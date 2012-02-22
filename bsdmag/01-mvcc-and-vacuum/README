@@ -1,0 +1,11 @@
+The scripts in this directory demonstrate the data page growing when doing multiple
+consecutive INSERTS/UPDATES/DELETES into the same table.
+
+01-install-extensions.sh 
+  installs the required extension into the database
+
+02-mvcc-test.sh          
+  demonstates how the data pages react to multiple tuple updates
+
+03-vacuum-test.sh        
+  forces a vacuum on the magazine table to see how space can be manually reclaimed
