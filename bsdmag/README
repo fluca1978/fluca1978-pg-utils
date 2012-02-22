@@ -1,0 +1,8 @@
+This directory (and its sub-directories) contain a set of scripts used to explain some PostgreSQL concepts with regard to articles in the BSD Magazine (year 2012).
+Each directory is numbered so that you know which directory scripts should be executed 
+before the others. Each sub-directory is related to a specific subject or example, the numbering of the sub-directories is not tied to the BSD Magazine issue number. 
+Within each directory each script is also numbered, to allow you to see how scripts should
+be executed.
+
+Please note that all scripts have been tested on a 9.1 PostgreSQL instance running
+on FreeBSD 8.2-RELEASE.
