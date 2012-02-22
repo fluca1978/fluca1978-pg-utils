@@ -1,0 +1,16 @@
+Scripts in this directory provides initial database setup.
+ATTENTION: carefully review each script before executing it, since
+the final database layout and configuration could not be the right one for you
+and you could have data loss!
+
+00-cluster-setup.sh
+   creates the database directory and enables PostgreSQL in rc.conf. This script should
+   be launched only once.
+
+01-database-setup.sh
+   creates the database user and the database used in other examples. This script should
+   be run once from the pgsql system user.
+
+magazine.sql
+   provides an initial definition and data load of the magazine table. It is safe
+   to execute such script every time you want.
