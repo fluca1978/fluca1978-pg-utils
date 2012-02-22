@@ -1,0 +1,4 @@
+This repository contains a few scripts, examples, and utilities I use to manage, tune and
+explain PostgreSQL related stuff.
+All the stuff in this repository is released under a BSD like license, please read
+the LICENSE text file for further information.
