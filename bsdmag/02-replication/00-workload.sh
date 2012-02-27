@@ -40,6 +40,10 @@ sleep 30
 touch /postgresql/standby.${STANDBY_CLUSTER_NUMBER}.trigger
 sleep 30
 
+DEST_PORT=`psql -U bsdmag -A -t -c "SELECT setting FROM pg_settings WHERE name = 'port';" template1`
+DEST_PORT=`expr $DEST_PORT + $STANDBY_CLUSTER_NUMBER`
+
+
 echo "=========================================="
 echo "Tuples in the master node (magazine table)"
 psql -U bsdmag -A -t -c "$COUNT_QUERY_MAGAZINE" bsdmagdb
