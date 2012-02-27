@@ -56,8 +56,13 @@ echo "Standby node $STANDBY_CLUSTER_NUMBER will listen on port $DEST_PORT"
 echo "Execute the following command to change the status of the standby"
 echo "in order to accept incoming connections:"
 echo
-echo "         touch $TRIGGER_FILE            "
+echo "      touch $TRIGGER_FILE            "
 echo
 echo "To manage the cluster use:"
-echo "/usr/local/bin/pg_ctl -D $DEST_CLUSTER {start|stop}"
+echo
+echo "      /usr/local/bin/pg_ctl -D $DEST_CLUSTER {start|stop}"
+echo
+echo "To run a workload please execute"
+echo
+echo "      sh 00-workload.sh $STANDBY_CLUSTER_NUMBER"
 /usr/local/bin/pg_ctl -D $DEST_CLUSTER start
