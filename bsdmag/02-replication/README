@@ -1,0 +1,4 @@
+This directory contains sample files for a quick configuration and test of replication 
+between clusters that runs on the same machine. 
+Almost every script accepts a number as argument, such number indicates the cluster number. A cluster will be created with such number and the TCP/IP port will be configured
+as the master one plus the cluster number.
