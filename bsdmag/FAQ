@@ -1,0 +1,13 @@
+- Why are these scripts so simple?
+
+They are here for didactic purposes, not for professional usage. Think they are 
+a starting point for you to produce your solid-as-rock derivates.
+
+- Why all the scripts reproduce the same stuff? Is not better to use functions and
+  chain scripts to avoid code duplication?
+
+This is not a scripting contest! The idea is that each script must be self contained
+and that has to clearly show to the user which commands and statements must be run
+in order to produce the final result. Moreover I want scripts to be copy-and-paste
+ready to exactly see what is going on without having to open another file or
+inspect a function.
