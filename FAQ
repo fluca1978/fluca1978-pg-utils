@@ -4,6 +4,17 @@ This is a list of scripts I used to teach and explain some PostgreSQL related co
 The main idea is to allow users to reproduce on their own installation the explained 
 concept without having to copy and paste each command line by line.
 
+- On which operating system can I run the scripts?
+
+All the scripts have been written as much portable as possible. Almost every script
+has been written to be run in a Bourne Shell; some scripts rely on Perl to execute.
+All the scripts have been tested on a FreeBSD system 8.2-RELEASE.
+
+- On which PostgreSQL can I run the scripts?
+
+All the examples, demos, scripts have been run against PostgreSQL 9.1.2 on i386-portbld-freebsd8.2, compiled by cc (GCC) 4.2.1 20070719  [FreeBSD], 32-bit.
+
+
 - Why are the scripts numbered?
 
 The number of each script is tied to the logical sequence I introduce arguments.
