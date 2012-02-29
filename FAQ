@@ -1,3 +1,16 @@
+- What are these scripts?
+
+This is a list of scripts I used to teach and explain some PostgreSQL related concepts.
+The main idea is to allow users to reproduce on their own installation the explained 
+concept without having to copy and paste each command line by line.
+
+- Why are the scripts numbered?
+
+The number of each script is tied to the logical sequence I introduce arguments.
+Sometime the execution of a script is related to the previous execution of the
+minor number script(s). For instance, in order to execute the demo 01-, 02, etc. you
+have at least to execute the setup scripts 00-*.
+
 - Why are these scripts so simple?
 
 They are here for didactic purposes, not for professional usage. Think they are 
