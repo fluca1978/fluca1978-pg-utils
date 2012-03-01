@@ -21,7 +21,7 @@ fi
 
 if [ $# -eq 1 ]
 then
-    STANDBY_OPERATION=
+    STANDBY_OPERATION=$STANDBY_OPERATION_ACTIVATE
 fi
 
 
@@ -36,8 +36,9 @@ fi
     DEST_PORT=`expr $DEST_PORT + $STANDBY_CLUSTER_NUMBER`
 
 
-
+echo "Operating mode is $STANDBY_OPERATION"
 echo "The stand-by node $STANDBY_CLUSTER_NUMBER is listening on $DEST_PORT"
+
 TEST_TABLE_NAME="test$$"
 COUNT_QUERY_MAGAZINE="SELECT count(*) FROM magazine;"
 COUNT_QUERY_TEST="SELECT count(*) FROM $TEST_TABLE_NAME;"
@@ -52,17 +53,12 @@ psql -U bsdmag -A -t -c "INSERT INTO $TEST_TABLE_NAME(pk, description) VALUES(ge
 
 
 
-# case for activating the node
-if [ $STANDBY_OPERATION = $STANDBY_OPERATION_ACTIVATE ]
+if [ "$STANDBY_OPERATION" = "$STANDBY_OPERATION_ACTIVATE" ]
 then
-    
     echo "Activating the stand-by node..."
     sleep 30
     touch /postgresql/standby.${STANDBY_CLUSTER_NUMBER}.trigger
-    sleep 30
-    
-    
-
+    sleep 10
     echo "=========================================="
     echo "Tuples in the master node (magazine table)"
     psql -U bsdmag -A -t -c "$COUNT_QUERY_MAGAZINE" bsdmagdb
@@ -74,20 +70,36 @@ then
     echo "Tuples in the slave node (test table)"
     psql -U bsdmag -A -t -p $DEST_PORT -c "$COUNT_QUERY_TEST" bsdmagdb
     echo "=========================================="
-
 else
-    if [ $STANDBY_OPERATION_SHOWREPLICATION = $STANDBY_OPERATION ]
+    if [ "$STANDBY_OPERATION" = "$STANDBY_OPERATION_SHOWREPLICATION" ]
     then
+    
+    
+
 	echo "Showing replica information"
 	# show log shipping processes
 	echo "====== MASTER ======="
-	ps -ex | grep archiver 
+	pgrep -f -l -i archiver 
 	echo "====================="
 	echo "====== STANDBY ======="
-	ps -ex | grep startup
+	pgrep -f -l -i startup
 	echo "====================="
 	
 
+	MASTER_XLOG_LOCATION=`psql -U pgsql -A -t -c "SELECT pg_current_xlog_location();" template1 | sed 's|[0-9]/\([0-9]\)*||g'`
+	STANDBY_XLOG_LOCATION=`psql -U pgsql -p $DEST_PORT -A -t -c "SELECT pg_last_xlog_replay_location();" template1 | sed 's|[0-9]/\([0-9]\)*||g'`
 	
+
+	obase=10
+	ibase=16
+	export obase
+	export ibase
+	MASTER_XLOG_LOCATION_10=`echo $MASTER_XLOG_LOCATION | bc`
+	STANDBY_XLOG_LOCATION_10=`echo $STANDBY_XLOG_LOCATION | bc`
+	echo "xlog location: master  $MASTER_XLOG_LOCATION  ($MASTER_XLOG_LOCATION_10)"
+	echo "xlog location: standby $STANDBY_XLOG_LOCATION ($STANDBY_XLOG_LOCATION_10)"
+	echo "Difference is " `expr $MASTER_XLOG_LOCATION_10 - $STANDBY_XLOG_LOCATION_10`
+
+
     fi
 fi
