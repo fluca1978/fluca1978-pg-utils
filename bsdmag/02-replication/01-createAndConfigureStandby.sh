@@ -90,6 +90,75 @@ add_entry_pghba_if_not_exists(){
 
 }
 
+# A function to check that the configuration of the master node is
+# appropriate for the log shipping replication.
+adjust_master_configuration_for_log_shipping(){
+    local CONF=${MASTER_CLUSTER}/postgresql.conf
+    cp $CONF /postgresql/postgresql.conf.beforeLogShipping.$$ > /dev/null 2>&1
+
+    # wal_level = 'archive'
+    sed  -i .bak "s/wal_level[ \t]*=.*/wal_level='archive'/g"        $CONF
+    # archive_mode = on
+    sed  -i .bak "s/archive_mode[ \t]*=.*/archive_mode=on/g"         $CONF
+    # archive command => copy to pitr directory
+    sed  -i .bak "s,archive_command[ \t]*=.*,archive_command='cp -i %p /postgresql/pitr/%f',g"        $CONF
+
+    # force a log segment every 30 seconds max
+    sed  -i .bak "s/archive_timeout[ \t]*=.*/archive_timeout=30/g"        $CONF
+}
+
+
+# A function to check that the configuration of the master node is
+# appropriate for the log streaming replication.
+adjust_master_configuration_for_log_streaming(){
+    local CONF=${MASTER_CLUSTER}/postgresql.conf
+    cp $CONF /postgresql/postgresql.conf.beforeLogStreaming.$$ > /dev/null 2>&1
+
+    # wal_level = 'archive'
+    sed  -i .bak "s/wal_level[ \t]*=.*/wal_level='archive'/g"        $CONF
+    # archive_mode = on
+    sed  -i .bak "s/#*archive_mode[ \t]*=.*/archive_mode=on/g"         $CONF
+    # archive command => copy to pitr directory
+    sed  -i .bak "s,#*archive_command[ \t]*=.*,archive_command='test 1 = 1',g"        $CONF
+    # force a log segment every 30 seconds max
+    sed  -i .bak "s/#*archive_timeout[ \t]*=.*/archive_timeout=30/g"        $CONF
+    # esnure at least one wal sender
+    sed  -i .bak "s/#*max_wal_senders[ \t]*=.*/max_wal_senders=1/g"         $CONF
+    # log connections, so we can see how is connecting to the master node
+    sed  -i .bak "s/#*log_connections[ \t]*=.*/log_connections=on/g"        $CONF
+}
+
+
+
+
+# A function to check that the configuration of the master node is
+# appropriate for the hotstandby replication.
+adjust_master_configuration_for_hotstandby(){
+    local CONF=${MASTER_CLUSTER}/postgresql.conf
+    cp $CONF /postgresql/postgresql.conf.beforeHotStandby.$$ > /dev/null 2>&1
+
+    # wal_level = 'archive'
+    sed  -i .bak "s/wal_level[ \t]*=.*/wal_level='hot_standby'/g"         $CONF
+    # archive_mode = on
+    sed  -i .bak "s/#*archive_mode[ \t]*=.*/archive_mode=on/g"              $CONF
+    # archive command => copy to pitr directory
+    sed  -i .bak "s,#*archive_command[ \t]*=.*,archive_command='test 1 = 1',g"        $CONF
+    # force a log segment every 30 seconds max
+    sed  -i .bak "s/#*archive_timeout[ \t]*=.*/archive_timeout=30/g"        $CONF
+    # esnure at least one wal sender
+    sed  -i .bak "s/#*max_wal_senders[ \t]*=.*/max_wal_senders=1/g"         $CONF
+    # log connections, so we can see how is connecting to the master node
+    sed  -i .bak "s/#*log_connections[ \t]*=.*/log_connections=on/g"        $CONF
+}
+
+
+
+# Restart the master cluster.
+restart_master_cluster(){
+    echo "Restarting the master cluster..."
+    /usr/local/etc/rc.d/postgresql restart
+}
+
 
 # Creates the recovery.conf file for the standby node in the case
 # of the log streaming.
@@ -103,12 +172,19 @@ create_recovery_file_for_log_streaming(){
 
 
 adjust_standby_configuration(){
-# adjust the port for the slave
-    sed  -i .bak "s/#*port[ \t]*=[ \t]*\([0-9]*\)/port=$DEST_PORT/g"  $DEST_CLUSTER/postgresql.conf
-# deactivate WAL archiving for the slave
-    sed  -i .bak "s/wal_level[ \t]*=.*/wal_level='minimal'/g"  $DEST_CLUSTER/postgresql.conf
-    sed  -i .bak "s/archive_mode[ \t]*=.*/archive_mode='off'/g"  $DEST_CLUSTER/postgresql.conf
-    sed  -i .bak "s/max_wal_senders[ \t]*=.*/#max_wal_senders=0/g"  $DEST_CLUSTER/postgresql.conf
+    local CONF=$DEST_CLUSTER/postgresql.conf
+
+    sed  -i .bak "s/#*port[ \t]*=[ \t]*\([0-9]*\)/port=$DEST_PORT/g"   $CONF
+    sed  -i .bak "s/wal_level[ \t]*=.*/wal_level='minimal'/g"          $CONF
+    sed  -i .bak "s/archive_mode[ \t]*=.*/archive_mode='off'/g"        $CONF
+    sed  -i .bak "s/max_wal_senders[ \t]*=.*/#max_wal_senders=0/g"     $CONF
+    sed  -i .bak "s/#*log_connections[ \t]*=.*/log_connections=off/g"    $CONF
+}
+
+# A function to activate the hot standby for the standby node.
+activate_hot_standby_on_standby_node(){
+    local CONF=$DEST_CLUSTER/postgresql.conf
+    sed  -i .bak "s/#*hot_standby[ \t]*=.*/hot_standby=on/g"    $CONF
 }
 
 
@@ -161,6 +237,10 @@ case $REPLICATION_MODE in
     ${REPLICATION_MODE_LOGSHIPPING}) 
     echo "Log shipping replication"
     BACKUP_LABEL=${REPLICATION_MODE_LOGSHIPPING}
+    # 0) ensure the master has the right configuration for log shipping
+    adjust_master_configuration_for_log_shipping
+    restart_master_cluster
+
     # 1) clone the master into the standby directory filesystem
     clone_master
     # 2) create the recovery.conf file
@@ -173,6 +253,10 @@ case $REPLICATION_MODE in
     ${REPLICATION_MODE_LOGSTREAMING})
     echo "Log streaming replication"
     BACKUP_LABEL=${REPLICATION_MODE_LOGSTREAMING}
+    # 0) ensure the master node has the right configuration
+    adjust_master_configuration_for_log_streaming
+    restart_master_cluster
+
     # 1) clone the master into the standby directory filesystem
     clone_master
     # 2) create the recovery.conf file
@@ -187,9 +271,26 @@ case $REPLICATION_MODE in
 
 
     ${REPLICATION_MODE_HOTSTANDBY}) 
-    echo "Hot standby replication"
+    echo "Hot Standby replication"
     BACKUP_LABEL=${REPLICATION_MODE_HOTSTANDBY}
+    # 0) ensure the master node has the right configuration
+    adjust_master_configuration_for_hotstandby
+    restart_master_cluster
+
+
+    # 1) clone the master into the standby directory filesystem
+    clone_master
+    # 2) create the recovery.conf file, use log streaming here
+    create_recovery_file_for_log_streaming   
+    # 3) create the replication user on the master node
+    create_replication_user_on_master_if_not_exists
+    # 4) allow the standby node to connect back to the master to allow for replication
+    add_entry_pghba_if_not_exists
+    # 5) set the standby configuration to not ship logs
+    adjust_standby_configuration
+    activate_hot_standby_on_standby_node
     ;;
+
     *)
 	echo "Cannot proceed without the replication method"
 	exit
@@ -201,7 +302,7 @@ print_final_info
 
 
 # shoudl I start the standby node?
-if [ $3 = "start" ]
+if [ "$3" = "start" ]
 then
     echo "Starting the standby node $DEST_CLUSTER"
     /usr/local/bin/pg_ctl -D $DEST_CLUSTER start
