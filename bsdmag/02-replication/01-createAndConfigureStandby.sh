@@ -133,7 +133,8 @@ print_final_info(){
 # check the number of arguments
 if [ $# -lt 2 ]
 then
-    echo "Please specify the number of the cluster to configure and the replication mode!"
+    echo "Usage:"
+    echo "$0 <standby-number> <$REPLICATION_MODE_LOGSHIPPING | $REPLICATION_MODE_LOGSTREAMING | $REPLICATION_MODE_HOTSTANDBY> [start]"
     exit
 fi
 
@@ -167,6 +168,8 @@ case $REPLICATION_MODE in
     # 3) adjust the postgresql.conf file in the standby node
     adjust_standby_configuration
     ;;
+
+
     ${REPLICATION_MODE_LOGSTREAMING})
     echo "Log streaming replication"
     BACKUP_LABEL=${REPLICATION_MODE_LOGSTREAMING}
@@ -181,25 +184,25 @@ case $REPLICATION_MODE in
     # 5) set the standby configuration to not ship logs
     adjust_standby_configuration
     ;;
+
+
     ${REPLICATION_MODE_HOTSTANDBY}) 
     echo "Hot standby replication"
     BACKUP_LABEL=${REPLICATION_MODE_HOTSTANDBY}
     ;;
     *)
-	echo "Cannot procede without the replication method"
+	echo "Cannot proceed without the replication method"
 	exit
 	;;
 esac
 
 
 print_final_info
-exit    
 
 
-
-
-
-
-
-
-#/usr/local/bin/pg_ctl -D $DEST_CLUSTER start
+# shoudl I start the standby node?
+if [ $3 = "start" ]
+then
+    echo "Starting the standby node $DEST_CLUSTER"
+    /usr/local/bin/pg_ctl -D $DEST_CLUSTER start
+fi
