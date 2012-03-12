@@ -11,6 +11,7 @@ RECOVERY_FILE=$DEST_CLUSTER/recovery.conf
 STANDBY_OPERATION_ACTIVATE="promote"
 STANDBY_OPERATION_SHOWREPLICATION="show"
 
+
 if [ $# -le 0 ]
 then
     echo "Please specify the number of the cluster to configure!"
@@ -39,17 +40,19 @@ fi
 echo "Operating mode is $STANDBY_OPERATION"
 echo "The stand-by node $STANDBY_CLUSTER_NUMBER is listening on $DEST_PORT"
 
+
+
 TEST_TABLE_NAME="test$$"
 COUNT_QUERY_MAGAZINE="SELECT count(*) FROM magazine;"
 COUNT_QUERY_TEST="SELECT count(*) FROM $TEST_TABLE_NAME;"
 
 echo "Inserting tuples into the master node"
 psql -U bsdmag -c "TRUNCATE TABLE magazine;" bsdmagdb
-psql -U bsdmag -c "INSERT INTO magazine(id, title) VALUES(generate_series(1,100000), 'TEST-REPLICA');" bsdmagdb
+psql -U bsdmag -c "INSERT INTO magazine(id, title) VALUES(generate_series(1,1000000), 'TEST-REPLICA');" bsdmagdb
 echo "Tuples in the master node (magazine table)"
 psql -U bsdmag -A -t -c "$COUNT_QUERY_MAGAZINE" bsdmagdb
 psql -U bsdmag -c "CREATE TABLE $TEST_TABLE_NAME(pk serial NOT NULL, description text);" bsdmagdb
-psql -U bsdmag -A -t -c "INSERT INTO $TEST_TABLE_NAME(pk, description) VALUES(generate_series(1,50000), 'NEW-TABLE-TEST');" bsdmagdb
+psql -U bsdmag -A -t -c "INSERT INTO $TEST_TABLE_NAME(pk, description) VALUES(generate_series(1,500000), 'NEW-TABLE-TEST');" bsdmagdb
 
 
 
@@ -74,32 +77,38 @@ else
     if [ "$STANDBY_OPERATION" = "$STANDBY_OPERATION_SHOWREPLICATION" ]
     then
     
-    
 
-	echo "Showing replica information"
-	# show log shipping processes
-	echo "====== MASTER ======="
-	pgrep -f -l -i archiver 
-	echo "====================="
-	echo "====== STANDBY ======="
-	pgrep -f -l -i startup
-	echo "====================="
-	
-
-	MASTER_XLOG_LOCATION=`psql -U pgsql -A -t -c "SELECT pg_current_xlog_location();" template1 | sed 's|[0-9]/\([0-9]\)*||g'`
-	STANDBY_XLOG_LOCATION=`psql -U pgsql -p $DEST_PORT -A -t -c "SELECT pg_last_xlog_replay_location();" template1 | sed 's|[0-9]/\([0-9]\)*||g'`
-	
-
-	obase=10
-	ibase=16
-	export obase
-	export ibase
-	MASTER_XLOG_LOCATION_10=`echo $MASTER_XLOG_LOCATION | bc`
-	STANDBY_XLOG_LOCATION_10=`echo $STANDBY_XLOG_LOCATION | bc`
-	echo "xlog location: master  $MASTER_XLOG_LOCATION  ($MASTER_XLOG_LOCATION_10)"
-	echo "xlog location: standby $STANDBY_XLOG_LOCATION ($STANDBY_XLOG_LOCATION_10)"
-	echo "Difference is " `expr $MASTER_XLOG_LOCATION_10 - $STANDBY_XLOG_LOCATION_10`
-
+	WAL_DIFFERENCE=1
+	while [ $WAL_DIFFERENCE -gt 0 ]
+	do
+	    
+	    echo "Showing replica information"
+	    # show log shipping processes
+	    echo "====== MASTER ======="
+	    pgrep -f -l -i archiver 
+	    pgrep -f -l -i postgres | grep sender 
+	    echo "====================="
+	    echo "====== STANDBY ======="
+	    pgrep -f -l -i startup
+	    pgrep -f -l -i postgres | grep receiver
+	    echo "====================="
+	    
+	    
+	    MASTER_XLOG_LOCATION=`psql -U pgsql -A -t -c "SELECT pg_current_xlog_location();" template1 | sed 's|[0-9]/\([0-9]\)*||g'`
+	    STANDBY_XLOG_LOCATION=`psql -U pgsql -p $DEST_PORT -A -t -c "SELECT pg_last_xlog_replay_location();" template1 | sed 's|[0-9]/\([0-9]\)*||g'`
+	    
+	    
+	    obase=10
+	    ibase=16
+	    export obase
+	    export ibase
+	    MASTER_XLOG_LOCATION_10=`echo $MASTER_XLOG_LOCATION | bc`
+	    STANDBY_XLOG_LOCATION_10=`echo $STANDBY_XLOG_LOCATION | bc`
+	    echo "xlog location: master  $MASTER_XLOG_LOCATION  ($MASTER_XLOG_LOCATION_10)"
+	    echo "xlog location: standby $STANDBY_XLOG_LOCATION ($STANDBY_XLOG_LOCATION_10)"
+	    WAL_DIFFERENCE=`expr $MASTER_XLOG_LOCATION_10 - $STANDBY_XLOG_LOCATION_10`
+	    echo "Difference is $WAL_DIFFERENCE"
+	done
 
     fi
 fi
