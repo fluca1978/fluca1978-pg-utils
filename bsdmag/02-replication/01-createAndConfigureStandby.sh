@@ -2,6 +2,7 @@
 
 STANDBY_CLUSTER_NUMBER=$1
 REPLICATION_MODE=$2
+REPLICATION_SYNC=$3
 POSTGRESQL_ROOT=/postgresql
 WAL_ARCHIVES=${POSTGRESQL_ROOT}/pitr
 MASTER_CLUSTER=${POSTGRESQL_ROOT}/cluster1
@@ -17,6 +18,8 @@ POSTGRESQL_CONF_TEMPLATE=/postgresql/postgresql.conf.template
 REPLICATION_MODE_LOGSHIPPING="logshipping"
 REPLICATION_MODE_LOGSTREAMING="logstreaming"
 REPLICATION_MODE_HOTSTANDBY="hotstandby"
+REPLICATION_MODE_SYNC="sync"
+REPLICATION_MODE_ASYNC="async"
 
 # A function to set up the file system for the standby node
 # and to start the backup of the master cluster.
@@ -149,6 +152,17 @@ adjust_master_configuration_for_hotstandby(){
     sed  -i .bak "s/#*max_wal_senders[ \t]*=.*/max_wal_senders=1/g"         $CONF
     # log connections, so we can see how is connecting to the master node
     sed  -i .bak "s/#*log_connections[ \t]*=.*/log_connections=on/g"        $CONF
+    # terminate the connections if the standby has crashed
+    sed  -i .bak "s/#*replication_timeout[ \t]*=.*/replication_timeout=60/g"        $CONF
+}
+
+# Activate the master configuration for sync replication.
+adjust_master_sync_replication(){
+    local CONF=${MASTER_CLUSTER}/postgresql.conf
+    SYNC_APP_NAME="sync_replication_$STANDBY_CLUSTER_NUMBER"
+    echo "Synchronous application name: $SYNC_APP_NAME"
+    sed  -i .bak "s/#*synchronous_standby_names[ \t]*=.*/synchronous_standby_names=$SYNC_APP_NAME/g"        $CONF
+    sed  -i .bak "s/#*synchronous_commit[ \t]*=.*/synchronous_commit=on/g"        $CONF
 }
 
 
@@ -168,6 +182,15 @@ create_recovery_file_for_log_streaming(){
     echo "primary_conninfo=' host=$HOST_IP user=$REPLICATION_USER'" >> $RECOVERY_FILE
     echo "trigger_file='$TRIGGER_FILE'" >> $RECOVERY_FILE
 }
+
+
+create_recovery_file_for_log_streaming_sync_replication(){
+    rm $TRIGGER_FILE > /dev/null 2>&1
+    echo "standby_mode='on'" > $RECOVERY_FILE
+    echo "primary_conninfo=' host=$HOST_IP user=$REPLICATION_USER' application_name=$SYNC_APP_NAME" >> $RECOVERY_FILE
+    echo "trigger_file='$TRIGGER_FILE'" >> $RECOVERY_FILE
+}
+
 
 
 
@@ -272,16 +295,28 @@ case $REPLICATION_MODE in
 
     ${REPLICATION_MODE_HOTSTANDBY}) 
     echo "Hot Standby replication"
+
     BACKUP_LABEL=${REPLICATION_MODE_HOTSTANDBY}
     # 0) ensure the master node has the right configuration
     adjust_master_configuration_for_hotstandby
+    # 0b) if the replication is sync, perform extra steps
+    if [ "$REPLICATION_SYNC" = "$REPLICATION_MODE_SYNC" ]
+    then
+	echo "Synchronous replication"
+	adjust_master_sync_replication
+    fi
     restart_master_cluster
 
 
     # 1) clone the master into the standby directory filesystem
     clone_master
     # 2) create the recovery.conf file, use log streaming here
-    create_recovery_file_for_log_streaming   
+    if [ "$REPLICATION_SYNC" = "$REPLICATION_MODE_SYNC" ]
+    then
+	create_recovery_file_for_log_streaming_sync_replication
+    else
+	create_recovery_file_for_log_streaming   
+    fi
     # 3) create the replication user on the master node
     create_replication_user_on_master_if_not_exists
     # 4) allow the standby node to connect back to the master to allow for replication
