@@ -128,6 +128,9 @@ adjust_master_configuration_for_log_streaming(){
     sed  -i .bak "s/#*max_wal_senders[ \t]*=.*/max_wal_senders=1/g"         $CONF
     # log connections, so we can see how is connecting to the master node
     sed  -i .bak "s/#*log_connections[ \t]*=.*/log_connections=on/g"        $CONF
+    # keep wal segments as emergency action
+    sed  -i .bak "s/#*wal_keep_segments[ \t]*=.*/wal_keep_segments=16/g"        $CONF
+
 }
 
 
@@ -150,6 +153,9 @@ adjust_master_configuration_for_hotstandby(){
     sed  -i .bak "s/#*max_wal_senders[ \t]*=.*/max_wal_senders=1/g"         $CONF
     # log connections, so we can see how is connecting to the master node
     sed  -i .bak "s/#*log_connections[ \t]*=.*/log_connections=on/g"        $CONF
+    # keep wal segments as emergency action
+    sed  -i .bak "s/#*wal_keep_segments[ \t]*=.*/wal_keep_segments=16/g"        $CONF
+
     # terminate the connections if the standby has crashed
     sed  -i .bak "s/#*replication_timeout[ \t]*=.*/replication_timeout=60/g"        $CONF
 }
@@ -194,7 +200,7 @@ create_recovery_file_for_log_streaming_sync_replication(){
 
 adjust_standby_configuration(){
     local CONF=$DEST_CLUSTER/postgresql.conf
-
+    echo "////// $DEST_PORT ///////"
     sed  -i .bak "s/#*port[ \t]*=[ \t]*\([0-9]*\)/port=$DEST_PORT/g"   $CONF
     sed  -i .bak "s/wal_level[ \t]*=.*/wal_level='minimal'/g"          $CONF
     sed  -i .bak "s/archive_mode[ \t]*=.*/archive_mode='off'/g"        $CONF
@@ -246,6 +252,7 @@ fi
 # compute on which TCP/IP port the standby will be accepting connections
 DEST_PORT=`psql -U bsdmag -A -t -c "SELECT setting FROM pg_settings WHERE name = 'port';" template1`
 DEST_PORT=`expr $DEST_PORT + $STANDBY_CLUSTER_NUMBER`
+echo "Destination port $DEST_PORT"
 
 # where will be the recovery file for this standby node?
 RECOVERY_FILE=$DEST_CLUSTER/recovery.conf
