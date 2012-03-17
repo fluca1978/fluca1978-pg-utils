@@ -121,7 +121,6 @@ adjust_master_configuration_for_log_streaming(){
     sed  -i .bak "s/wal_level[ \t]*=.*/wal_level='archive'/g"        $CONF
     # archive_mode = on
     sed  -i .bak "s/#*archive_mode[ \t]*=.*/archive_mode=on/g"         $CONF
-    # archive command => copy to pitr directory
     sed  -i .bak "s,#*archive_command[ \t]*=.*,archive_command='test 1 = 1',g"        $CONF
     # force a log segment every 30 seconds max
     sed  -i .bak "s/#*archive_timeout[ \t]*=.*/archive_timeout=30/g"        $CONF
@@ -144,7 +143,6 @@ adjust_master_configuration_for_hotstandby(){
     sed  -i .bak "s/wal_level[ \t]*=.*/wal_level='hot_standby'/g"         $CONF
     # archive_mode = on
     sed  -i .bak "s/#*archive_mode[ \t]*=.*/archive_mode=on/g"              $CONF
-    # archive command => copy to pitr directory
     sed  -i .bak "s,#*archive_command[ \t]*=.*,archive_command='test 1 = 1',g"        $CONF
     # force a log segment every 30 seconds max
     sed  -i .bak "s/#*archive_timeout[ \t]*=.*/archive_timeout=30/g"        $CONF
