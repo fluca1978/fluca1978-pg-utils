@@ -10,21 +10,21 @@ CREATE OR REPLACE FUNCTION notify_readers( integer ) RETURNS integer
     my ($result_set, $email_text, $name, $current_row, $email, %mail);
     my ($download_path, $title);
 
-    elog( INFO, "Extracting the issue data via the query $query\n");
+    elog( LOG, "Extracting the issue data via the query $query\n");
     $result_set    = spi_exec_query( $query );     
     $current_row   = $result_set->{rows}[ 0 ];	                                         
-    $title         = $current_row{"title"};
-    $download_path = $current_row{"download_path"};
-    elog( INFO, "Magazine Issue: $title at $download_path \n" );
+    $title         = $current_row->{"title"};
+    $download_path = $current_row->{"download_path"};
+    elog( LOG, "Magazine Issue: $title at $download_path \n" );
     
     $query       = "SELECT email, name FROM readers";
-    elog( INFO, "Extracting all readers via the query $query\n");
+    elog( LOG, "Extracting all readers via the query $query\n");
     $result_set = spi_exec_query( $query );                                              
     $num_rows   = $result_set->{processed};
-    elog( INFO, "Found $num_rows readers\n" );
+    elog( LOG, "Found $num_rows readers\n" );
                                                 
     # iterate on each reader
-    for( $i = 0; $i <= $num_rows; $i++ ){
+    for( $i = 0; $i < $num_rows; $i++ ){
        $current_row = $result_set->{rows}[ $i ];
        $name        = $current_row->{"name"};
        $email       = $current_row->{"email"};
@@ -47,7 +47,7 @@ so please check it out!
 $boundary----
 END_OF_BODY
 
-       elog( INFO, "Notifying reader $name at email $email\n" . $mail{body} . "\n" );
+       elog( LOG, "Notifying reader $name at email $email\n" );
 	
          #sendmail( %mail ) or warn( $Mail::Sendmail::error) ;
 	 $sent++;

@@ -9,3 +9,4 @@ CREATE TABLE readers(
 
 INSERT INTO readers(name, email) VALUES('Luca Ferrari', 'lf@fakemail.com');
 INSERT INTO readers(name, email) VALUES('Ritchie Root', 'rr@fakemail.com');
+ALTER TABLE magazine ADD COLUMN notified_readers integer DEFAULT 0;
