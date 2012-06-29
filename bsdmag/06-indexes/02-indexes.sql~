@@ -1,0 +1,3 @@
+\timing
+CREATE INDEX idx_difficulty ON articles(difficulty);
+CREATE INDEX idx_listings ON articles(listings);
