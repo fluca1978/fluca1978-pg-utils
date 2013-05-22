@@ -1,6 +1,6 @@
 BEGIN;
 
-DROP TABLE magazine CASCADE;
+--DROP TABLE magazine CASCADE;
 CREATE TABLE IF NOT EXISTS magazine(pk serial NOT NULL,
 id text,
 month int,

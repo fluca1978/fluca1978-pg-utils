@@ -10,9 +10,7 @@
 
 
 # default variables
-PGDATA=/mnt/postgresql/cluster-bsdmag
-PG_USER=pgsql
-
+. ../bsdmag-config.sh
 
 me=`id -u`
 PG_USER_ID=`id -u $PG_USER`

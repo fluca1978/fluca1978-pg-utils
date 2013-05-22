@@ -3,18 +3,13 @@
 # This script will create a demo user and database on
 # a running (locally) PostgreSQL cluster.
 
-
-DB_USERNAME="bsdmag"
-DB_NAME="${DB_USERNAME}db"
+# load config variables
+. ../bsdmag-config.sh
 DB_CONNECTION_LIMIT=2
-POSTGRESQL_USER="pgsql"
 
-me=`id -u`
-if [ $me -ne `id -u $POSTGRESQL_USER` ]
-then
-    echo "This script must be run as the user $POSTGRESQL_USER (or the default PostgreSQL user)"
-    exit 1
-fi
+# check if the user is the postgresql one and exit if not
+ensure_user_is_postgres
+
 
 
 cat <<EOF
