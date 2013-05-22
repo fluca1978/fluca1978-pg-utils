@@ -13,14 +13,16 @@
 PGDATA=/mnt/postgresql/cluster-bsdmag
 PG_USER=pgsql
 
+
 me=`id -u`
 PG_USER_ID=`id -u $PG_USER`
 
 if [ ! $me -eq 0 -a ! $me -eq $PG_USER_ID ]
 then
-    echo "Should run as root for directory creation and permission assignment"
-    echo "or as the $PG_USER user (assuming he can create the PGDATA directory)"
-    exit 1
+    cat <<EOF
+Should run as root for directory creation and permission assignment
+or as the $PG_USER user (assuming he can create the PGDATA directory).
+EOF
 fi
 
 
@@ -29,11 +31,12 @@ answer=""
 while [ "$answer" == "" ]
 do
     clear
-    echo "Will initialize the directory PGDATA = $PGDATA"
-    echo "with the user $PG_USER"
-    echo "and this WILL DESTROY any existing data"
-    echo ""
-    echo "Continue (y/n)?"
+cat <<EOF
+Will initialize the directory PGDATA = $PGDATA
+with the user $PG_USER
+and this WILL DESTROY any existing data!!!!!!
+Continue (y/n)?
+EOF
     read answer
 
     case $answer in
@@ -52,16 +55,36 @@ do
 done
 
 
-echo "Creating PGDATA and setting permissions"
-mkdir -p $PGDATA > /dev/null 2>&1
+if [ ! -d $PGDATA ]
+then
+    echo "Creating PGDATA and setting permissions"
+    mkdir -p $PGDATA > /dev/null 2>&1
+    
+else
+    echo "Cleaning up $PGDATA (destroying data!)"
+    rm -rf $PGDATA/*
+fi
+echo "Fixing directory permissions"
 chown $PG_USER:$PG_USER $PGDATA
 echo "Initializing the cluster directory (this may take a while)"
-/usr/local/etc/rc.d/postgresql oneinitdb 
+
+# It is important to export the rc variable used in the script, or
+# it will use the default value /usr/local/pgsql/data !!!!
+postgresql_data="$PGDATA"
+export postgresql_data
+/usr/local/etc/rc.d/postgresql  oneinitdb 
 echo "All done"
-echo "To ensure PostgreSQL will start automatically, please"
-echo "add the following options to /etc/rc.conf:"
-echo "-----------------------"
-echo postgresql_enable=\"YES\" 
-echo postgresql_data=\"$PGDATA\"
-echo "-----------------------"
-echo "Also check the pg_hba.conf and postgresql.conf files"
+cat <<EOF
+To ensure PostgreSQL will start automatically, please
+add the following options to /etc/rc.conf:
+
+#### PostgreSQL Configuration ####
+postgresql_enable="YES"
+postgresql_data="$PGDATA"
+##################################
+
+and also review settings in files
+$PGDATA/{ pg_hba.conf, postgresql.conf }
+
+EOF
+
