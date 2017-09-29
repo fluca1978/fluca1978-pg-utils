@@ -339,3 +339,49 @@ di un processo *postgres* (denominato anche *backend*) delegato a gestire la con
 
    La shared memory viene organizzata in */pagine dati/* che rappresentano la copia in memoria dei dati persistenti su disco.
    Vi sono una serie di processi di utilità che si occupano di scaricare/caricare i dati dalla /shared memory/ e dal disco.
+** File System
+   PostgreSQL si appoggia al *filesystem* per lo stoccaggio dei dati in maniera persistenza.
+
+   Questo offre diversi vantaggi, fra i quali la possibilità di un tuning molto raffinato
+   circa le opzioni di funzionamento del filesystem (replica, journaling, ecc.).
+
+   Dall'altra parte, il filesystem deve essere *affidabile*, pena il rischio di perdita dati.
+* Installazione
+** Tipologie di installazione
+   E' possibile installare PostgreSQL:
+   - mediante installer ufficiale
+   - mediante pacchetti binari della propria installazione
+   - compilando l'albero dei sorgenti
+
+*** Macchina Virtuale                                          :B_definition:
+   Tutte le prove qui mostrate sono state effettuate su una macchina virtuale con
+   quattro dischi da 2GB utilizzati come spazio dati:
+   #+begin_src sh
+   $ uname -a
+   FreeBSD olivia 11.1-RELEASE FreeBSD 11.1-RELEASE
+
+   $ mount
+   ...
+   /dev/ada1p1 on /mnt/data1 (ufs, local, soft-updates)
+   /dev/ada2p1 on /mnt/data2 (ufs, local, soft-updates)
+   /dev/ada3p1 on /mnt/data3 (ufs, local, soft-updates)
+   /dev/ada4p1 on /mnt/data4 (ufs, local, soft-updates)
+   #+end_src
+*** End of block                                               :B_ignoreheading:
+:PROPERTIES:
+:BEAMER_env: ignoreheading
+:END:
+
+Ad esempio, PostgreSQL non supporta i /query-hints/ tanto famosi in altri sistemi
+commerciali: per gli sviluppatori questa funzionalità non ha senso e non è mai stata
+(e mai verrà) implementata.
+
+#+begin_quote
+Approccio simile a quello di OpenBSD!
+#+end_quote
+
+   PostgreSQL è il naturale discendente di *Ingres* (dopo, /post/, gres), un database
+   accademico/sperimentale inventato dal prof. Michael Stonebreaker e commercializzato
+   indicativamente nello stesso spazio temporale di Oracle (1989 circa).
+
+   Tutto inizia alla Berkely University of California.
