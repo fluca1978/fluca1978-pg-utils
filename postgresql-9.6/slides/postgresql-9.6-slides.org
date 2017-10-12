@@ -385,3 +385,57 @@ Approccio simile a quello di OpenBSD!
    indicativamente nello stesso spazio temporale di Oracle (1989 circa).
 
    Tutto inizia alla Berkely University of California.
+
+** Installazione
+Compilazione dai ports:
+#+begin_src sh
+# cd /usr/ports/databases/postgresql96-server
+# make PREFIX=/opt/postgresql-9.6 BATCH=yes install clean
+#+end_src
+
+oppure il pacchetto binario:
+
+#+begin_src sh
+# pkg install postgresql96-server-9.6.5_1
+#+end_src
+
+In FreeBSD il database viene gestito dall'utente di sistema ~postgres~:
+
+#+begin_src sh
+# id postgres
+uid=770(postgres) gid=770(postgres) groups=770(postgres)
+#+end_src
+
+altri sistemi operativi creano utenti simili (~psql~, ~pgsql~, ecc.).
+
+** initdb
+PostgreSQL utilizza il filesystem del sistema operativo per salvare i dati in modo
+persistente.
+
+In particolare una directory specifica, denominata *PGDATA*, viene usata per contenere
+tutti gli oggetti PostgreSQL. Tale directory deve essere inizializzata opportunamente
+(creazione struttura directory, impostazione dei permessi, ecc.)
+tramite il programma ~initdb~.
+
+*** PGDATA
+   Un cluster può servire *una sola PGDATA* alla volta.
+   La directory PGDATA deve essere protetta opportunamente da accessi involontari
+   di altri utenti del sistema.
+*** End of block                                               :B_ignoreheading:
+:PROPERTIES:
+:BEAMER_env: ignoreheading
+:END:
+
+Ad esempio, PostgreSQL non supporta i /query-hints/ tanto famosi in altri sistemi
+commerciali: per gli sviluppatori questa funzionalità non ha senso e non è mai stata
+(e mai verrà) implementata.
+
+#+begin_quote
+Approccio simile a quello di OpenBSD!
+#+end_quote
+
+   PostgreSQL è il naturale discendente di *Ingres* (dopo, /post/, gres), un database
+   accademico/sperimentale inventato dal prof. Michael Stonebreaker e commercializzato
+   indicativamente nello stesso spazio temporale di Oracle (1989 circa).
+
+   Tutto inizia alla Berkely University of California.
