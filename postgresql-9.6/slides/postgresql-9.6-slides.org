@@ -455,3 +455,68 @@ La directory ~$PGDATA~ contiene diversi file e directory, in particolare:
 - *~pg_xlog~* e ~pg_clog~: rispettivamente WAL e commit log.
 
 Per altre informazioni vedere [[https://www.postgresql.org/docs/9.6/static/storage-file-layout.html][Storage File System Layout]].
+
+** Connessione al servizio
+Il file ~pg_hba.conf~ contiene le informazioni su quali metodi di autenticazione,
+quali utenti, quali host remoti e quali database sono accessibili per la connessione.
+Si può editare questo file prima di avviare il servizio (se si è impostata una password
+per ~postgres~ superuser) o anche in seguito.
+
+#+begin_src sh
+# tipo  database   utente   da dove       metodo
+local   all        all                    trust
+host    all        all      127.0.0.1/32    md5
+#+end_src
+
+La parola ~all~ indica tutti gli utenti/database (a seconda di dove è messa).
+*Il metodo ~trust~ non richiede autenticazione e va rimosso appena possibile!*
+
+
+** Avvio del servizio
+Una volta che i primi pezzi sono al loro posto, è possibile avviare il servizio:
+
+#+begin_src sh
+# service postgresql start
+#+end_src
+
+e se tutto va a buon fine...
+#+begin_src sh
+# psql -h localhost -U postgres -l
+Password for user postgres:
+   Name    |  Owner   | Encoding |
+-----------+----------+----------+
+ postgres  | postgres | UTF8     |
+ template0 | postgres | UTF8     |
+ template1 | postgres | UTF8     |
+(3 rows)
+#+end_src
+
+
+** Database template
+Quando viene inizializzata ~PGDATA~ il sistema crea due database chaimati /template/:
+- ~template0~: la copia principale del template;
+- *~template1~*: la copia usata in default.
+
+Ogni votla che viene creato un nuovo database *le impostazioni di base sono copiate da ~template1~*
+(che funge da /skel/ directory).
+
+E' facoltà del DBA impostare ~template1~ opportunamente per far si che la creazione di nuovi database
+abbia una base comune riconosciuta (es. schemi, linguaggi, ecc.).
+
+~template0~ è la copia di sicurezza del template, qualora si "sporchi" troppo ~template1~.
+
+** Database templating
+I due database template non svolgono alcuna funzione particolare se non quella di essere
+usati come possibili punti di origine di un nuovo database. In default, se non specificato, PostgreSQL
+copia ~template1~, mentre ~template0~ dovrebbe essere lasciato /vergine/ per operazioni particolari
+quali restore (può servire un database vuoto a cui collegarsi).
+
+*** Creare i propri template
+    E' possibile creare quanti database template si vuole e istruire il comando
+    ~CREATE DATABASE~ per usare altri template oltre ~template1~. Si noti però
+    che un database template non accetta connessioni durante la creazione, quindi
+    questo *non è un meccanismo di /clonazione/ dei database!*
+*** End of block                                               :B_ignoreheading:
+:PROPERTIES:
+:BEAMER_env: ignoreheading
+:END:
