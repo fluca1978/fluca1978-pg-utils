@@ -520,3 +520,125 @@ quali restore (può servire un database vuoto a cui collegarsi).
 :PROPERTIES:
 :BEAMER_env: ignoreheading
 :END:
+
+** psql
+Il pacchetto /client/ contiene un interprete da riga di comando, denominato ~psql~
+che consente di collegarsi al database e svolgere /tutti/ i compiti necessari.
+
+#+begin_src sh
+% psql -h localhost -U postgres template1
+Password for user postgres:
+psql (9.6.5)
+Type "help" for help.
+
+template1=#
+template1=# \q
+%
+#+end_src
+
+I parametri di linea comando sono:
+- ~-h~: host a cui collegarsi (hostname, indirizzo ip);
+- ~-U~: utente con cui collegarsi (/ruolo/ PostgreSQL);
+- database a cui collegarsi (es. ~template1~).
+
+** psql: connection URI
+Oltre a specificare ogni singolo parametro della conessione tramite opzioni di comando,
+~psql~ consente di utilizzare un URI per la connessione, ad esempio:
+
+#+begin_src sh
+% psql postgresql://postgres@localhost:5432/template1
+Password:
+psql (9.6.5)
+Type "help" for help.
+
+template1=#
+#+end_src
+
+Parametri ulteriori possono essere specificati nell'URL (dopo ~?~),
+come ad esempio:
+
+#+begin_src sh
+postgresql://postgres@localhost/template1?sslmode=require
+#+end_src
+
+** psql: prompt
+
+In modo simile alla shell, il prompt di ~psql~ mostra:
+- il database al quale si è collegati (~template1~);
+- un ~#~ se si è superuser o ~>~ se si è utenti normali.
+
+Si esce da ~psql~ con ~\q~.
+
+** Quale versione del server?
+~psql~ mostra all'avvio la propria versione (client) ma con una query
+è possibile capire anche la versione del server:
+
+#+begin_src SQL
+template1=# SELECT version();
+ PostgreSQL 9.6.5 on amd64-portbld-freebsd11.0, ...
+(1 row)
+#+end_src
+
+
+La funzione speciale ~version()~ viene compilata al momento
+del build del pacchetto binario.
+
+
+
+** psql, ruoli, database
+In default ~psql~ cerca di collegarsi a un database che ha lo stesso nome
+utente dell'utente che esegue il comando stesso, con un ruolo che ha
+lo stesso nome.
+In altre parole:
+
+#+begin_src sh
+% id -p
+uid     luca
+
+% psql
+psql: FATAL:  role "luca" does not exist
+#+end_src
+
+corrisponde a:
+
+#+begin_src sh
+% psql -h localhost -U luca luca
+#+end_src
+
+
+** psql: aiuto
+All'interno di ~psql~ ci sono due tipologie di aiuto:
+- /aiuto sui comandi SQL/: si ottiene con ~\h~
+  - ~\h~ senza argomenti mostra tutti i comandi SQL disponibili;
+  - ~\h COMANDO~ mostra l'aiuto del comando SQL specificato;
+- /aiuto su ~psql~/: si ottiene con ~\?~ e mostra tutti i comandi
+  speciali di ~psql~. Tutti i comandi ~psql~ iniziano con backslash
+  (es. ~\d~).
+
+
+** psql: evitare la password
+~psql~ consente di impostare un file di credenziali (~$HOME/.pgpass~) per collegarsi
+a uno specifico database/host con uno specifico utente senza dover digitare
+una password.
+Ogni riga nel file contiene:
+- host a cui collegarsi;
+- database a cui collegarsi (~*~ per tutti);
+- username con cui collegarsi;
+- password con cui collegarsi.
+
+Il file non deve essere leggibile da altri utenti (es. permessi ~600~).
+
+#+begin_src sh
+% cat ~/.pgpass
+127.0.0.1:template1:postgres:mySuperSecretPasswordHere
+
+% psql -U postgres template1
+template1=#
+#+end_src
+
+** psql: configurazione utente
+~psql~ consente di specificare delle configurazioni utente nel file ~$HOME/.psqlrc~.
+Tutti i comandi (~psql~ compatibili) specificati in tale file vengono eseguiti
+prima di fornire il prompt all'utente.
+
+Utile per impostare variabili, prompt, formati di output, ecc.
