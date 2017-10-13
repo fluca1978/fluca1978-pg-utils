@@ -359,9 +359,7 @@ di un processo *postgres* (denominato anche *backend*) delegato a gestire la con
    #+begin_src sh
    $ uname -a
    FreeBSD olivia 11.1-RELEASE FreeBSD 11.1-RELEASE
-
    $ mount
-   ...
    /dev/ada1p1 on /mnt/data1 (ufs, local, soft-updates)
    /dev/ada2p1 on /mnt/data2 (ufs, local, soft-updates)
    /dev/ada3p1 on /mnt/data3 (ufs, local, soft-updates)
@@ -371,20 +369,6 @@ di un processo *postgres* (denominato anche *backend*) delegato a gestire la con
 :PROPERTIES:
 :BEAMER_env: ignoreheading
 :END:
-
-Ad esempio, PostgreSQL non supporta i /query-hints/ tanto famosi in altri sistemi
-commerciali: per gli sviluppatori questa funzionalità non ha senso e non è mai stata
-(e mai verrà) implementata.
-
-#+begin_quote
-Approccio simile a quello di OpenBSD!
-#+end_quote
-
-   PostgreSQL è il naturale discendente di *Ingres* (dopo, /post/, gres), un database
-   accademico/sperimentale inventato dal prof. Michael Stonebreaker e commercializzato
-   indicativamente nello stesso spazio temporale di Oracle (1989 circa).
-
-   Tutto inizia alla Berkely University of California.
 
 ** Installazione
 Compilazione dai ports:
@@ -408,7 +392,21 @@ uid=770(postgres) gid=770(postgres) groups=770(postgres)
 
 altri sistemi operativi creano utenti simili (~psql~, ~pgsql~, ecc.).
 
-** initdb
+** Avvio del servizio
+I parametri di configurazione dipendono ovviamente dal sistema operativo, ad
+esempio su FreeBSD le variabili di ~rc.conf~ sono visibili da
+~/usr/local/etc/rc.d/postgresql~:
+
+#+begin_src sh
+#  postgresql_enable="YES"
+#  postgresql_data="/var/db/postgres/data96"
+#  postgresql_flags="-w -s -m fast"
+#  postgresql_initdb_flags="--encoding=utf-8 --lc-collate=C"
+#  postgresql_class="default"
+#  postgresql_profiles=""
+#+end_src
+
+** PGDATA
 PostgreSQL utilizza il filesystem del sistema operativo per salvare i dati in modo
 persistente.
 
@@ -417,7 +415,7 @@ tutti gli oggetti PostgreSQL. Tale directory deve essere inizializzata opportuna
 (creazione struttura directory, impostazione dei permessi, ecc.)
 tramite il programma ~initdb~.
 
-*** PGDATA
+*** Importanza di PGDATA
    Un cluster può servire *una sola PGDATA* alla volta.
    La directory PGDATA deve essere protetta opportunamente da accessi involontari
    di altri utenti del sistema.
@@ -426,16 +424,34 @@ tramite il programma ~initdb~.
 :BEAMER_env: ignoreheading
 :END:
 
-Ad esempio, PostgreSQL non supporta i /query-hints/ tanto famosi in altri sistemi
-commerciali: per gli sviluppatori questa funzionalità non ha senso e non è mai stata
-(e mai verrà) implementata.
+** initdb
+Creazione di una directory per la memorizzazione del database (alcuni
+sistemi operativi lo fanno automaticamente al momento dell'installazione
+binaria):
 
-#+begin_quote
-Approccio simile a quello di OpenBSD!
-#+end_quote
+#+begin_src sh
+# mkdir /mnt/data1/pgdata
+  && chown postgres:postgres /mnt/data1/pgdata
+$ initdb --data-checksum --encoding="UTF-8"
+         --pwprompt
+         -D /mnt/data1/pgdata/
+#+end_src
 
-   PostgreSQL è il naturale discendente di *Ingres* (dopo, /post/, gres), un database
-   accademico/sperimentale inventato dal prof. Michael Stonebreaker e commercializzato
-   indicativamente nello stesso spazio temporale di Oracle (1989 circa).
+~initdb~ deve essere eseguito da un utente non privilegiato, le opzioni indicano:
+- ~--data-checksum~: abilita il controllo sulle pagine dati del database;
+- ~--encoding~: default encoding di ogni database se non sovrascritto;
+- ~--pwprompt~: richiede la password del superutente di PostgreSQL (comodo per non impostarlo dopo);
+- *~-D~*: l'opzione principale, indica *dove si troveranno i dati*.
 
-   Tutto inizia alla Berkely University of California.
+** $PGDATA
+La directory ~$PGDATA~ contiene diversi file e directory, in particolare:
+- ~PG_VERSION~: file di testo con la versione che serve il cluster;
+- *~postgresql.conf~*: configurazione principale del cluster;
+- *~pg_hba.conf~*: file di accesso al database;
+- *~base~*: directory sotto la quale si troveranno tutti i database;
+- *~global~*: directory che contiene dati inter-database (es. cataloghi di sistema);
+- ~pg_stat~ e ~pg_stat_tmp~: informazioni per le statistiche di sistema;
+- *~pg_tblscp~*: link ai vari tablespace (oggetti fuori da ~base~);
+- *~pg_xlog~* e ~pg_clog~: rispettivamente WAL e commit log.
+
+Per altre informazioni vedere [[https://www.postgresql.org/docs/9.6/static/storage-file-layout.html][Storage File System Layout]].
