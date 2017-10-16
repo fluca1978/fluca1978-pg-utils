@@ -633,20 +633,29 @@ All'interno di ~psql~ ci sono due tipologie di aiuto:
 a uno specifico database/host con uno specifico utente senza dover digitare
 una password.
 Ogni riga nel file contiene:
-- host a cui collegarsi;
+- host e porta a cui collegarsi;
 - database a cui collegarsi (~*~ per tutti);
-- username con cui collegarsi;
-- password con cui collegarsi.
+- username e password con cui collegarsi.
 
 Il file non deve essere leggibile da altri utenti (es. permessi ~600~).
 
 #+begin_src sh
 % cat ~/.pgpass
-127.0.0.1:template1:postgres:mySuperSecretPasswordHere
+127.0.0.1:5432:template1:postgres:xxxxxxxx
 
 % psql -U postgres template1
 template1=#
 #+end_src
+
+*** Errori comuni
+    *Il file deve avere permessi ~rw~ per il solo proprietario*. Inoltre si deve specificare
+    la porta a cui collegarsi dopo l'hostname!
+*** End of block                                               :B_ignoreheading:
+:PROPERTIES:
+:BEAMER_env: ignoreheading
+:END:
+
+
 
 ** psql: configurazione utente
 ~psql~ consente di specificare delle configurazioni utente nel file ~$HOME/.psqlrc~.
@@ -726,3 +735,87 @@ From database "template1":
 
 ~oid2name~ va ad interrogare il catalogo di sistema per trovare le informazioni
 necessarie.
+** Ruoli e Utenti
+   Dalla versione 8.1 in poi PostgreSQL non distingue piu' fra utenti e gruppi
+   ma usa il concetto di *ruolo* che rappresenta entrambi:
+   - un ruolo può rappresentare un utente;
+   - ad un ruolo si possono aggiungere altri utenti (e quindi rappresenta un gruppo).
+
+*** Ruoli e Connessioni
+    *Per collegarsi ad un database occorre sempre un ruolo*, ossia un utente
+    PostgreSQL (che è logicamente separato da quello del sistema operativo).
+    Quando viene inizializzato un cluster viene creato un ruolo superutente
+    per permetterne la gestione (negli esempi ~postgres~).
+*** End of block                                               :B_ignoreheading:
+:PROPERTIES:
+:BEAMER_env: ignoreheading
+:END:
+
+** Vedere i ruoli
+Il catalogo ~pg_roles~ contiene le informazioni sui ruoli e le loro proprietà:
+
+#+begin_src sql
+# SELECT rolname, rolsuper, rolcreatedb, rolcanlogin
+FROM pg_roles;
+      rolname      | rolsuper | rolcreatedb | rolcanlogin
+-------------------+----------+-------------+-------------
+ pg_signal_backend | f        | f           | f
+ postgres          | t        | t           | t
+#+end_src
+
+E' possibile creare utenti/gruppi/ruoli con privilegi di super utente, possibilità di creare nuovi
+database e di collegarsi o no al cluster.
+
+** Creare i ruoli
+   Il comand SQL ~CREATE ROLE~ (o da terminale ~createuser~) consente di creare un nuovo utente/gruppo.
+   Ad esempio si supponga di voler gestire un database di una applicazione definendo due utenti: uno applicativo
+   e uno amministrativo/interattivo:
+
+   #+begin_src sql
+# CREATE ROLE my_app
+  WITH NOLOGIN
+  CONNECTION LIMIT 1
+  PASSWORD 'xxx';
+CREATE ROLE
+
+# ALTER ROLE my_app WITH LOGIN;
+
+# CREATE ROLE luca
+  WITH CREATEDB LOGIN PASSWORD 'xxxxx'
+  IN ROLE my_app;
+CREATE ROLE
+   #+end_src
+
+Ora il ruolo ~my_app~ funge sia da utente che da gruppo a cui ~luca~ appartiene.
+Si noti l'uso di ~ALTER ROLE~ per correggere un errore.
+
+** Creare i ruoli (2)
+   I ruoli appena creati risultano ora:
+#+begin_src sql
+# SELECT rolname, rolsuper, rolcreatedb, rolcanlogin, rolconnlimit
+  FROM pg_roles;
+      rolname      | rolsuper | rolcreatedb | rolcanlogin | rolconnlimit
+-------------------+----------+-------------+-------------+--------------
+ pg_signal_backend | f        | f           | f           |           -1
+ postgres          | t        | t           | t           |           -1
+ my_app            | f        | f           | t           |            1
+ luca              | f        | t           | t           |           -1
+#+end_src
+
+** Creare i ruoli (3)
+   E' ora possibile configurare il file ~.pgpass~ per i nuovi ruoli:
+#+begin_src sh
+% cat ~/.pgpass
+127.0.0.1:5432_template1:postgres:postgres
+localhost:5432:template1:luca:xxxxxx
+localhost:5432:template1:my_app:xxxxx
+#+end_src
+
+*** Evitare di censire ogni singolo database
+    Si ricordi che è possibile usare ~*~ per host, porta e database. Questo semplifica
+    il deployment di nuovi database, ma dall'altro lato rende piu' complesso censire
+    e controllare i database a cui si accede.
+*** End of block                                               :B_ignoreheading:
+:PROPERTIES:
+:BEAMER_env: ignoreheading
+:END:
