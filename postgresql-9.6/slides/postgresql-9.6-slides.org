@@ -23,6 +23,8 @@
 #+BEAMER_HEADER: \titlegraphic{\includegraphics[height=3cm]{./images/logo.png}}
 
 
+
+
 * Introduzione a PostgreSQL
 ** Cos'è?
    PostgreSQL è un *Object Relational Database Management System* (ORDBMS).
@@ -881,4 +883,45 @@ DROP DATABASE
 
 #+begin_src sh
 % dropdb -h localhost -U postgres testdb
+#+end_src
+** Creare una tabella
+   L'istruzione SQL è ~CREATE TABLE~.
+#+begin_src sql
+% psql -h localhost testdb                                                                                               ~
+> CREATE TABLE persona(
+ pk serial,
+ nome varchar(20),
+ cognome varchar(20),
+ codice_fiscale varchar(16),
+ PRIMARY KEY(pk),
+ UNIQUE(codice_fiscale)
+ );
+#+end_src
+
+** Modificare una tabella
+   Ci sono varie istruzioni, in particolare ~ALTER TABLE~ che consente di agire sulla tabella
+   e sui relativi vincoli:
+
+#+begin_src sql
+> ALTER TABLE persona ADD COLUMN eta integer;
+> ALTER TABLE persona ADD CHECK ( eta > 0 and eta < 120 );
+#+end_src
+
+** Come è fatta la tabella?
+   Il comando speciale di ~psql~ ~\d~ consente di ispezionare una tabella e i suoi vincoli:
+#+begin_src sql
+> \d persona
+                                    Table "public.persona"
+     Column     |         Type          |                      Modifiers
+----------------+-----------------------+------------------------------------------------------
+ pk             | integer               | not null default nextval('persona_pk_seq'::regclass)
+ nome           | character varying(20) |
+ cognome        | character varying(20) |
+ codice_fiscale | character varying(16) |
+ eta            | integer               |
+Indexes:
+    "persona_pkey" PRIMARY KEY, btree (pk)
+    "persona_codice_fiscale_key" UNIQUE CONSTRAINT, btree (codice_fiscale)
+Check constraints:
+    "persona_eta_check" CHECK (eta > 0 AND eta < 120)
 #+end_src
