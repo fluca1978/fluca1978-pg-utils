@@ -869,3 +869,16 @@ Collate           | C
 Ctype             | C
 Access privileges |
 #+end_src
+** Eliminare un database
+ Avendo i privilegi corretti, si può usare il comando SQL ~DROP DATABASE~
+ o il comando shell ~dropdb~:
+
+#+begin_src sql
+% psql -h localhost -U postgres template1
+# DROP DATABASE testdb;
+DROP DATABASE
+#+end_src
+
+#+begin_src sh
+% dropdb -h localhost -U postgres testdb
+#+end_src
