@@ -827,3 +827,45 @@ localhost:5432:template1:my_app:xxxxx
 :PROPERTIES:
 :BEAMER_env: ignoreheading
 :END:
+** Creare un database
+   Usando il comando SQL ~CREATE DATABASE~ è possibile aggiungere un nuovo database
+   (e /opzionalmente/ aggiungere un commento per indicare lo scopo del database):
+#+begin_src sql
+# CREATE DATABASE testdb
+  WITH OWNER 'luca';
+
+# COMMENT ON DATABASE testdb IS 'A test database';
+#+end_src
+
+  Alternativamente si può usare il comando shell ~createdb~:
+#+begin_src sh
+% createdb --owner='luca' -e -h localhost -U postgres testdb 'A test database'
+CREATE DATABASE testdb OWNER luca;
+COMMENT ON DATABASE testdb IS 'A test database';
+#+end_src
+
+** Vedere i database disponibili
+ Il catalogo ~pg_database~ contiene le informazioni circa i database presenti nel
+ sistema:
+
+#+begin_src sql
+# SELECT datname FROM pg_database;
+  datname
+-----------
+ postgres
+ testdb
+ template1
+ template0
+#+end_src
+
+ Alternativamente si può usare l'opzione ~-l~ in ~psql~:
+#+begin_src sh
+% psql -h localhost -U postgres -l
+...
+Name              | testdb
+Owner             | luca
+Encoding          | UTF8
+Collate           | C
+Ctype             | C
+Access privileges |
+#+end_src
