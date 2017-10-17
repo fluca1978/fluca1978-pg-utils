@@ -468,8 +468,16 @@ local   all        all                    trust
 host    all        all      127.0.0.1/32    md5
 #+end_src
 
-La parola ~all~ indica tutti gli utenti/database (a seconda di dove è messa).
-*Il metodo ~trust~ non richiede autenticazione e va rimosso appena possibile!*
+*** pg_hba.conf vs sudoers
+    Il file ~pg_hba.conf~ è simile al file ~sudoers~, e come tale
+    va gestito scrupolosamente.
+    La parola ~all~ indica tutti gli utenti/database (a seconda di dove è messa).
+    *Il metodo ~trust~ non richiede autenticazione e non va usato!*
+*** End of block                                               :B_ignoreheading:
+:PROPERTIES:
+:BEAMER_env: ignoreheading
+:END:
+
 
 
 ** Avvio del servizio
