@@ -938,3 +938,54 @@ ERROR:  relation "dual" does not exist
 ----------
         1
 #+end_src
+* SQL
+** Tabella di eventi
+   Si immagini di popolare una tabella di eventi:
+
+#+begin_src sql
+> CREATE TABLE evento( pk serial NOT NULL,
+                      description text,
+                      ts timestamp default current_timestamp,
+                       PRIMARY KEY(pk) );
+#+end_src
+
+e di popolarla con alcuni dati...
+#+begin_src sql
+> INSERT INTO evento( description )
+ SELECT 'Evento ' ||
+    CASE WHEN ( random() * 10 )::integer % 2 = 0
+         THEN 'pari'
+         ELSE 'dispari'
+    END
+ FROM generate_series( 1, 1000000 );
+
+INSERT 0 1000000
+Time: 8635.289 ms
+#+end_src
+
+
+** Tabella di eventi: quanto occupa?
+#+begin_src sql
+> SELECT relname, relpages, reltuples
+FROM pg_class
+WHERE relkind = 'r' AND relname = 'evento';
+ relname | relpages | reltuples
+---------+----------+-----------
+ evento  |     6879 |     1e+06
+#+end_src
+
+indicativamente ~6879 * 8kB = 53,74 MB~ di spazio disco.
+Verifichiamo...
+#+begin_src sh
+% oid2name -H localhost -U luca -d testdb -t evento                                                                      ~
+From database "testdb":
+  Filenode  Table Name
+----------------------
+     16465      evento
+
+% oid2name -H localhost -U luca                                                                                          ~
+  16393         testdb
+
+% sudo ls -lh /mnt/data1/pgdata/base/16393/16465                                                                         ~
+-rw-------  1 postgres  postgres    54M Oct 18 10:40 /mnt/data1/pgdata/base/16393/16465
+#+end_src
