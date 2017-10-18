@@ -938,7 +938,8 @@ ERROR:  relation "dual" does not exist
 ----------
         1
 #+end_src
-* SQL
+* Vacuum e Autovacuum
+
 ** Tabella di eventi
    Si immagini di popolare una tabella di eventi:
 
@@ -962,7 +963,6 @@ e di popolarla con alcuni dati...
 INSERT 0 1000000
 Time: 8635.289 ms
 #+end_src
-
 
 ** Tabella di eventi: quanto occupa?
 #+begin_src sql
@@ -989,3 +989,115 @@ From database "testdb":
 % sudo ls -lh /mnt/data1/pgdata/base/16393/16465                                                                         ~
 -rw-------  1 postgres  postgres    54M Oct 18 10:40 /mnt/data1/pgdata/base/16393/16465
 #+end_src
+
+** Tabella di eventi: quanto occupa? (2)
+Metodo meno "scomodo" di cercare il file fisico su disco...
+#+begin_src sql
+> SELECT pg_size_pretty(
+             pg_relation_size( 'evento'::regclass )
+         );
+ pg_size_pretty
+----------------
+ 54 MB
+(1 row)
+#+end_src
+** Tabella di eventi: statistiche
+Le statistiche di sistema sembrano funzionare correttamente:
+#+begin_src sql
+> SELECT pg_relation_size( 'evento'::regclass ) AS dimensione_fisica, relpages, reltuples
+  FROM pg_class  WHERE relkind = 'r' AND relname = 'evento';
+ dimensione_fisica | relpages | reltuples
+-------------------+----------+-----------
+          56352768 |     6879 |     1e+06
+
+> TRUNCATE evento;
+
+> SELECT pg_relation_size( 'evento'::regclass ) AS dimensione_fisica, relpages, reltuples
+  FROM pg_class  WHERE relkind = 'r' AND relname = 'evento';
+ dimensione_fisica | relpages | reltuples
+-------------------+----------+-----------
+                 0 |        0 |         0
+#+end_src
+
+** Tabella di eventi: statistiche (2)
+Ma cosa succede se *fermiamo autovacuum*?
+
+#+begin_src sql
+ > INSERT INTO evento( description ) -- 1000000 tuple
+...
+INSERT 0 1000000
+
+> SELECT pg_relation_size( 'evento'::regclass ) AS dimensione_fisica, relpages, reltuples
+  FROM pg_class  WHERE relkind = 'r' AND relname = 'evento';
+ dimensione_fisica | relpages | reltuples
+-------------------+----------+-----------
+          56344576 |        0 |         0
+#+end_src
+
+*Il numero di tuple e pagine non è stato aggiornato*.
+Che impatto ha questo? Il planner non sarà in grado di capire che "mole di dati" ha davanti!
+** Tabella di eventi: statistiche (3)
+Niente panico! E' possibile lanciare *vacuum* manualmente.
+#+begin_src sql
+> VACUUM FULL VERBOSE evento;
+INFO:  vacuuming "public.evento"
+INFO:  "evento": found 0 removable, 1000000 nonremovable row versions in 6878 pages
+DETAIL:  0 dead row versions cannot be removed yet.
+CPU 0.14s/0.30u sec elapsed 0.82 sec.
+
+> SELECT pg_relation_size( 'evento'::regclass ) AS dimensione_fisica, relpages, reltuples
+  FROM pg_class  WHERE relkind = 'r' AND relname = 'evento';
+ dimensione_fisica | relpages | reltuples
+-------------------+----------+-----------
+          56344576 |     6878 |     1e+06
+#+end_src
+
+* Transazioni
+** Livelli di isolamento
+   Le problematiche sono:
+   - *dirty reads*: è possibile vedere (leggere) tuple non ancora committate da altre
+     transazioni;
+   - *unrepeatable reads*: una tupla riletta piu' volte durante una transazione presenta valori
+     modificati da un'altra transazione;
+   - *phantom reads*: la stessa query eseguita piu' volta fornisce un resultset modificato (nella
+     quantità) da un'altra transazione
+
+** Livelli di isolamento in PostgreSQL
+   PostgreSQL supporta 3 livelli di isolamento sui 4 standard (/read uncommited/, /read committed/,
+   /repeatable read/, /serializable/). Questo non rappresenta un problema poiché è sufficiente
+   garantire il /livello di isolamento superiore/.
+
+   Una transazione può essere di tipo:
+   - *read committed*: /(default)/ uno statement vede solo le tuple consolidate
+     prima dell'inizio dello statement stesso;
+   - *repeatable read*: ogni statement della transazione può vedere solo le tuple
+     consolidate prima dell'esecuzione del primo statement (ovvero, all'inizio della transazione);
+   - *serializable*: come *repeatable read* ma impone che le transazioni siano /idempotenti/ rispetto
+     al loro effettivo ordine di esecuzione (monitoring di consistenza seriale).
+** Impostare i livelli di isolamento in PostgreSQL
+   All'interno di una transazione è possibile impostare il livello
+   di isolamento, che però non può essere piu' cambiato dopo l'esecuzione
+   di uno statement di modifica (incluso ~SELECT~).
+   Quando si avvia una transazione è possibile specificare l'isolation level
+   direttamente nel blocco ~BEGIN~, mentre per gli altri casi c'è ~SET TRANSACTION~:
+
+#+begin_src sql
+> BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+> SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+ERROR:  SET TRANSACTION ISOLATION LEVEL must not be called in a subtransaction
+#+end_src
+** Transazioni ~READ ONLY~ contro ~READ WRITE~
+   PostgreSQL permette di specificare due tipi di transazioni:
+   - *READ WRITE*: (default) è possibile eseguire ogni statement SQL;
+   - *READ ONLY*: è una /promessa/ di non alterare i dati. Tutti i comandi
+     generici (~UPDATE, INSERT, DELETE, EXECUTE, ALTER TABLE, VACUUM~, ecc.)
+     sono disabilitati a meno che non agiscano su tabelle temporanee.
+
+  *Non c'è nessuna garanzia che una transazione ~READ ONLY~ non effettui scritture su disco!*
+** Transazioni ~DEFERRABLE~
+   C'è un caso particolare di transazione: ~DEFERRABLE~.
+   Questo si applica solo a transazioni ~READ ONLY~ e ~SERIALIZABLE~.
+
+   L'idea è che la transazione accetta di "attendere" prima della sua esecuzione, e in cambio
+   l'overhead di monitoring per la serializzazione è ridotto. Ciò produce dei vantaggi
+   per le transazioni di reportistica.
