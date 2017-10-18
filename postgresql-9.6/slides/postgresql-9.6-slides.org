@@ -925,3 +925,16 @@ Indexes:
 Check constraints:
     "persona_eta_check" CHECK (eta > 0 AND eta < 120)
 #+end_src
+** SELECT not dual !
+   In PostgreSQL non esiste la "famosa" tabella ~dual~ e lo statement ~SELECT~
+   fa esattamente quello che ci si aspetta:
+
+#+begin_src sql
+> SELECT 1 FROM dual;
+ERROR:  relation "dual" does not exist
+
+> SELECT 1;
+ ?column?
+----------
+        1
+#+end_src
