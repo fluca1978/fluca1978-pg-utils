@@ -1101,3 +1101,168 @@ ERROR:  SET TRANSACTION ISOLATION LEVEL must not be called in a subtransaction
    L'idea è che la transazione accetta di "attendere" prima della sua esecuzione, e in cambio
    l'overhead di monitoring per la serializzazione è ridotto. Ciò produce dei vantaggi
    per le transazioni di reportistica.
+
+* Triggers
+** Introduzione ai triggers
+   PostgreSQL supporta (da sempre) i trigger a livello di /statement/ o /tupla/
+   sia per esecuzione prima (before) o dopo (after). Sulle viste agiscono
+   i trigger /INSTEAD OF/.
+
+   In PostgreSQL i trigger vengono definiti con un workflow ben definito:
+   1. definire una funzione (tipicamente in ~plpgsql~) che *non accetta alcun
+      argomento e ritorna un valore di tipo ~trigger~*;
+   2. si /aggancia/ la funzione ad un evento scatenato su una tabella (tramite
+      ~CREATE TRIGGER~).
+
+** Tiplogia di trigger
+   | Statement SQL                | Quando       | A livello di                                   |
+   |------------------------------+--------------+------------------------------------------------|
+   | ~INSERT~, ~UPDATE~, ~DELETE~ | /BEFORE/     | *tupla* su tabelle e FK                        |
+   |                              | /AFTER/      | *tupla* su tabelle e FK                        |
+   |------------------------------+--------------+------------------------------------------------|
+   | ~INSERT~, ~UPDATE~, ~DELETE~ | /BEFORE/     | *statement* su tabelle (anche esterne) e viste |
+   |                              | /AFTER/      | *statement* su tabelle (anche esterne) e viste |
+   |------------------------------+--------------+------------------------------------------------|
+   | ~TRUNCATE~                   | /BEFORE/     | *statement* su tabelle                         |
+   |                              | /AFTER/      | *statement* su tabelle                         |
+   |------------------------------+--------------+------------------------------------------------|
+   | ~INSERT~, ~UPDATE~, ~DELETE~ | /INSTEAD OF/ | *tupla* su vista                               |
+   |------------------------------+--------------+------------------------------------------------|
+
+** Esecuzione dei trigger
+   I trigger sono eseguiti in ordine alfabetico (per tipologia di evento).
+
+   I trigger ~BEFORE~ vengono eseguiti *prima del controllo delle constraint*, analogamente
+   i trigger ~AFTER~ dopo l'esecuzione e quindi *dopo il controllo delle constraint*.
+
+   I trigger vedono sempre la tupla di uscita ~NEW~ (quella che verrà /memorizzata/) e se sono
+   per update anche quella di ingresso ~OLD~ (quella che si sta aggiornando).
+
+** Esempio di trigger: descrizione
+   Si vuole creare un semplice trigger che, al momento di inserimento o aggiornamento di una tupla
+   della tabella ~persona~, controlli che l'età inserita sia coerente con quella del relativo
+   codice fiscale e la "auto-corregga" calcolandola dall'anno attuale.
+
+** Esempio di trigger: funzione
+#+begin_src sql
+CREATE OR REPLACE FUNCTION tr_check_eta()
+RETURNS TRIGGER
+AS $BODY$
+DECLARE
+        current_eta integer;
+        current_year integer;
+BEGIN
+  IF NEW.codice_fiscale IS NOT NULL THEN
+       current_eta  = to_number(
+                       substring( NEW.codice_fiscale FROM 7 FOR 2 ),
+                      '99' );
+       current_year = to_number( to_char( current_date, 'YY' ),
+                      '99' );
+       IF current_year < current_eta THEN
+          current_eta = current_year + 100 - current_eta;
+       END IF;
+  END IF;
+#+end_src
+
+
+** Esempio di trigger: funzione (2)
+#+begin_src sql
+  IF TG_OP = 'INSERT' THEN
+       NEW.eta = current_eta;
+       RAISE INFO 'Calcolo eta'' INSERT = %', current_eta;
+       RETURN NEW;
+   END IF;
+
+  IF TG_OP = 'UPDATE' THEN
+     IF OLD.eta > NEW.eta OR NEW.eta <= 0 THEN
+        RAISE INFO 'Aggiusto eta'' UPDATE da % a %', OLD.eta, current_eta;
+        NEW.eta = current_eta;
+     END IF;
+  END IF;
+
+END;
+$BODY$
+LANGUAGE plpgsql VOLATILE;
+#+end_src
+
+** Esempio di trigger: aggancio alla tabella
+#+begin_src sql
+> CREATE TRIGGER tr_persona_eta
+  BEFORE INSERT OR UPDATE
+  ON persona
+  FOR EACH ROW
+  EXECUTE PROCEDURE tr_check_eta();
+#+end_src
+
+** Esempio di trigger: esecuzione
+#+begin_src sql
+> INSERT INTO persona( nome, cognome, codice_fiscale )
+VALUES( 'Luca', 'Ferrari', 'FRRLCU78L19F257B' );
+INFO:  Calcolo eta' INSERT = 39
+
+> UPDATE persona SET eta = 10 WHERE codice_fiscale = 'FRRLCU78L19F257B';
+INFO:  Aggiusto eta' UPDATE da 39 a 39
+#+end_src
+
+
+** Esempio di trigger: agganciarlo a una colonna
+   Il trigger di esempio non dovrebbe scattare per ogni ~UPDATE~ incondizionato, ma solo
+   per gli ~UPDATE~ che coinvolgono la colonna ~eta~ o ~codice_fiscale~.
+   E' possibile specificare a quali colonne il trigger deve essere agganciato:
+
+#+begin_src sql
+>  DROP TRIGGER tr_persona_eta ON persona;
+> CREATE TRIGGER tr_persona_eta
+  BEFORE INSERT OR UPDATE OF eta, codice_fiscale
+  ON persona
+  FOR EACH ROW
+  EXECUTE PROCEDURE tr_check_eta();
+#+end_src
+
+** Esempio di trigger: aggancio a una colonna (2)
+   Il trigger scatta ora solo per gli aggiornamenti delle colonne specificate:
+#+begin_src sql
+> UPDATE persona SET eta = 10 WHERE codice_fiscale = 'FRRLCU78L19F257B';
+INFO:  Aggiusto eta' UPDATE da 39 a 39
+
+> UPDATE persona SET nome = 'LUCA' WHERE codice_fiscale = 'FRRLCU78L19F257B';
+-- non è scattato il trigger!
+#+end_src
+
+
+** Trigger parametrici
+   E' possibile passare dei parametri alla funzione di un trigger, tali
+   parametri saranno visibili tramite l'array ~TG_ARGV~.
+   *I parametri sono letterali e convertiti sempre a stringa*.
+
+** Esempio di trigger parametrico: funzione con parametro
+La funzione dell'esempio precedente può essere modificata per accettare
+l'età da usare come default:
+
+#+begin_src sql
+CREATE OR REPLACE FUNCTION tr_check_eta()
+RETURNS TRIGGER
+AS $BODY$
+DECLARE
+        current_eta integer;
+        current_year integer;
+BEGIN
+        IF TG_NARGS > 0 THEN
+           current_eta := to_number( TG_ARGV[ 0 ], '99' );
+        ELSE
+           current_eta := -1;
+        END IF;
+...
+#+end_src
+
+** Esempio di trigger parametrico: aggancio
+#+begin_src sql
+> CREATE TRIGGER tr_persona_eta
+  BEFORE INSERT OR UPDATE OF eta, codice_fiscale
+  ON persona
+  FOR EACH ROW EXECUTE PROCEDURE tr_check_eta( 10 );
+
+> UPDATE persona SET eta = 10, codice_fiscale = NULL
+  WHERE codice_fiscale = 'FRRLCU78L19F257B';
+INFO:  Aggiusto eta' UPDATE da 39 a 10
+#+end_src
