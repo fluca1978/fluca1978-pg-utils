@@ -1138,6 +1138,10 @@ ERROR:  SET TRANSACTION ISOLATION LEVEL must not be called in a subtransaction
    I trigger vedono sempre la tupla di uscita ~NEW~ (quella che verrà /memorizzata/) e se sono
    per update anche quella di ingresso ~OLD~ (quella che si sta aggiornando).
 
+   Il tipo di  operazione che ha fatto scattare il trigger è disponibile tramite la stringa ~TR_OP~, il
+   numero di argomenti del trigger tramite ~TG_NARGS~ e i singoli argomenti nell'array di stringhe
+   ~TG_ARGV~.
+
 ** Esempio di trigger: descrizione
    Si vuole creare un semplice trigger che, al momento di inserimento o aggiornamento di una tupla
    della tabella ~persona~, controlli che l'età inserita sia coerente con quella del relativo
