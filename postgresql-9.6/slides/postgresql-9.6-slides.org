@@ -925,6 +925,8 @@ Indexes:
 Check constraints:
     "persona_eta_check" CHECK (eta > 0 AND eta < 120)
 #+end_src
+
+* SQL PostgreSQL
 ** SELECT not dual !
    In PostgreSQL non esiste la "famosa" tabella ~dual~ e lo statement ~SELECT~
    fa esattamente quello che ci si aspetta:
@@ -952,6 +954,166 @@ ERROR:  relation "dual" does not exist
 #+end_src
 Si può usare anche uno statement SQL come tag (es. ~$SELECT$~).
 
+** Cast
+In PostgreSQL il cast può essere effettuato in quattro modi:
+- specificando il tipo prima del valore (es. ~int '10'~);
+- specificando il tipo dopo il valore con l'operatore ~::~ (es. ~'10'::int~);
+- usando l'operatore ~CAST~;
+- usando il tipo come fosse una funzione (es. ~text( 10 )~ ).
+#+begin_src sql
+> SELECT '10'::int + 3;
+> SELECT int '10' + 3;
+> SELECT CAST( '10' AS integer ) + 3;
+#+end_src
+
+** Considerazioni sul cast
+I modi consigliati sono *~CAST()~ (conforme SQL standard)* o ~::~, gli altri hanno delle limitazioni
+(es. la modalità funzione va usata solo per nomi di tipi che sono anche nomi validi di funzione, mentre il tipo
+prima del valore funziona solo per i letterali).
+
+Qualora il cast non sia ambiguo, è possibile ometterlo, ovvero:
+
+#+begin_src sql
+> SELECT '10' + 3;
+#+end_src
+
+** Array
+Gli array sono dichiarati con il tipo seguito da parentesi quadre (es. ~integer[]~).
+Il costruttore dell'array è l'operatore ~ARRAY~, che cerca di comprendere il tipo
+dagli elementi dell'array stesso (se non effettuato un cast).
+#+begin_src sql
+> SELECT ARRAY[1, 2, 3, 4]::integer[];
+   array
+-----------
+ {1,2,3,4}
+#+end_src
+** Array multidimensionali
+Sono costruiti combinando assieme piu' array.
+#+begin_src sql
+> SELECT ARRAY[ ARRAY[ 2, 4 ], ARRAY[ 1, 3 ] ];
+     array
+---------------
+ {{2,4},{1,3}}
+#+end_src
+
+** Array in tabella
+Le tabelle possono includere degli array.
+#+begin_src sql
+> CREATE TABLE software( name text, versions text[] );
+> INSERT INTO software
+  VALUES( 'Java', '{1.5, 1.6, 1.7, 1.8 }' );
+> INSERT INTO software
+  VALUES( 'Perl', '{5.10, 5.20, 6.c}' );
+#+end_src
+** Array in tabella: indici
+Gli indici degli array funzionano come nel linguaggio C, *ma gli indici partono da 1!*:
+#+begin_src sql
+> SELECT name, versions[1] FROM software;
+ name | versions
+------+----------
+ Perl | 5.10
+ Java | 1.5
+#+end_src
+** Array in tabella: estremi
+Le funzioni ~array_lower()~ e ~array_upper()~ forniscono il minimo e massimo indice
+usabile in una determinata dimensione dell'array:
+#+begin_src sql
+> SELECT name,
+  versions[ array_lower( versions, 1) ] AS required,
+  versions[ array_upper( versions, 1 ) ] AS optimal
+  FROM software;
+ name | required | optimal
+------+----------+---------
+ Perl | 5.10     | 6.c
+ Java | 1.5      | 1.8
+#+end_src
+** Array in tabella: slicing
+L'operatore ~[:]~ permette di ottenere lo slicing:
+#+begin_src sql
+> SELECT name, versions[1:2] FROM software;
+ name |  versions
+------+-------------
+ Perl | {5.10,5.20}
+ Java | {1.5,1.6}
+#+end_src
+
+** Array in tabella: aggiunta di elementi
+Si possono seguire diverse strade:
+- ricostruire l'intero array con i nuovi valori tramite ~ARRAY~;
+- appendere l'array originale con uno singolo (costruito con ~ARRAY~ o ~'{}'~);
+- usare ~array_prepend()~ per inserire un elemento in testa, ~array_append()~ per aggiungerlo in coda
+  e/o ~array_cat()~ per concatenare due array.
+
+** Array in tabella: aggiunta di elementi (esempio 1)
+#+begin_src sql
+> UPDATE software
+  SET versions = versions || ARRAY['2017.09']
+  WHERE name = 'Perl';
+
+> UPDATE software
+  SET versions = versions || '{1.8_168}'
+  WHERE name = 'Java';
+#+end_src
+
+** Array in tabella: aggiunta di elementi (esempio 2)
+#+begin_src sql
+> UPDATE software
+  SET versions = array_append( versions, '1.8_169' )
+  WHERE name = 'Java';
+
+> UPDATE software
+  SET versions = array_prepend( '1.4', versions )
+  WHERE name = 'Java';
+#+end_src
+
+** Array in tabella: concatenazione
+#+begin_src sql
+> UPDATE software
+  SET versions = array_cat( ARRAY[ '5.6', '5.8' ], versions )
+  WHERE name = 'Perl';
+#+end_src
+
+** Array in tabella: ricerca
+Ci sono due operatori principali:
+- ~ANY~ ricerca un valore in uno qualunque degli elementi dell'array;
+- ~ALL~ ricerca un valore in tutti gli elementi dell'array.
+
+Inoltre ~&&~ controlla la sovrapposizione fra degli array.
+** Array in tabella: ricerca (esempio 1)
+#+begin_src sql
+> SELECT name FROM software WHERE '6.c' = ANY( versions );
+ name
+------
+ Perl
+
+> SELECT name FROM software WHERE '6.c' = ALL( versions );
+ name
+------
+(0 rows)
+#+end_src
+
+** Array in tabella: ricerca (esempio 2)
+#+begin_src sql
+> SELECT name FROM software WHERE ARRAY[ '5.10', '5.20' ] && versions;
+ name
+------
+ Perl
+#+end_src
+
+** Row
+L'operatore ~ROW~ permette di costruire una /tupla/ al volo. Accetta l'uso di costanti
+e di espressioni da valutare al volo:
+#+begin_src sql
+> SELECT ROW( 1, 2, 'Foo', 'Fighters' );
+        row
+--------------------
+ (1,2,Foo,Fighters)
+
+> SELECT ROW( p.codice_fiscale, length( p.codice_fiscale ) ) FROM persona p;
+          row
+-----------------------
+ (FRRLCU71L19F257B,16)
+#+end_src
 * Vacuum e Autovacuum
 
 ** Tabella di eventi
