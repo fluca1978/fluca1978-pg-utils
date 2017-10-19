@@ -938,6 +938,20 @@ ERROR:  relation "dual" does not exist
 ----------
         1
 #+end_src
+** Dollar quoting
+   PostgreSQL permette l'uso del *dollar quoting* (simile all'operatore ~qq~ di Perl):
+   - si può usare un tag con nome arbitrario purché racchiuso fra due simboli ~$~;
+   - il tag va usato per l'apertura e la chiusura;
+   - la stringa fra tag viene sottoposta ad escape automatico.
+
+#+begin_src sql
+> SELECT $qq$Perche' l'hai scritto?$qq$;
+        ?column?
+------------------------
+ Perche' l'hai scritto?
+#+end_src
+Si può usare anche uno statement SQL come tag (es. ~$SELECT$~).
+
 * Vacuum e Autovacuum
 
 ** Tabella di eventi
