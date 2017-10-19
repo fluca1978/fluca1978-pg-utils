@@ -1078,7 +1078,10 @@ Ci sono due operatori principali:
 - ~ANY~ ricerca un valore in uno qualunque degli elementi dell'array;
 - ~ALL~ ricerca un valore in tutti gli elementi dell'array.
 
-Inoltre ~&&~ controlla la sovrapposizione fra degli array.
+Altri operatori utili nel confronto di due array:
+- ~&&~ ricerca le sovrapposizioni;
+- ~@>~ /contains/;
+- ~<@~ /is contained by/.
 ** Array in tabella: ricerca (esempio 1)
 #+begin_src sql
 > SELECT name FROM software WHERE '6.c' = ANY( versions );
@@ -1100,6 +1103,53 @@ Inoltre ~&&~ controlla la sovrapposizione fra degli array.
  Perl
 #+end_src
 
+** Array in tabella: ricerca (esempio 3)
+#+begin_src sql
+-- contains
+> SELECT name FROM software
+  WHERE ARRAY[ '5.10', '5.20' ] @> versions;
+
+(0 rows)
+
+-- is contained by
+> SELECT name FROM software
+  WHERE ARRAY[ '5.10', '5.20' ] <@ versions;
+ name
+------
+ Perl
+#+end_src
+** Array in tabella: eliminare un elemento
+La funzione ~array_remove()~ toglie un valore da un array, mentre ~array_replace()~
+sostituisce un elemento con un altro. *Restituiscono l'array modificato!*
+#+begin_src sql
+> UPDATE software
+  SET versions = array_remove( versions, '5.6' );
+
+> UPDATE software
+  SET versions = array_replace( versions, '5.8', '5.8.2' );
+#+end_src
+** Array in tabella: trovare un elemento
+Le funzioni ~array_position()~ e ~array_positions()~ ritornano la posizione di uno
+elemento (eventualmente ripetuto) nell'array:
+#+begin_src sql
+> SELECT name, array_positions( versions, '5.20' )
+  FROM software;
+ name | array_positions
+------+-----------------
+ Perl | {3}
+ Java | {}
+#+end_src
+** Array in tabella: trasformare un array in tabella
+#+begin_src sql
+> SELECT name, unnest( versions ) FROM software;
+ name | unnest
+------+---------
+ Perl | 5.8.2
+ Perl | 5.10
+ Perl | 5.20
+ Perl | 6.c
+...
+#+end_src
 ** Row
 L'operatore ~ROW~ permette di costruire una /tupla/ al volo. Accetta l'uso di costanti
 e di espressioni da valutare al volo:
