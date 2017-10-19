@@ -1,4 +1,4 @@
-#+TITLE:     PostgreSQL 10
+#+TITLE:     PostgreSQL 9.6
 #+AUTHOR:    Luca Ferrari
 #+EMAIL:     fluca1978@gmail.com
 #+DATE:      <2017-08-25 ven>
@@ -1101,6 +1101,179 @@ ERROR:  SET TRANSACTION ISOLATION LEVEL must not be called in a subtransaction
    L'idea è che la transazione accetta di "attendere" prima della sua esecuzione, e in cambio
    l'overhead di monitoring per la serializzazione è ridotto. Ciò produce dei vantaggi
    per le transazioni di reportistica.
+
+* Stored Procedures
+** Funzioni
+   PostgreSQL permette la creazione di funzioni tramite ~CREATE FUNCTION~.
+   Le funzioni possono accettare dei parametri (eventualmente tipizzati e con valori
+   di default), possono definire delle variabili (eventualmente tipizzate) e avere
+   un valore di ritorno (tipizzato).
+
+   Le funzioni sono create in uno specifico linguaggio, solitamente ~pgpsql~
+   e sono identificate dalla loro /signature/.
+
+** Template di CREATE FUNCTION
+#+begin_src sql
+CREATE OR REPLACE FUNCTION function_name( <arg>, <arg>, ... )
+RETURNS <return type>
+AS
+-- definition
+LANGUAGE 'language' <volatilità>;
+#+end_src
+
+** Prototiti di funzione
+   - la lista di parametri può includere solo i tipi, nel qual caso i parametri sono accessibili con ~$1~, ~$2~, ecc.;
+   - i parametri possono includere un valore di default specificato con ~DEFAULT~;
+   - i parametri possono essere in ingresso (~IN~, default), in uscita (~OUT~, non importa
+     farne il ~RETURN~) o in entrambi (~INOUT~).
+
+** Volatilità di una funzione
+   Le funzioni hanno tre livelli di /volatilità/:
+   - ~VOLATILE~: /default/, modifica il database e può dare risultati diversi
+     anche se inocata con gli stessi argomenti;
+   - ~STABLE~: non modifica il database e ritorna lo stesso valore con gli stessi
+     argomenti /per tutte le tuple nello stesso statement/ (è indipendente dal valore
+     delle singole tuple), utile per operatori di confronto (es. negli indici);
+   - ~IMMUTABLE~: non modifica il database e ritorna lo stesso valore con gli stessi
+     argomenti /sempre/.
+
+  Esempi: ~random()~ è ~VOLATILE~, ~current_timestamp~ è ~STABLE~,
+  ~version()~ è ~IMMUTABLE~.
+
+** plpgsql
+   E' il linguaggio /default/ per la gestione di blocchi di codice:
+   - prevede la dichiarazione delle variabili di funzione  con ~DECLARE~;
+   - racchiude il body della funzione fra ~BEGIN~ e ~END~
+   - consente cicli e istruzioni condizionali.
+
+** Esempio di semplice funzione: somma
+#+begin_src sql
+CREATE OR REPLACE FUNCTION somma( int, int )
+RETURNS INTEGER
+AS
+$BODY$
+DECLARE --nessun variabile
+BEGIN
+        RETURN $1 + $2;
+END;
+$BODY$
+LANGUAGE 'plpgsql';
+#+end_src
+
+#+begin_src sql
+> select somma( 10, 20 );
+ somma
+-------
+    30
+#+end_src
+
+** Esempio di semplice funzione: somma con alias parametri
+   Simile alle /sub/ di Perl 5!
+#+begin_src sql
+CREATE OR REPLACE FUNCTION somma( int, int )
+RETURNS INTEGER
+AS
+$BODY$
+DECLARE
+        a ALIAS FOR $1;
+        b ALIAS FOR $2;
+BEGIN
+        RETURN a + b;
+END;
+$BODY$
+LANGUAGE 'plpgsql';
+#+end_src
+
+** Esempio di semplice funzione: somma con parametri nominali
+#+begin_src sql
+CREATE OR REPLACE FUNCTION somma( a int, b int )
+RETURNS INTEGER
+AS
+$BODY$
+DECLARE
+BEGIN
+        RETURN a + b;
+END;
+$BODY$
+LANGUAGE 'plpgsql';
+#+end_src
+
+** Esempio di semplice funzione: somma e sottrazione
+#+begin_src sql
+CREATE OR REPLACE FUNCTION somma_sottrazione( INOUT a int ,
+                                              INOUT b int )
+AS $BODY$
+DECLARE
+BEGIN
+        a = a + b;
+        b = a - b;
+END; $BODY$
+LANGUAGE 'plpgsql';
+#+end_src
+
+** Esempio di semplice funzione: somma e sottrazione (2)
+#+begin_src sql
+> SELECT somma_sottrazione( 10, 20 );
+ somma_sottrazione
+-------------------
+ (30,10)
+
+> SELECT b, a FROM somma_sottrazione( 10, 20 );
+ b  | a
+----+----
+ 10 | 30
+#+end_src
+
+** Esempio di semplice funzione: somma con valori di default
+   I valori di default possono essere omessi nella chiamata
+   di funzione (*~NULL~ è considerato un valore*):
+#+begin_src sql
+CREATE OR REPLACE FUNCTION somma( a int DEFAULT 0,
+                                  b int DEFAULT 0 )
+RETURNS INTEGER
+AS $BODY$
+DECLARE
+BEGIN
+        RETURN a + b;
+END;
+$BODY$
+LANGUAGE 'plpgsql';
+#+end_src
+
+#+begin_src sql
+ > SELECT somma();
+ somma
+-------
+     0
+#+end_src
+
+** Esempio di semplice funzione: costanti
+   E' possibile definire delle costanti in fase di dichiarazione di variabili
+   con ~CONSTANT~, ed è opportuno definirne il valore.
+
+#+begin_src sql
+CREATE OR REPLACE FUNCTION somma( a int DEFAULT 0,
+                                  b int DEFAULT 0 )
+RETURNS INTEGER
+AS
+$BODY$
+DECLARE
+      c CONSTANT integer := 10;
+BEGIN
+        RETURN a + b + c;
+END;
+$BODY$
+LANGUAGE 'plpgsql';
+#+end_src
+
+** Variabili costanti
+   Se si cercasse di modificare una variabile costante verrebbe generato
+   un errore di compilazione della funzione:
+#+begin_src sql
+psql:functions.sql:43: ERROR:  "c" is declared CONSTANT
+LINE 38:  c := a + b;
+          ^
+#+end_src
 
 * Triggers
 ** Introduzione ai triggers
