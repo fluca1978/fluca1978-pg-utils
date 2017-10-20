@@ -1102,6 +1102,18 @@ Itera fra gli elementi di un array. Segue le stesse regole sintattiche del ciclo
  END LOOP;
 #+end_src
 
+** FOR IN query
+Quando si deve iterare sul result set di una query la sintassi è ~FOR IN <query>~:
+#+begin_src sql
+FOR my_record IN SELECT * FROM persona LOOP
+END LOOP;
+#+end_src
+oppure la variante con ~EXECUTE~ se la query viene specificata da una stringa:
+#+begin_src sql
+query_string := 'SELECT * FROM persona';
+FOR my_record IN EXECUTE query_string LOOP
+END LOOP;
+#+end_src
 ** Array
 Gli array sono dichiarati con il tipo seguito da parentesi quadre (es. ~integer[]~).
 Il costruttore dell'array è l'operatore ~ARRAY~, che cerca di comprendere il tipo
