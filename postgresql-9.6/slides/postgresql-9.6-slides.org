@@ -1040,6 +1040,12 @@ ritorna il primo valore:
       RETURN 'bimbo';
   END IF;
 #+end_src
+** Cicli
+I cicli hanno tutti una parola chiave ~LOOP~ e finiscono con ~END LOOP~.
+
+E' possibile specificare una etichetta per identificare il ciclo, l'etichetta deve:
+- essere dichiarata prima del ciclo fra doppie parentesi angolari (es. ~<<CICLO_1>>~);
+- essere inclusa nella chiusura del ciclo (es. ~END LOOP CICLO1~).
 ** LOOP
 Ciclo (con eventuale etichetta). Può essere annidato.
 
