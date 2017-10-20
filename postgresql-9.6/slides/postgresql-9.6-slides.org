@@ -1580,6 +1580,70 @@ LINE 38:  c := a + b;
           ^
 #+end_src
 
+** Variabili ROWTYPE
+Alcune variabili possono essere dichiarate con l'attributo ~%rowtype~ specificando
+la tabella a cui fanno riferimento.
+Le variabili di fatto rappresentano una tupla (strutturata) della tabella dichiarata.
+#+begin_src sql
+DECLARE
+  my_record persona%rowtype;
+BEGIN
+ my_record.nome = 'Luca';
+ my_record.eta  = 39;
+...-- return next etc.
+END;
+#+end_src
+** Variaibili RECORD
+Le variabili ~record~ sono la generalizzazione di quelle ~rowtype~: possono contenere
+un record estratto da una qualsiasi tabella e assumeranno la struttura di quella tupla,
+*ma prima del loro assegnamento non possono essere usate*.
+
+Le si possono assegnare piu' volte a tuple di struttura differente.
+** Funzioni che ritornano tuple
+Ci sono due modi per dichiarare una funzione che ritorna una o piu' tuple:
+- ~RETURNS RECORD~ restituisce una singola tupla contenuta in un ~record~ (questo ad esempio
+  è il caso con parametri ~OUT~);
+- ~RETURNS SETOF~ restituisce piu' tuple di un tipo specificato (es. di una tabella).
+** RETURN NEXT e RETURN QUERY
+Le funzioni che ritornano un ~SETOF~ possono usare ~RETURN NEXT~ per appendere un nuovo record
+al result set. Una volta conclusa la costruzione del result set si usa un normale ~RETURN~
+per uscire dalla funzione.
+
+Alternativamente si può usare ~RETURN QUERY~ per inserire nel result set il risultato
+di una query.
+
+** RETURN NEXT: esempio
+#+begin_src sql
+CREATE OR REPLACE FUNCTION find_maggiorenni()
+RETURNS SETOF persona AS $BODY$
+DECLARE
+  current_maggiorenne persona%rowtype;
+BEGIN
+  FOR current_maggiorenne IN
+        SELECT * FROM persona WHERE eta >= 18
+  LOOP
+          RETURN NEXT current_maggiorenne;
+  END LOOP;
+
+  RETURN;
+END;
+$BODY$ LANGUAGE plpgsql;
+#+end_src
+
+** RETURN QUERY: esempio
+#+begin_src sql
+CREATE OR REPLACE FUNCTION find_maggiorenni()
+RETURNS SETOF persona
+AS $BODY$
+DECLARE
+        current_maggiorenne persona%rowtype;
+BEGIN
+        RETURN QUERY SELECT * FROM persona WHERE eta >= 18;
+        RETURN;
+END;
+$BODY$ LANGUAGE plpgsql;
+#+end_src
+
 * Triggers
 ** Introduzione ai triggers
    PostgreSQL supporta (da sempre) i trigger a livello di /statement/ o /tupla/
