@@ -1062,6 +1062,33 @@ oppure semplificando:
      EXIT  WHEN eta >= 18;
   END LOOP;
 #+end_src
+
+** WHILE
+Analogo al ciclo /while/ di ogni linguaggio di programmazione, è un ~LOOP~ con ~EXIT~ integrata!
+Può includere una etichetta.
+#+begin_src sql
+<<LP_ETA>>
+  WHILE eta <= 18 LOOP
+     eta := eta + 1;
+  END LOOP LP_ETA;
+#+end_src
+
+** FOR
+Analogo al ciclo /for/ del linguaggio C, senza la definizione di incremento diventa un /foreach/:
+#+begin_src sql
+<<LP_ETA>>
+  FOR current_eta IN 18..30 LOOP
+     RAISE INFO 'vALORE %', current_eta;
+  END LOOP LP_ETA;
+#+end_src
+o analogamento al ciclo for del linguaggio C:
+#+begin_src sql
+  FOR current_eta IN 18..30 BY 2 LOOP
+     RAISE INFO 'vALORE %', current_eta;
+  END LOOP LP_ETA;
+#+end_src
+
+
 ** Array
 Gli array sono dichiarati con il tipo seguito da parentesi quadre (es. ~integer[]~).
 Il costruttore dell'array è l'operatore ~ARRAY~, che cerca di comprendere il tipo
