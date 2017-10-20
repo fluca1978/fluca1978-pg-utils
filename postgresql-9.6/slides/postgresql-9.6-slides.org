@@ -1030,6 +1030,16 @@ ritorna il primo valore:
 
 #+end_src
 /E' una sorta di ~xor~ del poveraccio!/
+** IF...ELSE
+#+begin_src sql
+  IF eta >= 18 THEN
+       RETURN 'maggiorenne';
+  ELSIF eta >= 10 THEN
+       RETURN 'teen-ager';
+  ELSE
+      RETURN 'bimbo';
+  END IF;
+#+end_src
 ** Array
 Gli array sono dichiarati con il tipo seguito da parentesi quadre (es. ~integer[]~).
 Il costruttore dell'array è l'operatore ~ARRAY~, che cerca di comprendere il tipo
