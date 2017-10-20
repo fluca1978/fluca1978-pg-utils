@@ -1094,6 +1094,13 @@ o analogamento al ciclo for del linguaggio C:
   END LOOP LP_ETA;
 #+end_src
 
+** FOREACH
+Itera fra gli elementi di un array. Segue le stesse regole sintattiche del ciclo ~FOR~ (etichetta, ecc).
+#+begin_src sql
+ FOREACH current_version IN ARRAY v_array LOOP
+    RAISE INFO 'Version %', current_version;
+ END LOOP;
+#+end_src
 
 ** Array
 Gli array sono dichiarati con il tipo seguito da parentesi quadre (es. ~integer[]~).
