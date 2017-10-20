@@ -1030,90 +1030,6 @@ ritorna il primo valore:
 
 #+end_src
 /E' una sorta di ~xor~ del poveraccio!/
-** IF...ELSE
-#+begin_src sql
-  IF eta >= 18 THEN
-       RETURN 'maggiorenne';
-  ELSIF eta >= 10 THEN
-       RETURN 'teen-ager';
-  ELSE
-      RETURN 'bimbo';
-  END IF;
-#+end_src
-** Cicli
-I cicli hanno tutti una parola chiave ~LOOP~ e finiscono con ~END LOOP~.
-
-E' possibile specificare una etichetta per identificare il ciclo, l'etichetta deve:
-- essere dichiarata prima del ciclo fra doppie parentesi angolari (es. ~<<CICLO_1>>~);
-- essere inclusa nella chiusura del ciclo (es. ~END LOOP CICLO1~).
-** LOOP
-Ciclo (con eventuale etichetta). Può essere annidato.
-
-Due operatori sintatticamente simili controllano il flusso:
-- ~CONTINUE~ ricomincia l'iterazione dall'etichetta specificata (o dal ciclo corrente) quando la condizione ~WHEN~ si verifica;
-- ~EXIT~ esce (termina) il ciclo specificato dall'etichetta (o quello corrente) quando la condizione ~WHEN~ viene soddisfatta.
-
-** LOOP: esempio
-#+begin_src sql
-<<LP_ETA>>
-  LOOP
-     eta := eta + 1;
-     EXIT LP_ETA WHEN eta >= 18;
-  END LOOP LP_ETA;
-#+end_src
-oppure semplificando:
-#+begin_src sql
-  LOOP
-     eta := eta + 1;
-     EXIT  WHEN eta >= 18;
-  END LOOP;
-#+end_src
-
-** WHILE
-Analogo al ciclo /while/ di ogni linguaggio di programmazione, è un ~LOOP~ con ~EXIT~ integrata!
-Può includere una etichetta.
-#+begin_src sql
-<<LP_ETA>>
-  WHILE eta <= 18 LOOP
-     eta := eta + 1;
-  END LOOP LP_ETA;
-#+end_src
-
-** FOR
-Analogo al ciclo /for/ del linguaggio C, senza la definizione di incremento diventa un /foreach/:
-#+begin_src sql
-<<LP_ETA>>
-  FOR current_eta IN 18..30 LOOP
-     RAISE INFO 'vALORE %', current_eta;
-  END LOOP LP_ETA;
-#+end_src
-o analogamento al ciclo for del linguaggio C:
-#+begin_src sql
-  FOR current_eta IN 18..30 BY 2 LOOP
-     RAISE INFO 'vALORE %', current_eta;
-  END LOOP LP_ETA;
-#+end_src
-
-** FOREACH
-Itera fra gli elementi di un array. Segue le stesse regole sintattiche del ciclo ~FOR~ (etichetta, ecc).
-#+begin_src sql
- FOREACH current_version IN ARRAY v_array LOOP
-    RAISE INFO 'Version %', current_version;
- END LOOP;
-#+end_src
-
-** FOR IN query
-Quando si deve iterare sul result set di una query la sintassi è ~FOR IN <query>~:
-#+begin_src sql
-FOR my_record IN SELECT * FROM persona LOOP
-END LOOP;
-#+end_src
-oppure la variante con ~EXECUTE~ se la query viene specificata da una stringa:
-#+begin_src sql
-query_string := 'SELECT * FROM persona';
-FOR my_record IN EXECUTE query_string LOOP
-END LOOP;
-#+end_src
 ** Array
 Gli array sono dichiarati con il tipo seguito da parentesi quadre (es. ~integer[]~).
 Il costruttore dell'array è l'operatore ~ARRAY~, che cerca di comprendere il tipo
@@ -1689,6 +1605,90 @@ $BODY$ LANGUAGE plpgsql;
 #+end_src
 
 ** RETURN QUERY: esempio
+** IF...ELSE
+#+begin_src sql
+  IF eta >= 18 THEN
+       RETURN 'maggiorenne';
+  ELSIF eta >= 10 THEN
+       RETURN 'teen-ager';
+  ELSE
+      RETURN 'bimbo';
+  END IF;
+#+end_src
+** Cicli
+I cicli hanno tutti una parola chiave ~LOOP~ e finiscono con ~END LOOP~.
+
+E' possibile specificare una etichetta per identificare il ciclo, l'etichetta deve:
+- essere dichiarata prima del ciclo fra doppie parentesi angolari (es. ~<<CICLO_1>>~);
+- essere inclusa nella chiusura del ciclo (es. ~END LOOP CICLO1~).
+** LOOP
+Ciclo (con eventuale etichetta). Può essere annidato.
+
+Due operatori sintatticamente simili controllano il flusso:
+- ~CONTINUE~ ricomincia l'iterazione dall'etichetta specificata (o dal ciclo corrente) quando la condizione ~WHEN~ si verifica;
+- ~EXIT~ esce (termina) il ciclo specificato dall'etichetta (o quello corrente) quando la condizione ~WHEN~ viene soddisfatta.
+
+** LOOP: esempio
+#+begin_src sql
+<<LP_ETA>>
+  LOOP
+     eta := eta + 1;
+     EXIT LP_ETA WHEN eta >= 18;
+  END LOOP LP_ETA;
+#+end_src
+oppure semplificando:
+#+begin_src sql
+  LOOP
+     eta := eta + 1;
+     EXIT  WHEN eta >= 18;
+  END LOOP;
+#+end_src
+** WHILE
+Analogo al ciclo /while/ di ogni linguaggio di programmazione, è un ~LOOP~ con ~EXIT~ integrata!
+Può includere una etichetta.
+#+begin_src sql
+<<LP_ETA>>
+  WHILE eta <= 18 LOOP
+     eta := eta + 1;
+  END LOOP LP_ETA;
+#+end_src
+
+** FOR
+Analogo al ciclo /for/ del linguaggio C, senza la definizione di incremento diventa un /foreach/:
+#+begin_src sql
+<<LP_ETA>>
+  FOR current_eta IN 18..30 LOOP
+     RAISE INFO 'vALORE %', current_eta;
+  END LOOP LP_ETA;
+#+end_src
+o analogamento al ciclo for del linguaggio C:
+#+begin_src sql
+  FOR current_eta IN 18..30 BY 2 LOOP
+     RAISE INFO 'vALORE %', current_eta;
+  END LOOP LP_ETA;
+#+end_src
+
+** FOREACH
+Itera fra gli elementi di un array. Segue le stesse regole sintattiche del ciclo ~FOR~ (etichetta, ecc).
+#+begin_src sql
+ FOREACH current_version IN ARRAY v_array LOOP
+    RAISE INFO 'Version %', current_version;
+ END LOOP;
+#+end_src
+
+** FOR IN query
+Quando si deve iterare sul result set di una query la sintassi è ~FOR IN <query>~:
+#+begin_src sql
+FOR my_record IN SELECT * FROM persona LOOP
+END LOOP;
+#+end_src
+oppure la variante con ~EXECUTE~ se la query viene specificata da una stringa:
+#+begin_src sql
+query_string := 'SELECT * FROM persona';
+FOR my_record IN EXECUTE query_string LOOP
+END LOOP;
+#+end_src
+
 #+begin_src sql
 CREATE OR REPLACE FUNCTION find_maggiorenni()
 RETURNS SETOF persona
@@ -1701,6 +1701,41 @@ BEGIN
 END;
 $BODY$ LANGUAGE plpgsql;
 #+end_src
+
+** Eccezioni
+Il blocco ~BEGIN...END~ di una funzione permette l'opzionale ~EXCEPTION~ che funziona
+da /catch/ per le eccezioni. Al suo interno l'eccezione viene cercata fra quelle specificate
+nelle clausole ~WHEN~.
+
+*Se nessuna clausola ~WHEN~ di ~EXCEPTION~ fa match, o se il blocco ~EXCEPTION~ non è stato specificato, la funzione termina con errore!*
+
+Le eccezioni possibili sono /etichettate/ e definite alla pagina
+<https://www.postgresql.org/docs/9.6/static/errcodes-appendix.html>
+come ad esempio ~division_by_zero~.
+
+*Il sistema mantiene lo stato delle variabili al momento in cui si verifica l'errore*, l'uso di un blocco
+~EXCEPTION~ è /costoso/ per il sistema, quindi non va usato ove non si possono verificare o non interessa
+catturare eccezioni.
+
+** Eccezioni: variabili diagnostiche
+All'interno di un blocco ~EXCEPTION~ le variabili speciali ~SQLSTATE~ e ~SQLERRM~ contengono lo stato e il messaggio
+associato all'errore generato.
+
+E' inoltre possibile usare il comando ~GET_STACKED_DIAGNOSTIC~ per estrarre ulteriori informazioni circa
+l'errore di esecuzione (es. su quale tabella, colonna, constraint, ecc.).
+
+** Eccezioni: esempio
+#+begin_src sql
+BEGIN
+    RETURN divide_what / divide_by;
+EXCEPTION
+    WHEN division_by_zero THEN
+      RAISE INFO 'Divisione per zero';
+      RAISE INFO 'Errore % %', SQLSTATE, SQLERRM;
+      RETURN 0;
+END;
+#+end_src
+
 
 * Triggers
 ** Introduzione ai triggers
