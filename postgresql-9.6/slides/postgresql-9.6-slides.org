@@ -1041,7 +1041,13 @@ ritorna il primo valore:
   END IF;
 #+end_src
 ** LOOP
-Ciclo (con eventuale etichetta), si esce con ~EXIT~ (eventualmente specificando etichetta e condizione):
+Ciclo (con eventuale etichetta). Può essere annidato.
+
+Due operatori sintatticamente simili controllano il flusso:
+- ~CONTINUE~ ricomincia l'iterazione dall'etichetta specificata (o dal ciclo corrente) quando la condizione ~WHEN~ si verifica;
+- ~EXIT~ esce (termina) il ciclo specificato dall'etichetta (o quello corrente) quando la condizione ~WHEN~ viene soddisfatta.
+
+** LOOP: esempio
 #+begin_src sql
 <<LP_ETA>>
   LOOP
