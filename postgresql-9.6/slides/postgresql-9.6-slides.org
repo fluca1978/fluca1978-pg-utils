@@ -977,6 +977,33 @@ Qualora il cast non sia ambiguo, è possibile ometterlo, ovvero:
 > SELECT '10' + 3;
 #+end_src
 
+** CASE
+Rappresento lo /switch/ del linguaggio C, o il /given/ di Perl:
+#+begin_src sql
+> SELECT nome,
+  CASE
+     WHEN eta >= 18 THEN 'maggiorenne'
+     ELSE 'minorenne'
+  END
+  FROM persona;
+ nome  |    case
+-------+-------------
+ Luca  | maggiorenne
+ Diego | minorenne
+#+end_src
+
+** CASE con equals
+Si può usare la versione che effettua una comparazione secca sul valore da analizzare:
+#+begin_src sql
+> SELECT nome,
+  CASE eta
+   WHEN 39 THEN 'maggiorenne'
+   WHEN 10 THEN 'minorenne'
+   ELSE 'non saprei'
+  END
+  FROM persona;
+#+end_src
+
 ** Array
 Gli array sono dichiarati con il tipo seguito da parentesi quadre (es. ~integer[]~).
 Il costruttore dell'array è l'operatore ~ARRAY~, che cerca di comprendere il tipo
