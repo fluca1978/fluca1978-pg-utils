@@ -1004,6 +1004,32 @@ Si può usare la versione che effettua una comparazione secca sul valore da anal
   FROM persona;
 #+end_src
 
+** COALESCE
+Ritorna il primo valore non nullo degli argomenti specificati:
+#+begin_src sql
+> SELECT COALESCE( NULL, 'MIRIAM',
+                   'LUCA', NULL );
+ coalesce
+----------
+ MIRIAM
+#+end_src
+
+E' utile per estrarre informazioni che possono trovarsi in campi multipli.
+
+** NULLIF
+Ritorna un valore ~NULL~ se gli operatori sono uguali, altrimenti
+ritorna il primo valore:
+#+begin_src sql
+> SELECT NULLIF('luca', 'LUCA');
+ nullif
+--------
+ luca
+> SELECT NULLIF( 10, 10 );
+ nullif
+--------
+
+#+end_src
+/E' una sorta di ~xor~ del poveraccio!/
 ** Array
 Gli array sono dichiarati con il tipo seguito da parentesi quadre (es. ~integer[]~).
 Il costruttore dell'array è l'operatore ~ARRAY~, che cerca di comprendere il tipo
