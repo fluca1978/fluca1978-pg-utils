@@ -1040,6 +1040,22 @@ ritorna il primo valore:
       RETURN 'bimbo';
   END IF;
 #+end_src
+** LOOP
+Ciclo (con eventuale etichetta), si esce con ~EXIT~ (eventualmente specificando etichetta e condizione):
+#+begin_src sql
+<<LP_ETA>>
+  LOOP
+     eta := eta + 1;
+     EXIT LP_ETA WHEN eta >= 18;
+  END LOOP LP_ETA;
+#+end_src
+oppure semplificando:
+#+begin_src sql
+  LOOP
+     eta := eta + 1;
+     EXIT  WHEN eta >= 18;
+  END LOOP;
+#+end_src
 ** Array
 Gli array sono dichiarati con il tipo seguito da parentesi quadre (es. ~integer[]~).
 Il costruttore dell'array è l'operatore ~ARRAY~, che cerca di comprendere il tipo
