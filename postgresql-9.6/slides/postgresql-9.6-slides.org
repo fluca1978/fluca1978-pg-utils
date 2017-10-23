@@ -1560,7 +1560,7 @@ CREATE OR REPLACE FUNCTION function_name( <arg>, <arg>, ... )
 RETURNS <return type>
 AS
 -- definition
-LANGUAGE 'language' <volatilità>;
+LANGUAGE language [<volatilità>];
 #+end_src
 
 ** Prototiti di funzione
@@ -1599,7 +1599,7 @@ BEGIN
         RETURN $1 + $2;
 END;
 $BODY$
-LANGUAGE 'plpgsql';
+LANGUAGE plpgsql;
 #+end_src
 
 #+begin_src sql
@@ -1623,7 +1623,7 @@ BEGIN
         RETURN a + b;
 END;
 $BODY$
-LANGUAGE 'plpgsql';
+LANGUAGE plpgsql;
 #+end_src
 
 ** Esempio di semplice funzione: somma con parametri nominali
@@ -1637,7 +1637,7 @@ BEGIN
         RETURN a + b;
 END;
 $BODY$
-LANGUAGE 'plpgsql';
+LANGUAGE plpgsql;
 #+end_src
 
 ** Esempio di semplice funzione: somma e sottrazione
@@ -1650,7 +1650,7 @@ BEGIN
         a = a + b;
         b = a - b;
 END; $BODY$
-LANGUAGE 'plpgsql';
+LANGUAGE plpgsql;
 #+end_src
 
 ** Esempio di semplice funzione: somma e sottrazione (2)
@@ -1679,7 +1679,7 @@ BEGIN
         RETURN a + b;
 END;
 $BODY$
-LANGUAGE 'plpgsql';
+LANGUAGE plpgsql;
 #+end_src
 
 #+begin_src sql
@@ -1705,7 +1705,7 @@ BEGIN
         RETURN a + b + c;
 END;
 $BODY$
-LANGUAGE 'plpgsql';
+LANGUAGE plpgsql;
 #+end_src
 
 ** Variabili costanti
