@@ -2232,6 +2232,67 @@ ERROR:  duplicate key value violates
              cognome = EXCLUDED.cognome;
 #+end_src
 * Viste
+** Tipologie di viste
+Esistono due tipi principali di viste:
+- /viste dinamiche/: effettuano la query al momento propagandola alle tabelle
+  di definizione della vista;
+- /materializzate/: contengono una versione memorizzata dei dati prelevati
+  dalle tabelle sottostanti e necessitano di essere aggiornata (refresh).
+** Viste dinamiche
+Si definisce la vista attraverso una query (che può includere join, order-by, ecc):
+#+begin_src sql
+> CREATE VIEW vw_persona
+  AS
+  SELECT upper( cognome ), nome, eta
+  FROM persona
+  ORDER BY cognome, nome;
+
+> SELECT * FROM vw_persona;
+#+end_src
+** Viste materializzate
+Si utilizza il comando ~CREATE MATERIALIZED VIEW~ specificando se prelevare subito i dati (~WITH DATA~)
+o no (~WITH NO DATA~). In quest'ultimo caso la vista deve prima essere sottoposta a ~REFRESH~ per essere utilizzata.
+#+begin_src sql
+> CREATE MATERIALIZED VIEW vw_m_persona
+  AS SELECT upper( cognome ), nome
+  FROM persona
+  ORDER BY cognome, eta
+  WITH NO DATA;
+
+ > SELECT * FROM vw_m_persona;
+ERROR:  materialized view "vw_m_persona"
+        has not been populated
+#+end_src
+
+** Popolare e fare refresh di una vista materializzata
+Il comando ~REFRESH MATERIALIZED VIEW~ viene usato per popolare la vista materializzata.
+Sostanzialmente il comando effettua:
+- un ~TRUNCATE~ della vista (quindi i dati precedenti sono persi);
+- un /lock/ della vista (che quindi non può essere usata fino a che il refresh non è terminato;
+- una esecuzione della query di definizione della vista per popolarla con i dati.
+
+Per evitare il /lock/ si può usare ~CONCURRENTLY~, così che la vista possa essere letta mentre viene
+popolata.
+Se si specifica ~WITH NO DATA~ la query non viene eseguita e la vista ritorna ad uno stato
+non usabile fino al prossimo refresh.
+** Popolare (e ripopolare) la vista materializzata
+#+begin_src sql
+> REFRESH MATERIALIZED VIEW vw_m_persona;
+-- equivalente a
+> REFRESH MATERIALIZED VIEW vw_m_persona WITH DATA;
+#+end_src
+** Popolare una vista materializzata senza lock
+Per usare ~CONCURRENTLY~ nel refresh si deve avere un indice /unique/ su almeno una colonna
+della vista, e non lo si può usare per il primo popolamento della vista.
+#+begin_src sql
+> CREATE UNIQUE INDEX idx_vw_m_persona_nome
+  ON vw_m_persona( nome );
+
+> REFRESH MATERIALIZED
+  VIEW CONCURRENTLY vw_m_persona
+  WITH DATA;
+#+end_src
+
 * Rules
 * Window Functions
 * Common Table Expression
