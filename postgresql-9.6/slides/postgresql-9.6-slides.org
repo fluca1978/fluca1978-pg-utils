@@ -1217,6 +1217,169 @@ e di espressioni da valutare al volo:
 -----------------------
  (FRRLCU71L19F257B,16)
 #+end_src
+** Range
+I tipi di dato /range/ sono valori /non esattamente definiti/.
+L'idea è quella di identificare un tipo ammesso di valori (denominato *subtype*),
+sul quale si imposta un valore di inizio e di fine e tutti i valori fra questi inclusi.
+
+Esempio: /dalle ore 8:00 alle ore 9:00/. Con un solo valore range si indica
+l'inizio (/8:00/) e la fine (/9:00/) del sottotipo (es. ~time~).
+
+** Range predefiniti
+PostgreSQL supporta i seguenti tipi range:
+- ~int4range~ range di ~integer~;
+- ~int8range~ range di ~biginteger~;
+- ~numrange~ range di ~numeric~;
+- ~tsrange~ rande di timestamp;
+- ~daterange~ range di ~date~.
+
+** Esempio di utilizzo di range
+#+begin_src sql
+> CREATE TABLE ticket(
+    pk SERIAL PRIMARY KEY,
+    tipo text,
+    periodo daterange,
+    altezza int4range );
+#+end_src
+
+** Costruzione di un range: sintassi stringa
+Un tipo range viene sempre specificato come stringa (fra apici)
+e può valere:
+- ~[ begin, end ]~ oppure ~( begin, end )~
+- ~empty~ per non specificare nessun valore (simile a ~NULL~),
+
+Come la forma matematica, le parentesi quadre indicano l'inclusione dell'estremo
+mentre quelle tonde l'esclusione dell'estreno.
+
+** Costruzione di range: costruttori
+Alternativamente alla forma stringa, ogni tipo di range predefinito include
+un costruttore con lo stesso nome del tipo di range e che accetta due o tre parametri:
+- ~typerange( a, b )~ costruisce un range di ~type~ come ~'[a, b)'~;
+- ~typerange( a, b, '()' )~ costruisce un range di ~type~ con gli estremi specificati
+  dalla combinazione delle parentesi.
+
+** Inserimento di valori di range
+#+begin_src sql
+> INSERT INTO ticket( tipo, periodo, altezza )
+  VALUES( 'GRATUITO-BIMBO',
+  '[2017-06-01, 2017-09-30)',
+  '(60, 100)' );
+
+> INSERT INTO ticket( tipo, periodo, altezza )
+  VALUES( 'GRATUITO-ANZIANO',
+  '[2017-06-01, 2017-10-31]',
+  'empty' );
+#+end_src
+
+** Operatori di range
+Per ricercare fra un range si usano operatori simili a quelli
+di un array:
+- ~@>~ il range (a sinistra) contiene il valore scalare a destra;
+- ~isempty~ indica se il range è vuoto;
+- ~upper~ e ~lower~ estraggono gli estremi del range;
+- ~&&~ sovrapposizione fra due range.
+
+** Query sui range
+#+begin_src sql
+> SELECT tipo FROM ticket
+  WHERE periodo
+     && daterange( '2017-07-01',
+                   '2017-07-31',
+                   '[]' );
+#+end_src
+
+** Query sui range (2)
+#+begin_src sql
+> SELECT tipo FROM ticket
+  WHERE periodo @> '2017-10-31'::date;
+#+end_src
+
+** Tipi personalizzati
+PostgreSQL consente di creare dei /tipi/ personalizzati:
+- *compositi* (una sorta di struttura);
+- *enum* le classiche enumerazioni, sostanzialmente una serie di /etichette/;
+- *range* un tipo che identifica un range di valori;
+- *scalare* un tipo fortemente integrato nel server e che richiede la scrittura di opportune
+  funzioni in codice C;
+
+** Creare un tipo enumerazione
+Si vogliono /standardizzare/ gli stati di un software:
+#+begin_src sql
+> CREATE TYPE sw_version
+  AS ENUM ( 'stable',
+            'unstable',
+            'EOL',
+            'development' );
+#+end_src
+
+** Creare un tipo composito
+SI supponga di voler creare un semplice tipo strutturato per un repository
+software:
+#+begin_src sql
+> CREATE TYPE sw_repository
+  AS ( url text,
+       author text );
+#+end_src
+*Il tipo composito si usa con parentesi tonde!*
+
+** Usare i tipi in una tabella
+#+begin_src sql
+> CREATE TABLE software(
+      pk SERIAL PRIMARY KEY,
+      name text,
+      version sw_version,
+      repository sw_repository );
+#+end_src
+
+** Inserire i tipi compositi
+#+begin_src sql
+> INSERT INTO software( name, version, repository )
+  VALUES( 'PostgreSQL-9.6',
+      'stable',
+      ( 'https://www.postgresql.org', 'PGDG' ) );
+
+> INSERT INTO software( name, version, repository )
+  VALUES( 'Perl-6',
+     'stable',
+     ( 'https://www.perl6.org', 'Perl Developers' ) );
+#+end_src
+
+** Estrarre i tipi composti
+#+begin_src sql
+> SELECT name, (repository).url FROM software;
+      name      |            url
+----------------+----------------------------
+ PostgreSQL-9.6 | https://www.postgresql.org
+ Perl-6         | https://www.perl6.org
+#+end_src
+
+** Creare un tipo personalizzato range
+#+begin_src sql
+> CREATE OR REPLACE FUNCTION f_versions_diff( older float, newer float )
+RETURNS float AS $BODY$
+DECLARE
+BEGIN
+    RETURN (newer - older)::integer;
+END;
+$BODY$
+LANGUAGE plpgsql IMMUTABLE;
+#+end_Src
+
+** Creare un tipo personalizzato range (2)
+#+begin_src sql
+> CREATE TYPE sw_major_version AS RANGE (
+subtype = float,
+subtype_diff = f_versions_diff );
+#+end_src
+
+** Creare un tipo personallizato range (3)
+#+begin_src sql
+> SELECT '[9.6, 10.0)'::sw_major_version;
+ sw_major_version
+------------------
+ [9.6,10)
+#+end_src
+
 * Vacuum e Autovacuum
 
 ** Tabella di eventi
