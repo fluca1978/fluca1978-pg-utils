@@ -1899,7 +1899,7 @@ EXCEPTION
 END;
 #+end_src
 
-* Triggers
+* Triggers DML
 ** Introduzione ai triggers
    PostgreSQL supporta (da sempre) i trigger a livello di /statement/ o /tupla/
    sia per esecuzione prima (before) o dopo (after). Sulle viste agiscono
@@ -2070,3 +2070,106 @@ BEGIN
   WHERE codice_fiscale = 'FRRLCU78L19F257B';
 INFO:  Aggiusto eta' UPDATE da 39 a 10
 #+end_src
+* Tiggers DDL
+** Introduzione ai trigger DDL
+PostgreSQL permette di definire dei trigger per /eventi/ di DDL, ovvero
+~CREATE~, ~DROP~, ~ALTER~, ~COMMENT~, ~GRANT~, ~REVOKE~.
+Gli istanti in cui si possono intercettare gli eventi sono:
+- ~ddl_command_start~: appena il comando viene avviato, senza alcun controllo
+  sull'esistenza dell'oggetto a cui si applica;
+- ~ddl_command_end~: appena il comando è finito (quindi i cataloghi di sistema
+  sono stati aggiornati ma non ancora consolidati);
+- ~table_rewrite~: si effettua un ~ALTER [TABLE | TYPE]~ su una tabella;
+- ~sql_drop~: il comando ~DROP~ ha rimosso dal catalogo di sistema degli oggetti.
+
+*Bisogna essere superutenti!*
+** Creazione di un event trigger
+Le regole sono simili a quelle di un trigger normale:
+1. si crea una funzione che deve ritornare un tipo ~event_trigger~. *Il valore di ritorno è solo un marcaposto, questi trigger non ritornano alcun valore!*
+2. si aggancia il trigger all'evento con ~CREATE EVENT TRIGGER~;
+3. si possono usare alcune funzioni di utilità per scoprire /cosa/ sta accadendo e cosa ha /scatenato/ il trigger (non esistono
+   al momento variabili speciali da interrogare ma solo funzioni di catalogo).
+** Dati interni di un event trigger
+Ci sono delle funzioni speciali che ritornano delle tuple contenenti le informazioni
+di come un trigger è stato invocato:
+- ~pg_event_trigger_ddl_commands()~ per ~ddl_command_start~ e ~ddl_command_stop~;
+- ~pg_event_trigger_dropped_objects()~ per ~sql_drop~;
+- ~pg_event_trigger_table_rewrite_oid()~ per ~table_rewrite~.
+** Esempio di event trigger
+#+begin_src sql
+CREATE OR REPLACE FUNCTION ddl_start_end()
+RETURNS EVENT_TRIGGER AS
+$BODY$
+DECLARE
+        command record;
+BEGIN
+   RAISE INFO 'event trigger fired!';
+   FOR command IN SELECT * FROM pg_event_trigger_ddl_commands()
+   LOOP
+           RAISE INFO 'Comando % su %',
+                 command.command_tag,
+                 command.object_identity;
+   END LOOP;
+END; $BODY$
+LANGUAGE plpgsql;
+#+end_src
+** Esempio di esecuzione con event trigger
+#+begin_src sql
+# CREATE EVENT TRIGGER tr_start_end
+  ON ddl_command_start
+  EXECUTE PROCEDURE ddl_start_end();
+
+# ALTER TABLE testddl ADD COLUMN foo int;
+INFO:  event trigger fired!
+INFO:  Comando ALTER TABLE su public.testddl
+ALTER TABLE
+#+end_src
+** Esempio di even trigger (drop)
+#+begin_src sql
+CREATE OR REPLACE FUNCTION ddl_drop_fn()
+RETURNS EVENT_TRIGGER AS $BODY$
+DECLARE
+        dropping record;
+BEGIN
+        RAISE INFO 'event trigger fired!';
+        FOR dropping IN SELECT * FROM pg_event_trigger_dropped_objects()
+        LOOP
+                RAISE INFO 'drop % di %',
+                      tg_tag, -- cosa si droppa?
+                      dropping.object_identity;
+        END LOOP;
+END; $BODY$ LANGUAGE plpgsql;
+#+end_src
+
+** Esecuzione di event trigger (drop)
+#+begin_src sql
+# CREATE EVENT TRIGGER tr_drop
+  ON sql_drop
+  EXECUTE PROCEDURE ddl_drop_fn();
+#+end_src
+** Esecuzione di event trigger (drop)
+#+begin_src sql
+# DROP TABLE testddl;
+INFO:  event trigger fired! -- ddl_command_start
+INFO:  drop DROP TABLE di public.testddl
+INFO:  drop DROP TABLE di testddl_pkey on public.testddl
+INFO:  drop DROP TABLE di public.testddl_pkey
+INFO:  drop DROP TABLE di public.testddl_pk_seq
+INFO:  drop DROP TABLE di public.testddl_pk_seq
+INFO:  drop DROP TABLE di for public.testddl.pk
+INFO:  drop DROP TABLE di public.testddl
+INFO:  drop DROP TABLE di public.testddl[]
+INFO:  drop DROP TABLE di pg_toast.pg_toast_16508
+INFO:  drop DROP TABLE di pg_toast.pg_toast_16508_index
+INFO:  drop DROP TABLE di pg_toast.pg_toast_16508
+INFO:  event trigger fired! -- ddl_command_end
+#+end_src
+
+
+
+* Grant/Revoke
+* Viste
+* Rules
+* Window Functions
+* Common Table Expression
+* Foreign Data Wrapper
