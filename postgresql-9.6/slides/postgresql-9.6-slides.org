@@ -2166,8 +2166,39 @@ INFO:  event trigger fired! -- ddl_command_end
 #+end_src
 
 
-
 * Grant/Revoke
+** Grant in PostgreSQL
+PostgreSQL distingue due tipi principali di ~GRANT~ e conseguentemente di ~REVOKE~:
+- su un oggetto di database (es. tabella), nel qual caso anche a livello di colonna;
+- su un ruolo (ovvero gestione dei gruppi).
+
+La parola ~PUBLIC~ indica tutti gli utenti, mentre la parola chiave ~ALL~ indica tutti i
+tipi di permessi.
+Per agire a livello globale (/pericoloso!/):
+#+begin_src sql
+> REVOKE ALL ON <oggetto> FROM PUBLIC;
+> GRANT ALL ON <oggetto> TO PUBLIC;
+#+end_src
+** Grant di grant
+Il proprietario di un oggetto ha per definizione tutti i permessi
+sull'oggetto che ha creato.
+
+Chi possiede il permesso ~GRANT~ può concedere lo stesso permesso
+ad altri ruoli: si può quindi non solo abitare agli oggetti, ma anche
+alle abilitazioni stesse verso altri utenti.
+** Esempio di permessi di colonna
+#+begin_src sql
+# REVOKE ALL ON software FROM PUBLIC;
+# GRANT SELECT(name) ON software TO luca;
+#+end_src
+e come utente ~luca~:
+#+begin_src sql
+> SELECT name FROM software; --OK!
+> SELECT name, versions FROM software;
+ERROR:  permission denied for relation software
+#+end_src
+* UPSERT
+
 * Viste
 * Rules
 * Window Functions
