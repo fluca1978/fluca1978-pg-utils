@@ -2197,6 +2197,18 @@ e come utente ~luca~:
 > SELECT name, versions FROM software;
 ERROR:  permission denied for relation software
 #+end_src
+** OWNED
+Esistono comandi appositi per /passare/ un oggetto da un ruolo ad un altro e per
+eliminare tutti gli oggetti posseduti da un determinato ruolo. La parola chiave
+~CURRENT_USER~ identifica l'utente corrente.
+#+begin_src sql
+> REASSIGN OWNED BY CURRENT_USER TO dba;
+-- drop altri oggetti
+> DROP OWNED BY dismissed;
+#+end_src
+
+*Tipicamente si usano questi comandi prima della cancellazione di un ruolo!*
+
 * UPSERT
 ** INSERT or UPDATE?
 Una /UPSERT/ è una ~INSERT~ che, in caso di conflitto (vincolo di univocità violato)
