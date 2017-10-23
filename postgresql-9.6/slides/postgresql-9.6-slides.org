@@ -2243,6 +2243,17 @@ ERROR:  duplicate key value violates
   DO UPDATE SET nome = EXCLUDED.nome,
              cognome = EXCLUDED.cognome;
 #+end_src
+** UPSERT in aborto
+Se si specifica la risoluzione del conflitto come ~DO NOTHING~ allora la query non effettua
+l'inserimento della tupla e fallisce silenziosamente (cioè con successo).
+#+begin_src sql
+> INSERT INTO persona( codice_fiscale, nome, cognome )
+  VALUES( 'FRRLCU78L19F257B', 'Luca', 'Ferrari' )
+  ON CONFLICT(codice_fiscale)
+  DO NOTHING;
+
+INSERT 0 0
+#+end_src
 * Viste
 ** Tipologie di viste
 Esistono due tipi principali di viste:
@@ -2306,6 +2317,72 @@ della vista, e non lo si può usare per il primo popolamento della vista.
 #+end_src
 
 * Rules
+** Introduzione alle rules
+Le *rules* sono definite anche *query rewrite system*.
+Le rules consentono la riscrittura al volo delle query (anticipando anche i trigger)
+e quindi di rimbalzare una query da un oggetto ad un altro o espandere una query
+in piu' di una.
+
+*A differenza di un trigger, una rule può intercettare una ~SELECT~!*
+** Parametri di una rule
+Una rule deve specificare:
+- un /evento/ ovvero ~SELECT~, ~INSERT~, ~UPDATE~, ~DELETE~;
+- la tabella a cui l'evento si applica (ossia su quale tabella il comando è stato eseguito);
+- una eventuale /condizione/ che può referenziare ~OLD~ e ~NEW~ come alias delle tabelle originali
+  e verso cui rimbalzare la query;
+- il /comando/ da eseguire come ~INSTEAD~ o ~ALSO~.
+
+*Le viste sono realizzate come una rule ~INSTEAD~!*
+** Esempio di una rule: DELETE
+#+begin_src sql
+> CREATE OR REPLACE RULE r_delete_persona
+  AS ON DELETE TO persona
+  DO INSTEAD
+    UPDATE persona
+    SET valid = false
+    WHERE OLD.pk = pk;
+#+end_src
+** Esempio di rule: INSERT
+#+begin_src sql
+ > CREATE OR REPLACE RULE r_insert_persona
+   AS ON INSERT
+   TO persona
+   DO ALSO
+    INSERT INTO log( message )
+    VALUES ( 'Inserimento/aggiornamento tupla '
+             || NEW.cognome || ' '
+             || NEW.nome );
+#+end_src
+** Rules "_RETURN"
+La rule per una select è speciale e viene denominata ~"_RETURN"~ (ce ne può essere solo una)
+e deve essere eseguita su una tabella vuota. E' il modello con il quale PostgreSQL realizza
+le viste dinamiche.
+
+Il workflow è:
+1. creare una tabella *vuota* con le stesse colonne della tabella finale;
+2. definire la rule ~"_RETURN"~ con ~DO INSTEAD~ e ~SELECT~ sulla tabella corretta.
+
+*Nel momento in cui ~"_RETURN"~ viene definita la tabella viene catalogata come vista!**
+
+** Esempio di rule: "_RETURN"
+#+begin_src sql
+-- CREATE TABLE maggiorenni() INHERITS( persona );
+> CREATE TABLE maggiorenni( LIKE persona );
+> CREATE OR REPLACE RULE "_RETURN"
+  AS ON SELECT TO maggiorenni
+  DO INSTEAD
+    SELECT * FROM persona
+    WHERE eta >= 18;
+#+end_src
+
+** Esempio di rule: UPDATE
+E' possibile /bloccare/ una tabella con una rule ~DO NOTHING~.
+#+begin_src sql
+> CREATE OR REPLACE RULE r_update_persona
+  AS ON update
+  TO persona
+  DO INSTEAD NOTHING;
+#+end_src
 * Window Functions
 * Common Table Expression
 * Foreign Data Wrapper
