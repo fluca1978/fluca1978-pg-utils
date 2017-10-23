@@ -1899,7 +1899,6 @@ EXCEPTION
 END;
 #+end_src
 
-
 * Triggers
 ** Introduzione ai triggers
    PostgreSQL supporta (da sempre) i trigger a livello di /statement/ o /tupla/
@@ -1911,8 +1910,14 @@ END;
       argomento e ritorna un valore di tipo ~trigger~*;
    2. si /aggancia/ la funzione ad un evento scatenato su una tabella (tramite
       ~CREATE TRIGGER~).
+** Tipologia di trigger
+I trigger possono essere eseguiti per ~statment~ o per ~riga~.
+Nel caso di esecuzione a livello di statement il valore di ritorno del trigger
+è ignorato (~NULL~), nel caso di esecuzione per riga il valore di ritorno
+può essere ~NULL~ per indicare che l'oeprazione deve abortire o ritornare una
+tupla (~NEW~, ~OLD~) per inserimento/modifica.
 
-** Tiplogia di trigger
+** Tiplogia di trigger (riassunto)
    | Statement SQL                | Quando       | A livello di                                   |
    |------------------------------+--------------+------------------------------------------------|
    | ~INSERT~, ~UPDATE~, ~DELETE~ | /BEFORE/     | *tupla* su tabelle e FK                        |
@@ -1966,7 +1971,6 @@ BEGIN
   END IF;
 #+end_src
 
-
 ** Esempio di trigger: funzione (2)
 #+begin_src sql
   IF TG_OP = 'INSERT' THEN
@@ -2006,7 +2010,6 @@ INFO:  Calcolo eta' INSERT = 39
 INFO:  Aggiusto eta' UPDATE da 39 a 39
 #+end_src
 
-
 ** Esempio di trigger: agganciarlo a una colonna
    Il trigger di esempio non dovrebbe scattare per ogni ~UPDATE~ incondizionato, ma solo
    per gli ~UPDATE~ che coinvolgono la colonna ~eta~ o ~codice_fiscale~.
@@ -2030,7 +2033,6 @@ INFO:  Aggiusto eta' UPDATE da 39 a 39
 > UPDATE persona SET nome = 'LUCA' WHERE codice_fiscale = 'FRRLCU78L19F257B';
 -- non è scattato il trigger!
 #+end_src
-
 
 ** Trigger parametrici
    E' possibile passare dei parametri alla funzione di un trigger, tali
