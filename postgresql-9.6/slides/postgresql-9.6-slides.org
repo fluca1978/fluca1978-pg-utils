@@ -953,6 +953,21 @@ ERROR:  relation "dual" does not exist
  Perche' l'hai scritto?
 #+end_src
 Si può usare anche uno statement SQL come tag (es. ~$SELECT$~).
+** Camel Case
+Lo standard SQL non ammette il camel case, e chiede l'uso di *UPPERCASE*.
+PostgreSQL utilizza il *lowercase* per tutti gli identificatori (il risultato non cambia).
+#+begin_src sql
+> CREATE TABLE Foo( Bar int, bAz int );
+-- diventa
+-- create table foo( bar int, baz int);
+#+end_src
+
+Se si vuole usare il *cAmeLcAsE* si deve indicare ogni operatore /*sempre*/
+fra doppi apici (sconsigliato):
+#+begin_src sql
+> CREATE TABLE "Foo"( "Bar" int, "bAz" int );
+> SELECT "Bar", "bAz" FROM "Foo";
+#+end_src
 
 ** Cast
 In PostgreSQL il cast può essere effettuato in quattro modi:
