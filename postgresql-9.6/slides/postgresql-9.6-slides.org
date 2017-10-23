@@ -2198,7 +2198,39 @@ e come utente ~luca~:
 ERROR:  permission denied for relation software
 #+end_src
 * UPSERT
+** INSERT or UPDATE?
+Una /UPSERT/ è una ~INSERT~ che, in caso di conflitto (vincolo di univocità violato)
+esegue una ~UPDATE~ automaticamente.
 
+*UPSERT è una modifica della sintassi di ~INSERT~!*
+
+Si specifica cosa fare in caso di conflitto, ed eventualmente come risolvere tale conflitto.
+** Funzionamento di UPSERT
+Occorre che sia specificato un ~CONSTRAINT~ che indica il conflitto (o una colonna su cui esiste
+un constraint di univocità).
+
+La tupla in conflitto viene nominata ~EXCLUDED~.
+
+** Senza UPSERT...
+#+begin_src sql
+> INSERT INTO persona( codice_fiscale, nome, cognome )
+  VALUES( 'FRRLCU78L19F257B', 'Ferrari', 'Luca' );
+
+-- no upsert!
+> INSERT INTO persona( codice_fiscale, nome, cognome )
+  VALUES( 'FRRLCU78L19F257B', 'Luca', 'Ferrari' );
+ERROR:  duplicate key value violates
+  unique constraint "persona_codice_fiscale_key"
+#+end_src
+** UPSERT in azione
+#+begin_src sql
+-- upsert!
+> INSERT INTO persona( codice_fiscale, nome, cognome )
+  VALUES( 'FRRLCU78L19F257B', 'Luca', 'Ferrari' )
+  ON CONFLICT(codice_fiscale)
+  DO UPDATE SET nome = EXCLUDED.nome,
+             cognome = EXCLUDED.cognome;
+#+end_src
 * Viste
 * Rules
 * Window Functions
