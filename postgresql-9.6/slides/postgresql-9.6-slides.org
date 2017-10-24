@@ -1914,6 +1914,47 @@ EXCEPTION
 END;
 #+end_src
 
+** PERFORM: il problema
+Se in una stored procedure si utilizza una query che ritorna dei risultati,
+ma si vuole scartare l'insieme dei risultati stessi, occorre usare ~PERFORM~.
+In altre parole: *nelle stored procedures è possibile usare ogni comando SQL che non ritorni risultati o dove i risultati siano /memorizzati in variabili/ (anche di iterazione)*.
+
+#+begin_src sql
+CREATE OR REPLACE FUNCTION do_select()
+RETURNS VOID AS $BODY$
+DECLARE
+BEGIN
+        SELECT * FROM persona;
+END;
+$BODY$ LANGUAGE plpgsql;
+#+end_src
+
+#+begin_src sql
+> SELECT do_select();
+ERROR:  query has no destination for result data
+HINT:  If you want to discard the results of a
+SELECT, use PERFORM instead.
+#+end_src
+
+** PERFORM: la soluzione
+#+begin_src sql
+CREATE OR REPLACE FUNCTION do_select()
+RETURNS VOID
+AS $BODY$ DECLARE
+BEGIN
+        PERFORM  * FROM persona;
+END;
+$BODY$ LANGUAGE plpgsql;
+#+end_src
+
+*** PERFORM vs SELECT                                          :B_definition:
+    *PERFORM* sostituisce *SELECT* in una query!
+*** End of block                                               :B_ignoreheading:
+:PROPERTIES:
+:BEAMER_env: ignoreheading
+:END:
+
+
 * Triggers DML
 ** Introduzione ai triggers
    PostgreSQL supporta (da sempre) i trigger a livello di /statement/ o /tupla/
@@ -2401,3 +2442,9 @@ E' possibile /bloccare/ una tabella con una rule ~DO NOTHING~.
 * Window Functions
 * Common Table Expression
 * Foreign Data Wrapper
+* Extensions
+
+
+* TODO
+** PERFORM in stored procedures
+** aggiungere livelllo 3 header
