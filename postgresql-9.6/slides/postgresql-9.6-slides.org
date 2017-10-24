@@ -1954,6 +1954,71 @@ $BODY$ LANGUAGE plpgsql;
 :BEAMER_env: ignoreheading
 :END:
 
+** SELECT INTO
+E' possibile assegnare a una (o piu') variabili il risultato di una ~SELECT~
+specificando appunto la lista di variabile ove inserire (~INTO~) il risultato, considerando
+che:
+- se la query ritorna piu' di una riga e non è specificato ~STRICT~ allora solo la prima tupla
+  viene inserita nelle variabili e la query termina (ossia ~SELECT INTO~ esegue un implicito
+  ~LIMIT 1~);
+- se la query ritorna piu' di una riga ed è specificato ~STRICT~ allora si ha un errore di esecuzione
+  (ossia *~STRICT~ impone che la query fornisca una sola tupla*).
+** SELECT INTO: esempio senza STRICT
+#+begin_src sql
+CREATE OR REPLACE FUNCTION do_select()
+RETURNS VOID AS $BODY$
+DECLARE
+        v_nome text;
+        v_cognome text;
+BEGIN
+        SELECT nome, cognome
+        INTO v_nome, v_cognome
+        FROM persona;
+
+        RAISE INFO 'Trovati % %',
+                    v_nome,
+                    v_cognome;
+END;
+$BODY$ LANGUAGE plpgsql;
+#+end_src
+** SELECT INTO: esempio senza STRICT (2)
+#+begin_src sql
+> SELECT count(*) FROM persona;
+ count
+-------
+     4 -- ci sono 4 persone!
+> SELECT do_select();
+INFO:  Trovati EMANUELA SANTUNIONE
+#+end_src
+** SELECT INTO: errore di STRICT
+Se la query viene eseguita con ~STRICT~ si ottiene un errore di esecuzione:
+
+#+begin_src sql
+> SELECT do_select();
+ERROR:  query returned more than one row
+#+end_src
+
+** SELECT INTO: esempio con STRICT
+#+begin_src sql
+CREATE OR REPLACE FUNCTION do_select()
+RETURNS VOID AS $BODY$
+DECLARE
+        v_nome text;
+        v_cognome text;
+BEGIN
+        SELECT nome, cognome
+        INTO STRICT v_nome, v_cognome
+        FROM persona
+        WHERE codice_fiscale = 'FRRLCU78L19F257B';
+
+        RAISE INFO 'Trovati % %',
+                   v_nome,
+                   v_cognome;
+END;
+$BODY$ LANGUAGE plpgsql;
+#+end_src
+Si filtra sulla chiave per ottenere esattamente un record!
+
 
 * Triggers DML
 ** Introduzione ai triggers
