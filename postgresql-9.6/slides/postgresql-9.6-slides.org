@@ -968,7 +968,31 @@ fra doppi apici (sconsigliato):
 > CREATE TABLE "Foo"( "Bar" int, "bAz" int );
 > SELECT "Bar", "bAz" FROM "Foo";
 #+end_src
+** INSERT
+In default una istruzione di ~INSERT~ restituisce due valori:
+- ~oid~ della tupla inserita (se la tabella ha gli oid);
+- /numero di tuple inserite/.
 
+E' possibile specificare una clausola ~RETURNING~ che restituisca dei valori
+basati su una /select-like/ di ogni tupla inserita (caso banale: la chiave automatica).
+** INSERT RETURNING: un primo esempio
+#+begin_src sql
+> INSERT INTO persona( cognome, nome, codice_fiscale )
+  VALUES( 'Luca', 'Ferrari', 'FRRLCU78L19F257T' )
+  RETURNING pk;
+ pk
+----
+ 13
+#+end_src
+** INSERT RETURNING: un esempio piu' complesso
+#+begin_src sql
+> INSERT INTO persona( cognome, nome, codice_fiscale )
+  VALUES( 'Luca', 'Ferrari', 'FRRLCU78L19F257Z' )
+  RETURNING upper(codice_fiscale), pk;
+      upper       | pk
+------------------+----
+ FRRLCU78L19F257Z | 14
+#+end_src
 ** Cast
 In PostgreSQL il cast può essere effettuato in quattro modi:
 - specificando il tipo prima del valore (es. ~int '10'~);
@@ -2366,6 +2390,9 @@ esegue una ~UPDATE~ automaticamente.
 *UPSERT è una modifica della sintassi di ~INSERT~!*
 
 Si specifica cosa fare in caso di conflitto, ed eventualmente come risolvere tale conflitto.
+
+In default viene ritornato il numero di tuple inserite o aggiornate in caso di conflitto (come
+da return di un ~INSERT~).
 ** Funzionamento di UPSERT
 Occorre che sia specificato un ~CONSTRAINT~ che indica il conflitto (o una colonna su cui esiste
 un constraint di univocità).
@@ -2392,7 +2419,7 @@ ERROR:  duplicate key value violates
   DO UPDATE SET nome = EXCLUDED.nome,
              cognome = EXCLUDED.cognome;
 #+end_src
-** UPSERT in aborto
+** UPSERT in aborto (controllato)
 Se si specifica la risoluzione del conflitto come ~DO NOTHING~ allora la query non effettua
 l'inserimento della tupla e fallisce silenziosamente (cioè con successo).
 #+begin_src sql
@@ -2402,6 +2429,21 @@ l'inserimento della tupla e fallisce silenziosamente (cioè con successo).
   DO NOTHING;
 
 INSERT 0 0
+#+end_src
+** UPSERT RETURNING
+E' possibile usare la clausola ~RETURNING~ anche nel caso di un /UPSERT/:
+#+begin_src sql
+> INSERT INTO persona( codice_fiscale, nome, cognome )
+  VALUES( 'FRRLCU78L19F257B', 'Luca', 'Ferrari' )
+  ON CONFLICT(codice_fiscale)
+  DO UPDATE SET nome = EXCLUDED.nome,
+             cognome = EXCLUDED.cognome
+RETURNING nome, cognome;
+
+ nome | cognome
+------+---------
+ Luca | Ferrari
+
 #+end_src
 * Viste
 ** Tipologie di viste
@@ -2541,3 +2583,5 @@ E' possibile /bloccare/ una tabella con una rule ~DO NOTHING~.
 * TODO
 ** PERFORM in stored procedures
 ** aggiungere livelllo 3 header
+** cursori
+** insert returning
