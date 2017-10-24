@@ -2338,7 +2338,6 @@ INFO:  drop DROP TABLE di pg_toast.pg_toast_16508
 INFO:  event trigger fired! -- ddl_command_end
 #+end_src
 
-
 * Grant/Revoke
 ** Grant in PostgreSQL
 PostgreSQL distingue due tipi principali di ~GRANT~ e conseguentemente di ~REVOKE~:
@@ -2582,7 +2581,5 @@ E' possibile /bloccare/ una tabella con una rule ~DO NOTHING~.
 
 
 * TODO
-** PERFORM in stored procedures
 ** aggiungere livelllo 3 header
 ** cursori
-** insert returning
