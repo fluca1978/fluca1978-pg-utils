@@ -2388,6 +2388,7 @@ Una /UPSERT/ è una ~INSERT~ che, in caso di conflitto (vincolo di univocità vi
 esegue una ~UPDATE~ automaticamente.
 
 *UPSERT è una modifica della sintassi di ~INSERT~!*
+*UPSERT non può funzionare se si sono delle rules definite sulla tabella!*
 
 Si specifica cosa fare in caso di conflitto, ed eventualmente come risolvere tale conflitto.
 
