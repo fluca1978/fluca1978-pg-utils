@@ -4,7 +4,7 @@
 #+DATE:      <2017-08-25 ven>
 #+LANGUAGE:  it
 
-#+OPTIONS:   H:2 num:t toc:t \n:nil @:t ::t |:t ^:t -:t f:t *:t <:t
+#+OPTIONS:   H:3 num:t toc:t \n:nil @:t ::t |:t ^:t -:t f:t *:t <:t
 #+OPTIONS:   TeX:t LaTeX:t skip:nil d:nil todo:t pri:nil tags:not-in-toc
 #+INFOJS_OPT: view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
 #+EXPORT_SELECT_TAGS: export
@@ -25,14 +25,15 @@
 
 
 
-* Introduzione a PostgreSQL
-** Cos'è?
+* Introduzione
+** Il progetto PostgreSQL
+*** Cos'è?
    PostgreSQL è un *Object Relational Database Management System* (ORDBMS).
 
-*** O-RDBMS                                                    :B_definition:
+**** O-RDBMS                                                   :B_definition:
    *Object* non è da intendersi relativamente al paradigma /OOP/ quanto al fatto
    che un utente /puo' estendere il database con i propri "oggetti"/.
-*** End of block                                               :B_ignoreheading:
+**** End of block                                           :B_ignoreheading:
 :PROPERTIES:
 :BEAMER_env: ignoreheading
 :END:
@@ -51,9 +52,7 @@ Approccio simile a quello di OpenBSD!
 
    Tutto inizia alla Berkely University of California.
 
-
-
-** Quand'è?
+*** Quand'è?
 
    | Nome          | Anno di produzione | Note                             |
    |---------------+--------------------+----------------------------------|
@@ -73,19 +72,19 @@ Thanks to Professor Michael Stonebraker for making this possible.
 --- Release 1.0
 #+end_quotation
 
-** Di chi è?
+*** Di chi è?
    PostgreSQL non è guidato da nessun vendor e di conseguenza _non ha una
    lista di clienti da soddisfare_. Questo significa che
    una feature sarà implementata in PostgreSQL solo se ha senso dal punto di
    vista /tecnico/ e /scientifico/.
 
-*** Approccio culturale :B_definition:
+**** Approccio culturale                                       :B_definition:
     PostgreSQL is a *non-commercial, all volunteer, free software project*,
     and as such *there is no formal list of feature requirements*
     required for development.
     We really do follow the mantra of
     letting developers scratch their own itches.
-*** End of block                                               :B_ignoreheading:
+**** End of block                                           :B_ignoreheading:
 :PROPERTIES:
 :BEAMER_env: ignoreheading
 :END:
@@ -97,7 +96,7 @@ commerciali: per gli sviluppatori questa funzionalità non ha senso e non è mai
 Approccio simile a quello di OpenBSD!
 #+end_quote
 
-** Per chi è?
+*** Per chi è?
 Licenza *BSD* (anche per il logo):
 
 
@@ -115,8 +114,7 @@ is hereby granted, provided that the above copyright notice and this
 paragraph and the following two paragraphs appear in all copies.
 #+end_src
 
-
-** Quanto costa?
+*** Quanto costa?
    Il progetto è /Open Source/ ed è /Free/.
 
    Esistono diverse varianti commerciali che si differenziano dalla versione
@@ -126,29 +124,27 @@ paragraph and the following two paragraphs appear in all copies.
    Molti degli sviluppatori della versione mainstream sono in realtà _anche_ sviluppatori
    di un qualche vendor.
 
-
-** Qual'era?
+*** Qual'era?
    In PostgreSQL i numeri di versione */erano/* a tre cifre separati da punto:
    - */release brand/* (es. 7, no-crash, 8 MS Windows portability, 9 Replication)
    - */year release/*  (da quanti anni si ha questo brand)
    - */minor release/* (rilasciata circa ogni quattro mesi o in presenza di gravi
      problemi di sicurezza o consistenza)
 
-*** Major version vs Minor Version :B_theorem:
+**** Major version vs Minor Version                               :B_theorem:
     - *9.5*.1 # major version 9.5, minor version 1
       - 9.5.1 compatibile con 9.5.2, 9.5.3, ...
     - *9.6*.2 # major version 9.6, minor version 2
       - incompatibile con 9.5.x!
 
-*** End of block                                               :B_ignoreheading:
+**** End of block                                           :B_ignoreheading:
 :PROPERTIES:
 :BEAMER_env: ignoreheading
 :END:
    Le prime due cifre rappresentavano una *major version* e quindi erano segnale di
    possibile incompatibilità.
 
-
-** Qual'é?
+*** Qual'é?
    Dalla versione 10 la numerazione è diventata a due sole cifre.
 
    La cifra prima del punto rappresenta la /major version/.
@@ -168,7 +164,7 @@ paragraph and the following two paragraphs appear in all copies.
    |     10.0 |    10 |     0 |   100000 |
    |     10.1 |    10 |     1 |   100001 |
 
-** Quanto dura?
+*** Quanto dura?
    Ogni /major release/ di PostgreSQL viene manutenuta per *5 anni* dalla data di primo rilascio.
    Una volta che una release raggiunge la *End Of Life* nessun pacchetto binario sarà piu' rilasciato
    ma potrebbe essere aggiornato (in retrocompatibilità) l'albero dei sorgenti (a discrezione degli
@@ -184,7 +180,7 @@ paragraph and the following two paragraphs appear in all copies.
 |     9.3 | 	September 2013 	 | September 2018   |
 |     9.2 | 	September 2012 	 | *September 2017* |
 
-** Quanto è?
+*** Quanto è?
    E' difficile /spaventare/ una istanza PostgreSQL!
 
 | Dato                        | Limite massimo                       |
@@ -197,9 +193,7 @@ paragraph and the following two paragraphs appear in all copies.
 | Maximum Columns per Table	 | 250 - 1600 depending on column types |
 | Maximum Indexes per Table	 | Unlimited                            |
 
-
-
-** Chi lo usa?
+*** Chi lo usa?
 
    Alcuni esempi:
 
@@ -209,8 +203,7 @@ paragraph and the following two paragraphs appear in all copies.
 [[./images/cisco.png]]
 [[./images/skype.png]]
 
-
-** Chi lo sviluppa?
+*** Chi lo sviluppa?
    *Chiunque*, anche tu! Non esiste un /benevolent dictator/!
 
    Tre livelli principali di sviluppatori:
@@ -229,7 +222,7 @@ paragraph and the following two paragraphs appear in all copies.
    - *hacker emeritus*: chi ha lavorato in passato al progetto con particolare successo
       (Josh Berkus, Marc G. Fournier, Thomas G. Lockhart, Vadim B. Mikheev, Jan Wieck)
 
-** Come si sviluppa?
+*** Come si sviluppa?
    Si utilizza ~git~ (migrato da CVS intorno al 2009).
 
    #+begin_src sh
@@ -248,8 +241,7 @@ Cloning into 'postgresql'...
    - Strumenti (anche Perl) ad-hoc per mantenere il codice: ~pgindent~, ~git_changelog~,
      ~make_ctags~, ecc.
 
-
-** Da quanto si sviluppa?
+*** Da quanto si sviluppa?
    Da molto tempo (oltre 30 anni), ma non si torna prima della versione 1.01 di *Postgres95*,
    ramo di sviluppo 6 del Postgres "attuale":
 
@@ -263,8 +255,8 @@ Date:   Tue Jul 9 06:22:35 1996 +0000
     Postgres95 1.01 Distribution - Virgin Sources
    #+end_src
 
-* Concetti Generali
-** Terminologia
+** Concetti Generali
+*** Terminologia
 - Ogni istanza di PostgreSQL gestisce un *cluster*.
 
 - Un cluster è formato da uno o piu' *database*, ogni database può essere a sua volta
@@ -281,8 +273,7 @@ Date:   Tue Jul 9 06:22:35 1996 +0000
 In linea con la filosofia Unix, PostgreSQL vuole svolgere un compito solo nel miglior modo possibile: gestire
 i dati. E' compito del DBA documentarsi e aggiungere le estensioni necessarie a seconda del caso d'uso (es. pooling).
 
-
-** Cluster di Database
+*** Cluster di Database
 Un singolo cluster quindi può gestire un albero di oggetti a granularità molto specifica:
 
   - /database 1/
@@ -302,7 +293,7 @@ Un singolo cluster quindi può gestire un albero di oggetti a granularità molto
       - /tabelle, trigger, indici/ -> /tablespace disco SSD/
       - /tabelle, trigger, indici/ -> /tablespace disco lento/
 
-** Analogia tra Cluster e OS
+*** Analogia tra Cluster e OS
 L'isolamento e la gestione di un cluster ricorda molto quella di un sistema operativo:
 
 | PostgreSQL                                | Unix                             |
@@ -315,8 +306,7 @@ L'isolamento e la gestione di un cluster ricorda molto quella di un sistema oper
 | schema                                    | sottodirectory  (es ~$HOME/bin~) |
 | oggetto (tabella, trigger, funzione, ...) | file, script                     |
 
-
-** Schema a Processi: Connessioni
+*** Schema a Processi: Connessioni
 PostgreSQL utilizza uno *schema a processi*: /ogni connessione viene gestita da un sottoprocesso creato ad-hoc/.
 
 
@@ -333,7 +323,7 @@ di un processo *postgres* (denominato anche *backend*) delegato a gestire la con
 
 *** Connessioni
     Una connessione può essere *TCP/IP* oppure su *socket locale*.
-** Schema a Processi: IPC
+*** Schema a Processi: IPC
    Siccome ogni processo è /fisicamente/ isolato, ma piu' connessioni possono dover condividere i dati, PostgreSQL
    utilizza un'area *shared memory* ove mantiene i dati. Tale zona di memoria è visibile a tutti i processi *postgres*.
 
@@ -341,7 +331,7 @@ di un processo *postgres* (denominato anche *backend*) delegato a gestire la con
 
    La shared memory viene organizzata in */pagine dati/* che rappresentano la copia in memoria dei dati persistenti su disco.
    Vi sono una serie di processi di utilità che si occupano di scaricare/caricare i dati dalla /shared memory/ e dal disco.
-** File System
+*** File System
    PostgreSQL si appoggia al *filesystem* per lo stoccaggio dei dati in maniera persistenza.
 
    Questo offre diversi vantaggi, fra i quali la possibilità di un tuning molto raffinato
@@ -349,7 +339,8 @@ di un processo *postgres* (denominato anche *backend*) delegato a gestire la con
 
    Dall'altra parte, il filesystem deve essere *affidabile*, pena il rischio di perdita dati.
 * Installazione
-** Tipologie di installazione
+** Installazione
+*** Tipologie di installazione
    E' possibile installare PostgreSQL:
    - mediante installer ufficiale
    - mediante pacchetti binari della propria installazione
@@ -372,7 +363,7 @@ di un processo *postgres* (denominato anche *backend*) delegato a gestire la con
 :BEAMER_env: ignoreheading
 :END:
 
-** Installazione
+*** Installazione
 Compilazione dai ports:
 #+begin_src sh
 # cd /usr/ports/databases/postgresql96-server
@@ -394,7 +385,7 @@ uid=770(postgres) gid=770(postgres) groups=770(postgres)
 
 altri sistemi operativi creano utenti simili (~psql~, ~pgsql~, ecc.).
 
-** Avvio del servizio
+*** Configurazione avvio servizio (OS)
 I parametri di configurazione dipendono ovviamente dal sistema operativo, ad
 esempio su FreeBSD le variabili di ~rc.conf~ sono visibili da
 ~/usr/local/etc/rc.d/postgresql~:
@@ -408,7 +399,8 @@ esempio su FreeBSD le variabili di ~rc.conf~ sono visibili da
 #  postgresql_profiles=""
 #+end_src
 
-** PGDATA
+** Layout su disco
+*** PGDATA
 PostgreSQL utilizza il filesystem del sistema operativo per salvare i dati in modo
 persistente.
 
@@ -426,7 +418,7 @@ tramite il programma ~initdb~.
 :BEAMER_env: ignoreheading
 :END:
 
-** initdb
+*** initdb
 Creazione di una directory per la memorizzazione del database (alcuni
 sistemi operativi lo fanno automaticamente al momento dell'installazione
 binaria):
@@ -445,7 +437,7 @@ $ initdb --data-checksum --encoding="UTF-8"
 - ~--pwprompt~: richiede la password del superutente di PostgreSQL (comodo per non impostarlo dopo);
 - *~-D~*: l'opzione principale, indica *dove si troveranno i dati*.
 
-** $PGDATA
+*** $PGDATA
 La directory ~$PGDATA~ contiene diversi file e directory, in particolare:
 - ~PG_VERSION~: file di testo con la versione che serve il cluster;
 - *~postgresql.conf~*: configurazione principale del cluster;
@@ -457,7 +449,7 @@ La directory ~$PGDATA~ contiene diversi file e directory, in particolare:
 - *~pg_xlog~* e ~pg_clog~: rispettivamente WAL e commit log.
 
 Per altre informazioni vedere [[https://www.postgresql.org/docs/9.6/static/storage-file-layout.html][Storage File System Layout]].
-** File fisici su disco
+*** File fisici su disco
 Ogni /oggetto/ con dei dati (es. tabella) viene memorizzato su disco in un file
 con nome pari al suo /Object IDentifier/ (~OID~) numerico. Questo ha il vantaggio di:
 - essere indipendente dal nome /logico/ e dalla relativa codifica e charset;
@@ -468,7 +460,7 @@ avere piu' file nominati con ~oid~, ~oid.1~, ~oid.2~, ecc.
 
 Solitamente i file crescono in dimensione di ~8 kB~ alla volta (ossia della dimensione di una pagina dati).
 
-** oid2name
+*** oid2name
 L'utility ~oid2name~ (modulo /contrib/) consente di esplorare
 la struttura dati su disco.
 #+begin_src sh
@@ -490,7 +482,7 @@ dei database:
 1       12757   12758
 #+end_src
 
-** oid2name (2)
+*** oid2name (2)
  Esploriamo il database ~template1~ su disco e cerchiamo di capire
  cosa contiene:
 
@@ -513,7 +505,7 @@ From database "template1":
 *ATTENZIONE: si deve specificare a quale database si fa riferimento, poiché
 gli stessi oid possono essere riciclati in database differenti*
 
-** oid2name (3)
+*** oid2name (3)
 E se si vuole trovare una tabella dato il suo nome?
 
  #+begin_src sh
@@ -528,7 +520,8 @@ From database "template1":
 ~oid2name~ va ad interrogare il catalogo di sistema per trovare le informazioni
 necessarie.
 
-** Connessione al servizio
+** Connessioni
+*** Connessione al servizio
 Il file ~pg_hba.conf~ contiene le informazioni su quali metodi di autenticazione,
 quali utenti, quali host remoti e quali database sono accessibili per la connessione.
 Si può editare questo file prima di avviare il servizio (se si è impostata una password
@@ -550,8 +543,7 @@ host    all        all      127.0.0.1/32    md5
 :BEAMER_env: ignoreheading
 :END:
 
-
-** Avvio del servizio
+*** Avvio del servizio
 Una volta che i primi pezzi sono al loro posto, è possibile avviare il servizio:
 
 #+begin_src sh
@@ -570,7 +562,7 @@ Password for user postgres:
 (3 rows)
 #+end_src
 
-** Database template
+*** Database template
 Quando viene inizializzata ~PGDATA~ il sistema crea due database chaimati /template/:
 - ~template0~: la copia principale del template;
 - *~template1~*: la copia usata in default.
@@ -583,7 +575,7 @@ abbia una base comune riconosciuta (es. schemi, linguaggi, ecc.).
 
 ~template0~ è la copia di sicurezza del template, qualora si "sporchi" troppo ~template1~.
 
-** Database templating
+*** Database templating
 I due database template non svolgono alcuna funzione particolare se non quella di essere
 usati come possibili punti di origine di un nuovo database. In default, se non specificato, PostgreSQL
 copia ~template1~, mentre ~template0~ dovrebbe essere lasciato /vergine/ per operazioni particolari
@@ -599,7 +591,8 @@ quali restore (può servire un database vuoto a cui collegarsi).
 :BEAMER_env: ignoreheading
 :END:
 
-** psql
+** Terminale psql
+*** psql
 Il pacchetto /client/ contiene un interprete da riga di comando, denominato ~psql~
 che consente di collegarsi al database e svolgere /tutti/ i compiti necessari.
 
@@ -619,7 +612,7 @@ I parametri di linea comando sono:
 - ~-U~: utente con cui collegarsi (/ruolo/ PostgreSQL);
 - database a cui collegarsi (es. ~template1~).
 
-** psql: connection URI
+*** psql: connection URI
 Oltre a specificare ogni singolo parametro della conessione tramite opzioni di comando,
 ~psql~ consente di utilizzare un URI per la connessione, ad esempio:
 
@@ -639,7 +632,7 @@ come ad esempio:
 postgresql://postgres@localhost/template1?sslmode=require
 #+end_src
 
-** psql: prompt
+*** psql: prompt
 
 In modo simile alla shell, il prompt di ~psql~ mostra:
 - il database al quale si è collegati (~template1~);
@@ -647,7 +640,7 @@ In modo simile alla shell, il prompt di ~psql~ mostra:
 
 Si esce da ~psql~ con ~\q~.
 
-** Quale versione del server?
+*** Quale versione del server?
 ~psql~ mostra all'avvio la propria versione (client) ma con una query
 è possibile capire anche la versione del server:
 
@@ -662,7 +655,7 @@ La funzione speciale ~version()~ viene compilata al momento
 del build del pacchetto binario.
 
 
-** psql, ruoli, database
+*** psql, ruoli, database
 In default ~psql~ cerca di collegarsi a un database che ha lo stesso nome
 utente dell'utente che esegue il comando stesso, con un ruolo che ha
 lo stesso nome.
@@ -682,7 +675,7 @@ corrisponde a:
 % psql -h localhost -U luca luca
 #+end_src
 
-** psql: ruoli, database e variabili di ambiente
+*** psql: ruoli, database e variabili di ambiente
  In realtà quando non viene specificato un utente e/o un database
  ~psql~ cerca di collegarsi a quanto stabilito dalle variabili
  di ambiente ~PGUSER~ e ~PGDATABASE~ (e le relative ~PGHOST~ e ~PGPORT~):
@@ -695,7 +688,7 @@ psql: FATAL:  no pg_hba.conf entry for host "[local]",
               database "myDB", SSL off
 #+end_src
 
-** psql: aiuto
+*** psql: aiuto
 All'interno di ~psql~ ci sono due tipologie di aiuto:
 - /aiuto sui comandi SQL/: si ottiene con ~\h~
   - ~\h~ senza argomenti mostra tutti i comandi SQL disponibili;
@@ -704,7 +697,7 @@ All'interno di ~psql~ ci sono due tipologie di aiuto:
   speciali di ~psql~. Tutti i comandi ~psql~ iniziano con backslash
   (es. ~\d~).
 
-** psql: evitare la password
+*** psql: evitare la password
 ~psql~ consente di impostare un file di credenziali (~$HOME/.pgpass~) per collegarsi
 a uno specifico database/host con uno specifico utente senza dover digitare
 una password.
@@ -732,13 +725,13 @@ template1=#
 :END:
 
 
-** psql: configurazione utente
+*** psql: configurazione utente
 ~psql~ consente di specificare delle configurazioni utente nel file ~$HOME/.psqlrc~.
 Tutti i comandi (~psql~ compatibili) specificati in tale file vengono eseguiti
 prima di fornire il prompt all'utente.
 
 Utile per impostare variabili, prompt, formati di output, ecc.
-** psql: ~/.psqlrc di esempio
+*** psql: ~/.psqlrc di esempio
 #+begin_src sh
 \set HISTFILE ~/.psql_history_ :DBNAME
 \set ON_ERROR_ROLLBACK on
@@ -751,7 +744,8 @@ Il prompt corrisponde a: /username/ (~%n~), /database/ (~%/~),
 /hostname/ (~%m~), /linea/ (~%l~), /stato transazione/ (~%x~)
 e /prompt superutente o utente normale/ (~%#~).
 
-** Ruoli e Utenti
+** Interazione: ruoli, database, tabelle
+*** Ruoli e Utenti
    Dalla versione 8.1 in poi PostgreSQL non distingue piu' fra utenti e gruppi
    ma usa il concetto di *ruolo* che rappresenta entrambi:
    - un ruolo può rappresentare un utente;
@@ -767,7 +761,7 @@ e /prompt superutente o utente normale/ (~%#~).
 :BEAMER_env: ignoreheading
 :END:
 
-** Vedere i ruoli
+*** Vedere i ruoli
 Il catalogo ~pg_roles~ contiene le informazioni sui ruoli e le loro proprietà:
 
 #+begin_src sql
@@ -782,7 +776,7 @@ FROM pg_roles;
 E' possibile creare utenti/gruppi/ruoli con privilegi di super utente, possibilità di creare nuovi
 database e di collegarsi o no al cluster.
 
-** Creare i ruoli
+*** Creare i ruoli
    Il comand SQL ~CREATE ROLE~ (o da terminale ~createuser~) consente di creare un nuovo utente/gruppo.
    Ad esempio si supponga di voler gestire un database di una applicazione definendo due utenti: uno applicativo
    e uno amministrativo/interattivo:
@@ -805,7 +799,7 @@ CREATE ROLE
 Ora il ruolo ~my_app~ funge sia da utente che da gruppo a cui ~luca~ appartiene.
 Si noti l'uso di ~ALTER ROLE~ per correggere un errore.
 
-** Creare i ruoli (2)
+*** Creare i ruoli (2)
    I ruoli appena creati risultano ora:
 #+begin_src sql
 # SELECT rolname, rolsuper, rolcreatedb, rolcanlogin, rolconnlimit
@@ -818,7 +812,7 @@ Si noti l'uso di ~ALTER ROLE~ per correggere un errore.
  luca              | f        | t           | t           |           -1
 #+end_src
 
-** Creare i ruoli (3)
+*** Creare i ruoli (3)
    E' ora possibile configurare il file ~.pgpass~ per i nuovi ruoli:
 #+begin_src sh
 % cat ~/.pgpass
@@ -835,7 +829,7 @@ localhost:5432:template1:my_app:xxxxx
 :PROPERTIES:
 :BEAMER_env: ignoreheading
 :END:
-** Creare un database
+*** Creare un database
    Usando il comando SQL ~CREATE DATABASE~ è possibile aggiungere un nuovo database
    (e /opzionalmente/ aggiungere un commento per indicare lo scopo del database):
 #+begin_src sql
@@ -852,7 +846,7 @@ CREATE DATABASE testdb OWNER luca;
 COMMENT ON DATABASE testdb IS 'A test database';
 #+end_src
 
-** Vedere i database disponibili
+*** Vedere i database disponibili
  Il catalogo ~pg_database~ contiene le informazioni circa i database presenti nel
  sistema:
 
@@ -877,7 +871,7 @@ Collate           | C
 Ctype             | C
 Access privileges |
 #+end_src
-** Eliminare un database
+*** Eliminare un database
  Avendo i privilegi corretti, si può usare il comando SQL ~DROP DATABASE~
  o il comando shell ~dropdb~:
 
@@ -890,7 +884,7 @@ DROP DATABASE
 #+begin_src sh
 % dropdb -h localhost -U postgres testdb
 #+end_src
-** Creare una tabella
+*** Creare una tabella
    L'istruzione SQL è ~CREATE TABLE~.
 #+begin_src sql
 % psql -h localhost testdb                                                                                               ~
@@ -904,7 +898,7 @@ DROP DATABASE
  );
 #+end_src
 
-** Modificare una tabella
+*** Modificare una tabella
    Ci sono varie istruzioni, in particolare ~ALTER TABLE~ che consente di agire sulla tabella
    e sui relativi vincoli:
 
@@ -913,7 +907,7 @@ DROP DATABASE
 > ALTER TABLE persona ADD CHECK ( eta > 0 and eta < 120 );
 #+end_src
 
-** Come è fatta la tabella?
+*** Come è fatta la tabella?
    Il comando speciale di ~psql~ ~\d~ consente di ispezionare una tabella e i suoi vincoli:
 #+begin_src sql
 > \d persona
@@ -933,7 +927,8 @@ Check constraints:
 #+end_src
 
 * SQL PostgreSQL
-** SELECT not dual !
+** Accorgimenti iniziali
+*** SELECT not dual !
    In PostgreSQL non esiste la "famosa" tabella ~dual~ e lo statement ~SELECT~
    fa esattamente quello che ci si aspetta:
 
@@ -946,7 +941,7 @@ ERROR:  relation "dual" does not exist
 ----------
         1
 #+end_src
-** Dollar quoting
+*** Dollar quoting
    PostgreSQL permette l'uso del *dollar quoting* (simile all'operatore ~qq~ di Perl):
    - si può usare un tag con nome arbitrario purché racchiuso fra due simboli ~$~;
    - il tag va usato per l'apertura e la chiusura;
@@ -959,7 +954,7 @@ ERROR:  relation "dual" does not exist
  Perche' l'hai scritto?
 #+end_src
 Si può usare anche uno statement SQL come tag (es. ~$SELECT$~).
-** Camel Case
+*** Camel Case
 Lo standard SQL non ammette il camel case, e chiede l'uso di *UPPERCASE*.
 PostgreSQL utilizza il *lowercase* per tutti gli identificatori (il risultato non cambia).
 #+begin_src sql
@@ -975,13 +970,14 @@ fra doppi apici (sconsigliato):
 > SELECT "Bar", "bAz" FROM "Foo";
 #+end_src
 ** INSERT
+*** Valori di uscita di una INSERT
 In default una istruzione di ~INSERT~ restituisce due valori:
 - ~oid~ della tupla inserita (se la tabella ha gli oid);
 - /numero di tuple inserite/.
 
 E' possibile specificare una clausola ~RETURNING~ che restituisca dei valori
 basati su una /select-like/ di ogni tupla inserita (caso banale: la chiave automatica).
-** INSERT RETURNING: un primo esempio
+*** INSERT RETURNING: un primo esempio
 #+begin_src sql
 > INSERT INTO persona( cognome, nome, codice_fiscale )
   VALUES( 'Luca', 'Ferrari', 'FRRLCU78L19F257T' )
@@ -990,7 +986,7 @@ basati su una /select-like/ di ogni tupla inserita (caso banale: la chiave autom
 ----
  13
 #+end_src
-** INSERT RETURNING: un esempio piu' complesso
+*** INSERT RETURNING: un esempio piu' complesso
 #+begin_src sql
 > INSERT INTO persona( cognome, nome, codice_fiscale )
   VALUES( 'Luca', 'Ferrari', 'FRRLCU78L19F257Z' )
@@ -1000,6 +996,7 @@ basati su una /select-like/ di ogni tupla inserita (caso banale: la chiave autom
  FRRLCU78L19F257Z | 14
 #+end_src
 ** Cast
+*** Modalità di cast
 In PostgreSQL il cast può essere effettuato in quattro modi:
 - specificando il tipo prima del valore (es. ~int '10'~);
 - specificando il tipo dopo il valore con l'operatore ~::~ (es. ~'10'::int~);
@@ -1011,7 +1008,7 @@ In PostgreSQL il cast può essere effettuato in quattro modi:
 > SELECT CAST( '10' AS integer ) + 3;
 #+end_src
 
-** Considerazioni sul cast
+*** Considerazioni sul cast
 I modi consigliati sono *~CAST()~ (conforme SQL standard)* o ~::~, gli altri hanno delle limitazioni
 (es. la modalità funzione va usata solo per nomi di tipi che sono anche nomi validi di funzione, mentre il tipo
 prima del valore funziona solo per i letterali).
@@ -1022,7 +1019,8 @@ Qualora il cast non sia ambiguo, è possibile ometterlo, ovvero:
 > SELECT '10' + 3;
 #+end_src
 
-** CASE
+** Alcuni statement particolari
+*** CASE
 Rappresento lo /switch/ del linguaggio C, o il /given/ di Perl:
 #+begin_src sql
 > SELECT nome,
@@ -1037,7 +1035,7 @@ Rappresento lo /switch/ del linguaggio C, o il /given/ di Perl:
  Diego | minorenne
 #+end_src
 
-** CASE con equals
+*** CASE con equals
 Si può usare la versione che effettua una comparazione secca sul valore da analizzare:
 #+begin_src sql
 > SELECT nome,
@@ -1049,7 +1047,7 @@ Si può usare la versione che effettua una comparazione secca sul valore da anal
   FROM persona;
 #+end_src
 
-** COALESCE
+*** COALESCE
 Ritorna il primo valore non nullo degli argomenti specificati:
 #+begin_src sql
 > SELECT COALESCE( NULL, 'MIRIAM',
@@ -1061,7 +1059,7 @@ Ritorna il primo valore non nullo degli argomenti specificati:
 
 E' utile per estrarre informazioni che possono trovarsi in campi multipli.
 
-** NULLIF
+*** NULLIF
 Ritorna un valore ~NULL~ se gli operatori sono uguali, altrimenti
 ritorna il primo valore:
 #+begin_src sql
@@ -1075,7 +1073,22 @@ ritorna il primo valore:
 
 #+end_src
 /E' una sorta di ~xor~ del poveraccio!/
+*** Row
+L'operatore ~ROW~ permette di costruire una /tupla/ al volo. Accetta l'uso di costanti
+e di espressioni da valutare al volo:
+#+begin_src sql
+> SELECT ROW( 1, 2, 'Foo', 'Fighters' );
+        row
+--------------------
+ (1,2,Foo,Fighters)
+
+> SELECT ROW( p.codice_fiscale, length( p.codice_fiscale ) ) FROM persona p;
+          row
+-----------------------
+ (FRRLCU71L19F257B,16)
+#+end_src
 ** Array
+*** Costruttore di un array
 Gli array sono dichiarati con il tipo seguito da parentesi quadre (es. ~integer[]~).
 Il costruttore dell'array è l'operatore ~ARRAY~, che cerca di comprendere il tipo
 dagli elementi dell'array stesso (se non effettuato un cast).
@@ -1085,7 +1098,7 @@ dagli elementi dell'array stesso (se non effettuato un cast).
 -----------
  {1,2,3,4}
 #+end_src
-** Array multidimensionali
+*** Array multidimensionali
 Sono costruiti combinando assieme piu' array.
 #+begin_src sql
 > SELECT ARRAY[ ARRAY[ 2, 4 ], ARRAY[ 1, 3 ] ];
@@ -1094,7 +1107,7 @@ Sono costruiti combinando assieme piu' array.
  {{2,4},{1,3}}
 #+end_src
 
-** Array in tabella
+*** Array in tabella
 Le tabelle possono includere degli array.
 #+begin_src sql
 > CREATE TABLE software( name text, versions text[] );
@@ -1103,7 +1116,7 @@ Le tabelle possono includere degli array.
 > INSERT INTO software
   VALUES( 'Perl', '{5.10, 5.20, 6.c}' );
 #+end_src
-** Array in tabella: indici
+*** Array in tabella: indici
 Gli indici degli array funzionano come nel linguaggio C, *ma gli indici partono da 1!*:
 #+begin_src sql
 > SELECT name, versions[1] FROM software;
@@ -1112,7 +1125,7 @@ Gli indici degli array funzionano come nel linguaggio C, *ma gli indici partono 
  Perl | 5.10
  Java | 1.5
 #+end_src
-** Array in tabella: estremi
+*** Array in tabella: estremi
 Le funzioni ~array_lower()~ e ~array_upper()~ forniscono il minimo e massimo indice
 usabile in una determinata dimensione dell'array:
 #+begin_src sql
@@ -1125,7 +1138,7 @@ usabile in una determinata dimensione dell'array:
  Perl | 5.10     | 6.c
  Java | 1.5      | 1.8
 #+end_src
-** Array in tabella: slicing
+*** Array in tabella: slicing
 L'operatore ~[:]~ permette di ottenere lo slicing:
 #+begin_src sql
 > SELECT name, versions[1:2] FROM software;
@@ -1135,14 +1148,14 @@ L'operatore ~[:]~ permette di ottenere lo slicing:
  Java | {1.5,1.6}
 #+end_src
 
-** Array in tabella: aggiunta di elementi
+*** Array in tabella: aggiunta di elementi
 Si possono seguire diverse strade:
 - ricostruire l'intero array con i nuovi valori tramite ~ARRAY~;
 - appendere l'array originale con uno singolo (costruito con ~ARRAY~ o ~'{}'~);
 - usare ~array_prepend()~ per inserire un elemento in testa, ~array_append()~ per aggiungerlo in coda
   e/o ~array_cat()~ per concatenare due array.
 
-** Array in tabella: aggiunta di elementi (esempio 1)
+*** Array in tabella: aggiunta di elementi (esempio 1)
 #+begin_src sql
 > UPDATE software
   SET versions = versions || ARRAY['2017.09']
@@ -1153,7 +1166,7 @@ Si possono seguire diverse strade:
   WHERE name = 'Java';
 #+end_src
 
-** Array in tabella: aggiunta di elementi (esempio 2)
+*** Array in tabella: aggiunta di elementi (esempio 2)
 #+begin_src sql
 > UPDATE software
   SET versions = array_append( versions, '1.8_169' )
@@ -1164,14 +1177,14 @@ Si possono seguire diverse strade:
   WHERE name = 'Java';
 #+end_src
 
-** Array in tabella: concatenazione
+*** Array in tabella: concatenazione
 #+begin_src sql
 > UPDATE software
   SET versions = array_cat( ARRAY[ '5.6', '5.8' ], versions )
   WHERE name = 'Perl';
 #+end_src
 
-** Array in tabella: ricerca
+*** Array in tabella: ricerca
 Ci sono due operatori principali:
 - ~ANY~ ricerca un valore in uno qualunque degli elementi dell'array;
 - ~ALL~ ricerca un valore in tutti gli elementi dell'array.
@@ -1180,7 +1193,7 @@ Altri operatori utili nel confronto di due array:
 - ~&&~ ricerca le sovrapposizioni;
 - ~@>~ /contains/;
 - ~<@~ /is contained by/.
-** Array in tabella: ricerca (esempio 1)
+*** Array in tabella: ricerca (esempio 1)
 #+begin_src sql
 > SELECT name FROM software WHERE '6.c' = ANY( versions );
  name
@@ -1193,7 +1206,7 @@ Altri operatori utili nel confronto di due array:
 (0 rows)
 #+end_src
 
-** Array in tabella: ricerca (esempio 2)
+*** Array in tabella: ricerca (esempio 2)
 #+begin_src sql
 > SELECT name FROM software WHERE ARRAY[ '5.10', '5.20' ] && versions;
  name
@@ -1201,7 +1214,7 @@ Altri operatori utili nel confronto di due array:
  Perl
 #+end_src
 
-** Array in tabella: ricerca (esempio 3)
+*** Array in tabella: ricerca (esempio 3)
 #+begin_src sql
 -- contains
 > SELECT name FROM software
@@ -1216,7 +1229,7 @@ Altri operatori utili nel confronto di due array:
 ------
  Perl
 #+end_src
-** Array in tabella: eliminare un elemento
+*** Array in tabella: eliminare un elemento
 La funzione ~array_remove()~ toglie un valore da un array, mentre ~array_replace()~
 sostituisce un elemento con un altro. *Restituiscono l'array modificato!*
 #+begin_src sql
@@ -1226,7 +1239,7 @@ sostituisce un elemento con un altro. *Restituiscono l'array modificato!*
 > UPDATE software
   SET versions = array_replace( versions, '5.8', '5.8.2' );
 #+end_src
-** Array in tabella: trovare un elemento
+*** Array in tabella: trovare un elemento
 Le funzioni ~array_position()~ e ~array_positions()~ ritornano la posizione di uno
 elemento (eventualmente ripetuto) nell'array:
 #+begin_src sql
@@ -1237,7 +1250,7 @@ elemento (eventualmente ripetuto) nell'array:
  Perl | {3}
  Java | {}
 #+end_src
-** Array in tabella: trasformare un array in tabella
+*** Array in tabella: trasformare un array in tabella
 #+begin_src sql
 > SELECT name, unnest( versions ) FROM software;
  name | unnest
@@ -1248,21 +1261,8 @@ elemento (eventualmente ripetuto) nell'array:
  Perl | 6.c
 ...
 #+end_src
-** Row
-L'operatore ~ROW~ permette di costruire una /tupla/ al volo. Accetta l'uso di costanti
-e di espressioni da valutare al volo:
-#+begin_src sql
-> SELECT ROW( 1, 2, 'Foo', 'Fighters' );
-        row
---------------------
- (1,2,Foo,Fighters)
-
-> SELECT ROW( p.codice_fiscale, length( p.codice_fiscale ) ) FROM persona p;
-          row
------------------------
- (FRRLCU71L19F257B,16)
-#+end_src
 ** Range
+*** Range di dato
 I tipi di dato /range/ sono valori /non esattamente definiti/.
 L'idea è quella di identificare un tipo ammesso di valori (denominato *subtype*),
 sul quale si imposta un valore di inizio e di fine e tutti i valori fra questi inclusi.
@@ -1270,7 +1270,7 @@ sul quale si imposta un valore di inizio e di fine e tutti i valori fra questi i
 Esempio: /dalle ore 8:00 alle ore 9:00/. Con un solo valore range si indica
 l'inizio (/8:00/) e la fine (/9:00/) del sottotipo (es. ~time~).
 
-** Range predefiniti
+*** Range predefiniti
 PostgreSQL supporta i seguenti tipi range:
 - ~int4range~ range di ~integer~;
 - ~int8range~ range di ~biginteger~;
@@ -1278,7 +1278,7 @@ PostgreSQL supporta i seguenti tipi range:
 - ~tsrange~ rande di timestamp;
 - ~daterange~ range di ~date~.
 
-** Esempio di utilizzo di range
+*** Esempio di utilizzo di range
 #+begin_src sql
 > CREATE TABLE ticket(
     pk SERIAL PRIMARY KEY,
@@ -1287,7 +1287,7 @@ PostgreSQL supporta i seguenti tipi range:
     altezza int4range );
 #+end_src
 
-** Costruzione di un range: sintassi stringa
+*** Costruzione di un range: sintassi stringa
 Un tipo range viene sempre specificato come stringa (fra apici)
 e può valere:
 - ~[ begin, end ]~ oppure ~( begin, end )~
@@ -1296,14 +1296,14 @@ e può valere:
 Come la forma matematica, le parentesi quadre indicano l'inclusione dell'estremo
 mentre quelle tonde l'esclusione dell'estreno.
 
-** Costruzione di range: costruttori
+*** Costruzione di range: costruttori
 Alternativamente alla forma stringa, ogni tipo di range predefinito include
 un costruttore con lo stesso nome del tipo di range e che accetta due o tre parametri:
 - ~typerange( a, b )~ costruisce un range di ~type~ come ~'[a, b)'~;
 - ~typerange( a, b, '()' )~ costruisce un range di ~type~ con gli estremi specificati
   dalla combinazione delle parentesi.
 
-** Inserimento di valori di range
+*** Inserimento di valori di range
 #+begin_src sql
 > INSERT INTO ticket( tipo, periodo, altezza )
   VALUES( 'GRATUITO-BIMBO',
@@ -1316,7 +1316,7 @@ un costruttore con lo stesso nome del tipo di range e che accetta due o tre para
   'empty' );
 #+end_src
 
-** Operatori di range
+*** Operatori di range
 Per ricercare fra un range si usano operatori simili a quelli
 di un array:
 - ~@>~ il range (a sinistra) contiene il valore scalare a destra;
@@ -1324,7 +1324,7 @@ di un array:
 - ~upper~ e ~lower~ estraggono gli estremi del range;
 - ~&&~ sovrapposizione fra due range.
 
-** Query sui range
+*** Query sui range
 #+begin_src sql
 > SELECT tipo FROM ticket
   WHERE periodo
@@ -1333,13 +1333,14 @@ di un array:
                    '[]' );
 #+end_src
 
-** Query sui range (2)
+*** Query sui range (2)
 #+begin_src sql
 > SELECT tipo FROM ticket
   WHERE periodo @> '2017-10-31'::date;
 #+end_src
 
-** Tipi personalizzati
+** Tipi di dato personalizzato
+*** Tipi personalizzati
 PostgreSQL consente di creare dei /tipi/ personalizzati:
 - *compositi* (una sorta di struttura);
 - *enum* le classiche enumerazioni, sostanzialmente una serie di /etichette/;
@@ -1347,7 +1348,7 @@ PostgreSQL consente di creare dei /tipi/ personalizzati:
 - *scalare* un tipo fortemente integrato nel server e che richiede la scrittura di opportune
   funzioni in codice C;
 
-** Creare un tipo enumerazione
+*** Creare un tipo enumerazione
 Si vogliono /standardizzare/ gli stati di un software:
 #+begin_src sql
 > CREATE TYPE sw_version
@@ -1357,7 +1358,7 @@ Si vogliono /standardizzare/ gli stati di un software:
             'development' );
 #+end_src
 
-** Creare un tipo composito
+*** Creare un tipo composito
 SI supponga di voler creare un semplice tipo strutturato per un repository
 software:
 #+begin_src sql
@@ -1367,7 +1368,7 @@ software:
 #+end_src
 *Il tipo composito si usa con parentesi tonde!*
 
-** Usare i tipi in una tabella
+*** Usare i tipi in una tabella
 #+begin_src sql
 > CREATE TABLE software(
       pk SERIAL PRIMARY KEY,
@@ -1376,7 +1377,7 @@ software:
       repository sw_repository );
 #+end_src
 
-** Inserire i tipi compositi
+*** Inserire i tipi compositi
 #+begin_src sql
 > INSERT INTO software( name, version, repository )
   VALUES( 'PostgreSQL-9.6',
@@ -1389,7 +1390,7 @@ software:
      ( 'https://www.perl6.org', 'Perl Developers' ) );
 #+end_src
 
-** Estrarre i tipi composti
+*** Estrarre i tipi composti
 #+begin_src sql
 > SELECT name, (repository).url FROM software;
       name      |            url
@@ -1398,7 +1399,7 @@ software:
  Perl-6         | https://www.perl6.org
 #+end_src
 
-** Creare un tipo personalizzato range
+*** Creare un tipo personalizzato range
 #+begin_src sql
 > CREATE OR REPLACE FUNCTION f_versions_diff( older float, newer float )
 RETURNS float AS $BODY$
@@ -1410,14 +1411,14 @@ $BODY$
 LANGUAGE plpgsql IMMUTABLE;
 #+end_Src
 
-** Creare un tipo personalizzato range (2)
+*** Creare un tipo personalizzato range (2)
 #+begin_src sql
 > CREATE TYPE sw_major_version AS RANGE (
 subtype = float,
 subtype_diff = f_versions_diff );
 #+end_src
 
-** Creare un tipo personallizato range (3)
+*** Creare un tipo personallizato range (3)
 #+begin_src sql
 > SELECT '[9.6, 10.0)'::sw_major_version;
  sw_major_version
