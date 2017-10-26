@@ -1427,8 +1427,8 @@ subtype_diff = f_versions_diff );
 #+end_src
 
 * Vacuum e Autovacuum
-
-** Tabella di eventi
+** Impatti di Vacuum e autovacuum
+*** Tabella di eventi
    Si immagini di popolare una tabella di eventi:
 
 #+begin_src sql
@@ -1452,7 +1452,7 @@ INSERT 0 1000000
 Time: 8635.289 ms
 #+end_src
 
-** Tabella di eventi: quanto occupa?
+*** Tabella di eventi: quanto occupa?
 #+begin_src sql
 > SELECT relname, relpages, reltuples
 FROM pg_class
@@ -1478,7 +1478,7 @@ From database "testdb":
 -rw-------  1 postgres  postgres    54M Oct 18 10:40 /mnt/data1/pgdata/base/16393/16465
 #+end_src
 
-** Tabella di eventi: quanto occupa? (2)
+*** Tabella di eventi: quanto occupa? (2)
 Metodo meno "scomodo" di cercare il file fisico su disco...
 #+begin_src sql
 > SELECT pg_size_pretty(
@@ -1489,7 +1489,7 @@ Metodo meno "scomodo" di cercare il file fisico su disco...
  54 MB
 (1 row)
 #+end_src
-** Tabella di eventi: statistiche
+*** Tabella di eventi: statistiche
 Le statistiche di sistema sembrano funzionare correttamente:
 #+begin_src sql
 > SELECT pg_relation_size( 'evento'::regclass ) AS dimensione_fisica, relpages, reltuples
@@ -1507,7 +1507,7 @@ Le statistiche di sistema sembrano funzionare correttamente:
                  0 |        0 |         0
 #+end_src
 
-** Tabella di eventi: statistiche (2)
+*** Tabella di eventi: statistiche (2)
 Ma cosa succede se *fermiamo autovacuum*?
 
 #+begin_src sql
@@ -1524,7 +1524,7 @@ INSERT 0 1000000
 
 *Il numero di tuple e pagine non è stato aggiornato*.
 Che impatto ha questo? Il planner non sarà in grado di capire che "mole di dati" ha davanti!
-** Tabella di eventi: statistiche (3)
+*** Tabella di eventi: statistiche (3)
 Niente panico! E' possibile lanciare *vacuum* manualmente.
 #+begin_src sql
 > VACUUM FULL VERBOSE evento;
@@ -1541,7 +1541,8 @@ CPU 0.14s/0.30u sec elapsed 0.82 sec.
 #+end_src
 
 * Transazioni
-** Livelli di isolamento
+** Livello di isolamento
+*** Livelli di isolamento
    Le problematiche sono:
    - *dirty reads*: è possibile vedere (leggere) tuple non ancora committate da altre
      transazioni;
@@ -1550,7 +1551,7 @@ CPU 0.14s/0.30u sec elapsed 0.82 sec.
    - *phantom reads*: la stessa query eseguita piu' volta fornisce un resultset modificato (nella
      quantità) da un'altra transazione
 
-** Livelli di isolamento in PostgreSQL
+*** Livelli di isolamento in PostgreSQL
    PostgreSQL supporta 3 livelli di isolamento sui 4 standard (/read uncommited/, /read committed/,
    /repeatable read/, /serializable/). Questo non rappresenta un problema poiché è sufficiente
    garantire il /livello di isolamento superiore/.
@@ -1562,7 +1563,7 @@ CPU 0.14s/0.30u sec elapsed 0.82 sec.
      consolidate prima dell'esecuzione del primo statement (ovvero, all'inizio della transazione);
    - *serializable*: come *repeatable read* ma impone che le transazioni siano /idempotenti/ rispetto
      al loro effettivo ordine di esecuzione (monitoring di consistenza seriale).
-** Impostare i livelli di isolamento in PostgreSQL
+*** Impostare i livelli di isolamento in PostgreSQL
    All'interno di una transazione è possibile impostare il livello
    di isolamento, che però non può essere piu' cambiato dopo l'esecuzione
    di uno statement di modifica (incluso ~SELECT~).
@@ -1574,7 +1575,8 @@ CPU 0.14s/0.30u sec elapsed 0.82 sec.
 > SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 ERROR:  SET TRANSACTION ISOLATION LEVEL must not be called in a subtransaction
 #+end_src
-** Transazioni ~READ ONLY~ contro ~READ WRITE~
+** Casistiche particolari delle transazioni
+*** Transazioni ~READ ONLY~ contro ~READ WRITE~
    PostgreSQL permette di specificare due tipi di transazioni:
    - *READ WRITE*: (default) è possibile eseguire ogni statement SQL;
    - *READ ONLY*: è una /promessa/ di non alterare i dati. Tutti i comandi
@@ -1582,7 +1584,7 @@ ERROR:  SET TRANSACTION ISOLATION LEVEL must not be called in a subtransaction
      sono disabilitati a meno che non agiscano su tabelle temporanee.
 
   *Non c'è nessuna garanzia che una transazione ~READ ONLY~ non effettui scritture su disco!*
-** Transazioni ~DEFERRABLE~
+*** Transazioni ~DEFERRABLE~
    C'è un caso particolare di transazione: ~DEFERRABLE~.
    Questo si applica solo a transazioni ~READ ONLY~ e ~SERIALIZABLE~.
 
@@ -1591,7 +1593,8 @@ ERROR:  SET TRANSACTION ISOLATION LEVEL must not be called in a subtransaction
    per le transazioni di reportistica.
 
 * Stored Procedures
-** Funzioni
+** FUNCTION
+*** Funzioni
    PostgreSQL permette la creazione di funzioni tramite ~CREATE FUNCTION~.
    Le funzioni possono accettare dei parametri (eventualmente tipizzati e con valori
    di default), possono definire delle variabili (eventualmente tipizzate) e avere
@@ -1600,7 +1603,7 @@ ERROR:  SET TRANSACTION ISOLATION LEVEL must not be called in a subtransaction
    Le funzioni sono create in uno specifico linguaggio, solitamente ~pgpsql~
    e sono identificate dalla loro /signature/.
 
-** Template di CREATE FUNCTION
+*** Template di CREATE FUNCTION
 #+begin_src sql
 CREATE OR REPLACE FUNCTION function_name( <arg>, <arg>, ... )
 RETURNS <return type>
@@ -1609,13 +1612,13 @@ AS
 LANGUAGE language [<volatilità>];
 #+end_src
 
-** Prototiti di funzione
+*** Prototiti di funzione
    - la lista di parametri può includere solo i tipi, nel qual caso i parametri sono accessibili con ~$1~, ~$2~, ecc.;
    - i parametri possono includere un valore di default specificato con ~DEFAULT~;
    - i parametri possono essere in ingresso (~IN~, default), in uscita (~OUT~, non importa
      farne il ~RETURN~) o in entrambi (~INOUT~).
 
-** Volatilità di una funzione
+*** Volatilità di una funzione
    Le funzioni hanno tre livelli di /volatilità/:
    - ~VOLATILE~: /default/, modifica il database e può dare risultati diversi
      anche se inocata con gli stessi argomenti;
@@ -1628,13 +1631,14 @@ LANGUAGE language [<volatilità>];
   Esempi: ~random()~ è ~VOLATILE~, ~current_timestamp~ è ~STABLE~,
   ~version()~ è ~IMMUTABLE~.
 
-** plpgsql
+** Il linguaggio plpgsql
+*** plpgsql
    E' il linguaggio /default/ per la gestione di blocchi di codice:
    - prevede la dichiarazione delle variabili di funzione  con ~DECLARE~;
    - racchiude il body della funzione fra ~BEGIN~ e ~END~
    - consente cicli e istruzioni condizionali.
 
-** Esempio di semplice funzione: somma
+*** Esempio di semplice funzione: somma
 #+begin_src sql
 CREATE OR REPLACE FUNCTION somma( int, int )
 RETURNS INTEGER
@@ -1655,7 +1659,7 @@ LANGUAGE plpgsql;
     30
 #+end_src
 
-** Esempio di semplice funzione: somma con alias parametri
+*** Esempio di semplice funzione: somma con alias parametri
    Simile alle /sub/ di Perl 5!
 #+begin_src sql
 CREATE OR REPLACE FUNCTION somma( int, int )
@@ -1672,7 +1676,7 @@ $BODY$
 LANGUAGE plpgsql;
 #+end_src
 
-** Esempio di semplice funzione: somma con parametri nominali
+*** Esempio di semplice funzione: somma con parametri nominali
 #+begin_src sql
 CREATE OR REPLACE FUNCTION somma( a int, b int )
 RETURNS INTEGER
@@ -1686,7 +1690,7 @@ $BODY$
 LANGUAGE plpgsql;
 #+end_src
 
-** Esempio di semplice funzione: somma e sottrazione
+*** Esempio di semplice funzione: somma e sottrazione
 #+begin_src sql
 CREATE OR REPLACE FUNCTION somma_sottrazione( INOUT a int ,
                                               INOUT b int )
@@ -1699,7 +1703,7 @@ END; $BODY$
 LANGUAGE plpgsql;
 #+end_src
 
-** Esempio di semplice funzione: somma e sottrazione (2)
+*** Esempio di semplice funzione: somma e sottrazione (2)
 #+begin_src sql
 > SELECT somma_sottrazione( 10, 20 );
  somma_sottrazione
@@ -1712,7 +1716,7 @@ LANGUAGE plpgsql;
  10 | 30
 #+end_src
 
-** Esempio di semplice funzione: somma con valori di default
+*** Esempio di semplice funzione: somma con valori di default
    I valori di default possono essere omessi nella chiamata
    di funzione (*~NULL~ è considerato un valore*):
 #+begin_src sql
@@ -1735,7 +1739,7 @@ LANGUAGE plpgsql;
      0
 #+end_src
 
-** Esempio di semplice funzione: costanti
+*** Esempio di semplice funzione: costanti
    E' possibile definire delle costanti in fase di dichiarazione di variabili
    con ~CONSTANT~, ed è opportuno definirne il valore.
 
@@ -1754,7 +1758,7 @@ $BODY$
 LANGUAGE plpgsql;
 #+end_src
 
-** Variabili costanti
+*** Variabili costanti
    Se si cercasse di modificare una variabile costante verrebbe generato
    un errore di compilazione della funzione:
 #+begin_src sql
@@ -1763,7 +1767,7 @@ LINE 38:  c := a + b;
           ^
 #+end_src
 
-** Variabili ROWTYPE
+*** Variabili ROWTYPE
 Alcune variabili possono essere dichiarate con l'attributo ~%rowtype~ specificando
 la tabella a cui fanno riferimento.
 Le variabili di fatto rappresentano una tupla (strutturata) della tabella dichiarata.
@@ -1776,18 +1780,18 @@ BEGIN
 ...-- return next etc.
 END;
 #+end_src
-** Variaibili RECORD
+*** Variaibili RECORD
 Le variabili ~record~ sono la generalizzazione di quelle ~rowtype~: possono contenere
 un record estratto da una qualsiasi tabella e assumeranno la struttura di quella tupla,
 *ma prima del loro assegnamento non possono essere usate*.
 
 Le si possono assegnare piu' volte a tuple di struttura differente.
-** Funzioni che ritornano tuple
+*** Funzioni che ritornano tuple
 Ci sono due modi per dichiarare una funzione che ritorna una o piu' tuple:
 - ~RETURNS RECORD~ restituisce una singola tupla contenuta in un ~record~ (questo ad esempio
   è il caso con parametri ~OUT~);
 - ~RETURNS SETOF~ restituisce piu' tuple di un tipo specificato (es. di una tabella).
-** RETURN NEXT e RETURN QUERY
+*** RETURN NEXT e RETURN QUERY
 Le funzioni che ritornano un ~SETOF~ possono usare ~RETURN NEXT~ per appendere un nuovo record
 al result set. Una volta conclusa la costruzione del result set si usa un normale ~RETURN~
 per uscire dalla funzione.
@@ -1795,7 +1799,7 @@ per uscire dalla funzione.
 Alternativamente si può usare ~RETURN QUERY~ per inserire nel result set il risultato
 di una query.
 
-** RETURN NEXT: esempio
+*** RETURN NEXT: esempio
 #+begin_src sql
 CREATE OR REPLACE FUNCTION find_maggiorenni()
 RETURNS SETOF persona AS $BODY$
@@ -1813,8 +1817,8 @@ END;
 $BODY$ LANGUAGE plpgsql;
 #+end_src
 
-** RETURN QUERY: esempio
-** IF...ELSE
+*** RETURN QUERY: esempio
+*** IF...ELSE
 #+begin_src sql
   IF eta >= 18 THEN
        RETURN 'maggiorenne';
@@ -1824,20 +1828,20 @@ $BODY$ LANGUAGE plpgsql;
       RETURN 'bimbo';
   END IF;
 #+end_src
-** Cicli
+*** Cicli
 I cicli hanno tutti una parola chiave ~LOOP~ e finiscono con ~END LOOP~.
 
 E' possibile specificare una etichetta per identificare il ciclo, l'etichetta deve:
 - essere dichiarata prima del ciclo fra doppie parentesi angolari (es. ~<<CICLO_1>>~);
 - essere inclusa nella chiusura del ciclo (es. ~END LOOP CICLO1~).
-** LOOP
+*** LOOP
 Ciclo (con eventuale etichetta). Può essere annidato.
 
 Due operatori sintatticamente simili controllano il flusso:
 - ~CONTINUE~ ricomincia l'iterazione dall'etichetta specificata (o dal ciclo corrente) quando la condizione ~WHEN~ si verifica;
 - ~EXIT~ esce (termina) il ciclo specificato dall'etichetta (o quello corrente) quando la condizione ~WHEN~ viene soddisfatta.
 
-** LOOP: esempio
+*** LOOP: esempio
 #+begin_src sql
 <<LP_ETA>>
   LOOP
@@ -1852,7 +1856,7 @@ oppure semplificando:
      EXIT  WHEN eta >= 18;
   END LOOP;
 #+end_src
-** WHILE
+*** WHILE
 Analogo al ciclo /while/ di ogni linguaggio di programmazione, è un ~LOOP~ con ~EXIT~ integrata!
 Può includere una etichetta.
 #+begin_src sql
@@ -1862,7 +1866,7 @@ Può includere una etichetta.
   END LOOP LP_ETA;
 #+end_src
 
-** FOR
+*** FOR
 Analogo al ciclo /for/ del linguaggio C, senza la definizione di incremento diventa un /foreach/:
 #+begin_src sql
 <<LP_ETA>>
@@ -1877,7 +1881,7 @@ o analogamento al ciclo for del linguaggio C:
   END LOOP LP_ETA;
 #+end_src
 
-** FOREACH
+*** FOREACH
 Itera fra gli elementi di un array. Segue le stesse regole sintattiche del ciclo ~FOR~ (etichetta, ecc).
 #+begin_src sql
  FOREACH current_version IN ARRAY v_array LOOP
@@ -1885,7 +1889,7 @@ Itera fra gli elementi di un array. Segue le stesse regole sintattiche del ciclo
  END LOOP;
 #+end_src
 
-** FOR IN query
+*** FOR IN query
 Quando si deve iterare sul result set di una query la sintassi è ~FOR IN <query>~:
 #+begin_src sql
 FOR my_record IN SELECT * FROM persona LOOP
@@ -1911,7 +1915,7 @@ END;
 $BODY$ LANGUAGE plpgsql;
 #+end_src
 
-** Eccezioni
+*** Eccezioni
 Il blocco ~BEGIN...END~ di una funzione permette l'opzionale ~EXCEPTION~ che funziona
 da /catch/ per le eccezioni. Al suo interno l'eccezione viene cercata fra quelle specificate
 nelle clausole ~WHEN~.
@@ -1926,14 +1930,14 @@ come ad esempio ~division_by_zero~.
 ~EXCEPTION~ è /costoso/ per il sistema, quindi non va usato ove non si possono verificare o non interessa
 catturare eccezioni.
 
-** Eccezioni: variabili diagnostiche
+*** Eccezioni: variabili diagnostiche
 All'interno di un blocco ~EXCEPTION~ le variabili speciali ~SQLSTATE~ e ~SQLERRM~ contengono lo stato e il messaggio
 associato all'errore generato.
 
 E' inoltre possibile usare il comando ~GET_STACKED_DIAGNOSTIC~ per estrarre ulteriori informazioni circa
 l'errore di esecuzione (es. su quale tabella, colonna, constraint, ecc.).
 
-** Eccezioni: esempio
+*** Eccezioni: esempio
 #+begin_src sql
 BEGIN
     RETURN divide_what / divide_by;
@@ -1945,7 +1949,7 @@ EXCEPTION
 END;
 #+end_src
 
-** PERFORM: il problema
+*** PERFORM: il problema
 Se in una stored procedure si utilizza una query che ritorna dei risultati,
 ma si vuole scartare l'insieme dei risultati stessi, occorre usare ~PERFORM~.
 In altre parole: *nelle stored procedures è possibile usare ogni comando SQL che non ritorni risultati o dove i risultati siano /memorizzati in variabili/ (anche di iterazione)*.
@@ -1967,7 +1971,7 @@ HINT:  If you want to discard the results of a
 SELECT, use PERFORM instead.
 #+end_src
 
-** PERFORM: la soluzione
+*** PERFORM: la soluzione
 #+begin_src sql
 CREATE OR REPLACE FUNCTION do_select()
 RETURNS VOID
@@ -1985,7 +1989,7 @@ $BODY$ LANGUAGE plpgsql;
 :BEAMER_env: ignoreheading
 :END:
 
-** SELECT INTO
+*** SELECT INTO
 E' possibile assegnare a una (o piu') variabili il risultato di una ~SELECT~
 specificando appunto la lista di variabile ove inserire (~INTO~) il risultato, considerando
 che:
@@ -1994,7 +1998,7 @@ che:
   ~LIMIT 1~);
 - se la query ritorna piu' di una riga ed è specificato ~STRICT~ allora si ha un errore di esecuzione
   (ossia *~STRICT~ impone che la query fornisca una sola tupla*).
-** SELECT INTO: esempio senza STRICT
+*** SELECT INTO: esempio senza STRICT
 #+begin_src sql
 CREATE OR REPLACE FUNCTION do_select()
 RETURNS VOID AS $BODY$
@@ -2012,7 +2016,7 @@ BEGIN
 END;
 $BODY$ LANGUAGE plpgsql;
 #+end_src
-** SELECT INTO: esempio senza STRICT (2)
+*** SELECT INTO: esempio senza STRICT (2)
 #+begin_src sql
 > SELECT count(*) FROM persona;
  count
@@ -2021,7 +2025,7 @@ $BODY$ LANGUAGE plpgsql;
 > SELECT do_select();
 INFO:  Trovati EMANUELA SANTUNIONE
 #+end_src
-** SELECT INTO: errore di STRICT
+*** SELECT INTO: errore di STRICT
 Se la query viene eseguita con ~STRICT~ si ottiene un errore di esecuzione:
 
 #+begin_src sql
@@ -2029,7 +2033,7 @@ Se la query viene eseguita con ~STRICT~ si ottiene un errore di esecuzione:
 ERROR:  query returned more than one row
 #+end_src
 
-** SELECT INTO: esempio con STRICT
+*** SELECT INTO: esempio con STRICT
 #+begin_src sql
 CREATE OR REPLACE FUNCTION do_select()
 RETURNS VOID AS $BODY$
@@ -2050,7 +2054,7 @@ $BODY$ LANGUAGE plpgsql;
 #+end_src
 Si filtra sulla chiave per ottenere esattamente un record!
 
-** EXECUTE
+*** EXECUTE
 Il comando ~EXECUTE~ consente l'esecuzione di query costruite al volo (/no-caching/)
 in formato stringa.
 Il comando permette la sotituzione di variabili all'iterno della stringa di query:
@@ -2060,7 +2064,7 @@ Il comando permette la sotituzione di variabili all'iterno della stringa di quer
 *I parametri possono essere usati solo per dei dati, per i nomi di tabella/colonna si deve effettuare una concatenazione di stringa!*
 
 Inoltre ~EXECUTE~ permette di effettuare un ~INTO [STRICT]~ come una normale ~SELECT~.
-** EXECUTE: esempio
+*** EXECUTE: esempio
 #+begin_src sql
 -- SELECT do_count( 2, 'persona' );
 CREATE OR REPLACE FUNCTION do_count( pk int, tabella text)
@@ -2079,8 +2083,9 @@ END;
 $BODY$ LANGUAGE plpgsql;
 #+end_src
 
-* Triggers DML
-** Introduzione ai triggers
+* Triggers
+** Triggers DML
+*** Introduzione ai triggers
    PostgreSQL supporta (da sempre) i trigger a livello di /statement/ o /tupla/
    sia per esecuzione prima (before) o dopo (after). Sulle viste agiscono
    i trigger /INSTEAD OF/.
@@ -2090,14 +2095,14 @@ $BODY$ LANGUAGE plpgsql;
       argomento e ritorna un valore di tipo ~trigger~*;
    2. si /aggancia/ la funzione ad un evento scatenato su una tabella (tramite
       ~CREATE TRIGGER~).
-** Tipologia di trigger
+*** Tipologia di trigger
 I trigger possono essere eseguiti per ~statment~ o per ~riga~.
 Nel caso di esecuzione a livello di statement il valore di ritorno del trigger
 è ignorato (~NULL~), nel caso di esecuzione per riga il valore di ritorno
 può essere ~NULL~ per indicare che l'oeprazione deve abortire o ritornare una
 tupla (~NEW~, ~OLD~) per inserimento/modifica.
 
-** Tiplogia di trigger (riassunto)
+*** Tiplogia di trigger (riassunto)
    | Statement SQL                | Quando       | A livello di                                   |
    |------------------------------+--------------+------------------------------------------------|
    | ~INSERT~, ~UPDATE~, ~DELETE~ | /BEFORE/     | *tupla* su tabelle e FK                        |
@@ -2112,7 +2117,7 @@ tupla (~NEW~, ~OLD~) per inserimento/modifica.
    | ~INSERT~, ~UPDATE~, ~DELETE~ | /INSTEAD OF/ | *tupla* su vista                               |
    |------------------------------+--------------+------------------------------------------------|
 
-** Esecuzione dei trigger
+*** Esecuzione dei trigger
    I trigger sono eseguiti in ordine alfabetico (per tipologia di evento).
 
    I trigger ~BEFORE~ vengono eseguiti *prima del controllo delle constraint*, analogamente
@@ -2125,12 +2130,12 @@ tupla (~NEW~, ~OLD~) per inserimento/modifica.
    numero di argomenti del trigger tramite ~TG_NARGS~ e i singoli argomenti nell'array di stringhe
    ~TG_ARGV~.
 
-** Esempio di trigger: descrizione
+*** Esempio di trigger: descrizione
    Si vuole creare un semplice trigger che, al momento di inserimento o aggiornamento di una tupla
    della tabella ~persona~, controlli che l'età inserita sia coerente con quella del relativo
    codice fiscale e la "auto-corregga" calcolandola dall'anno attuale.
 
-** Esempio di trigger: funzione
+*** Esempio di trigger: funzione
 #+begin_src sql
 CREATE OR REPLACE FUNCTION tr_check_eta()
 RETURNS TRIGGER
@@ -2151,7 +2156,7 @@ BEGIN
   END IF;
 #+end_src
 
-** Esempio di trigger: funzione (2)
+*** Esempio di trigger: funzione (2)
 #+begin_src sql
   IF TG_OP = 'INSERT' THEN
        NEW.eta = current_eta;
@@ -2171,7 +2176,7 @@ $BODY$
 LANGUAGE plpgsql VOLATILE;
 #+end_src
 
-** Esempio di trigger: aggancio alla tabella
+*** Esempio di trigger: aggancio alla tabella
 #+begin_src sql
 > CREATE TRIGGER tr_persona_eta
   BEFORE INSERT OR UPDATE
@@ -2180,7 +2185,7 @@ LANGUAGE plpgsql VOLATILE;
   EXECUTE PROCEDURE tr_check_eta();
 #+end_src
 
-** Esempio di trigger: esecuzione
+*** Esempio di trigger: esecuzione
 #+begin_src sql
 > INSERT INTO persona( nome, cognome, codice_fiscale )
 VALUES( 'Luca', 'Ferrari', 'FRRLCU78L19F257B' );
@@ -2190,7 +2195,7 @@ INFO:  Calcolo eta' INSERT = 39
 INFO:  Aggiusto eta' UPDATE da 39 a 39
 #+end_src
 
-** Esempio di trigger: agganciarlo a una colonna
+*** Esempio di trigger: agganciarlo a una colonna
    Il trigger di esempio non dovrebbe scattare per ogni ~UPDATE~ incondizionato, ma solo
    per gli ~UPDATE~ che coinvolgono la colonna ~eta~ o ~codice_fiscale~.
    E' possibile specificare a quali colonne il trigger deve essere agganciato:
@@ -2204,7 +2209,7 @@ INFO:  Aggiusto eta' UPDATE da 39 a 39
   EXECUTE PROCEDURE tr_check_eta();
 #+end_src
 
-** Esempio di trigger: aggancio a una colonna (2)
+*** Esempio di trigger: aggancio a una colonna (2)
    Il trigger scatta ora solo per gli aggiornamenti delle colonne specificate:
 #+begin_src sql
 > UPDATE persona SET eta = 10 WHERE codice_fiscale = 'FRRLCU78L19F257B';
@@ -2214,12 +2219,12 @@ INFO:  Aggiusto eta' UPDATE da 39 a 39
 -- non è scattato il trigger!
 #+end_src
 
-** Trigger parametrici
+*** Trigger parametrici
    E' possibile passare dei parametri alla funzione di un trigger, tali
    parametri saranno visibili tramite l'array ~TG_ARGV~.
    *I parametri sono letterali e convertiti sempre a stringa*.
 
-** Esempio di trigger parametrico: funzione con parametro
+*** Esempio di trigger parametrico: funzione con parametro
 La funzione dell'esempio precedente può essere modificata per accettare
 l'età da usare come default:
 
@@ -2239,7 +2244,7 @@ BEGIN
 ...
 #+end_src
 
-** Esempio di trigger parametrico: aggancio
+*** Esempio di trigger parametrico: aggancio
 #+begin_src sql
 > CREATE TRIGGER tr_persona_eta
   BEFORE INSERT OR UPDATE OF eta, codice_fiscale
@@ -2250,8 +2255,8 @@ BEGIN
   WHERE codice_fiscale = 'FRRLCU78L19F257B';
 INFO:  Aggiusto eta' UPDATE da 39 a 10
 #+end_src
-* Tiggers DDL
-** Introduzione ai trigger DDL
+** Tiggers DDL
+*** Introduzione ai trigger DDL
 PostgreSQL permette di definire dei trigger per /eventi/ di DDL, ovvero
 ~CREATE~, ~DROP~, ~ALTER~, ~COMMENT~, ~GRANT~, ~REVOKE~.
 Gli istanti in cui si possono intercettare gli eventi sono:
@@ -2263,19 +2268,19 @@ Gli istanti in cui si possono intercettare gli eventi sono:
 - ~sql_drop~: il comando ~DROP~ ha rimosso dal catalogo di sistema degli oggetti.
 
 *Bisogna essere superutenti!*
-** Creazione di un event trigger
+*** Creazione di un event trigger
 Le regole sono simili a quelle di un trigger normale:
 1. si crea una funzione che deve ritornare un tipo ~event_trigger~. *Il valore di ritorno è solo un marcaposto, questi trigger non ritornano alcun valore!*
 2. si aggancia il trigger all'evento con ~CREATE EVENT TRIGGER~;
 3. si possono usare alcune funzioni di utilità per scoprire /cosa/ sta accadendo e cosa ha /scatenato/ il trigger (non esistono
    al momento variabili speciali da interrogare ma solo funzioni di catalogo).
-** Dati interni di un event trigger
+*** Dati interni di un event trigger
 Ci sono delle funzioni speciali che ritornano delle tuple contenenti le informazioni
 di come un trigger è stato invocato:
 - ~pg_event_trigger_ddl_commands()~ per ~ddl_command_start~ e ~ddl_command_stop~;
 - ~pg_event_trigger_dropped_objects()~ per ~sql_drop~;
 - ~pg_event_trigger_table_rewrite_oid()~ per ~table_rewrite~.
-** Esempio di event trigger
+*** Esempio di event trigger
 #+begin_src sql
 CREATE OR REPLACE FUNCTION ddl_start_end()
 RETURNS EVENT_TRIGGER AS
@@ -2293,7 +2298,7 @@ BEGIN
 END; $BODY$
 LANGUAGE plpgsql;
 #+end_src
-** Esempio di esecuzione con event trigger
+*** Esempio di esecuzione con event trigger
 #+begin_src sql
 # CREATE EVENT TRIGGER tr_start_end
   ON ddl_command_start
@@ -2304,7 +2309,7 @@ INFO:  event trigger fired!
 INFO:  Comando ALTER TABLE su public.testddl
 ALTER TABLE
 #+end_src
-** Esempio di even trigger (drop)
+*** Esempio di even trigger (drop)
 #+begin_src sql
 CREATE OR REPLACE FUNCTION ddl_drop_fn()
 RETURNS EVENT_TRIGGER AS $BODY$
@@ -2321,13 +2326,13 @@ BEGIN
 END; $BODY$ LANGUAGE plpgsql;
 #+end_src
 
-** Esecuzione di event trigger (drop)
+*** Esecuzione di event trigger (drop)
 #+begin_src sql
 # CREATE EVENT TRIGGER tr_drop
   ON sql_drop
   EXECUTE PROCEDURE ddl_drop_fn();
 #+end_src
-** Esecuzione di event trigger (drop)
+*** Esecuzione di event trigger (drop)
 #+begin_src sql
 # DROP TABLE testddl;
 INFO:  event trigger fired! -- ddl_command_start
