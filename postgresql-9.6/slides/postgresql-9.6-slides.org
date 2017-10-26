@@ -457,6 +457,76 @@ La directory ~$PGDATA~ contiene diversi file e directory, in particolare:
 - *~pg_xlog~* e ~pg_clog~: rispettivamente WAL e commit log.
 
 Per altre informazioni vedere [[https://www.postgresql.org/docs/9.6/static/storage-file-layout.html][Storage File System Layout]].
+** File fisici su disco
+Ogni /oggetto/ con dei dati (es. tabella) viene memorizzato su disco in un file
+con nome pari al suo /Object IDentifier/ (~OID~) numerico. Questo ha il vantaggio di:
+- essere indipendente dal nome /logico/ e dalla relativa codifica e charset;
+- essere /univoco/ indipendentemente da quante volte si cambia nome all'oggetto nel database.
+
+Ogni file dato viene /spezzato/ in chunk da ~1 GB~ massimo, quindi dello stesso oggetto si possono
+avere piu' file nominati con ~oid~, ~oid.1~, ~oid.2~, ecc.
+
+Solitamente i file crescono in dimensione di ~8 kB~ alla volta (ossia della dimensione di una pagina dati).
+
+** oid2name
+L'utility ~oid2name~ (modulo /contrib/) consente di esplorare
+la struttura dati su disco.
+#+begin_src sh
+% oid2name -H localhost -U postgres
+Password:
+All databases:
+    Oid  Database Name  Tablespace
+----------------------------------
+  12758       postgres  pg_default
+  12757      template0  pg_default
+      1      template1  pg_default
+#+end_src
+
+Gli /oid/ visualizzati in questo caso corrispondono al nome *fisico su disco*
+dei database:
+
+#+begin_src sh
+% sudo ls /mnt/data1/pgdata/base
+1       12757   12758
+#+end_src
+
+** oid2name (2)
+ Esploriamo il database ~template1~ su disco e cerchiamo di capire
+ cosa contiene:
+
+#+begin_src sh
+% sudo stat /mnt/data1/pgdata/base/1/12618
+107 65870 -rw------- 1 postgres postgres 145910 8192
+#+end_src
+
+A cosa corrisponde l'oggetto file ~12618~?
+
+#+begin_src sh
+% oid2name -H localhost -U postgres -d template1 -o 12618
+Password:
+From database "template1":
+  Filenode  Table Name
+----------------------
+     12618  sql_sizing
+#+end_src
+
+*ATTENZIONE: si deve specificare a quale database si fa riferimento, poiché
+gli stessi oid possono essere riciclati in database differenti*
+
+** oid2name (3)
+E se si vuole trovare una tabella dato il suo nome?
+
+ #+begin_src sh
+% oid2name -H localhost -U postgres -d template1 -t sql_sizing
+Password:
+From database "template1":
+  Filenode  Table Name
+----------------------
+     12618  sql_sizing
+ #+end_src
+
+~oid2name~ va ad interrogare il catalogo di sistema per trovare le informazioni
+necessarie.
 
 ** Connessione al servizio
 Il file ~pg_hba.conf~ contiene le informazioni su quali metodi di autenticazione,
@@ -681,76 +751,6 @@ Il prompt corrisponde a: /username/ (~%n~), /database/ (~%/~),
 /hostname/ (~%m~), /linea/ (~%l~), /stato transazione/ (~%x~)
 e /prompt superutente o utente normale/ (~%#~).
 
-** File fisici su disco
-Ogni /oggetto/ con dei dati (es. tabella) viene memorizzato su disco in un file
-con nome pari al suo /Object IDentifier/ (~OID~) numerico. Questo ha il vantaggio di:
-- essere indipendente dal nome /logico/ e dalla relativa codifica e charset;
-- essere /univoco/ indipendentemente da quante volte si cambia nome all'oggetto nel database.
-
-Ogni file dato viene /spezzato/ in chunk da ~1 GB~ massimo, quindi dello stesso oggetto si possono
-avere piu' file nominati con ~oid~, ~oid.1~, ~oid.2~, ecc.
-
-Solitamente i file crescono in dimensione di ~8 kB~ alla volta (ossia della dimensione di una pagina dati).
-
-** oid2name
-L'utility ~oid2name~ (modulo /contrib/) consente di esplorare
-la struttura dati su disco.
-#+begin_src sh
-% oid2name -H localhost -U postgres
-Password:
-All databases:
-    Oid  Database Name  Tablespace
-----------------------------------
-  12758       postgres  pg_default
-  12757      template0  pg_default
-      1      template1  pg_default
-#+end_src
-
-Gli /oid/ visualizzati in questo caso corrispondono al nome *fisico su disco*
-dei database:
-
-#+begin_src sh
-% sudo ls /mnt/data1/pgdata/base
-1       12757   12758
-#+end_src
-
-** oid2name (2)
- Esploriamo il database ~template1~ su disco e cerchiamo di capire
- cosa contiene:
-
-#+begin_src sh
-% sudo stat /mnt/data1/pgdata/base/1/12618
-107 65870 -rw------- 1 postgres postgres 145910 8192
-#+end_src
-
-A cosa corrisponde l'oggetto file ~12618~?
-
-#+begin_src sh
-% oid2name -H localhost -U postgres -d template1 -o 12618
-Password:
-From database "template1":
-  Filenode  Table Name
-----------------------
-     12618  sql_sizing
-#+end_src
-
-*ATTENZIONE: si deve specificare a quale database si fa riferimento, poiché
-gli stessi oid possono essere riciclati in database differenti*
-
-** oid2name (3)
-E se si vuole trovare una tabella dato il suo nome?
-
- #+begin_src sh
-% oid2name -H localhost -U postgres -d template1 -t sql_sizing
-Password:
-From database "template1":
-  Filenode  Table Name
-----------------------
-     12618  sql_sizing
- #+end_src
-
-~oid2name~ va ad interrogare il catalogo di sistema per trovare le informazioni
-necessarie.
 ** Ruoli e Utenti
    Dalla versione 8.1 in poi PostgreSQL non distingue piu' fra utenti e gruppi
    ma usa il concetto di *ruolo* che rappresenta entrambi:
