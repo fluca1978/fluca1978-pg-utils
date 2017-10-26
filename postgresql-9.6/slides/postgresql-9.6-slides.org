@@ -481,7 +481,6 @@ host    all        all      127.0.0.1/32    md5
 :END:
 
 
-
 ** Avvio del servizio
 Una volta che i primi pezzi sono al loro posto, è possibile avviare il servizio:
 
@@ -500,7 +499,6 @@ Password for user postgres:
  template1 | postgres | UTF8     |
 (3 rows)
 #+end_src
-
 
 ** Database template
 Quando viene inizializzata ~PGDATA~ il sistema crea due database chaimati /template/:
@@ -594,7 +592,6 @@ La funzione speciale ~version()~ viene compilata al momento
 del build del pacchetto binario.
 
 
-
 ** psql, ruoli, database
 In default ~psql~ cerca di collegarsi a un database che ha lo stesso nome
 utente dell'utente che esegue il comando stesso, con un ruolo che ha
@@ -637,7 +634,6 @@ All'interno di ~psql~ ci sono due tipologie di aiuto:
   speciali di ~psql~. Tutti i comandi ~psql~ iniziano con backslash
   (es. ~\d~).
 
-
 ** psql: evitare la password
 ~psql~ consente di impostare un file di credenziali (~$HOME/.pgpass~) per collegarsi
 a uno specifico database/host con uno specifico utente senza dover digitare
@@ -666,14 +662,13 @@ template1=#
 :END:
 
 
-
 ** psql: configurazione utente
 ~psql~ consente di specificare delle configurazioni utente nel file ~$HOME/.psqlrc~.
 Tutti i comandi (~psql~ compatibili) specificati in tale file vengono eseguiti
 prima di fornire il prompt all'utente.
 
 Utile per impostare variabili, prompt, formati di output, ecc.
-** psql: ~/.psqlrc
+** psql: ~/.psqlrc di esempio
 #+begin_src sh
 \set HISTFILE ~/.psql_history_ :DBNAME
 \set ON_ERROR_ROLLBACK on
@@ -686,9 +681,20 @@ Il prompt corrisponde a: /username/ (~%n~), /database/ (~%/~),
 /hostname/ (~%m~), /linea/ (~%l~), /stato transazione/ (~%x~)
 e /prompt superutente o utente normale/ (~%#~).
 
+** File fisici su disco
+Ogni /oggetto/ con dei dati (es. tabella) viene memorizzato su disco in un file
+con nome pari al suo /Object IDentifier/ (~OID~) numerico. Questo ha il vantaggio di:
+- essere indipendente dal nome /logico/ e dalla relativa codifica e charset;
+- essere /univoco/ indipendentemente da quante volte si cambia nome all'oggetto nel database.
+
+Ogni file dato viene /spezzato/ in chunk da ~1 GB~ massimo, quindi dello stesso oggetto si possono
+avere piu' file nominati con ~oid~, ~oid.1~, ~oid.2~, ecc.
+
+Solitamente i file crescono in dimensione di ~8 kB~ alla volta (ossia della dimensione di una pagina dati).
+
 ** oid2name
- L'utility ~oid2name~ (modulo /contrib/) consente di esplorare velocamente
- la struttura dati su disco.
+L'utility ~oid2name~ (modulo /contrib/) consente di esplorare
+la struttura dati su disco.
 #+begin_src sh
 % oid2name -H localhost -U postgres
 Password:
@@ -732,7 +738,7 @@ From database "template1":
 gli stessi oid possono essere riciclati in database differenti*
 
 ** oid2name (3)
- E se si vuole trovare una tabella dato il suo nome?
+E se si vuole trovare una tabella dato il suo nome?
 
  #+begin_src sh
 % oid2name -H localhost -U postgres -d template1 -t sql_sizing
