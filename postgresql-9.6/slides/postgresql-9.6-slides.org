@@ -995,6 +995,70 @@ basati su una /select-like/ di ogni tupla inserita (caso banale: la chiave autom
 ------------------+----
  FRRLCU78L19F257Z | 14
 #+end_src
+** UPSERT
+*** INSERT or UPDATE?
+Una /UPSERT/ è una ~INSERT~ che, in caso di conflitto (vincolo di univocità violato)
+esegue una ~UPDATE~ automaticamente.
+
+*UPSERT è una modifica della sintassi di ~INSERT~!*
+*UPSERT non può funzionare se si sono delle rules definite sulla tabella!*
+
+Si specifica cosa fare in caso di conflitto, ed eventualmente come risolvere tale conflitto.
+
+In default viene ritornato il numero di tuple inserite o aggiornate in caso di conflitto (come
+da return di un ~INSERT~).
+*** Funzionamento di UPSERT
+Occorre che sia specificato un ~CONSTRAINT~ che indica il conflitto (o una colonna su cui esiste
+un constraint di univocità).
+
+La tupla in conflitto viene nominata ~EXCLUDED~.
+
+*** Senza UPSERT...
+#+begin_src sql
+> INSERT INTO persona( codice_fiscale, nome, cognome )
+  VALUES( 'FRRLCU78L19F257B', 'Ferrari', 'Luca' );
+
+-- no upsert!
+> INSERT INTO persona( codice_fiscale, nome, cognome )
+  VALUES( 'FRRLCU78L19F257B', 'Luca', 'Ferrari' );
+ERROR:  duplicate key value violates
+  unique constraint "persona_codice_fiscale_key"
+#+end_src
+*** UPSERT in azione
+#+begin_src sql
+-- upsert!
+> INSERT INTO persona( codice_fiscale, nome, cognome )
+  VALUES( 'FRRLCU78L19F257B', 'Luca', 'Ferrari' )
+  ON CONFLICT(codice_fiscale)
+  DO UPDATE SET nome = EXCLUDED.nome,
+             cognome = EXCLUDED.cognome;
+#+end_src
+*** UPSERT in aborto (controllato)
+Se si specifica la risoluzione del conflitto come ~DO NOTHING~ allora la query non effettua
+l'inserimento della tupla e fallisce silenziosamente (cioè con successo).
+#+begin_src sql
+> INSERT INTO persona( codice_fiscale, nome, cognome )
+  VALUES( 'FRRLCU78L19F257B', 'Luca', 'Ferrari' )
+  ON CONFLICT(codice_fiscale)
+  DO NOTHING;
+
+INSERT 0 0
+#+end_src
+*** UPSERT RETURNING
+E' possibile usare la clausola ~RETURNING~ anche nel caso di un /UPSERT/:
+#+begin_src sql
+> INSERT INTO persona( codice_fiscale, nome, cognome )
+  VALUES( 'FRRLCU78L19F257B', 'Luca', 'Ferrari' )
+  ON CONFLICT(codice_fiscale)
+  DO UPDATE SET nome = EXCLUDED.nome,
+             cognome = EXCLUDED.cognome
+RETURNING nome, cognome;
+
+ nome | cognome
+------+---------
+ Luca | Ferrari
+
+#+end_src
 ** Cast
 *** Modalità di cast
 In PostgreSQL il cast può essere effettuato in quattro modi:
@@ -2393,78 +2457,14 @@ eliminare tutti gli oggetti posseduti da un determinato ruolo. La parola chiave
 
 *Tipicamente si usano questi comandi prima della cancellazione di un ruolo!*
 
-* UPSERT
-** INSERT or UPDATE?
-Una /UPSERT/ è una ~INSERT~ che, in caso di conflitto (vincolo di univocità violato)
-esegue una ~UPDATE~ automaticamente.
-
-*UPSERT è una modifica della sintassi di ~INSERT~!*
-*UPSERT non può funzionare se si sono delle rules definite sulla tabella!*
-
-Si specifica cosa fare in caso di conflitto, ed eventualmente come risolvere tale conflitto.
-
-In default viene ritornato il numero di tuple inserite o aggiornate in caso di conflitto (come
-da return di un ~INSERT~).
-** Funzionamento di UPSERT
-Occorre che sia specificato un ~CONSTRAINT~ che indica il conflitto (o una colonna su cui esiste
-un constraint di univocità).
-
-La tupla in conflitto viene nominata ~EXCLUDED~.
-
-** Senza UPSERT...
-#+begin_src sql
-> INSERT INTO persona( codice_fiscale, nome, cognome )
-  VALUES( 'FRRLCU78L19F257B', 'Ferrari', 'Luca' );
-
--- no upsert!
-> INSERT INTO persona( codice_fiscale, nome, cognome )
-  VALUES( 'FRRLCU78L19F257B', 'Luca', 'Ferrari' );
-ERROR:  duplicate key value violates
-  unique constraint "persona_codice_fiscale_key"
-#+end_src
-** UPSERT in azione
-#+begin_src sql
--- upsert!
-> INSERT INTO persona( codice_fiscale, nome, cognome )
-  VALUES( 'FRRLCU78L19F257B', 'Luca', 'Ferrari' )
-  ON CONFLICT(codice_fiscale)
-  DO UPDATE SET nome = EXCLUDED.nome,
-             cognome = EXCLUDED.cognome;
-#+end_src
-** UPSERT in aborto (controllato)
-Se si specifica la risoluzione del conflitto come ~DO NOTHING~ allora la query non effettua
-l'inserimento della tupla e fallisce silenziosamente (cioè con successo).
-#+begin_src sql
-> INSERT INTO persona( codice_fiscale, nome, cognome )
-  VALUES( 'FRRLCU78L19F257B', 'Luca', 'Ferrari' )
-  ON CONFLICT(codice_fiscale)
-  DO NOTHING;
-
-INSERT 0 0
-#+end_src
-** UPSERT RETURNING
-E' possibile usare la clausola ~RETURNING~ anche nel caso di un /UPSERT/:
-#+begin_src sql
-> INSERT INTO persona( codice_fiscale, nome, cognome )
-  VALUES( 'FRRLCU78L19F257B', 'Luca', 'Ferrari' )
-  ON CONFLICT(codice_fiscale)
-  DO UPDATE SET nome = EXCLUDED.nome,
-             cognome = EXCLUDED.cognome
-RETURNING nome, cognome;
-
- nome | cognome
-------+---------
- Luca | Ferrari
-
-#+end_src
-* Viste
+* Viste & Rules
 ** Tipologie di viste
 Esistono due tipi principali di viste:
 - /viste dinamiche/: effettuano la query al momento propagandola alle tabelle
   di definizione della vista;
 - /materializzate/: contengono una versione memorizzata dei dati prelevati
   dalle tabelle sottostanti e necessitano di essere aggiornata (refresh).
-** Viste dinamiche
+*** Viste dinamiche
 Si definisce la vista attraverso una query (che può includere join, order-by, ecc):
 #+begin_src sql
 > CREATE VIEW vw_persona
@@ -2475,7 +2475,7 @@ Si definisce la vista attraverso una query (che può includere join, order-by, e
 
 > SELECT * FROM vw_persona;
 #+end_src
-** Viste materializzate
+*** Viste materializzate
 Si utilizza il comando ~CREATE MATERIALIZED VIEW~ specificando se prelevare subito i dati (~WITH DATA~)
 o no (~WITH NO DATA~). In quest'ultimo caso la vista deve prima essere sottoposta a ~REFRESH~ per essere utilizzata.
 #+begin_src sql
@@ -2490,7 +2490,7 @@ ERROR:  materialized view "vw_m_persona"
         has not been populated
 #+end_src
 
-** Popolare e fare refresh di una vista materializzata
+*** Popolare e fare refresh di una vista materializzata
 Il comando ~REFRESH MATERIALIZED VIEW~ viene usato per popolare la vista materializzata.
 Sostanzialmente il comando effettua:
 - un ~TRUNCATE~ della vista (quindi i dati precedenti sono persi);
@@ -2501,13 +2501,13 @@ Per evitare il /lock/ si può usare ~CONCURRENTLY~, così che la vista possa ess
 popolata.
 Se si specifica ~WITH NO DATA~ la query non viene eseguita e la vista ritorna ad uno stato
 non usabile fino al prossimo refresh.
-** Popolare (e ripopolare) la vista materializzata
+*** Popolare (e ripopolare) la vista materializzata
 #+begin_src sql
 > REFRESH MATERIALIZED VIEW vw_m_persona;
 -- equivalente a
 > REFRESH MATERIALIZED VIEW vw_m_persona WITH DATA;
 #+end_src
-** Popolare una vista materializzata senza lock
+*** Popolare una vista materializzata senza lock
 Per usare ~CONCURRENTLY~ nel refresh si deve avere un indice /unique/ su almeno una colonna
 della vista, e non lo si può usare per il primo popolamento della vista.
 #+begin_src sql
@@ -2519,15 +2519,15 @@ della vista, e non lo si può usare per il primo popolamento della vista.
   WITH DATA;
 #+end_src
 
-* Rules
-** Introduzione alle rules
+** Rules
+*** Introduzione alle rules
 Le *rules* sono definite anche *query rewrite system*.
 Le rules consentono la riscrittura al volo delle query (anticipando anche i trigger)
 e quindi di rimbalzare una query da un oggetto ad un altro o espandere una query
 in piu' di una.
 
 *A differenza di un trigger, una rule può intercettare una ~SELECT~!*
-** Parametri di una rule
+*** Parametri di una rule
 Una rule deve specificare:
 - un /evento/ ovvero ~SELECT~, ~INSERT~, ~UPDATE~, ~DELETE~;
 - la tabella a cui l'evento si applica (ossia su quale tabella il comando è stato eseguito);
@@ -2536,7 +2536,7 @@ Una rule deve specificare:
 - il /comando/ da eseguire come ~INSTEAD~ o ~ALSO~.
 
 *Le viste sono realizzate come una rule ~INSTEAD~!*
-** Esempio di una rule: DELETE
+*** Esempio di una rule: DELETE
 #+begin_src sql
 > CREATE OR REPLACE RULE r_delete_persona
   AS ON DELETE TO persona
@@ -2545,7 +2545,7 @@ Una rule deve specificare:
     SET valid = false
     WHERE OLD.pk = pk;
 #+end_src
-** Esempio di rule: INSERT
+*** Esempio di rule: INSERT
 #+begin_src sql
  > CREATE OR REPLACE RULE r_insert_persona
    AS ON INSERT
@@ -2556,7 +2556,7 @@ Una rule deve specificare:
              || NEW.cognome || ' '
              || NEW.nome );
 #+end_src
-** Rules "_RETURN"
+*** Rules "_RETURN"
 La rule per una select è speciale e viene denominata ~"_RETURN"~ (ce ne può essere solo una)
 e deve essere eseguita su una tabella vuota. E' il modello con il quale PostgreSQL realizza
 le viste dinamiche.
@@ -2567,7 +2567,7 @@ Il workflow è:
 
 *Nel momento in cui ~"_RETURN"~ viene definita la tabella viene catalogata come vista!**
 
-** Esempio di rule: "_RETURN"
+*** Esempio di rule: "_RETURN"
 #+begin_src sql
 -- CREATE TABLE maggiorenni() INHERITS( persona );
 > CREATE TABLE maggiorenni( LIKE persona );
@@ -2578,7 +2578,7 @@ Il workflow è:
     WHERE eta >= 18;
 #+end_src
 
-** Esempio di rule: UPDATE
+*** Esempio di rule: UPDATE
 E' possibile /bloccare/ una tabella con una rule ~DO NOTHING~.
 #+begin_src sql
 > CREATE OR REPLACE RULE r_update_persona
