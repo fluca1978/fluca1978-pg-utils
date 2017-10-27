@@ -1490,6 +1490,7 @@ subtype_diff = f_versions_diff );
  [9.6,10)
 #+end_src
 
+** TODO JSON & JSONB
 * Vacuum e Autovacuum
 ** Impatti di Vacuum e autovacuum
 *** Tabella di eventi
@@ -2908,14 +2909,14 @@ il sottosistema di I/O viene messo a dura prova.
 Per evitare dei colli di bottiglia è stato introdotto un parametro che consente di stabilire entro quanto tempo
 il checkpoint deve essere completato: ~checkpoint_completion_target~. Il suo valore è compreso fra 0 e 1 e indica
 la frazione di tempo (~checkpoint_timeout~) da usare per completare il checkpoint stesso.
-** Comprendere checkpoint_completion_target
+** Comprendere ~checkpoint_completion_target~
 L'idea di ~checkpoint_completion_target~ è di *rallentare* l'attività di I/O di scarto delle pagine dati sporche.
 In sostanza le pagine dati devono essere tutte scritte entro
    ~checkpoint_completion_target * checkpoint_timeout~ secondi
 che con la configurazione di default divente:
   ~0.5 * 5 min = 2.5 min~
 e quindi il sistema ha circa 2.5 minuti per completare l'I/O.
-** Non forzare la mano a checkpoint_completion_target
+** Non forzare la mano a ~checkpoint_completion_target~
 Il parametro offre una indicazione di come verrà /sparso/ l'I/O nel tempo, non è una stima esatta.
 Ne consegue che valori prossimi a 1 rallenteranno le scritture su disco causando I/O costante (bassa banda), di contro
 valori prossimi a 0 forzano un picco di I/O rapido (alta banda). Il rischio è che valori prossimi ad 1 producano
