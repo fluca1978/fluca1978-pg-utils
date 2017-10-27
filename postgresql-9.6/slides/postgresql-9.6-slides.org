@@ -2858,6 +2858,25 @@ corrispondente al seguente valore nel file di configurazione:
 shared_buffers = 128MB
 #+end_src
 
+** Ricarica la configurazione a run-time
+Ci sono diversi modi per /forzare un refresh della configurazione/:
+- restart del server (non molto pratico);
+- *inviare un ~SIGHUP~ al ~postmaster~*;
+#+begin_src sql
+% sudo kill HUP 1126
+#+end_src
+- *eseguire, come superutente, la stored procedure ~pg_reload_conf~*;
+#+begin_src sql
+# SELECT pg_reload_conf();
+ pg_reload_conf 
+----------------
+ t
+#+end_src
+- eseguire uno degli script a disposizione del sistema operativo, ad esempio
+  ~pg_ctlcluster~ (debian-like):
+#+begin_src sql
+% sudo pg_ctlcluster 9.5 main reload
+#+end_src
 * Write Ahead Log
 ** Introduzione ai WAL
 I *Write Ahead Log* sono un componente fondamentale per il funzionamento del database.
