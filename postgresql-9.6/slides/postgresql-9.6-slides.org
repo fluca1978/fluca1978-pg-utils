@@ -1490,6 +1490,7 @@ subtype_diff = f_versions_diff );
  [9.6,10)
 #+end_src
 
+** TODO Row Level Security
 * Vacuum e Autovacuum
 ** Impatti di Vacuum e autovacuum
 *** Tabella di eventi
@@ -1656,7 +1657,7 @@ ERROR:  SET TRANSACTION ISOLATION LEVEL must not be called in a subtransaction
    l'overhead di monitoring per la serializzazione è ridotto. Ciò produce dei vantaggi
    per le transazioni di reportistica.
 
-* Stored Procedures
+* Stored Procedures & Cursori
 ** FUNCTION
 *** Funzioni
    PostgreSQL permette la creazione di funzioni tramite ~CREATE FUNCTION~.
@@ -2147,6 +2148,7 @@ END;
 $BODY$ LANGUAGE plpgsql;
 #+end_src
 
+** TODO Cursori
 * Triggers
 ** Triggers DML
 *** Introduzione ai triggers
@@ -2586,12 +2588,110 @@ E' possibile /bloccare/ una tabella con una rule ~DO NOTHING~.
   TO persona
   DO INSTEAD NOTHING;
 #+end_src
-* Window Functions
-* Common Table Expression
-* Foreign Data Wrapper
-* Extensions
+* TODO Window Functions & CTE
+** Window Functions
+** Common Table Expressions
+* TODO Foreign Data Wrapper
+* TODO Extensions
+* Configurazione del Server
+** postgresql.conf
+Il file principale di configurazione è ~postgresql.conf~, contenuto solitamente
+in ~$PGDATA~ (alcune distribuzioni lo inseriscono nell'albero ~/etc~).
 
+Il file contiene dei parametri in formato ~chiave = valore~ con valori
+booleani (~on~, ~off~), numerici, stringa.
 
-* TODO
-** aggiungere livelllo 3 header
-** cursori
+Il carattere ~#~ identifica un commento.
+
+** Vedere la configurazione a run-time
+La vista speciale ~pg_settings~ consente di valutare ogni singolo parametro
+con i relativi valori di default, minimo, massimo, descrizione, ecc.
+
+#+begin_src sql
+# SELECT name, setting, min_val, max_val, unit,
+  sourcefile, sourceline,
+  short_desc,
+  pending_restart
+  FROM pg_settings
+  WHERE name like 'shared_buffer%';
+
+-[ RECORD 1 ]---+-------------------------------------------------------------
+name            | shared_buffers
+setting         | 16384
+min_val         | 16
+max_val         | 1073741823
+unit            | 8kB
+sourcefile      | /mnt/data1/pgdata/postgresql.conf
+sourceline      | 113
+short_desc      | Sets the number of shared memory buffers used by the server.
+pending_restart | f
+#+end_src
+** Vedere la configurazione a run-time: note su pg_settings
+I dati sul file di configurazione (~sourcefile~, ~sourceline~) non sono visualizzati per utenti
+non amministratori.
+Il flag ~pending_restart~ indica se il valore è stato modificato nel file di configurazione
+ma non ancora /riletto/ dal sistema (ossia occorre un riavvio).
+Il valore ~unit~ indica l'unità di misura del valore corrente ~setting~, nell'esempio
+di cui sopra il valore è impostato a:
+         ~8 kB * 16384 = 131072 kB = 128 MB~
+corrispondente al seguente valore nel file di configurazione:
+#+begin_src sh
+% sudo grep shared_buffers /mnt/data1/pgdata/postgresql.conf                                                             ~
+shared_buffers = 128MB
+#+end_src
+
+* Write Ahead Log
+** Introduzione ai WAL
+I *Write Ahead Log* sono un componente fondamentale per il funzionamento del database.
+
+L'idea dietro ai ~WAL~ è questa:
+- ogni volta che una transazione effettua un ~COMMIT~ i dati *NON* vengono scritti
+  immediatamente su disco, per ottimizzare l'I/O.
+- il ~COMMIT~ viene registrato nei *WAL* che contengono /le differenze/ (binarie)
+  dei dati;
+- il WAL viene *reso persistente su disco*.
+
+Siccome il WAL viene usato in modo *sequenziale* l'impatto di I/O è basso e si garantisce
+in questo modo di avere uno strato di persistenza.
+** Utilizzo dei WAL: crash recovery
+I WAL vengono usati principalmente in caso di crash: se il database riparte a seguito di
+un crash, *il sistema ripercorre i segmenti di WAL e riapplica le modifiche ai dati*.
+
+Durante questa fase di /recovery/ il database si trova in uno stato /inconsistente/, i WAL
+garantiscono appunto l'allineamento dei dati a quanto si trova su memoria persistente
+e quindi la /consistenza/ del database.
+
+** Dove sono i WAL
+PostgreSQL memorizza il *Write Ahead Log* nella directory ~pg_xlog~.
+*Ogni /segmento/ è di 16 MB e ha un nome in esadecimale*.
+#+begin_src sh
+% sudo  ls -lh /mnt/data1/pgdata/pg_xlog                                                                                 ~
+ 16M Oct 27 10:21 000000010000000000000082
+ 16M Oct 18 10:32 000000010000000000000083
+ 16M Oct 18 10:32 000000010000000000000084
+#+end_src
+** Checkpoint
+*Un checkpoint è un ponto di consolidamento fra WAL e dati fisici.*
+
+Il sistema non può registrare modifiche indefinitamente nei WAL:
+- i segmenti aumenterebbe all'infinito;
+- il tempo di recovery (ripercorrere i WAL) aumenterebbe di conseguenza.
+
+Per evitare tali problemi si definiscono degli *istanti periodici detti /checkpoint/*
+ove PostgreSQL si preoccupa di consolidare i dati fisici su disco, scartando quindi i
+WAL precedenti quel checkpoint.
+
+**** Crash recovery                                            :B_definition:
+Di fatto un crash recovery *ripercorre i segmenti di WAL dall'ultimo checkpoint conosciuto*!
+**** End of block                                           :B_ignoreheading:
+:PROPERTIES:
+:BEAMER_env: ignoreheading
+:END:
+** Regolare i checkpoint
+I checkpoint sono configurabili attraverso due parametri:
+- ~max_wal_size~ indica quanti segmenti (da 16MB l'uno) sono tollerati fra due checkpoint consecutivi;
+- ~checkpoint_timeout~ indica quanti secondi sono tollerati fra due checkpoint consecutivi.
+
+Un checkpoint viene forzato aumaticamente ogni volta che si raggiunge una quantità di /dati sporchi/
+pari a ~max_wal_size * 16 MB~ o dopo che ~checkpoint_timeout~ secondi sono trascorsi.
+*La prima condizione che si verifica fa scattare un checkpoint*!
