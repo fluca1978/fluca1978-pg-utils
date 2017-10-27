@@ -1491,6 +1491,16 @@ subtype_diff = f_versions_diff );
 #+end_src
 
 ** TODO JSON & JSONB
+*** Tipi di dato JSON
+PostgreSQL supporta due tipi di dato /JSON (JavaScript Object Notation):
+- ~json~ tipo di dato testuale che richiede un nuovo /parsing/ ogni volta che
+  si opera sul dato stesso;
+- ~jsonb~ una forma che viene destrutturata e memorizzata in formato binario per successive
+  elaborazioni piu' rapide (richiede maggior tempo in inserimento per la conversione).
+
+Il formato ~json~ mantiene l'input intatto, quindi spazi bianchi, chiavi duplicate (solo l'ultima
+viene trattata dagli operatori). IL tipo ~jsonb~ rimuove spazi bianchi ridondanti nonché mantiene
+un solo valore per ogni chiave (l'ultimo nel caso di chiavi duplicate).
 * Vacuum e Autovacuum
 ** Impatti di Vacuum e autovacuum
 *** Tabella di eventi
