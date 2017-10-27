@@ -2719,3 +2719,13 @@ un /inseguimento/ dei checkpoint continuo.
 Un superutente può forzare un checkpoint immediato con il comando ~CHECKPOINT~.
 Il comando è pensato per le fasi di archiviazione e recovery, difficilmente
 è da usarsi nell'ultilizzo regolare del database.
+** Quanti sono i WAL?
+Stabilito che i segmenti di WAL sono /riciclati/ dopo un checkpoint, è possibile stimare
+l'occupazione della directory ~pg_xlog~ che è pressoché costante nel tempo e vale:
+#+begin_src sh
+ ( 2 + checkpoint_completion_target ) * checkpoint_segments + 1.
+#+end_src
+ossia è dominata da ~checkpoint_segments~.
+*Durante un uso intenso potrebbe capitare che il numero di segmenti aumenti oltre ~checkpoint_segments~*, ma
+il sistema provvederà all'eliminazione del residuo una volta ripristinato l'ordine. e' quindi consigliato
+mantenere una certa quota disco per consentire qualche segmento ulteriore a quanto calcolato sopra.
