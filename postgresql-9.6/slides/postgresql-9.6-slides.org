@@ -2913,6 +2913,14 @@ Di fatto un crash recovery *ripercorre i segmenti di WAL dall'ultimo checkpoint 
 :PROPERTIES:
 :BEAMER_env: ignoreheading
 :END:
+** LSN
+Come si fa a sapere quali pagine dati sono /sicure/ per essere scaricate su memoria
+persistente?
+La risposta è *LSN: Log Sequence Number*.
+
+Ogni pagina dati contiene un numero LSN che indica quale segmento di log contiene le modifiche
+a quella pagina. 
+*Una pagina dati non può quindi essere resa persistente se i log fino a quel ~lsn~ non sono stati a loro volta resi persistenti*.
 ** Regolare i checkpoint
 I checkpoint sono configurabili attraverso due parametri:
 - ~max_wal_size~ indica quanti segmenti (da 16MB l'uno) sono tollerati fra due checkpoint consecutivi;
