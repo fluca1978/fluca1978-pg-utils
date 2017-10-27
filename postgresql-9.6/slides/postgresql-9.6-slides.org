@@ -2147,7 +2147,170 @@ END;
 $BODY$ LANGUAGE plpgsql;
 #+end_src
 
-** TODO Cursori
+** Cursori
+*** Cos'è un cursore?
+Un cursore è un meccanismo che trasforma un record-set in una iterazione fra record: non si ottiene
+piu' l'insieme dei risultati in un unico blocco ma si /scorre/ il risultato tupla per tupla.
+
+I cursori sono di due tipologie:
+- /bound/ sono dichiarati con la relativa query a cui fanno riferimento;
+- /unbound/ sono dichiarati senza la query, che sarà fornita successivamente.
+
+*Tutti i cursori sono di tipo ~refcursor~, ma solo quelli /unbound/ vengono esplicitamente dichiarati come tali*.
+Un cursorse si dice /scrollable/ se può scorrere le tuple in avanti e indietro.
+*** Workflow di un cursore
+Solitamente il workflow è il seguente:
+1. dichiarazione (bound/unbound);
+2. ~OPEN~ indica che si vuole usare il cursore;
+3. ~FETCH~ preleva una tupla dalla query (imposta la variabile ~FOUND~ di conseguenza);
+   - ~MOVE~
+   - ~INSERT~ o ~UPDATE~
+4. ~CLOSE~ si è finito di usare il cursore, le risorse sono liberate.
+*** Esempio di cursore
+#+begin_src sql
+CREATE OR REPLACE FUNCTION do_cursor()
+RETURNS int AS $BODY$
+DECLARE
+   counter int := 0;
+   my_curs CURSOR FOR SELECT * FROM persona;
+   my_record persona%rowtype;
+BEGIN
+    OPEN my_curs;
+    FETCH my_curs INTO my_record;
+    WHILE FOUND
+    LOOP
+      IF my_record.eta >= 18
+      THEN
+         counter := counter + 1;
+      END IF;
+      FETCH my_curs INTO my_record;
+    END LOOP;
+
+     CLOSE my_curs;
+     RETURN counter;
+END;
+$BODY$ LANGUAGE plpgsql;
+#+end_src
+*** Esempio di cursore parametrico
+#+begin_src sql
+CREATE OR REPLACE FUNCTION do_cursor()
+RETURNS int AS $BODY$
+DECLARE
+        counter int := 0;
+        my_curs CURSOR (s_eta int)
+             FOR SELECT * FROM persona
+                 WHERE eta >= s_eta;
+        my_record persona%rowtype;
+BEGIN
+        OPEN my_curs( 18 );
+        FETCH my_curs INTO my_record;
+        WHILE FOUND
+        LOOP
+          counter := counter + 1;
+          FETCH my_curs INTO my_record;
+        END LOOP;
+
+     CLOSE my_curs;
+     RETURN counter;
+END; $BODY$ LANGUAGE plpgsql;
+#+end_src
+*** Esempio di cursore unbound
+#+begin_src sql
+CREATE OR REPLACE FUNCTION do_cursor()
+RETURNS int AS $BODY$
+DECLARE
+        counter int := 0;
+        my_curs refcursor;
+        my_record persona%rowtype;
+BEGIN
+        OPEN my_curs FOR
+            SELECT * FROM persona
+            WHERE eta >= 18;
+        FETCH my_curs INTO my_record;
+        WHILE FOUND
+        LOOP
+          counter := counter + 1;
+          FETCH my_curs INTO my_record;
+        END LOOP;
+
+     CLOSE my_curs;
+     RETURN counter;
+END;
+$BODY$ LANGUAGE plpgsql;
+#+end_src
+*** Ciclo "automatico" su cursore
+Invece che il workflow ~OPEN~, ~FETCH~, ~LOOP~, ~CLOSE~ si può usare
+il ciclo ~FOR~ che riduce le operazioni necessaire al solo ~LOOP~.
+
+*Con ~FOR~ non si usa ~OPEN~, ~CLOSE~, ~FETCH~*!
+*** Esempio di ciclo "automatico" su cursore
+#+begin_src sql
+CREATE OR REPLACE FUNCTION do_cursor()
+RETURNS int AS $BODY$
+DECLARE
+        counter int := 0;
+        my_curs CURSOR FOR
+          SELECT * FROM persona
+          WHERE eta >= 18;
+        my_record persona%rowtype;
+BEGIN
+   FOR my_record IN my_curs
+   LOOP
+     counter := counter + 1;
+   END LOOP;
+  RETURN counter;
+END; $BODY$ LANGUAGE plpgsql;
+#+end_src
+*** Capire FETCH
+L'istruzione ~FETCH~ permette di specificare la direzione e il posizionamento assoluto o relativo.
+La direzione viene specificata con ~FORWARD~ (default) o ~BACKWARD~.
+Il posizionamento viene specificato con ~FIRST~, ~LAST~, ~ABSOLUTE n~ e ~RELATIVE n~.
+*** Esempio di spostamento con FETCH: lettura all'indietro
+#+begin_src sql
+     OPEN my_curs;
+     FETCH LAST FROM my_curs INTO my_record;
+     WHILE FOUND
+     LOOP
+        IF my_record.eta >= 18 THEN
+          counter := counter + 1;
+        END IF;
+        FETCH BACKWARD FROM my_curs INTO my_record;
+     END LOOP;
+     CLOSE my_curs;
+#+end_src
+*** Esempio di spostamento con FETCH: lettura all'indietro ogni due record
+#+begin_src sql
+     OPEN my_curs;
+     FETCH LAST FROM my_curs INTO my_record;
+     WHILE FOUND
+     LOOP
+        IF my_record.eta >= 18 THEN
+          counter := counter + 1;
+        END IF;
+        FETCH RELATIVE -2 FROM my_curs INTO my_record;
+     END LOOP;
+     CLOSE my_curs;
+#+end_src
+*** UPDATE/DELETE FOR CURRENT
+E' possibile eseguire un aggiornamento/cancellazione di una tupla su cui è posizionato il cursore.
+La sintassi è ~UPDATE <table> SET <cols> WHERE CURRENT OF <cursor>~ o nel caso
+di una cancellazione ~DELETE FROM <table> WHERE CURRENT OF <cursor>~.
+
+#+begin_src sql
+ OPEN my_curs;
+  FETCH LAST FROM my_curs INTO my_record;
+  WHILE FOUND
+  LOOP
+     IF my_record.eta >= 18 THEN
+       counter := counter + 1;
+     ELSE
+       UPDATE persona set valid = false
+            WHERE CURRENT OF my_curs;
+     END IF;
+     FETCH RELATIVE -2 FROM my_curs INTO my_record;
+  END LOOP;
+  CLOSE my_curs;
+#+end_src
 * Triggers
 ** Triggers DML
 *** Introduzione ai triggers
