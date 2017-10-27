@@ -1490,7 +1490,6 @@ subtype_diff = f_versions_diff );
  [9.6,10)
 #+end_src
 
-** TODO Row Level Security
 * Vacuum e Autovacuum
 ** Impatti di Vacuum e autovacuum
 *** Tabella di eventi
@@ -2458,6 +2457,50 @@ eliminare tutti gli oggetti posseduti da un determinato ruolo. La parola chiave
 #+end_src
 
 *Tipicamente si usano questi comandi prima della cancellazione di un ruolo!*
+** Row Level Security
+E' possibile specificare, tabella per tabella, una sicurezza a livello
+di tupla, denominata /Row Level Security/.
+
+La Row Level Security si basa su delle /policy/ che devono discriminare quali dati
+mostrare/nascondere. Se nessuna policy viene creata si usa un default di /deny all/.
+** Row Level Security: esempio
+#+begin_src sql
+> CREATE POLICY view_maggiorenni
+  ON persona
+  FOR SELECT  -- quale statement?
+  TO PUBLIC   -- quale ruolo ?
+  USING  (eta >= 18); -- condizione di SELECT
+
+> ALTER TABLE persona ENABLE ROW LEVEL SECURITY;
+#+end_src
+e come altro utente si vedranno solo le tuple che soddisfano ~USING~.
+** Row Level Security: spiegazione
+Anzitutto l'utente che effettua lo statement deve avere le opportune ~GRANT~.
+*Il proprietario dell'oggetto non è soggetto alle policy*.
+
+Nel caso di statement ~SELECT~ la condizione è data da ~USING~, nel caso di
+~INSERT~ o ~UPDATE~ da ~CHECK~, e si può combinare tutto quanto assieme:
+
+#+begin_src sql
+> CREATE POLICY handle_maggiorenni
+  ON persona
+  FOR ALL  -- SELECT, UPDATE, DELETE, INSERT
+  TO PUBLIC   -- quale ruolo ?
+  USING  (eta >= 18) -- condizione di SELECT
+  WITH CHECK (eta >= 18); -- condizione DDL
+#+end_src
+** Row Level Security: un altro esempio
+Tipicamente questo meccanismo viene usato per nascondere le tuple
+di altri utenti:
+
+#+begin_src sql
+> CREATE POLICY handle_my_tuples
+  ON usernames
+  FOR ALL  -- SELECT, UPDATE, DELETE, INSERT
+  TO PUBLIC   -- quale ruolo ?
+  USING  (usernam >= CURRENT_USER) -- condizione di SELECT
+  WITH CHECK (usernam >= CURRENT_USER); -- condizione DDL
+#+end_src
 
 * Viste & Rules
 ** Tipologie di viste
