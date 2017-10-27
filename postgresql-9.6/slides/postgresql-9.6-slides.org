@@ -2983,3 +2983,47 @@ ossia è dominata da ~checkpoint_segments~.
 *Durante un uso intenso potrebbe capitare che il numero di segmenti aumenti oltre ~checkpoint_segments~*, ma
 il sistema provvederà all'eliminazione del residuo una volta ripristinato l'ordine. e' quindi consigliato
 mantenere una certa quota disco per consentire qualche segmento ulteriore a quanto calcolato sopra.
+** Livelli di WAL
+Il parametro ~wal_level~ specifica quale livello di WAL si vuole usare:
+- ~minimal~ (default), è il livello usato per garantire il normale funzionamento del cluster;
+- ~archive~ consente di archiviare i WAL su memoria o dispositivo alternativo, utile per
+  tecniche di backup avanzate (es. PITR) o per replica /warm standby/;
+- ~hot_standby~ consente di rendere le repliche funzionanti da subito (in sola lettura!);
+- ~logical~ consente di avviare la /replica logica/.
+- 
+* TODO Point in Time Recovery & Replicatino
+** Point in Time Recovery (PITR)
+*** Introduzione al PITR
+L'idea è abbastanza semplice ma molto potente: *avendo i WAL segments + possibile ripristinare il sistema ad un istante temporale nel passato predefinito!*
+
+In sostanza si simula un /crash/, forzando il sistema a ripercorrere i WAL; invece che
+lasciare il sistema terminare di srotolare tutti i WAL lo si ferma ad un istante consistente
+nel passato.
+
+#begin_quote
+Utilità (esempi): recuperare il database subito prima una transazione che ha fatto /drop/ di tutto
+un database; visualizzare i dati come erano prima di una lunga elaborazione, debug di applicazioni
+che possono aver sporcato i dati, ecc.
+#èend_quote
+
+**** Istanti temporali 					       :B_definition:
+     Se viene specificato un istante nel /futuro/ (ovvero che non è presente nei WAL,
+     PostgreSQL effettuerà un normale avvio in recovery.
+     *Non si può rompere PostgreSQL per un errore del DBA!*
+**** End of block                                           :B_ignoreheading:
+:PROPERTIES:
+:BEAMER_env: ignoreheading
+:END:
+
+
+#+begin_quote
+Approccio simile a quello di OpenBSD!
+#+end_quote
+
+   PostgreSQL è il naturale discendente di *Ingres* (dopo, /post/, gres), un database
+   accademico/sperimentale inventato dal prof. Michael Stonebreaker e commercializzato
+   indicativamente nello stesso spazio temporale di Oracle (1989 circa).
+
+   Tutto inizia alla Berkely University of California.
+
+
