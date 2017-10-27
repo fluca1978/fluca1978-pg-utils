@@ -3026,4 +3026,21 @@ Approccio simile a quello di OpenBSD!
 
    Tutto inizia alla Berkely University of California.
 
+*** Preparasi al PITR
+Le fasi da seguire sono sostanzialmente due:
+- eseguire il backup dei file di dati (non importa siano /corrotti/, i WAL aggiusteranno la situazione);
+- eseguire il backup dei segmenti di WAL.
 
+Esistono due metodologie di archiviazione per PITR:
+- /manuale/: si effettua un backup dei file di dati con strumenti a livello di filesystem,
+  ma il cluster deve essere informato dell'inizio e della fine del backup per allineare
+  opportunamento i WAL;
+- /integrato/: si usa lo strumento ~pg_basebackup~ che consente di ottenere i file di dati
+  senza richiedere l'utilizzo di tool a livello di filesystem.
+*** PITR Manuale
+Una volta che l'archiviazione dei WAL è attiva occorre:
+1. informare il cluster che il backup sta iniziando con ~pg_start_backup()~;
+2. effettuare il backup dei file di dati;
+3. informare il cluster che il backup è terminato con ~pg_stop_backup()~.
+
+*Non importa il tempo che passa fra il punto 1 e 2, il comportamento del cluster non viene alterato!*
