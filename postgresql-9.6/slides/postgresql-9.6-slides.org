@@ -2677,7 +2677,8 @@ di altri utenti:
 #+end_src
 
 * Viste & Rules
-** Tipologie di viste
+** Viste
+*** Tipologie di viste
 Esistono due tipi principali di viste:
 - /viste dinamiche/: effettuano la query al momento propagandola alle tabelle
   di definizione della vista;
