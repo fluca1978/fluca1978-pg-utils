@@ -2867,7 +2867,16 @@ un crash, *il sistema ripercorre i segmenti di WAL e riapplica le modifiche ai d
 Durante questa fase di /recovery/ il database si trova in uno stato /inconsistente/, i WAL
 garantiscono appunto l'allineamento dei dati a quanto si trova su memoria persistente
 e quindi la /consistenza/ del database.
-
+** Sicurezza dei WAL
+I segmenti di WAL sono *fondamentali* per il funzionamento del database, e quindi occorrono alcuni
+accorgimenti per assicurare un buon funzionamento dei WAL:
+1. la dimensione dei log è fissa (16MB), così come il loro numero (con qualche piccola variazione);
+   questo garantisce che lo spazio di archiviazione dei WAL non si riempirà mai!
+2. ogni dato nel WAL viene memorizzato come /record/ in linked list al record precedente; questo
+   permette di risalire all'ultimo record "buono" nella catena dei segmenti;
+3. ogni record inserito nei segmenti ha un checksum CRC32 che ne garantisce l'integrità;
+4. i /signals/ sono interrotti durante la scrittura dei WAL, così da garantire che il processo
+   non sia interrotto per errore.
 ** Dove sono i WAL
 PostgreSQL memorizza il *Write Ahead Log* nella directory ~pg_xlog~.
 *Ogni /segmento/ è di 16 MB e ha un nome in esadecimale*.
