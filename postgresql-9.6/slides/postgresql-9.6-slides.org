@@ -1501,6 +1501,141 @@ PostgreSQL supporta due tipi di dato /JSON (JavaScript Object Notation):
 Il formato ~json~ mantiene l'input intatto, quindi spazi bianchi, chiavi duplicate (solo l'ultima
 viene trattata dagli operatori). IL tipo ~jsonb~ rimuove spazi bianchi ridondanti nonché mantiene
 un solo valore per ogni chiave (l'ultimo nel caso di chiavi duplicate).
+*** Sintassi JSON
+La sintassi per creare un tipo JSON prevede:
+- /scalari/ (di tipo intero o stringa);
+#+begin_src sql
+> SELECT '"hello"'::json;
+> SELECT '10'::json;
+#+end_src
+- /array/ (anche di tipi differenti), stabiliti da parentesi quadre;
+#+begin_src sql
+> SELECT '[ "Luca", "Ferrari", 39 ]'::json;
+#+end_src
+- /oggetti/ identificati da parentesi graffe;
+#+begin_src sql
+> SELECT '{ "name" : "Luca", "surname" : "Ferrari", "age" : 39 }'::json;
+#+end_src
+*** Un esempio pratico di differenza fra JSON e JSONB
+Si ricordi che ~json~ mantiene intalterati i dati di input, mentre
+~jsonb~ li riorganizza e li "ottimizza" tenendo solo l'ultima chiave
+nel caso di duplicazione:
+#+begin_src sql
+> SELECT '{ "name" : "Luca",
+  "surname" : "Ferrari",
+  "age" : 29,
+  "age" : 39 }'::json;
+          json          
+------------------------
+ { "name" : "Luca",    +
+ "surname" : "Ferrari",+
+ "age" : 29,           +
+ "age" : 39 }
+#+end_src
+
+#+begin_src sql
+> SELECT '{ "name" : "Luca",
+    "surname" : "Ferrari",
+    "age" : 29,
+    "age" : 39 }'::jsonb;
+                       jsonb                       
+---------------------------------------------------
+ {"age": 39, "name": "Luca", "surname": "Ferrari"}
+#+end_src
+*** Operatori JSON
+Gli operatori hanno tutti due varianti:
+1. se usati con indice numerico forniscono accesso ad un array;
+2. se usati con indice testuale accedono ad un campo di oggetto.
+
+Inoltre ogni operatore ha la sua controvariante /doppia freccia/ chie
+ritorna il valore come testo ~text~.
+
+| Operatore | Indice   | Significato                                        |
+|-----------+----------+----------------------------------------------------|
+| ->        | numerico | accesso ad array (da zero)                         |
+| ->        | text     | accesso ad un oggetto con chiave                   |
+| ->>       | numerico | accesso ad array, restituisce ~text~               |
+| ->>       | text     | accesso ad oggetto con chiave (restituisce ~text~) |
+| #>        | text[]   | dereferenziazione                                  |
+| #>>       | text[]   | dereferenziazione (restituisce un ~text~)          | 
+*** Operatori JSON: esempi
+#+begin_src sql
+> SELECT '[ "foo", 0, "bar", 1 ]'::json->1; -- 0
+
+> SELECT '{ "foo" : 0, "bar" : 1 }'::json->'foo'; -- 0
+
+> SELECT '{ "foo" : { "bar" : 1 } }'::json#>'{foo, bar}'; --1
+#+end_src  
+*** Operatori JSONB: esempi
+Il tipo ~jsonb~ dispone di altri operatori comodi:
+- ~?~ ricerca una chiave nell'oggetto;
+#+begin_src sql
+> SELECT '{ "foo" : { "bar" : 1 } }'::jsonb ? 'bar'; -- true
+#+end_src
+- ~@>~ e ~<@~ contenimento da einistra a destra e viceversa (solo al livello principale);
+#+begin_src sql
+> SELECT '{ "foo" : { "bar" : 1 } }'::jsonb 
+     @> '{"bar" : 1}'::jsonb;  -- false
+
+> SELECT '{ "foo" : { "bar" : 1 } }'::jsonb 
+    @> '{"foo" : {"bar" : 1}}'::jsonb;  -- true
+#+end_src
+- ~||~ concatenazione di due oggetti.
+#+begin_src sql
+> SELECT '{ "name" : "Luca" }'::jsonb 
+   || '{ "surname" : "Ferrari" }'::jsonb;
+#+end_src
+*** Esempio di uso di JSONB in tabella
+#+begin_src sql
+> CREATE TABLE persona ( 
+    pk SERIAL PRIMARY KEY, 
+    name text, 
+    surname text, 
+    stuff jsonb );
+
+> INSERT INTO persona( name, surname, stuff ) 
+  VALUES ( 'Luca', 'Ferrari', 
+    '{ "email" : "luca@mail.me", "web" : "http://fluca1978" }' );
+
+> INSERT INTO persona( name, surname, stuff ) 
+  VALUES ( 'Emanuela', 'Santunione', 
+    '{ "email" : "luca@mail.me" }' );
+#+end_src
+*** Esempio di JSONB in tabella (2)
+Quali persone hanno un sito web?
+#+begin_src sql
+SELECT name, surname, stuff->'web'
+FROM persona
+WHERE stuff ? 'web';
+
+ name | surname |      ?column?      
+------+---------+--------------------
+ Luca | Ferrari | "http://fluca1978"
+#+end_src
+*** Funzioni di utilitaì JSON
+Ci sono molte funzioni di utilità per convertire dati da e per JSON:
+- ~row_to_json~ converte una tupla in un oggetto JSON (esportabile);
+- ~jsopn_build_object~ costruisce un oggetto JSON da una lista di valori;
+- ~array_to_json~ converte un array PostgreSQL in uno JSON.
+#+begin_src sql
+> SELECT row_to_json( row( name, surname, stuff->'email' ) )
+  FROM persona
+  WHERE stuff ? 'email';
+                       row_to_json                       
+---------------------------------------------------------
+ {"f1":"Luca","f2":"Ferrari","f3":"luca@mail.me"}
+ {"f1":"Emanuela","f2":"Santunione","f3":"luca@mail.me"}
+
+> SELECT json_build_object( 'name', 'Luca', 'surname', 'Ferrari' );
+            json_build_object             
+------------------------------------------
+ {"name" : "Luca", "surname" : "Ferrari"}
+
+> SELECT array_to_json( ARRAY[ 1, 2, 3, 4 ] );
+ array_to_json 
+---------------
+ [1,2,3,4]
+#+end_src
 * Vacuum e Autovacuum
 ** Impatti di Vacuum e autovacuum
 *** Tabella di eventi
