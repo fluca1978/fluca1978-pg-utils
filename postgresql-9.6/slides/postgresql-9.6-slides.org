@@ -3299,8 +3299,17 @@ Esistono due metodologie di archiviazione per PITR:
   opportunamento i WAL;
 - /integrato/: si usa lo strumento ~pg_basebackup~ che consente di ottenere i file di dati
   senza richiedere l'utilizzo di tool a livello di filesystem.
+*** Premessa per il PITR: WAL Archiving
+Non dipende il modo che si sceglie per effettuare l'archiviazione dell'istanza, la cosa che
+realmente conta è che il *WAL Archiving sia abilitato!*
+
+Il /Wal Archiving/ è la tecnica mediante la quale PostgreSQL non ricicla automaticamente i WAL ma li mantiene
+/offline/ per elaborazioni future.
+
+Ovviamente questo significa che si deve avere lo spazio di archiviazione (locale, remoto) per mantenere
+la quantità di WAL (ossia di dati) da /ri-eseguire/.
 *** PITR Manuale
-Una volta che l'archiviazione dei WAL è attiva occorre:
+Una volta che *l'archiviazione dei WAL è attiva* occorre:
 1. informare il cluster che il backup sta iniziando con ~pg_start_backup()~;
 2. effettuare il backup dei file di dati;
 3. informare il cluster che il backup è terminato con ~pg_stop_backup()~.
