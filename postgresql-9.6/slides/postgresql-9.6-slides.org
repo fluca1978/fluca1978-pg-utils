@@ -3138,12 +3138,17 @@ Ci sono diversi modi per /forzare un refresh della configurazione/:
 #+begin_src sql
 % sudo kill HUP 1126
 #+end_src
-- *eseguire, come superutente, la stored procedure ~pg_reload_conf~*;
+- *eseguire, come superutente del database, la stored procedure ~pg_reload_conf~*;
 #+begin_src sql
 # SELECT pg_reload_conf();
  pg_reload_conf
 ----------------
  t
+#+end_src
+- *eseguire, come owner del processo, ~pg_ctl~* che è lo strumento ufficiale per controllare un cluter:
+#+begin_src sh
+% sudo -u postgres pg_ctl reload -D /mnt/data1/pgdata                                                                    ~
+server signaled
 #+end_src
 - eseguire uno degli script a disposizione del sistema operativo, ad esempio
   ~pg_ctlcluster~ (debian-like):
@@ -3366,6 +3371,25 @@ si inizia a popolare:
 -rw-------  1 postgres  postgres    16M Oct 30 13:01 000000010000000100000091
 -rw-------  1 postgres  postgres    16M Oct 30 13:01 000000010000000100000092
 -rw-------  1 postgres  postgres   1.5K Oct 30 13:01 log.txt
+#+end_src
+*** Forzare l'archiviazione
+Il database archivia i WAL segment ogni volta che ha terminato di prepararne uno (es. al checkpoint).
+Questo può rappresentare un problema poiché se ci sono pochi dati o il tempo fra due checkpoint è alto
+si possono perdere dei segmenti di WAL e, conseguentemente, non riuscire a ripristinare tutti i dati (ossia la
+granularità dell'ultimo periodo si riduce).
+
+L'opzione ~archive_timeout~ permette di specificare un numero di secondi dopo il quale forzare un nuovo segmento
+di WAL (e la conseguente archiviazione).
+Ad esempio:
+#+begin_src sh
+archive_timeout = 10
+#+end_src
+e i log sono archiviati ogni 10 secondi:
+#+begin_src sh
+% sudo -u postgres cat /mnt/data2/wal_archive/log.txt
+OK Mon, 30 Oct 2017 13:15:08 +0100: WAL segment 000000010000000100000094 copiato
+OK Mon, 30 Oct 2017 13:15:18 +0100: WAL segment 000000010000000100000095 copiato
+OK Mon, 30 Oct 2017 13:15:29 +0100: WAL segment 000000010000000100000096 copiato
 #+end_src
 *** PITR Manuale
 Una volta che *l'archiviazione dei WAL è attiva* occorre:
