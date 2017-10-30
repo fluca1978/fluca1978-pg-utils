@@ -1525,7 +1525,7 @@ nel caso di duplicazione:
   "surname" : "Ferrari",
   "age" : 29,
   "age" : 39 }'::json;
-          json          
+          json
 ------------------------
  { "name" : "Luca",    +
  "surname" : "Ferrari",+
@@ -1538,7 +1538,7 @@ nel caso di duplicazione:
     "surname" : "Ferrari",
     "age" : 29,
     "age" : 39 }'::jsonb;
-                       jsonb                       
+                       jsonb
 ---------------------------------------------------
  {"age": 39, "name": "Luca", "surname": "Ferrari"}
 #+end_src
@@ -1557,7 +1557,7 @@ ritorna il valore come testo ~text~.
 | ->>       | numerico | accesso ad array, restituisce ~text~               |
 | ->>       | text     | accesso ad oggetto con chiave (restituisce ~text~) |
 | #>        | text[]   | dereferenziazione                                  |
-| #>>       | text[]   | dereferenziazione (restituisce un ~text~)          | 
+| #>>       | text[]   | dereferenziazione (restituisce un ~text~)          |
 *** Operatori JSON: esempi
 #+begin_src sql
 > SELECT '[ "foo", 0, "bar", 1 ]'::json->1; -- 0
@@ -1565,7 +1565,7 @@ ritorna il valore come testo ~text~.
 > SELECT '{ "foo" : 0, "bar" : 1 }'::json->'foo'; -- 0
 
 > SELECT '{ "foo" : { "bar" : 1 } }'::json#>'{foo, bar}'; --1
-#+end_src  
+#+end_src
 *** Operatori JSONB: esempi
 Il tipo ~jsonb~ dispone di altri operatori comodi:
 - ~?~ ricerca una chiave nell'oggetto;
@@ -1574,31 +1574,31 @@ Il tipo ~jsonb~ dispone di altri operatori comodi:
 #+end_src
 - ~@>~ e ~<@~ contenimento da einistra a destra e viceversa (solo al livello principale);
 #+begin_src sql
-> SELECT '{ "foo" : { "bar" : 1 } }'::jsonb 
+> SELECT '{ "foo" : { "bar" : 1 } }'::jsonb
      @> '{"bar" : 1}'::jsonb;  -- false
 
-> SELECT '{ "foo" : { "bar" : 1 } }'::jsonb 
+> SELECT '{ "foo" : { "bar" : 1 } }'::jsonb
     @> '{"foo" : {"bar" : 1}}'::jsonb;  -- true
 #+end_src
 - ~||~ concatenazione di due oggetti.
 #+begin_src sql
-> SELECT '{ "name" : "Luca" }'::jsonb 
+> SELECT '{ "name" : "Luca" }'::jsonb
    || '{ "surname" : "Ferrari" }'::jsonb;
 #+end_src
 *** Esempio di uso di JSONB in tabella
 #+begin_src sql
-> CREATE TABLE persona ( 
-    pk SERIAL PRIMARY KEY, 
-    name text, 
-    surname text, 
+> CREATE TABLE persona (
+    pk SERIAL PRIMARY KEY,
+    name text,
+    surname text,
     stuff jsonb );
 
-> INSERT INTO persona( name, surname, stuff ) 
-  VALUES ( 'Luca', 'Ferrari', 
+> INSERT INTO persona( name, surname, stuff )
+  VALUES ( 'Luca', 'Ferrari',
     '{ "email" : "luca@mail.me", "web" : "http://fluca1978" }' );
 
-> INSERT INTO persona( name, surname, stuff ) 
-  VALUES ( 'Emanuela', 'Santunione', 
+> INSERT INTO persona( name, surname, stuff )
+  VALUES ( 'Emanuela', 'Santunione',
     '{ "email" : "luca@mail.me" }' );
 #+end_src
 *** Esempio di JSONB in tabella (2)
@@ -1608,7 +1608,7 @@ SELECT name, surname, stuff->'web'
 FROM persona
 WHERE stuff ? 'web';
 
- name | surname |      ?column?      
+ name | surname |      ?column?
 ------+---------+--------------------
  Luca | Ferrari | "http://fluca1978"
 #+end_src
@@ -1621,18 +1621,18 @@ Ci sono molte funzioni di utilità per convertire dati da e per JSON:
 > SELECT row_to_json( row( name, surname, stuff->'email' ) )
   FROM persona
   WHERE stuff ? 'email';
-                       row_to_json                       
+                       row_to_json
 ---------------------------------------------------------
  {"f1":"Luca","f2":"Ferrari","f3":"luca@mail.me"}
  {"f1":"Emanuela","f2":"Santunione","f3":"luca@mail.me"}
 
 > SELECT json_build_object( 'name', 'Luca', 'surname', 'Ferrari' );
-            json_build_object             
+            json_build_object
 ------------------------------------------
  {"name" : "Luca", "surname" : "Ferrari"}
 
 > SELECT array_to_json( ARRAY[ 1, 2, 3, 4 ] );
- array_to_json 
+ array_to_json
 ---------------
  [1,2,3,4]
 #+end_src
@@ -2971,11 +2971,11 @@ La funzione ~rank()~ fornisce una classifica dei dati.
 *Se non si specifica un ~PARTITION BY~ la funzione non sa come correlare la tupla corrente*, quindi
 è come correlarla a sé stessa:
 #+begin_src sql
-> SELECT name, version, 
-         rank() OVER () 
-  FROM software 
+> SELECT name, version,
+         rank() OVER ()
+  FROM software
   ORDER BY name, version;
- name | version | rank 
+ name | version | rank
 ------+---------+------
  Java |     1.4 |    1
  Java |     1.5 |    1
@@ -2988,11 +2988,11 @@ La funzione ~rank()~ fornisce una classifica dei dati.
 #+end_src
 *** Esempio di Window Function: rank (2)
 #+begin_src sql
-> SELECT name, version, 
-  rank() OVER ( PARTITION BY name ORDER BY version) 
-  FROM software 
+> SELECT name, version,
+  rank() OVER ( PARTITION BY name ORDER BY version)
+  FROM software
   ORDER BY name, version;
- name | version | rank 
+ name | version | rank
 ------+---------+------
  Java |     1.4 |    1
  Java |     1.5 |    2
@@ -3022,14 +3022,14 @@ Concettualmente è come definire una tabella temporanea che può essere usata in
 statement piu' complesso.
 *** CTE SELECT
 #+begin_src sql
-> WITH max_sw AS ( 
-   SELECT max( version ) AS v, name 
-   FROM software GROUP BY name  
+> WITH max_sw AS (
+   SELECT max( version ) AS v, name
+   FROM software GROUP BY name
   )
- SELECT name, v 
-  FROM max_sw 
+ SELECT name, v
+  FROM max_sw
   ORDER BY name;
- name |  v  
+ name |  v
 ------+-----
  Java | 1.8
  Perl | 5.4
@@ -3038,26 +3038,26 @@ statement piu' complesso.
 #+begin_src sql
 > WITH delete_obsolete AS (
     UPDATE software SET valid = false
-    WHERE version IN ( 
-        SELECT MIN( version ) 
+    WHERE version IN (
+        SELECT MIN( version )
         FROM software GROUP BY name )
    RETURNING * )
   SELECT * FROM delete_obsolete;
- pk | name | version | valid 
+ pk | name | version | valid
 ----+------+---------+-------
   1 | Perl |     5.1 | f
   5 | Java |     1.4 | f
 #+end_src
 *** CTE UPDATE (con piu' CTE)
 #+begin_src sql
-> WITH min_version AS ( 
-   SELECT name, min( version ) AS v 
-   FROM software GROUP BY name 
+> WITH min_version AS (
+   SELECT name, min( version ) AS v
+   FROM software GROUP BY name
   )
-  , delete_obsolete AS ( 
+  , delete_obsolete AS (
     UPDATE software  SET valid = false
     WHERE version IN ( SELECT v FROM min_version )
-    RETURNING * 
+    RETURNING *
   )
   SELECT * FROM delete_obsolete;
 #+end_src
@@ -3075,8 +3075,8 @@ Le CTE ricorsive sono composte di due parti:
 
 *** CTE ricorsive: generare una sequenza
 #+begin_src sql
-> WITH RECURSIVE foo AS ( 
-  SELECT 1 AS f 
+> WITH RECURSIVE foo AS (
+  SELECT 1 AS f
  UNION ALL
   SELECT 1 + f FROM foo )
 
@@ -3141,7 +3141,7 @@ Ci sono diversi modi per /forzare un refresh della configurazione/:
 - *eseguire, come superutente, la stored procedure ~pg_reload_conf~*;
 #+begin_src sql
 # SELECT pg_reload_conf();
- pg_reload_conf 
+ pg_reload_conf
 ----------------
  t
 #+end_src
@@ -3212,7 +3212,7 @@ persistente?
 La risposta è *LSN: Log Sequence Number*.
 
 Ogni pagina dati contiene un numero LSN che indica quale segmento di log contiene le modifiche
-a quella pagina. 
+a quella pagina.
 *Una pagina dati non può quindi essere resa persistente se i log fino a quel ~lsn~ non sono stati a loro volta resi persistenti*.
 ** Regolare i checkpoint
 I checkpoint sono configurabili attraverso due parametri:
@@ -3263,7 +3263,7 @@ Il parametro ~wal_level~ specifica quale livello di WAL si vuole usare:
   tecniche di backup avanzate (es. PITR) o per replica /warm standby/;
 - ~hot_standby~ consente di rendere le repliche funzionanti da subito (in sola lettura!);
 - ~logical~ consente di avviare la /replica logica/.
-- 
+-
 * TODO Point in Time Recovery & Replicatino
 ** Point in Time Recovery (PITR)
 *** Introduzione al PITR
@@ -3273,11 +3273,11 @@ In sostanza si simula un /crash/, forzando il sistema a ripercorrere i WAL; inve
 lasciare il sistema terminare di srotolare tutti i WAL lo si ferma ad un istante consistente
 nel passato.
 
-#begin_quote
+#+begin_quote
 Utilità (esempi): recuperare il database subito prima una transazione che ha fatto /drop/ di tutto
 un database; visualizzare i dati come erano prima di una lunga elaborazione, debug di applicazioni
 che possono aver sporcato i dati, ecc.
-#èend_quote
+#+end_quote
 
 **** Istanti temporali 					       :B_definition:
      Se viene specificato un istante nel /futuro/ (ovvero che non è presente nei WAL,
@@ -3287,17 +3287,6 @@ che possono aver sporcato i dati, ecc.
 :PROPERTIES:
 :BEAMER_env: ignoreheading
 :END:
-
-
-#+begin_quote
-Approccio simile a quello di OpenBSD!
-#+end_quote
-
-   PostgreSQL è il naturale discendente di *Ingres* (dopo, /post/, gres), un database
-   accademico/sperimentale inventato dal prof. Michael Stonebreaker e commercializzato
-   indicativamente nello stesso spazio temporale di Oracle (1989 circa).
-
-   Tutto inizia alla Berkely University of California.
 
 *** Preparasi al PITR
 Le fasi da seguire sono sostanzialmente due:
