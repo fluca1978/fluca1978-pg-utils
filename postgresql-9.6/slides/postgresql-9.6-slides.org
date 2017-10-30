@@ -3308,6 +3308,65 @@ Il /Wal Archiving/ è la tecnica mediante la quale PostgreSQL non ricicla automa
 
 Ovviamente questo significa che si deve avere lo spazio di archiviazione (locale, remoto) per mantenere
 la quantità di WAL (ossia di dati) da /ri-eseguire/.
+*** Come impostare il WAL Archiving
+Occorre specificare, nal file ~postgresql.conf~, il comando shell (o lo script, o il programma) da eseguire
+ogni volta che un nuovo segmento di WAL viene pronto per l'archiviazione (ossia è stato scritto in ~pg_xlog~).
+
+Il comando può essere un semplice ~cp~ o un complesso programma, tenendo conto che i marcaposto speciali sono
+espansi come segue:
+- ~%f~ è il nome relativo del file di log da archiviare;
+- ~%p~ è il nome del file da archiviare relativo a ~$PGDATA~ (ossia ~pg_xlog/<file>~).
+
+*I file di WAL sono di proprietà dell'utente che esegue il cluster.*
+Si tenga presente che i WAL contengono effettivamente i dati contenuti nel database (e quindi è opportuno siano protetti).
+*** WAL Archiving: impostazioni pratiche
+Si deve definire dove archiviare i WAL (può essere uno spazio locale o remoto):
+#+begin_src sh
+# mkdir /mnt/data2/wal_archive
+  && chown postgres:postgres /mnt/data2/wal_archive
+  && chmod 700 /mnt/data2/wal_archive
+#+end_src
+Poi in ~postgresql.conf~ si abilita l'archiving:
+#+begin_src sh
+archive_mode = on
+# archive_command = 'test ! -f /mnt/server/archivedir/%f && cp %p /mnt/server/archivedir/%f'
+archive_command = '/usr/local/bin/my_wal_archiver.sh %f %p'
+wal_level = replica
+#+end_src
+e infine si /riavvia/ il cluster (~wal_level~ richiede un restart).
+*** WAL Archiving: semplice script di archiviazione
+#+begin_src sh
+% cat /usr/local/bin/my_wal_archiver.sh                                                                                  ~
+#!/bin/sh
+
+ARCHIVING_PATH=/mnt/data2/wal_archive
+LOG=${ARCHIVING_PATH}/log.txt
+NOW=$( date -R )
+
+SRC_FILE=$2 # file with path
+DST_FILE=${ARCHIVING_PATH}/$1
+
+# non sovrascrivo il file se esiste gia!
+if [ -f ${DST_FILE} ]
+then
+    echo "KO $NOW: $1 esiste gia'" >> $LOG
+    exit 1
+fi
+
+cp ${SRC_FILE} ${DST_FILE} \
+  && echo "OK $NOW: WAL segment $1 copiato" >> $LOG \
+  && exit 0
+#+end_src
+*** Cosa succede a regime?
+Man mano che i dati vengono immessi nel database (o un checkpoint viene raggiunto) lo spazio di archiviazione dei WAL
+si inizia a popolare:
+#+begin_src sh
+% sudo -u postgres ls -lh /mnt/data2/wal_archive                                                                         ~
+...
+-rw-------  1 postgres  postgres    16M Oct 30 13:01 000000010000000100000091
+-rw-------  1 postgres  postgres    16M Oct 30 13:01 000000010000000100000092
+-rw-------  1 postgres  postgres   1.5K Oct 30 13:01 log.txt
+#+end_src
 *** PITR Manuale
 Una volta che *l'archiviazione dei WAL è attiva* occorre:
 1. informare il cluster che il backup sta iniziando con ~pg_start_backup()~;
