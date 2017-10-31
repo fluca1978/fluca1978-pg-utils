@@ -3694,3 +3694,152 @@ si ha una timeline history
 *** PITR & Timeline
 Il ~recovery.conf~ lavora implicitamente sulla stessa timeline del server di origine.
 E' tuttavia possibile specificare una timeline differente.
+
+** Replication
+*** Concetti e terminologia
+La /replication/ è la capacità di /sincronizzare/ un cluster *master* con uno o piu' *slave*
+che replicano i dati (ossia ripetono le transazioni).
+*Il nodo master è l'unico che accetta le query DML (ossia l'unico abilitato alle scritture)*.
+Gli slave, detti anche /stand-by/, possono funzionare in replica isolata (warm standby) o in replica funzionante (*hot standby*): in questo caso
+essi accettano solo query di lettura (e quindi possono essere usati per il bilanciamento del carico).
+*** Tipologia di replica
+Esistono fondamentalmente tre tipi di /replication/:
+1. *log shipping*: il master archivia i WAL segment che lo slave ripercorre indefinitamente;
+2. *streaming*: il master invia, su richiesta, i WAL segment allo slave che li richiede. Questo tipo di replica si suddivide ulteriormente in:
+   - *sincrona* il master attende che anche lo slave abbia eseguito la transazione (molto sicuro, ma molto "costoso");
+   - *asincrona* il master si "fida" che lo slave porterà a termine la transazione.
+3. *logica*: non supportata nel core (occorre la versione ~10.0~), consente di replicare gli statement SQL.
+
+**** Cascading Replication                                     :B_definition:
+Ogni slave può a sua volta diventare un punto di "avvio" di replicazione per un
+successivo slave.
+**** End of block                                           :B_ignoreheading:
+:PROPERTIES:
+:BEAMER_env: ignoreheading
+:END:
+*** Setup della replicazione
+La configurazione per la replicazione è simile in tutti gli scenari, ma occorre che vi sia una copia
+fisica del cluster master per inizializzare lo slave.
+
+La copia può essere effettuata con il metodo manuale (~pg_start_backup~, copia del filesystem, ~pg_stop_backup~) o con
+l'utility ~pg_basebackup~.
+** Log Shipping Replication
+*** Fase 1: configurazione del master
+Occore che il master consenta l'archiviazione dei WAL segment e supporti la connessione per replica (solo se si usa ~pg_basebackup~).
+In ~postgresql.conf~:
+#+begin_src sh
+wal_level       = replica
+archive_mode    = on
+archive_command = '/usr/local/bin/my_wal_archiver.sh %f %p'
+max_wal_senders = 1 # solo per usare pg_basebackup
+#+end_src
+
+e se si usa ~pg_basebackup~ in ~pg_hba.conf~:
+#+begin_src sh
+host  replication  postgres    127.0.0.1/32  trust
+#+end_src
+*** Fase 2: creazione dello slave
+#+begin_src sh
+% sudo -u postgres pg_basebackup \                                                                                        ~
+   -D /mnt/data3/pgdata \
+   -l 'LOG_SHIPPING_REPLICA' -v \
+   -h localhost -p 5432 -U postgres
+#+end_src
+
+Editare il file ~postgresql.conf~ dello slave affinché:
+#+begin_src shell
+wal_level       = minimal
+archive_mode    = off
+max_wal_senders = 0
+hot_standby     = on # solo per fare query
+port            = 5433 # solo per test locale!!
+#+end_src
+*** Fase 3: creare il ~recovery.conf~
+Anche nel caso di replication occorre generare un file ~recovery.conf~ che
+istruisca lo slave su come "riavviarsi":
+#+begin_src shell
+standby_mode = 'on'
+restore_command = 'cp /mnt/data2/wal_archive/%f "%p"'
+#+end_src
+
+In sostanza non si specifica a quale istante temporale fermare il recovery e si abilita la funzione ~standby_mode~ che, appunto,
+istruisce lo slave a /seguire/ le transazioni del master.
+*** Fase 4: avvio dello slave
+#+begin_src shell
+ sudo -u postgres pg_ctl -D /mnt/data3/pgdata start                                                                      ~
+server starting
+LOG:  database system was interrupted; last known up at 2017-10-31 08:50:52 CET                                         ~
+LOG:  entering standby mode
+LOG:  restored log file "00000001000000020000005A" from archive
+LOG:  redo starts at 2/5A000060
+LOG:  consistent recovery state reached at 2/5A000130
+LOG:  database system is ready to accept read only connections
+...
+#+end_src
+
+Come si nota il database accetta solo query in lettura ed è pronto.
+*** Interazione con lo slave
+Come già detto, lo slave è in sola lettura:
+#+begin_src sql
+> INSERT INTO persona( nome, cognome, codice_fiscale )
+  VALUES( 'Luca', 'Stantunione', 'SNTLCU02A20F257T' );
+ERROR:  cannot execute INSERT in a read-only transaction
+#+end_src
+*** Perdita di dati sullo slave ?
+Sul master:
+#+begin_src sql
+> CREATE TABLE evento( pk SERIAL PRIMARY KEY, description TEXT);
+> INSERT INTO evento( description )
+  SELECT 'replication ' || generate_series(1, 2000 );
+#+end_src
+
+ma sullo slave non è ancora visibile:
+
+#+begin_src sql
+> select * from evento;
+ERROR:  relation "evento" does not exist
+#+end_src
+*** Perdita di dati sullo slave, perché?
+*Non è una perdita di dati*: lo slave non ha ancora ricevuto il file WAL da ripercorrere.
+#+begin_src shell
+cp: /mnt/data2/wal_archive/00000001000000020000005B: No such file or directory
+cp: /mnt/data2/wal_archive/00000001000000020000005B: No such file or directory
+cp: /mnt/data2/wal_archive/00000001000000020000005B: No such file or directory
+cp: /mnt/data2/wal_archive/00000001000000020000005B: No such file or directory
+LOG:  restored log file "00000001000000020000005B" from archive
+LOG:  restored log file "00000001000000020000005C" from archive
+LOG:  restored log file "00000001000000020000005D" from archive
+LOG:  restored log file "00000001000000020000005E" from archive
+#+end_src
+
+ma quando finalmente il master produce i nuovi WAL allora ecco che lo slave si "allinea":
+
+#+begin_src sql
+> select count(*) from evento;
+ count
+-------
+  2000
+#+end_src
+
+*** Perdita di dati sullo slave, che fare?
+*Non è una perdita di dati*: lo slave rimane indietro dei segmenti di WAL non ancora archiviati.
+Occorre allora agire sul master impostando il parametro:
+
+#+begin_src shell
+archive_timeout = 10
+#+end_src
+
+che forza una archiviazione ogni 10 secondi (ad esempio).
+
+*** Perdita di spazio, che fare?
+L'archiviazione dei WAL non può avvenire all'infinito. Il ~recovery.conf~ consente di specificare un comando
+da effettuare una volta che il segmento è stato ripercoso (a patto che non serva per altri scopi!). Il comando
+~pg_archivecleanup~ effettua la cancellazione dei file recuperati. Nel file ~recovery.conf~ il placeholder ~%r~
+indica un segmento recuperato, quindi:
+
+#+begin_src shell
+standby_mode = 'on'
+restore_command = 'cp /mnt/data2/wal_archive/%f "%p"'
+archive_cleanup_command = 'pg_archivecleanup /mnt/data2/wal_archive %r'
+#+end_src
+** Streaming Replication (asynchronous)
