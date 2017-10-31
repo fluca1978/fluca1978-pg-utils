@@ -3843,3 +3843,279 @@ restore_command = 'cp /mnt/data2/wal_archive/%f "%p"'
 archive_cleanup_command = 'pg_archivecleanup /mnt/data2/wal_archive %r'
 #+end_src
 ** Streaming Replication (asynchronous)
+*** Fase 1: configurazione del master
+Occorre che il master consenta un numero di processi di invio dei WAL (/WAL Senders/) pari o superiore al numero di slave che si connetteranno.
+Inoltre il master deve sapere che i WAL saranno sottoposti a replication, quindi in ~postgresql.conf~:
+#+begin_src sh
+wal_level       = replica
+max_wal_senders = 1 # quanti slave?
+#+end_src
+
+Siccome lo slave si collegherà al master, deve essere possibile l'autenticazione, quindi in ~pg_hba.conf~:
+#+begin_src sh
+host  replication  postgres    127.0.0.1/32  md5
+#+end_src
+*** Fase 2: creazione dello slave
+#+begin_src sh
+% sudo -u postgres pg_basebackup \                                                                                        ~
+   -D /mnt/data3/pgdata \
+   -l 'LOG_SHIPPING_REPLICA' -v \
+   -h localhost -p 5432 -U postgres
+#+end_src
+
+Editare il file ~postgresql.conf~ dello slave affinché:
+#+begin_src shell
+wal_level       = minimal
+archive_mode    = off
+max_wal_senders = 0
+hot_standby     = on # solo per fare query
+port            = 5433 # solo per test locale!!
+#+end_src
+*** Fase 3: creare il ~recovery.conf~
+Anche nel caso di replication occorre generare un file ~recovery.conf~ che
+istruisca lo slave su come "riavviarsi":
+#+begin_src shell
+standby_mode = 'on'
+primary_conninfo = 'host=localhost port=5432 user=postgres password=xxxxx'
+#+end_src
+
+In sostanza si specifica a quale server remoto collegarsi per ottenere il *flusso di WAL*.
+*** Fase 4: avvio dello slave
+#+begin_src shell
+% sudo -u postgres pg_ctl -D /mnt/data3/pgdata start                                                                     ~
+server starting
+LOG:  database system was interrupted; last known up at 2017-10-31 12:44:30 CET                                        ~
+LOG:  entering standby mode
+LOG:  started streaming WAL from primary at 3/2F000000 on timeline 1
+LOG:  redo starts at 3/2F000028
+LOG:  consistent recovery state reached at 3/2F0000F8
+LOG:  database system is ready to accept read only connections
+...
+#+end_src
+
+Come si nota il database accetta solo query in lettura ed è pronto.
+*** Monitoring
+La vista ~pg_stat_replication~ fornisce informazioni utili sullo stato di ogni slave (occorre essere sul nodo master e interrogarla
+come superutente):
+#+begin_src sql
+# SELECT * FROM pg_stat_replication;
+-[ RECORD 1 ]----+-----------------------------
+pid              | 2112
+usesysid         | 10
+usename          | postgres
+application_name | walreceiver
+client_addr      | 127.0.0.1
+client_hostname  |
+client_port      | 34332
+backend_start    | 2017-10-31 13:41:00.38603+01
+backend_xmin     |
+state            | streaming
+sent_location    | 3/D8000060
+write_location   | 3/D8000060
+flush_location   | 3/D8000060
+replay_location  | 3/D8000000
+sync_priority    | 0
+sync_state       | async
+#+end_src
+*** Replication Slot
+Cosa succede se lo slave si disconnette e il master inizia a riciclare i WAL? Lo slave sarà impossibilitato a recuperare
+il suo stato!
+
+Possibili soluzioni:
+- archiviazione dei WAL (ma potrebbe richiedere molto spazio);
+- replication slot.
+
+I replication slot informano il master di tenere i WAL segment qualora non siano stati inviati agli slave relativi.
+*** Replication Slot: configurazione dello slave
+Si deve impostare il nome dello slot nel ~recovery.conf~:
+#+begin_src shell
+standby_mode = 'on'
+primary_conninfo = 'host=localhost port=5432 user=postgres password=xxxxx'
+primary_slot_name = 'slave_a_slot'
+#+end_src
+
+*** Replication Slot: configurazione del master
+Nel file ~postgresql.conf~ si deve specificare quanti slot si vogliono mantenere:
+#+begin_src shell
+max_replication_slots = 1
+#+end_src
+
+e si possono quindi creare gli slot con il nome identico a quello fornito agli slave:
+#+begin_src sql
+# SELECT *
+  FROM pg_create_physical_replication_slot( 'slave_a_slot' );
+-[ RECORD 1 ]-+-------------
+slot_name     | slave_a_slot
+xlog_position |
+#+end_src
+*** Replication Slot: monitoring
+Una volta avviato lo slave è possibile verificare (dal master) in che stato sono i replication slot:
+#+begin_src sql
+# SELECT * FROM pg_replication_slots;
+-[ RECORD 1 ]-------+-------------
+slot_name           | slave_a_slot
+plugin              |
+slot_type           | physical
+datoid              |
+database            |
+active              | t
+active_pid          | 2112
+xmin                |
+catalog_xmin        |
+restart_lsn         | 3/D7000000
+confirmed_flush_lsn |
+#+end_src
+
+** Streaming Replication (Synchronous)
+*** Application Name
+La replica sincrona passa per il concetto di /application name/.
+L'idea è semplice: ogni connessione viene associata ad un /nome applicazione/. Qualora la connessione
+(di replica dallo slave) abbia un nome di connessione riconosciuto fra quelli che devono comportarsi come replica
+sincrona, il sistema viene istruito di comportarsi come replica sincrona.
+
+*La replica sincrona è costosa: si deve aspettare che ogni slave abbia effettuato la transazione!*
+
+/Nel caso di replica asincrona l'application name di default è ~walreceiver~!/
+
+*** Fase 1: configurazione del master
+Il master deve consentire un opportuno numero di slave (e quindi di /WAL Senders/), nonché sapere quali slave si
+collegheranno in modo sincrono (ossia la /application name/ deve essere nota fra tutti i sistemi!).
+Nel file ~postgresql.conf~:
+
+#+begin_src shell
+synchronous_standby_names = 'slave_a, slave_b'
+wal_level       = replica
+max_wal_senders = 2 # quanti slave?
+#+end_src
+
+Come per la replica asincrona, occorre che sia concessa la possibilità di connessione agli slave, quindi in ~pg_hba.conf~:
+#+begin_src shell
+host  replication  postgres    127.0.0.1/32  md5
+#+end_src
+e righe relative ai vari slave.
+*** Fase 2: creazione dello slave
+#+begin_src sh
+% sudo -u postgres pg_basebackup \                                                                                        ~
+   -D /mnt/data3/pgdata \
+   -l 'LOG_SHIPPING_REPLICA' -v \
+   -h localhost -p 5432 -U postgres
+#+end_src
+
+Editare il file ~postgresql.conf~ dello slave affinché:
+#+begin_src shell
+wal_level       = minimal
+archive_mode    = off
+max_wal_senders = 0
+hot_standby     = on # solo per fare query
+port            = 5433 # solo per test locale!!
+#+end_src
+*** Fase 3: creare il ~recovery.conf~
+L'application name deve essere inserito nella stringa di connessione affinché lo slave si identifichi per la replica sincrona:
+#+begin_src shell
+standby_mode = 'on'
+primary_conninfo = 'host=localhost port=5432 user=postgres password=xxxx application_name=slave_a'
+#+end_src
+*** Fase 4: avviare lo slave
+#+begin_src shell
+% sudo -u postgres pg_ctl -D /mnt/data3/pgdata start                                                                     ~
+server starting
+LOG:  database system was shut down in recovery at 2017-10-31 13:17:10 CET                                             ~
+LOG:  entering standby mode
+LOG:  redo starts at 3/92000060
+LOG:  consistent recovery state reached at 3/9A000000
+LOG:  database system is ready to accept read only connections
+LOG:  unexpected pageaddr 3/6B000000 in log segment 00000001000000030000009A, offset 0
+LOG:  started streaming WAL from primary at 3/9A000000 on timeline 1
+#+end_src
+*** Monitoring in replica
+Su uno slave è possibile vedere l'ultimo segment WAL ricevuto con ~pg_last_xlog_received()~:
+#+begin_src sql
+> SELECT pg_last_xlog_receive_location();
+-[ RECORD 1 ]-----------------+-----------
+pg_last_xlog_receive_location | 3/A3000000
+#+end_src
+
+mentre sul master ~pg_current_xlog_location()~ indica dove si è:
+#+begin_src sql
+> SELECT PG_CURRENT_XLOG_LOCATION();
+-[ RECORD 1 ]------------+-----------
+pg_current_xlog_location | 3/A8000060
+#+end_src
+
+*** Monitoring in replica (2)
+Sul nodo master, come superutenti, è possibile avere un'idea dei singoli slave collegati:
+#+begin_src sql
+# SELECT * FROM pg_stat_replication;
+-[ RECORD 1 ]----+------------------------------
+pid              | 1648
+usesysid         | 10
+usename          | postgres
+application_name | slave_a
+client_addr      | 127.0.0.1
+client_hostname  |
+client_port      | 63390
+backend_start    | 2017-10-31 13:23:49.874223+01
+backend_xmin     |
+state            | streaming
+sent_location    | 3/AC000000
+write_location   | 3/AC000000
+flush_location   | 3/AC000000
+replay_location  | 3/AC000000
+sync_priority    | 1
+sync_state       | sync
+#+end_src
+** Da slave a master
+*** Promote
+Uno slave può diventare un master qualora sia necessario.
+
+Diventare master (*promote*) significa che lo slave inizierà a percorrere la sua stessa timeline e si sgancerà dal vecchio master (ossia
+sarà completato il recovery).
+
+Ci sono due modi per promuovere uno slave:
+- fare una /promote/ esplicita;
+- usare un trigger file.
+
+*** Promote esplicita
+Usando ~pg_ctl~ si può effettuare il promote di un database:
+#+begin_src shell
+% sudo -u postgres pg_ctl -D /mnt/data3/pgdata promote                                                                   ~
+server promoting
+LOG:  received promote request
+FATAL:  terminating walreceiver process due to administrator command
+LOG:  invalid record length at 3/F7000140: wanted 24, got 0
+LOG:  redo done at 3/F7000108
+LOG:  selected new timeline ID: 2                                                                                      ~
+LOG:  archive recovery complete
+LOG:  MultiXact member wraparound protections are now enabled
+LOG:  database system is ready to accept connections
+LOG:  autovacuum launcher started
+#+end_src
+
+*** Promote via trigger file
+Si deve specificare un'opzione nel file ~recovery.conf~:
+#+begin_src shell
+standby_mode = 'on'
+primary_conninfo = 'host=localhost port=5432 user=postgres password=postgres'
+trigger_file = '/tmp/promote_to_master'
+#+end_src
+
+Quando sarà presente il file ~/tmp/promote_to_master~ (non importa il contenuto!) lo slave si sgancerà dal master.
+
+*** Promote via trigger file: esempio
+#+begin_src shell
+% echo `date` > /tmp/promote_to_master
+#+end_src
+
+e lo slave reagisce con
+
+#+begin_src shell
+LOG:  trigger file found: /tmp/promote_to_master                                                   ~
+FATAL:  terminating walreceiver process due to administrator command
+LOG:  invalid record length at 3/F9000060: wanted 24, got 0
+LOG:  redo done at 3/F9000028
+LOG:  selected new timeline ID: 2
+LOG:  archive recovery complete
+LOG:  MultiXact member wraparound protections are now enabled
+LOG:  database system is ready to accept connections
+LOG:  autovacuum launcher started
+#+end_src
