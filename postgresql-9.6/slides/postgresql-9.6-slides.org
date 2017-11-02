@@ -3269,7 +3269,7 @@ Il parametro ~wal_level~ specifica quale livello di WAL si vuole usare:
 - ~hot_standby~ consente di rendere le repliche funzionanti da subito (in sola lettura!);
 - ~logical~ consente di avviare la /replica logica/.
 -
-* TODO Point in Time Recovery & Replicatino
+* Point in Time Recovery & Replicatino
 ** Point in Time Recovery (PITR)
 *** Introduzione al PITR
 L'idea è abbastanza semplice ma molto potente: *avendo i WAL segments + possibile ripristinare il sistema ad un istante temporale nel passato predefinito!*
@@ -4121,7 +4121,6 @@ LOG:  MultiXact member wraparound protections are now enabled
 LOG:  database system is ready to accept connections
 LOG:  autovacuum launcher started
 #+end_src
-
 ** Logical Decoding
 *** Introduzione
 PostgreSQL supporta la replicazione logica dalla versione 10, ma intanto l'infrastruttura
