@@ -3084,8 +3084,9 @@ SELECT * FROM foo LIMIT 10;
 #+end_src
 * TODO Foreign Data Wrapper
 * TODO Extensions
-* Configurazione del Server
-** postgresql.conf
+* TODO Configurazione del Server
+** Configurazione
+*** postgresql.conf
 Il file principale di configurazione è ~postgresql.conf~, contenuto solitamente
 in ~$PGDATA~ (alcune distribuzioni lo inseriscono nell'albero ~/etc~).
 
@@ -3094,7 +3095,7 @@ booleani (~on~, ~off~), numerici, stringa.
 
 Il carattere ~#~ identifica un commento.
 
-** Vedere la configurazione a run-time
+*** Vedere la configurazione a run-time
 La vista speciale ~pg_settings~ consente di valutare ogni singolo parametro
 con i relativi valori di default, minimo, massimo, descrizione, ecc.
 
@@ -3117,7 +3118,7 @@ sourceline      | 113
 short_desc      | Sets the number of shared memory buffers used by the server.
 pending_restart | f
 #+end_src
-** Vedere la configurazione a run-time: note su pg_settings
+*** Vedere la configurazione a run-time: note su pg_settings
 I dati sul file di configurazione (~sourcefile~, ~sourceline~) non sono visualizzati per utenti
 non amministratori.
 Il flag ~pending_restart~ indica se il valore è stato modificato nel file di configurazione
@@ -3131,7 +3132,7 @@ corrispondente al seguente valore nel file di configurazione:
 shared_buffers = 128MB
 #+end_src
 
-** Ricarica la configurazione a run-time
+*** Ricarica la configurazione a run-time
 Ci sono diversi modi per /forzare un refresh della configurazione/:
 - restart del server (non molto pratico);
 - *inviare un ~SIGHUP~ al ~postmaster~*;
@@ -3155,6 +3156,96 @@ server signaled
 #+begin_src sql
 % sudo pg_ctlcluster 9.5 main reload
 #+end_src
+** Benchmarking
+*** pgbench
+Il sistema include un comando denominato ~pgbench~ che aiuta ad eseguire una serie di transazioni (anche
+definite dall'utente) su un determinato database al fine di calcolare le */Transaction Per Second (TPS)/*
+e quindi valutare differenti scelte di configurazione.
+
+Pgbench installa una manciata di tabelle con alcune tuple nel database specificato ed esegue alcuni test.
+*** Scaling factor, clients e tipo di test
+Ci sono alcune opzioni importanti quando si usa ~pgbench~:
+- /scaling factor/ (~-s~): usabile solo in inizializzazione per indicare quanto "grossi" devono essere i dati (crescita lineare);
+- /fill factor/ (~-F~): usabile solo in inizializzazione per indica la percentuale di utilizzo delle tabelle create (default 100%);
+- /number of clientes/ (~-c~) usato in benchmarking, indica quanti client devono essere simulati (in default 1);
+- /protocol/ (~-M~): usato in benchmarking, indica se inviare le query al server usando prepared statements o meno.
+*** Fase 1: inizializzazione
+#+begin_src shell
+% pgbench -i -s 10 -h localhost -U luca testdb
+creating tables...
+100000 of 1000000 tuples (10%) done (elapsed 0.14 s, remaining 1.26 s)
+200000 of 1000000 tuples (20%) done (elapsed 0.43 s, remaining 1.71 s)
+300000 of 1000000 tuples (30%) done (elapsed 1.73 s, remaining 4.03 s)
+400000 of 1000000 tuples (40%) done (elapsed 2.54 s, remaining 3.81 s)
+500000 of 1000000 tuples (50%) done (elapsed 3.23 s, remaining 3.23 s)
+600000 of 1000000 tuples (60%) done (elapsed 3.82 s, remaining 2.55 s)
+700000 of 1000000 tuples (70%) done (elapsed 4.55 s, remaining 1.95 s)
+800000 of 1000000 tuples (80%) done (elapsed 5.58 s, remaining 1.39 s)
+900000 of 1000000 tuples (90%) done (elapsed 6.01 s, remaining 0.67 s)
+1000000 of 1000000 tuples (100%) done (elapsed 7.18 s, remaining 0.00 s)
+vacuum...
+set primary keys...
+done.
+#+end_src
+*** Fase 2: benchmarking
+#+begin_src shell
+% pgbench  -h localhost -U luca -c 10 -M prepared testdb
+starting vacuum...end.
+transaction type: <builtin: TPC-B (sort of)>
+scaling factor: 10
+query mode: prepared
+number of clients: 10
+number of threads: 1
+number of transactions per client: 10
+number of transactions actually processed: 100/100
+latency average = 16.586 ms
+tps = 602.921759 (including connections establishing)
+tps = 616.187365 (excluding connections establishing)
+#+end_src
+*** Custom scripts
+L'utente può creare i propri script di test da far eseguire a ~pgbench~.
+
+All'interno dello script occorre inserire le eventuali definizioni di variabili (~\set~) e la transazione
+da eseguire.
+
+L'esecuzione dello script corrisponde ad una transazione.
+
+Vengono fornite da ~pgbench~ due variabili speciali passate agli script custom:
+- ~:scale~ lo scaling factor;
+- ~:client_id~ un numero intero (che parte da zero) che identifica univocamente un client simulato.
+*** Custom script: esempio (sbagliato)
+#+begin_src sql
+ \set eta random(:scale , 50)
+ \set anno random( 11, 99 )
+ \set giorno random( 10, 50 )
+BEGIN;
+  INSERT INTO persona( nome, cognome, codice_fiscale, eta )
+  VALUES( 'NomeTest', 'CognomeTest', 'TTTzzz' || :anno || 'A' || :giorno || 'XXXW', :eta );
+END;
+#+end_src
+*** Custom script: esempio (sbagliato) e sua esecuzione
+#+begin_src shell
+% pgbench  -h localhost -U luca -c 10 -f my_bench.sql testdb
+starting vacuum...end.
+client 4 aborted in state 4: ERROR:  duplicate key value violates unique constraint "persona_codice_fiscale_key"
+DETAIL:  Key (codice_fiscale)=(TTTzzz96A37XXXW) already exists.
+client 3 aborted in state 4: ERROR:  duplicate key value violates unique constraint "persona_codice_fiscale_key"
+DETAIL:  Key (codice_fiscale)=(TTTzzz70A45XXXW) already exists.
+transaction type: my_bench.sql
+scaling factor: 1
+query mode: simple
+number of clients: 10
+number of threads: 1
+number of transactions per client: 10
+number of transactions actually processed: 98/100
+latency average = 19.566 ms
+tps = 511.090134 (including connections establishing)
+tps = 518.212526 (excluding connections establishing)
+#+end_src
+
+Siccome due client hanno fallito entrambi una transazione, e quindi in tutto sono fallite due transazioni, il sistema
+riporta che *98/100* transazioni sono state attualmente processate!
+
 * Write Ahead Log
 ** Introduzione ai WAL
 I *Write Ahead Log* sono un componente fondamentale per il funzionamento del database.
