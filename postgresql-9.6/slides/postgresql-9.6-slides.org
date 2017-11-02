@@ -4133,6 +4133,14 @@ poter gestire i WAL segment. Uno di questi plugin è ~test_decoding~, usato per
 ottenere statement SQL.
 
 L'interazione fra plugin e WAL segment avviene attraverso i /replication slot/.
+*** Perché i replication slot?
+In PostgreSQL un /replication slot/ è *uno stream univoco di modifiche ordinate* che un /consumer/ può ripercorrere a applicare (o decodificare).
+
+Lo slot non è al corrente di cosa sta facendo il consumer, e neanche di quale consumer vi è attaccato. Ogni consumer è responsabile
+di richiedere le modifiche allo slot a partire da un certo punto.
+
+Gli slot usati per la decodifica logica sono leggermente differenti da quelli di streaming replication (detti anche /fisici/): le differenze
+sono nel protocollo di scambio di dati, ma concettualmente entrambi rappresentano uno stream ordinato di modifiche.
 
 *** Logical Decoding: passi fondamentali
 Per ottenere le informazioni logiche occorre:
