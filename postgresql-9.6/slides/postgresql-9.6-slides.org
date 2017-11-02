@@ -3926,6 +3926,8 @@ Possibili soluzioni:
 - replication slot.
 
 I replication slot informano il master di tenere i WAL segment qualora non siano stati inviati agli slave relativi.
+
+*Un replication slot è uno stream ordinato e univoco di modifiche!*
 *** Replication Slot: configurazione dello slave
 Si deve impostare il nome dello slot nel ~recovery.conf~:
 #+begin_src shell
