@@ -1636,6 +1636,55 @@ Ci sono molte funzioni di utilità per convertire dati da e per JSON:
 #+end_src
 * TODO MVCC, Vacuum e Autovacuum
 ** TODO Multi Version Concurrency Control (MVCC)
+*** Introduzione
+Il /Multi Version Concurrency Control (MVCC)/ è un meccanismo per garantire alta concorrenza in accesso ai dati (tuple).
+
+/Non è prerogativa di PostgreSQL, viene usato anche in altri DBMS!/
+
+L'idea è concettualmente semplice: per evitare che processi di scrittura blocchino (lock) i processi di lettura e viceversa, ogni
+transazione vede uno /snapshot/ dei dati, ossia una "istantanea" dei dati. Ogni tupla contiene delle *informazioni di visiilità*che
+indicano quali transazioni possono vedere la tupla stessa e quali no.
+
+*** MVCC Bloating
+Al fine di poter mantenere lo snapshot dei dati, ogni volta che una tupla viene "toccata" in scrittura (es. ~UPDATE~) essa viene /invalidata/
+e ne viene posizionata in "append" una nuova con i relativi valori aggiornati.
+
+In altre parole: /ci possono essere contemporaneamente piu' versioni della stessa tupla!/
+
+Queste produce un "rigonfiamento" dei dati (/bloating/) che viene risolto da un apposito meccanismo detto /vacuuming/.
+
+*** Informazioni di visibilità
+Ogni tabella ha quattro colonne nascoste, che quindi sono disponibili su ogni tupla:
+- ~xmin~ indica il /transaction id/ della transazione che ha *generato* la tupla;
+- ~xmax~ indica il /transaction id/ della transazione che ha *invalidato* la tupla;
+- ~cmin~ indica il /command id/ che ha *generato* la tupla all'interno di una transazione;
+- ~cmax~ indica il /command id/ che ha *invalidato* la tupla all'interno di una transazione.
+
+Se ~xmax~ vale zero allora la tupla è valida (non è stata invalidata).
+Se ~cmin~ e/o ~cmax~ sono zero allora il comando non faceva parte di una transazione esplicita (~BEGIN ... END~).
+
+*** Informazioni di visibilità: estrarle
+Nominando le colonne "nascoste" si possono vedere le informazioni di visibilità:
+
+#+begin_src sql
+> SELECT xmin, xmax, cmin, cmax, pk
+  FROM persona LIMIT 2;
+ xmin | xmax | cmin | cmax | pk
+------+------+------+------+----
+ 1202 |    0 |    0 |    0 | 10
+ 1202 |    0 |    0 |    0 | 11
+#+end_src
+
+*** Quando è visibile una tupla?
+In generale la tupla è visibile se:
+- ~xmin == current_xid && cmin >= current_command_id~ e ~xmax == 0 || ( xmax == current_xid && cmax >= current_command_id )~ ossia se la tupla è stata creata da questa transazione e non è stata invalidata se non dalla transazione stessa;
+- ~xmin committed && ( xmax == 0 || xmax == current_xid || xmax ! commited )~ ossia se la tupla è stata creata prima di questa transazione (o comunque committata) e non è stata invalidata se non dalla transazione corrente o da una transazione che non ha ancora fatto il commit.
+
+/Il test è complesso!/
+In generale la regola è
+   ~xmin == current_xid || xmin committed~ per candidarla come possibile tupla visibile:
+e
+   ~xmax == 0 || xmax == current_xid || xmax ! committed~ per stabilire se non è stata invalidata.
 ** TODO Impatti di Vacuum e autovacuum
 *** Tabella di eventi
    Si immagini di popolare una tabella di eventi:
