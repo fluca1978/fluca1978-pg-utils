@@ -3253,7 +3253,7 @@ E' possibile specificare quale indice usare al momento della creazione.
 
 Un indice può essere *multicolonna* (fino a 32 colonne per indice).
 *** B-Tree
-E' il tipo di default.
+E' il tipo di default. *Sono gli unici indici che possono essere definiti ~UNIQUE~!*
 
 Funziona per operazioni di *equalità* e *range* su dati ordinabili in qualche modo, quindi operatori ~=~, ~>~, ~<~, ~>=~, ~<=~, ~BETWEEN~,
 ~IN~, ~IS NULL~.
@@ -3284,6 +3284,26 @@ Ad esempio, se i dati sono ordinabili, il BRIN memorizza il valore minimo e mass
 Tali indici vengono costruiti definendo gli operatori applicabili e il relativo comportamento (ad esempio indici spaziali).
 *** SP-GIST
 E' una infrastruttura per la costruzione di indici non bilanciati.
+** Quando viene usato un indice?
+*** Quando sicuramente non viene usato un indice
+Una query che non filtri i dati *non userà mai un indice*.
+
+Si vogliono reperire tutti i dati, che senso avrebbe caricare in memoria prima l'indice per poi accederli tutti?
+*** ORDER BY
+Nel caso di un ~ORDER BY~ è possibile sia utilizzato l'indice, a patto che:
+- le colonne dell'indice comprendano quelle dell'~ORDER BY~;
+- la tabella sia molto piccola, nel qual caso l'I/O per un sort esterno risulterebbe piu' costoso che la visita dell'indice.
+
+In questo caso i B-Tree sono utili: memorizzano i dati in ordine /ascendente/ con i ~NULL~ alla fine.
+
+Un altro caso in cui si "forza" l'uso dell'indice è ~ORDER BY ... LIMIT~, poiché l'indice solitamente è piu' veloce nel restituire le prime n-tuple di ~LIMIT~.
+*** Agggregazione di indici
+PostgreSQL è capace di unire piu' indici al fine di ottimizzare l'esecuzione della query.
+
+Solitamente la query viene "smontata" in piu' piani di esecuzione, ciascuno colelgato ad un indice (a volte anche allo stesso con clausole diverse). Dopo aver percorso un indice il sistema costruisce una *bitmap* che contiene la mappa di match trovati su quella condizione/indice.
+Le varie bitmap (una per indice) sono poi aggregate logicamente con ~AND~ o ~OR~ per costruire la mappa finale delle tuple che hanno passato ogni indice.
+
+La mappa finale è ordinata naturalmente per posizione /fisica/ delle tuple, quindi se c'è un ~ORDER BY~ sarà necessario un ulteriore passaggio di sorting.
 * Write Ahead Log
 ** Introduzione ai WAL
 I *Write Ahead Log* sono un componente fondamentale per il funzionamento del database.
