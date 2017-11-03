@@ -3245,6 +3245,27 @@ tps = 518.212526 (excluding connections establishing)
 
 Siccome due client hanno fallito entrambi una transazione, e quindi in tutto sono fallite due transazioni, il sistema
 riporta che *98/100* transazioni sono state attualmente processate!
+* Indici
+** Tipi di indici
+*** Introduzione
+PostgreSQL supporta diversi tipi di indici, ognuno specializzato per un algoritmo di /ordinamento/ dei dati.
+E' possibile specificare quale indice usare al momento della creazione.
+*** B-Tree
+E' il tipo di default.
+
+Funziona per operazioni di *equalità* e *range* su dati ordinabili in qualche modo, quindi operatori ~=~, ~>~, ~<~, ~>=~, ~<=~, ~BETWEEN~,
+~IN~, ~IS NULL~.
+
+Possono anche essere usati per ricerche ~LIKE~ a patto che:
+- il pattern sia un literal;
+- il pattern sia cercato all'inizio della stringa.
+
+Ad esempio ~LIKE 'Ferr%'~.
+*** Hash
+Gli indici /Hash/ sono usabili solo per *uguaglianza*, quindi non saranno mai utilizzati se non assieme all'operatore ~=~.
+
+*ATTENZIONE: gli indici hash non sono attualmente salvati nei WAL.* Questo significa che gli indici hash non sopravvivono ad un crash
+e non sono nemmeno replicati (dalla version 10 entrambi i problemi sono risolti).
 
 * Write Ahead Log
 ** Introduzione ai WAL
