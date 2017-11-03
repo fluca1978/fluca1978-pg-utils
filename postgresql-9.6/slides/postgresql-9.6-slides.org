@@ -3263,6 +3263,18 @@ PostgreSQL permette di indicizzare:
 Le espressioni di colonne sono calcolate ad ogni ~INSERT~ / ~UPDATE~ ma non ad ogni scansione dell'indice.
 
 Gli indici parziali sono costruiti attorno a particolari valori dei dati (ad esempio ~eta >= 18~). L'idea è quella di non indicizzare i valori piu' comuni perché non sarebbero comunque usati (l'indice non è filtrante su valori comuni!). Gli indici parziali possono anche essere ~UNIQUE~: le colonne indicizzate devono essere ~UNIQUE~, il predicato viene fatto su altre colonne.
+*** Heap, Indice secondario, accessi
+*In PostgreSQL gli indici sono memorizzati separatamente dalla tabella*:
+- l'indice è formalmente detto /secondario/;
+- lo spazio di memorizzazione della tabella è detto /heap/.
+
+Questo significa che un accesso attraverso un indice richiede:
+1. il caricamento e la valutazione (scan) delle pagine dati dell'indice;
+2. il caricamento e l'accesso alla pagina dati della tabella individuata dall'indice.
+
+Questo significa che l'accesso tramite indice può essere /costoso/ in termini di risorse e I/O (random access).
+Per questo motivo un indice viene usato solo se il suo utilizzo non aggiunge penalità, altrimenti un accesso sequenziale all'heap viene preferito.
+
 *** B-Tree
 E' il tipo di default. *Sono gli unici indici che possono essere definiti ~UNIQUE~!*
 
