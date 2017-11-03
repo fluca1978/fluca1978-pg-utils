@@ -3252,6 +3252,12 @@ PostgreSQL supporta diversi tipi di indici, ognuno specializzato per un algoritm
 E' possibile specificare quale indice usare al momento della creazione.
 
 Un indice può essere *multicolonna* (fino a 32 colonne per indice).
+*** Cosa si può indicizzare?
+PostgreSQL permette di indicizzare:
+- colonne (fino a 32 per indice);
+- espressioni di colonne.
+
+Le espressioni di colonne sono calcolate ad ogni ~INSERT~ / ~UPDATE~ ma non ad ogni scansione dell'indice.
 *** B-Tree
 E' il tipo di default. *Sono gli unici indici che possono essere definiti ~UNIQUE~!*
 
