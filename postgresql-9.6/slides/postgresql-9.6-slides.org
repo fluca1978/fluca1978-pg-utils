@@ -3328,6 +3328,49 @@ Solitamente la query viene "smontata" in piu' piani di esecuzione, ciascuno cole
 Le varie bitmap (una per indice) sono poi aggregate logicamente con ~AND~ o ~OR~ per costruire la mappa finale delle tuple che hanno passato ogni indice.
 
 La mappa finale è ordinata naturalmente per posizione /fisica/ delle tuple, quindi se c'è un ~ORDER BY~ sarà necessario un ulteriore passaggio di sorting.
+** Tipi di accesso tramite indice
+*** Sequential Scan (~Seq Scan~)
+E' il tipo di scansione di default (ossia quando non vi sono indici o il loro utilizzo è inutile e/o costoso).
+
+Viene letta la tabella una pagina dati alla volta fino alla fine.
+*** Bitmap Index Scan (~Bitmap Index Scan~)
+Viene usato quando si hanno dei valori non troppo frequenti e delle clausole di uguaglianza.
+
+Si costruisce una mappa hash di tuple che soddisfano o meno la condizione e si ripercorre questa condizione quando si leggono le pagine dati.
+*** Index Scan (~Index Scan~)
+Viene usato quando si ha un indice altamente filtrante (ossia pochi valori da estrarre).
+
+E' l'accesso classico con indice:
+1. si percorre l'indice;
+2. si estraggono le tuple visibili dall'heap della tabella.
+*** Index Only Scan (~Index Only Scan~)
+E' una funzionalità introdotta nelle ultime versione di PostgreSQL.
+Viene usata se:
+- l'indice supporta l'/Index Only Scan/ (es. B-Tree);
+- la query referenzia *solo* colonne presenti nell'indice.
+
+Tutti i dati sono quindi accessibili solo tramite l'indice, e quindi è possibile accedere all'indice direttamente senza accedere all'heap.
+
+C'è però una complicazione: gli indici non memorizzano i dati di visibilità, quindi l'indice potrebbe referenziare tuple invisibili (MVCC). Per risolvere questo problema ogni pagina heap memorizza un bit che indica se tutte le sue tuple sono visibili. Se non tutte le tuple sono visibili questo accesso si trasforma di fatto in un /Index Scan/.
+*** Nested Loop (~Nested Loop~)
+E' un meccanismo di join fra tabelle.
+La tabella di destra viene percorsa con due strategie:
+- /inner/ ~Seq Scan~
+  1. la tabella /outer/ (sinistra) viene percorsa sequenzialmente;
+  2. la tabella /inner/ (destra) viene percorsa sequenzialmente per ogni valore della tabella inner. *Funziona solo per piccole dimensioni della /inner/.*
+- /inner/ ~Index Scan~
+  1. la tabella /outer/ (sinistra) viene letta sequenzialmente (o anche con indice);
+  2. per ogni valore della /outer/ si cerca nell'indice della /inner/ (destra) il match e si accede tramite l'indice alle tuple.
+*** Altri tipi di join
+- ~Hash Join~
+  1. la tabella /inner/ (destra) viene decomposta in un hash con valori multipli per bucket;
+  2. la tabella /outer/ (sinistra) viene percorsa sequenzialmente, per ogni valore si calcola la chiave e si cerca nell'array di valori
+     hash della /inner/
+- ~Merge Join~
+  1. entrambe le tabelle sono prima ordinate (~Sort~) a seguito di una lettura sequenziale (~Seq Scan~);
+  2. la tabella /outer/ (sinistra) viene percorsa sequenzialmente;
+  3. per ogni valore della /outer/ si estraggono tutti i valori della /inner/ che fanno match (sono ordinati);
+  4. al primo valore della /outer/ che non fa match si avanza al prossimo valore della /inner/ e si riparte dalla stessa posizione della /inner/.
 * Write Ahead Log
 ** Introduzione ai WAL
 I *Write Ahead Log* sono un componente fondamentale per il funzionamento del database.
