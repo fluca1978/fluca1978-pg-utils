@@ -3328,7 +3328,7 @@ Solitamente la query viene "smontata" in piu' piani di esecuzione, ciascuno cole
 Le varie bitmap (una per indice) sono poi aggregate logicamente con ~AND~ o ~OR~ per costruire la mappa finale delle tuple che hanno passato ogni indice.
 
 La mappa finale è ordinata naturalmente per posizione /fisica/ delle tuple, quindi se c'è un ~ORDER BY~ sarà necessario un ulteriore passaggio di sorting.
-** Tipi di accesso tramite indice
+** Tipi di accesso
 *** Sequential Scan (~Seq Scan~)
 E' il tipo di scansione di default (ossia quando non vi sono indici o il loro utilizzo è inutile e/o costoso).
 
