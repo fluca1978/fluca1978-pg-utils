@@ -3252,6 +3252,8 @@ PostgreSQL supporta diversi tipi di indici, ognuno specializzato per un algoritm
 E' possibile specificare quale indice usare al momento della creazione.
 
 Un indice può essere *multicolonna* (fino a 32 colonne per indice).
+
+L'indice userà la /collation/ della colonna a cui si applica, ma è possibile specificarne una differente all'atto della creazione dell'indice. Ad ogni modo un indice usa una sola collation!
 *** Cosa si può indicizzare?
 PostgreSQL permette di indicizzare:
 - colonne (fino a 32 per indice);
