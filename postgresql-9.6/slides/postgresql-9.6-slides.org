@@ -3277,6 +3277,7 @@ Per questo motivo un indice viene usato solo se il suo utilizzo non aggiunge pen
 
 *** B-Tree
 E' il tipo di default. *Sono gli unici indici che possono essere definiti ~UNIQUE~!*
+Supporta l'/Index Only Scan/!
 
 Funziona per operazioni di *equalità* e *range* su dati ordinabili in qualche modo, quindi operatori ~=~, ~>~, ~<~, ~>=~, ~<=~, ~BETWEEN~,
 ~IN~, ~IS NULL~.
