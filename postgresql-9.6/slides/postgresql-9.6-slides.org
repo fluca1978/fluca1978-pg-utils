@@ -3359,7 +3359,110 @@ Il parametro ~wal_level~ specifica quale livello di WAL si vuole usare:
   tecniche di backup avanzate (es. PITR) o per replica /warm standby/;
 - ~hot_standby~ consente di rendere le repliche funzionanti da subito (in sola lettura!);
 - ~logical~ consente di avviare la /replica logica/.
--
+** Logical Decoding
+*** Introduzione
+PostgreSQL supporta la replicazione logica dalla versione 10, ma intanto l'infrastruttura
+per la /decodifica/ dei WAL da binario a logico (ossia verso statement SQL) è possibile.
+
+La decodifica logica avviene attraverso dei /plugin/.
+Ogni plugin è responsabile di operare sui WAL e tradurli nel formato appropriato, ad esempio un formato SQL.
+
+Per interagire con la decodifica logica occorre quindi avere un opportuno plugin per
+poter gestire i WAL segment. Uno di questi plugin è ~test_decoding~, usato per
+ottenere statement SQL.
+
+L'interazione fra plugin e WAL segment avviene attraverso i /replication slot/.
+*** Perché i replication slot?
+In PostgreSQL un /replication slot/ è *uno stream univoco di modifiche ordinate* che un /consumer/ può ripercorrere a applicare (o decodificare).
+
+Lo slot non è al corrente di cosa sta facendo il consumer, e neanche di quale consumer vi è attaccato. Ogni consumer è responsabile
+di richiedere le modifiche allo slot a partire da un certo punto.
+
+Gli slot usati per la decodifica logica sono leggermente differenti da quelli di streaming replication (detti anche /fisici/): le differenze
+sono nel protocollo di scambio di dati, ma concettualmente entrambi rappresentano uno stream ordinato di modifiche.
+
+*** Logical Decoding: passi fondamentali
+Per ottenere le informazioni logiche occorre:
+1. abilitare il liello ~logical~ per ~wal_level~;
+2. usare degli /slot/ di replicazione (quindi occorre abilitare almeno uno slot di replicazione);
+3. interfacciarsi con i cataloghi di sistemi o appositi programmi del cluster.
+
+*ATTENZIONE: i comandi DDL non sono decodificati (ma ovviamente /esistono/)!*
+*** Configurazione del server
+Nel file ~postgresql.conf~:
+#+begin_src shell
+wal_level = logical
+max_replication_slots = 1 # almeno uno!
+#+end_src
+
+*** Creazione di uno slot
+E' possibile usare il plugin ~test_decoding~:
+#+begin_src sql
+# SELECT *
+  FROM pg_create_logical_replication_slot( 'logical_decoding_slot',
+                                           'test_decoding');
+-[ RECORD 1 ]-+----------------------
+slot_name     | logical_decoding_slot
+xlog_position | 3/FB0004F8
+#+end_src
+
+/E' possibile creare lo slot anche tramite ~pg_recvlogical~!/
+
+*** Interazione con lo slot e con la decodifica: SQL
+#+begin_src sql
+# INSERT INTO persona( nome, cognome, codice_fiscale )
+  VALUES( 'Mario', 'Rossi', 'RSSMRA71M68F357T' );
+#+end_src
+
+e interrogando la vista ~pg_logical_slot_get_changes~ si ottiene:
+#+begin_src sql
+# SELECT * FROM pg_logical_slot_get_changes('logical_decoding_slot', NULL, NULL);
+-[ RECORD 1 ]--------
+location | 3/FB000530
+xid      | 1950
+data     | BEGIN 1950
+-[ RECORD 2 ]--------
+location | 3/FB000600
+xid      | 1950
+data     | table public.persona:
+           INSERT: pk[integer]:16
+           nome[character varying]:'Mario'
+           cognome[character varying]:'Rossi'
+           codice_fiscale[character varying]:'RSSMRA71M68F357T'
+           eta[integer]:null
+           valid[boolean]:true
+-[ RECORD 3 ]--------
+location | 3/FB000B18
+xid      | 1950
+data     | COMMIT 1950
+#+end_src
+
+*** Interazione con lo slot e la decodifica: ~pg_recvlogical~
+Da un terminale:
+#+begin_src shell
+% pg_recvlogical -h localhost \                                                                                          ~
+  -d testdb \
+  -U postgres \
+  --slot=logical_decoding_slot \
+  --start -f -
+Password:
+
+BEGIN 1951
+table public.persona: INSERT:
+   pk[integer]:17
+   nome[character varying]:'Giovanni'
+   cognome[character varying]:'Verdi'
+   codice_fiscale[character varying]:'VRDGVN71M18F357K'
+   eta[integer]:null
+   valid[boolean]:true
+COMMIT 1951
+#+end_src
+
+che corrisponde allo stament SQL
+#+begin_src sql
+# INSERT INTO persona( nome, cognome, codice_fiscale )
+  VALUES( 'Giovanni', 'Verdi', 'VRDGVN71M18F357K' );
+#+end_src
 * Point in Time Recovery & Replication
 ** Point in Time Recovery (PITR)
 *** Introduzione al PITR
@@ -4211,108 +4314,4 @@ LOG:  archive recovery complete
 LOG:  MultiXact member wraparound protections are now enabled
 LOG:  database system is ready to accept connections
 LOG:  autovacuum launcher started
-#+end_src
-** Logical Decoding
-*** Introduzione
-PostgreSQL supporta la replicazione logica dalla versione 10, ma intanto l'infrastruttura
-per la /decodifica/ dei WAL da binario a logico (ossia verso statement SQL) è possibile.
-
-La decodifica logica avviene attraverso dei /plugin/.
-Ogni plugin è responsabile di operare sui WAL e tradurli nel formato appropriato, ad esempio un formato SQL.
-
-Per interagire con la decodifica logica occorre quindi avere un opportuno plugin per
-poter gestire i WAL segment. Uno di questi plugin è ~test_decoding~, usato per
-ottenere statement SQL.
-
-L'interazione fra plugin e WAL segment avviene attraverso i /replication slot/.
-*** Perché i replication slot?
-In PostgreSQL un /replication slot/ è *uno stream univoco di modifiche ordinate* che un /consumer/ può ripercorrere a applicare (o decodificare).
-
-Lo slot non è al corrente di cosa sta facendo il consumer, e neanche di quale consumer vi è attaccato. Ogni consumer è responsabile
-di richiedere le modifiche allo slot a partire da un certo punto.
-
-Gli slot usati per la decodifica logica sono leggermente differenti da quelli di streaming replication (detti anche /fisici/): le differenze
-sono nel protocollo di scambio di dati, ma concettualmente entrambi rappresentano uno stream ordinato di modifiche.
-
-*** Logical Decoding: passi fondamentali
-Per ottenere le informazioni logiche occorre:
-1. abilitare il liello ~logical~ per ~wal_level~;
-2. usare degli /slot/ di replicazione (quindi occorre abilitare almeno uno slot di replicazione);
-3. interfacciarsi con i cataloghi di sistemi o appositi programmi del cluster.
-
-*ATTENZIONE: i comandi DDL non sono decodificati (ma ovviamente /esistono/)!*
-*** Configurazione del server
-Nel file ~postgresql.conf~:
-#+begin_src shell
-wal_level = logical
-max_replication_slots = 1 # almeno uno!
-#+end_src
-
-*** Creazione di uno slot
-E' possibile usare il plugin ~test_decoding~:
-#+begin_src sql
-# SELECT *
-  FROM pg_create_logical_replication_slot( 'logical_decoding_slot',
-                                           'test_decoding');
--[ RECORD 1 ]-+----------------------
-slot_name     | logical_decoding_slot
-xlog_position | 3/FB0004F8
-#+end_src
-
-/E' possibile creare lo slot anche tramite ~pg_recvlogical~!/
-
-*** Interazione con lo slot e con la decodifica: SQL
-#+begin_src sql
-# INSERT INTO persona( nome, cognome, codice_fiscale )
-  VALUES( 'Mario', 'Rossi', 'RSSMRA71M68F357T' );
-#+end_src
-
-e interrogando la vista ~pg_logical_slot_get_changes~ si ottiene:
-#+begin_src sql
-# SELECT * FROM pg_logical_slot_get_changes('logical_decoding_slot', NULL, NULL);
--[ RECORD 1 ]--------
-location | 3/FB000530
-xid      | 1950
-data     | BEGIN 1950
--[ RECORD 2 ]--------
-location | 3/FB000600
-xid      | 1950
-data     | table public.persona:
-           INSERT: pk[integer]:16
-           nome[character varying]:'Mario'
-           cognome[character varying]:'Rossi'
-           codice_fiscale[character varying]:'RSSMRA71M68F357T'
-           eta[integer]:null
-           valid[boolean]:true
--[ RECORD 3 ]--------
-location | 3/FB000B18
-xid      | 1950
-data     | COMMIT 1950
-#+end_src
-
-*** Interazione con lo slot e la decodifica: ~pg_recvlogical~
-Da un terminale:
-#+begin_src shell
-% pg_recvlogical -h localhost \                                                                                          ~
-  -d testdb \
-  -U postgres \
-  --slot=logical_decoding_slot \
-  --start -f -
-Password:
-
-BEGIN 1951
-table public.persona: INSERT:
-   pk[integer]:17
-   nome[character varying]:'Giovanni'
-   cognome[character varying]:'Verdi'
-   codice_fiscale[character varying]:'VRDGVN71M18F357K'
-   eta[integer]:null
-   valid[boolean]:true
-COMMIT 1951
-#+end_src
-
-che corrisponde allo stament SQL
-#+begin_src sql
-# INSERT INTO persona( nome, cognome, codice_fiscale )
-  VALUES( 'Giovanni', 'Verdi', 'VRDGVN71M18F357K' );
 #+end_src
