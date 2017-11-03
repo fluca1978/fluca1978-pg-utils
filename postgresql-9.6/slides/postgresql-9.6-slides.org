@@ -3250,6 +3250,8 @@ riporta che *98/100* transazioni sono state attualmente processate!
 *** Introduzione
 PostgreSQL supporta diversi tipi di indici, ognuno specializzato per un algoritmo di /ordinamento/ dei dati.
 E' possibile specificare quale indice usare al momento della creazione.
+
+Un indice può essere *multicolonna* (fino a 32 colonne per indice).
 *** B-Tree
 E' il tipo di default.
 
@@ -3261,12 +3263,27 @@ Possono anche essere usati per ricerche ~LIKE~ a patto che:
 - il pattern sia cercato all'inizio della stringa.
 
 Ad esempio ~LIKE 'Ferr%'~.
+
+Nel caso di indici multicolonna l'indice viene usato in base a delle limitazioni: il fattore di filtro delle *prime colonne con uguaglianza e la prima con disuguaglianza identificano la porzione di indice da "caricare in memoria e valutare"*, le colonne a seguire sono comunque usate ma non riducono la porzione di dati dell'indice da controllare.
+
 *** Hash
 Gli indici /Hash/ sono usabili solo per *uguaglianza*, quindi non saranno mai utilizzati se non assieme all'operatore ~=~.
 
 *ATTENZIONE: gli indici hash non sono attualmente salvati nei WAL.* Questo significa che gli indici hash non sopravvivono ad un crash
 e non sono nemmeno replicati (dalla version 10 entrambi i problemi sono risolti).
+*** GIN
+Sono indici /invertiti/, ovvero invece che "puntare" ad una tupla puntano a dati multipli (es. array).
 
+Sono usati solitamente per testare l'esistenza della chiave fra i possibili valori, ad esempio nell Full Text Search.
+*** BRIN
+Gli indici /BRIN/ (Block Range INdexes) memorizzano dati sommari circa ogni blocco fisico di dati su disco.
+Ad esempio, se i dati sono ordinabili, il BRIN memorizza il valore minimo e massimo di ogni /blocco fisico/ di dati.
+*** GIST
+/GIST/ (Generalized Index Search Tree) non è un vero tipo di indice ma una "piattaforma" per la costruzione di indici personalizzati.
+
+Tali indici vengono costruiti definendo gli operatori applicabili e il relativo comportamento (ad esempio indici spaziali).
+*** SP-GIST
+E' una infrastruttura per la costruzione di indici non bilanciati.
 * Write Ahead Log
 ** Introduzione ai WAL
 I *Write Ahead Log* sono un componente fondamentale per il funzionamento del database.
