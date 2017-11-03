@@ -3244,7 +3244,132 @@ tps = 518.212526 (excluding connections establishing)
 
 Siccome due client hanno fallito entrambi una transazione, e quindi in tutto sono fallite due transazioni, il sistema
 riporta che *98/100* transazioni sono state attualmente processate!
+* Indici
+** Tipi di indici
+*** Introduzione
+PostgreSQL supporta diversi tipi di indici, ognuno specializzato per un algoritmo di /ordinamento/ dei dati.
+E' possibile specificare quale indice usare al momento della creazione.
 
+Un indice può essere *multicolonna* (fino a 32 colonne per indice).
+
+L'indice userà la /collation/ della colonna a cui si applica, ma è possibile specificarne una differente all'atto della creazione dell'indice. Ad ogni modo un indice usa una sola collation!
+*** Cosa si può indicizzare?
+PostgreSQL permette di indicizzare:
+- colonne (fino a 32 per indice);
+- espressioni di colonne;
+- dati parziali.
+
+Le espressioni di colonne sono calcolate ad ogni ~INSERT~ / ~UPDATE~ ma non ad ogni scansione dell'indice.
+
+Gli indici parziali sono costruiti attorno a particolari valori dei dati (ad esempio ~eta >= 18~). L'idea è quella di non indicizzare i valori piu' comuni perché non sarebbero comunque usati (l'indice non è filtrante su valori comuni!). Gli indici parziali possono anche essere ~UNIQUE~: le colonne indicizzate devono essere ~UNIQUE~, il predicato viene fatto su altre colonne.
+*** Heap, Indice secondario, accessi
+*In PostgreSQL gli indici sono memorizzati separatamente dalla tabella*:
+- l'indice è formalmente detto /secondario/;
+- lo spazio di memorizzazione della tabella è detto /heap/.
+
+Questo significa che un accesso attraverso un indice richiede:
+1. il caricamento e la valutazione (scan) delle pagine dati dell'indice;
+2. il caricamento e l'accesso alla pagina dati della tabella individuata dall'indice.
+
+Questo significa che l'accesso tramite indice può essere /costoso/ in termini di risorse e I/O (random access).
+Per questo motivo un indice viene usato solo se il suo utilizzo non aggiunge penalità, altrimenti un accesso sequenziale all'heap viene preferito.
+
+*** B-Tree
+E' il tipo di default. *Sono gli unici indici che possono essere definiti ~UNIQUE~!*
+Supporta l'/Index Only Scan/!
+
+Funziona per operazioni di *equalità* e *range* su dati ordinabili in qualche modo, quindi operatori ~=~, ~>~, ~<~, ~>=~, ~<=~, ~BETWEEN~,
+~IN~, ~IS NULL~.
+
+Possono anche essere usati per ricerche ~LIKE~ a patto che:
+- il pattern sia un literal;
+- il pattern sia cercato all'inizio della stringa.
+
+Ad esempio ~LIKE 'Ferr%'~.
+
+Nel caso di indici multicolonna l'indice viene usato in base a delle limitazioni: il fattore di filtro delle *prime colonne con uguaglianza e la prima con disuguaglianza identificano la porzione di indice da "caricare in memoria e valutare"*, le colonne a seguire sono comunque usate ma non riducono la porzione di dati dell'indice da controllare.
+
+*** Hash
+Gli indici /Hash/ sono usabili solo per *uguaglianza*, quindi non saranno mai utilizzati se non assieme all'operatore ~=~.
+
+*ATTENZIONE: gli indici hash non sono attualmente salvati nei WAL.* Questo significa che gli indici hash non sopravvivono ad un crash
+e non sono nemmeno replicati (dalla version 10 entrambi i problemi sono risolti).
+*** GIN
+Sono indici /invertiti/, ovvero invece che "puntare" ad una tupla puntano a dati multipli (es. array).
+
+Sono usati solitamente per testare l'esistenza della chiave fra i possibili valori, ad esempio nell Full Text Search.
+*** BRIN
+Gli indici /BRIN/ (Block Range INdexes) memorizzano dati sommari circa ogni blocco fisico di dati su disco.
+Ad esempio, se i dati sono ordinabili, il BRIN memorizza il valore minimo e massimo di ogni /blocco fisico/ di dati.
+*** GIST
+/GIST/ (Generalized Index Search Tree) non è un vero tipo di indice ma una "piattaforma" per la costruzione di indici personalizzati.
+
+Tali indici vengono costruiti definendo gli operatori applicabili e il relativo comportamento (ad esempio indici spaziali).
+*** SP-GIST
+E' una infrastruttura per la costruzione di indici non bilanciati.
+** Quando viene usato un indice?
+*** Quando sicuramente non viene usato un indice
+Una query che non filtri i dati *non userà mai un indice*.
+
+Si vogliono reperire tutti i dati, che senso avrebbe caricare in memoria prima l'indice per poi accederli tutti?
+*** ORDER BY
+Nel caso di un ~ORDER BY~ è possibile sia utilizzato l'indice, a patto che:
+- le colonne dell'indice comprendano quelle dell'~ORDER BY~;
+- la tabella sia molto piccola, nel qual caso l'I/O per un sort esterno risulterebbe piu' costoso che la visita dell'indice.
+
+In questo caso i B-Tree sono utili: memorizzano i dati in ordine /ascendente/ con i ~NULL~ alla fine.
+
+Un altro caso in cui si "forza" l'uso dell'indice è ~ORDER BY ... LIMIT~, poiché l'indice solitamente è piu' veloce nel restituire le prime n-tuple di ~LIMIT~.
+*** Agggregazione di indici
+PostgreSQL è capace di unire piu' indici al fine di ottimizzare l'esecuzione della query.
+
+Solitamente la query viene "smontata" in piu' piani di esecuzione, ciascuno colelgato ad un indice (a volte anche allo stesso con clausole diverse). Dopo aver percorso un indice il sistema costruisce una *bitmap* che contiene la mappa di match trovati su quella condizione/indice.
+Le varie bitmap (una per indice) sono poi aggregate logicamente con ~AND~ o ~OR~ per costruire la mappa finale delle tuple che hanno passato ogni indice.
+
+La mappa finale è ordinata naturalmente per posizione /fisica/ delle tuple, quindi se c'è un ~ORDER BY~ sarà necessario un ulteriore passaggio di sorting.
+** Tipi di accesso
+*** Sequential Scan (~Seq Scan~)
+E' il tipo di scansione di default (ossia quando non vi sono indici o il loro utilizzo è inutile e/o costoso).
+
+Viene letta la tabella una pagina dati alla volta fino alla fine.
+*** Bitmap Index Scan (~Bitmap Index Scan~)
+Viene usato quando si hanno dei valori non troppo frequenti e delle clausole di uguaglianza.
+
+Si costruisce una mappa hash di tuple che soddisfano o meno la condizione e si ripercorre questa condizione quando si leggono le pagine dati.
+*** Index Scan (~Index Scan~)
+Viene usato quando si ha un indice altamente filtrante (ossia pochi valori da estrarre).
+
+E' l'accesso classico con indice:
+1. si percorre l'indice;
+2. si estraggono le tuple visibili dall'heap della tabella.
+*** Index Only Scan (~Index Only Scan~)
+E' una funzionalità introdotta nelle ultime versione di PostgreSQL.
+Viene usata se:
+- l'indice supporta l'/Index Only Scan/ (es. B-Tree);
+- la query referenzia *solo* colonne presenti nell'indice.
+
+Tutti i dati sono quindi accessibili solo tramite l'indice, e quindi è possibile accedere all'indice direttamente senza accedere all'heap.
+
+C'è però una complicazione: gli indici non memorizzano i dati di visibilità, quindi l'indice potrebbe referenziare tuple invisibili (MVCC). Per risolvere questo problema ogni pagina heap memorizza un bit che indica se tutte le sue tuple sono visibili. Se non tutte le tuple sono visibili questo accesso si trasforma di fatto in un /Index Scan/.
+*** Nested Loop (~Nested Loop~)
+E' un meccanismo di join fra tabelle.
+La tabella di destra viene percorsa con due strategie:
+- /inner/ ~Seq Scan~
+  1. la tabella /outer/ (sinistra) viene percorsa sequenzialmente;
+  2. la tabella /inner/ (destra) viene percorsa sequenzialmente per ogni valore della tabella inner. *Funziona solo per piccole dimensioni della /inner/.*
+- /inner/ ~Index Scan~
+  1. la tabella /outer/ (sinistra) viene letta sequenzialmente (o anche con indice);
+  2. per ogni valore della /outer/ si cerca nell'indice della /inner/ (destra) il match e si accede tramite l'indice alle tuple.
+*** Altri tipi di join
+- ~Hash Join~
+  1. la tabella /inner/ (destra) viene decomposta in un hash con valori multipli per bucket;
+  2. la tabella /outer/ (sinistra) viene percorsa sequenzialmente, per ogni valore si calcola la chiave e si cerca nell'array di valori
+     hash della /inner/
+- ~Merge Join~
+  1. entrambe le tabelle sono prima ordinate (~Sort~) a seguito di una lettura sequenziale (~Seq Scan~);
+  2. la tabella /outer/ (sinistra) viene percorsa sequenzialmente;
+  3. per ogni valore della /outer/ si estraggono tutti i valori della /inner/ che fanno match (sono ordinati);
+  4. al primo valore della /outer/ che non fa match si avanza al prossimo valore della /inner/ e si riparte dalla stessa posizione della /inner/.
 * Write Ahead Log
 ** Introduzione ai WAL
 I *Write Ahead Log* sono un componente fondamentale per il funzionamento del database.
