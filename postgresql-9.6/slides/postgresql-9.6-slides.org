@@ -3255,9 +3255,12 @@ Un indice può essere *multicolonna* (fino a 32 colonne per indice).
 *** Cosa si può indicizzare?
 PostgreSQL permette di indicizzare:
 - colonne (fino a 32 per indice);
-- espressioni di colonne.
+- espressioni di colonne;
+- dati parziali.
 
 Le espressioni di colonne sono calcolate ad ogni ~INSERT~ / ~UPDATE~ ma non ad ogni scansione dell'indice.
+
+Gli indici parziali sono costruiti attorno a particolari valori dei dati (ad esempio ~eta >= 18~). L'idea è quella di non indicizzare i valori piu' comuni perché non sarebbero comunque usati (l'indice non è filtrante su valori comuni!). Gli indici parziali possono anche essere ~UNIQUE~: le colonne indicizzate devono essere ~UNIQUE~, il predicato viene fatto su altre colonne.
 *** B-Tree
 E' il tipo di default. *Sono gli unici indici che possono essere definiti ~UNIQUE~!*
 
