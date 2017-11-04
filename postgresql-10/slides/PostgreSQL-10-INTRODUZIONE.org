@@ -339,3 +339,13 @@ di un processo *postgres* (denominato anche *backend*) delegato a gestire la con
 
    La shared memory viene organizzata in */pagine dati/* che rappresentano la copia in memoria dei dati persistenti su disco.
    Vi sono una serie di processi di utilità che si occupano di scaricare/caricare i dati dalla /shared memory/ e dal disco.
+* Licenza
+This work is licensed under the *Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License*.
+To view a copy of this license,
+visit http://creativecommons.org/licenses/by-nc-sa/4.0/
+or send a letter to
+Creative Commons,
+PO Box 1866,
+Mountain View,
+CA 94042,
+USA.

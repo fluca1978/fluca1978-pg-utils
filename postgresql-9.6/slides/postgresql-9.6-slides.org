@@ -4488,3 +4488,13 @@ LOG:  MultiXact member wraparound protections are now enabled
 LOG:  database system is ready to accept connections
 LOG:  autovacuum launcher started
 #+end_src
+* Licenza
+This work is licensed under the *Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License*.
+To view a copy of this license,
+visit http://creativecommons.org/licenses/by-nc-sa/4.0/
+or send a letter to
+Creative Commons,
+PO Box 1866,
+Mountain View,
+CA 94042,
+USA.
