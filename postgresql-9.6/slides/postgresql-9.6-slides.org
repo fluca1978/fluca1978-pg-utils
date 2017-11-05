@@ -1685,6 +1685,67 @@ In generale la regola è
    ~xmin == current_xid || xmin committed~ per candidarla come possibile tupla visibile:
 e
    ~xmax == 0 || xmax == current_xid || xmax ! committed~ per stabilire se non è stata invalidata.
+*** VACUUM
+Il comand ~VACUUM~ permette di "ricompattare" lo spaizo disco andando ad eliminare quelle tuple che non sono piu' /naturalmente/ visibili (ossia sono state invalidate per ogni transazione).
+
+Il comando può agire su un intero database o su una singola tabella, ed è I/O intensive (deve riorganizzare le pagine dati).
+
+Il comando ~VACUUM~ può essere combinato con ~ANALYZE~: si ricompattano i dati e si aggiornano le statistiche usate dall'ottimizzatore.
+*** Il problema dello xid wraparound
+PostgreSQL numera le transazioni in un intero a 32 bit denominato /xid/. Ogni transazione ottiene uno xid progressivo (e quindi superiore) rispetto alle transazioni precedenti. 
+Questo permette di identificare una transazione nel futuro o nel passato comparando gli /xid/.
+
+Tuttavia prima o poi lo /xid/ subirà il /wraparound/, e precisamente dopo 2^31 transazioni le nuove transazioni otterranno un numero identificativo minore (riavviato) e improvvisamente appariranno nel passato.
+*** Quando ci si avvicina allo xid wraparound
+Per sicurezza PostgreSQL interrompe le proprie attività quando ci si avvicina al rischio di wraparound. Nelle versioni molto vecchie questo imponeva un ~VACUUM~ manuale, nelle versioni attuali l'autovacuum previene il problema:
+#+begin_src shell
+WARNING:  database "mydb" must be vacuumed within 177009986 transactions
+HINT:  To avoid a database shutdown, execute a database-wide VACUUM in "mydb".
+...
+RROR:  database is not accepting commands to avoid wraparound data loss in database "mydb"
+HINT:  Stop the postmaster and vacuum that database in single-user mode.
+#+end_src
+*** xid wraparound: soluzioni
+In passato (< 9.4) PostgreSQL numerava le transazioni partendo da ~3~ e usava il valore ~2~ come ~FrozenTransactionId~. Era quindi sufficiente modificare lo ~xmin~ di ogni tupla con ~FrozenTransactionId~ per fare in modo che questa /comparisse *sempre* nel passato/.
+(il valore ~1~ era usato come ~BootstrapTransactionId~ per indicare che l'oggetto è stato creato durante l'inizializzazione del database)
+
+Nelle versioni attuali di PostgreSQL viene mantenuto lo ~xmin~ originale (utile per debugging) e viene aggiunto un flag /~frozen~/ per indicare che la tupla è /nel passato/.
+*** xid wraparound: ~VACUUM FREEZE~
+Il comando ~VACUUM~ accetta un'opzione particolare, ~FREEZE~ che va a controllare ogni tupla e la marca come /frozen/ (quindi *sempre* nel passato) se possibile.
+
+Per ottimizzare l'I/O, ~VACUUM~ controlla la /visibility map/ di ogni pagina e salta le pagine dati che non hanno tuple "espirate", quindi non applicando il ~FREEZE~ a tutte le tuple. Per effettuare l'analisi anche di queste pagine dati occorre dare l'opzione ~DISABLE_PAGE_SKIPPING~.
+*** Vacuum in azione
+#+begin_src sql
+# VACUUM FREEZE VERBOSE software;
+INFO:  vacuuming "public.software"
+INFO:  index "software_pkey" now contains 8 row versions in 2 pages
+DETAIL:  0 index row versions were removed.
+0 index pages have been deleted, 0 are currently reusable.
+CPU 0.00s/0.00u sec elapsed 0.00 sec.
+INFO:  index "software_name_version_key" now contains 8 row versions in 2 pages
+DETAIL:  0 index row versions were removed.
+0 index pages have been deleted, 0 are currently reusable.
+CPU 0.00s/0.00u sec elapsed 0.00 sec.
+INFO:  "software": found 4 removable, 8 nonremovable row versions in 1 out of 1 pages
+DETAIL:  0 dead row versions cannot be removed yet.
+There were 2 unused item pointers.
+Skipped 0 pages due to buffer pins.
+0 pages are entirely empty.
+CPU 0.00s/0.00u sec elapsed 0.00 sec.
+INFO:  vacuuming "pg_toast.pg_toast_16559"
+INFO:  index "pg_toast_16559_index" now contains 0 row versions in 1 pages
+DETAIL:  0 index row versions were removed.
+0 index pages have been deleted, 0 are currently reusable.
+CPU 0.00s/0.00u sec elapsed 0.00 sec.
+INFO:  "pg_toast_16559": found 0 removable, 0 nonremovable row versions in 0 out of 0 pages
+DETAIL:  0 dead row versions cannot be removed yet.
+There were 0 unused item pointers.
+Skipped 0 pages due to buffer pins.
+0 pages are entirely empty.
+CPU 0.00s/0.00u sec elapsed 0.00 sec.
+VACUUM
+#+end_src
+
 ** TODO Impatti di Vacuum e autovacuum
 *** Tabella di eventi
    Si immagini di popolare una tabella di eventi:
