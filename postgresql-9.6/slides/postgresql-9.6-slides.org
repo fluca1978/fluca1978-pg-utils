@@ -3480,6 +3480,64 @@ La tabella di destra viene percorsa con due strategie:
   2. la tabella /outer/ (sinistra) viene percorsa sequenzialmente;
   3. per ogni valore della /outer/ si estraggono tutti i valori della /inner/ che fanno match (sono ordinati);
   4. al primo valore della /outer/ che non fa match si avanza al prossimo valore della /inner/ e si riparte dalla stessa posizione della /inner/.
+** Statistische
+*** Dove sono le statistische?
+Il catalogo ~pg_statistic~ contiene le informazioni statistiche su ogni attributo di ogni tabella, ad sempio:
+#+begin_src sql
+# SELECT pc.relname, ps.stanullfrac, ps.stadistinct, pa.attname, pa.attstattarget
+  FROM pg_class pc JOIN pg_statistic ps ON ps.starelid = pc.oid
+  JOIN pg_attribute pa ON pa.attnum = ps.staattnum
+  WHERE pc.relname = 'software' AND pa.attrelid = pc.oid;
+ relname  | stanullfrac | stadistinct | attname | attstattarget 
+----------+-------------+-------------+---------+---------------
+ software |           0 |          -1 | pk      |            -1
+ software |           0 |       -0.25 | name    |            -1
+ software |           0 |          -1 | version |            -1
+ software |           0 |       -0.25 | valid   |            -1
+#+end_Src
+
+che mostra i valori null e il numero di valori distinti per le varie colonne.
+
+*** I valori delle statistiche
+I valori delle statistiche /solitamente/ seguono questa regola:
+- se sono valori positivi allora sono valori esatti;
+- se sono valori negativi hanno un significato speciale.
+
+Ad esempio:
+#+begin_src sql
+ relname  | stanullfrac | stadistinct | attname | attstattarget 
+----------+-------------+-------------+---------+---------------
+ software |           0 |          -1 | pk      |            -1
+ software |           0 |       -0.25 | name    |            -1
+#+end_Src
+
+- ~stadistinct~ indica il numero esatto di valori distinti o un valore negativo che il moltiplicatore del numero di tuple, ovvero ~name~ ha valori distinti ogni 4 righe (~-0.25~), mentre ~pk~ ogni riga (è chiave!);
+- ~attstattarget~ indica la granularilarità delle statistiche collezionate da ~ANALYZE~. Il valore dipende dal dominio del dato:
+  - se negativo indica che si usa il default per quel tipo di dato;
+  - se positivo indica che si userà quel valore;
+  - se zero allora nessuna statistica sarà raccolta su quella colonna.
+
+Per valori scalari solitamente il target indica quanti /valori comuni devono essere considerati/.
+
+*** ANALYZE
+PostgreSQL aggiorna il catalogo delle statistiche con il comando ~ANALYZE~ (che può essere eseguito da solo o assieme a ~VACUUM~).
+
+#+begin_src sql
+# ANALYZE VERBOSE software;
+INFO:  analyzing "public.software"
+INFO:  "software": scanned 1 of 1 pages, 
+       containing 8 live rows and 0 dead rows; 
+       8 rows in sample, 8 estimated total rows
+#+end_Src
+
+Il livello di statistiche (granularità) da raccogliere con ~ANALYZE~ può essere specificato colonna per colonna con:
+
+#+begin_src sql
+> ALTER TABLE software 
+  ALTER COLUMN name 
+  SET STATISTICS 1;
+#+end_src
+
 * Write Ahead Log
 ** Introduzione ai WAL
 I *Write Ahead Log* sono un componente fondamentale per il funzionamento del database.
