@@ -1677,8 +1677,19 @@ Nominando le colonne "nascoste" si possono vedere le informazioni di visibilità
 
 *** Quando è visibile una tupla?
 In generale la tupla è visibile se:
-- ~xmin == current_xid && cmin >= current_command_id~ e ~xmax == 0 || ( xmax == current_xid && cmax >= current_command_id )~ ossia se la tupla è stata creata da questa transazione e non è stata invalidata se non dalla transazione stessa;
-- ~xmin committed && ( xmax == 0 || xmax == current_xid || xmax ! commited )~ ossia se la tupla è stata creata prima di questa transazione (o comunque committata) e non è stata invalidata se non dalla transazione corrente o da una transazione che non ha ancora fatto il commit.
+a) la tupla è stata creata da questa transazione e non è stata invalidata se non dalla transazione stessa
+#+begin_src c
+   xmin == current_xid && cmin >= current_command_id
+      &&
+   xmax == 0 || ( xmax == current_xid && cmax >= current_command_id )
+#+end_src
+
+b) la tupla è stata creata prima di questa transazione (o comunque committata) e non è stata invalidata se non dalla transazione corrente o da una transazione che non ha ancora fatto il commit
+#+begin_src c
+  xmin committed
+  &&
+  ( xmax == 0 || xmax == current_xid || xmax ! commited )
+#+end_src
 
 /Il test è complesso!/
 In generale la regola è
@@ -1692,7 +1703,7 @@ Il comando può agire su un intero database o su una singola tabella, ed è I/O 
 
 Il comando ~VACUUM~ può essere combinato con ~ANALYZE~: si ricompattano i dati e si aggiornano le statistiche usate dall'ottimizzatore.
 *** Il problema dello xid wraparound
-PostgreSQL numera le transazioni in un intero a 32 bit denominato /xid/. Ogni transazione ottiene uno xid progressivo (e quindi superiore) rispetto alle transazioni precedenti. 
+PostgreSQL numera le transazioni in un intero a 32 bit denominato /xid/. Ogni transazione ottiene uno xid progressivo (e quindi superiore) rispetto alle transazioni precedenti.
 Questo permette di identificare una transazione nel futuro o nel passato comparando gli /xid/.
 
 Tuttavia prima o poi lo /xid/ subirà il /wraparound/, e precisamente dopo 2^31 transazioni le nuove transazioni otterranno un numero identificativo minore (riavviato) e improvvisamente appariranno nel passato.
@@ -3488,7 +3499,7 @@ Il catalogo ~pg_statistic~ contiene le informazioni statistiche su ogni attribut
   FROM pg_class pc JOIN pg_statistic ps ON ps.starelid = pc.oid
   JOIN pg_attribute pa ON pa.attnum = ps.staattnum
   WHERE pc.relname = 'software' AND pa.attrelid = pc.oid;
- relname  | stanullfrac | stadistinct | attname | attstattarget 
+ relname  | stanullfrac | stadistinct | attname | attstattarget
 ----------+-------------+-------------+---------+---------------
  software |           0 |          -1 | pk      |            -1
  software |           0 |       -0.25 | name    |            -1
@@ -3505,7 +3516,7 @@ I valori delle statistiche /solitamente/ seguono questa regola:
 
 Ad esempio:
 #+begin_src sql
- relname  | stanullfrac | stadistinct | attname | attstattarget 
+ relname  | stanullfrac | stadistinct | attname | attstattarget
 ----------+-------------+-------------+---------+---------------
  software |           0 |          -1 | pk      |            -1
  software |           0 |       -0.25 | name    |            -1
@@ -3525,16 +3536,16 @@ PostgreSQL aggiorna il catalogo delle statistiche con il comando ~ANALYZE~ (che 
 #+begin_src sql
 # ANALYZE VERBOSE software;
 INFO:  analyzing "public.software"
-INFO:  "software": scanned 1 of 1 pages, 
-       containing 8 live rows and 0 dead rows; 
+INFO:  "software": scanned 1 of 1 pages,
+       containing 8 live rows and 0 dead rows;
        8 rows in sample, 8 estimated total rows
 #+end_Src
 
 Il livello di statistiche (granularità) da raccogliere con ~ANALYZE~ può essere specificato colonna per colonna con:
 
 #+begin_src sql
-> ALTER TABLE software 
-  ALTER COLUMN name 
+> ALTER TABLE software
+  ALTER COLUMN name
   SET STATISTICS 1;
 #+end_src
 
