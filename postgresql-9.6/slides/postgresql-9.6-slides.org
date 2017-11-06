@@ -1635,7 +1635,7 @@ Ci sono molte funzioni di utilità per convertire dati da e per JSON:
  [1,2,3,4]
 #+end_src
 * TODO MVCC, Vacuum e Autovacuum
-** TODO Multi Version Concurrency Control (MVCC)
+** Multi Version Concurrency Control (MVCC)
 *** Introduzione
 Il /Multi Version Concurrency Control (MVCC)/ è un meccanismo per garantire alta concorrenza in accesso ai dati (tuple).
 
@@ -1696,7 +1696,71 @@ In generale la regola è
    ~xmin == current_xid || xmin committed~ per candidarla come possibile tupla visibile:
 e
    ~xmax == 0 || xmax == current_xid || xmax ! committed~ per stabilire se non è stata invalidata.
-*** VACUUM
+*** Un esempio di utilizzo dei campi
+#+begin_src sql
+> CREATE TABLE foo( i int );
+> BEGIN;
+> BEGIN;
+> INSERT INTO foo(i) VALUES( 1 );
+> INSERT INTO foo(i) VALUES( 2 );
+> SELECT xmin, cmin, xmax, cmax, i FROM foo;
+ xmin | cmin | xmax | cmax | i
+------+------+------+------+---
+ 2488 |    0 |    0 |    0 | 1
+ 2488 |    1 |    0 |    1 | 2
+-- xmax = 0 e quindi le tuple sono valide!
+
+> SELECT txid_current();
+ txid_current
+--------------
+         2488
+
+#+end_src
+*** Un esempio di utilizzo dei campi (2)
+#+begin_src sql
+-- nella stessa transazione
+> DECLARE my_cursor CURSOR FOR
+  SELECT xmin, cmin, xmax, cmax, i FROM foo;
+
+> DELETE FROM foo;
+
+> FETCH ALL FROM my_cursor;
+ xmin | cmin | xmax | cmax | i
+------+------+------+------+---
+ 2488 |    0 | 2488 |    0 | 1
+ 2488 |    1 | 2488 |    1 | 2
+#+end_src
+*** Un esempio di utilizzo dei campi: cosa è successo?
+Il cursorse è stato definito ad un certo punto, e quindi deve poter vedere uno /snapshot/ dei dati. I dati cancellati dalla seguente ~DELETE~ vengono rimossi (~xmax~ viene valorizzato) ma sono ancora visibili al cursore che è stato definito prima!
+*** Snapshot
+Come fa il sistema a sapere quali transazioni sono ancora attive? La funzione ~txid_current_snapshot()~ fornisce gli ~xmin~ e ~xmax~ delle transazioni ancora attive quanto quella corrente è partita.
+In una sessione:
+#+begin_src sql
+> BEGIN;
+> SELECT txid_current();
+ txid_current
+--------------
+         2491
+#+end_src
+
+e contemporaneamente in un'altra sessione:
+#+begin_src sql
+> BEGIN;
+> INSERT INTO foo(i) VALUES( 1 );
+> SELECT xmin, xmax, cmin, cmax, i FROM foo;
+ xmin | xmax | cmin | cmax | i
+------+------+------+------+---
+ 2492 |    0 |    0 |    0 | 1
+
+> SELECT * FROM txid_current_snapshot();
+ txid_current_snapshot
+-----------------------
+ 2491:2491:
+#+end_src
+
+quindi la transazione ~2492~ sa che la ~2491~ è ancora attiva e non ancora conclusa, ma tutte quelle prima della ~2491~ sono terminate.
+** VACUUM
+*** Introduzione
 Il comand ~VACUUM~ permette di "ricompattare" lo spaizo disco andando ad eliminare quelle tuple che non sono piu' /naturalmente/ visibili (ossia sono state invalidate per ogni transazione).
 
 Il comando può agire su un intero database o su una singola tabella, ed è I/O intensive (deve riorganizzare le pagine dati).
@@ -3765,6 +3829,18 @@ che corrisponde allo stament SQL
 #+begin_src sql
 # INSERT INTO persona( nome, cognome, codice_fiscale )
   VALUES( 'Giovanni', 'Verdi', 'VRDGVN71M18F357K' );
+#+end_src
+*** Slot da cancellare!
+Se si vuole interrompere la replicazione occorre anche cancellare gli slot dal sistema, altrimenti
+al prossimo riavvio il sistema andrà in /PANIC/:
+
+#+begin_src shell
+ [3-1] PANIC:  too many replication slots active before shutdown
+ [3-2] HINT:  Increase max_replication_slots and try again.
+#+end_src
+
+#+begin_src sql
+# SELECT pg_drop_replication_slot( 'logical_decoding_slot' );
 #+end_src
 * Point in Time Recovery & Replication
 ** Point in Time Recovery (PITR)
