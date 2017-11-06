@@ -742,6 +742,15 @@ Il prompt corrisponde a: /username/ (~%n~), /database/ (~%/~),
 /hostname/ (~%m~), /linea/ (~%l~), /stato transazione/ (~%x~)
 e /prompt superutente o utente normale/ (~%#~).
 
+**** ON_ERROR_ROLLBACK                                         :B_definition:
+A differenza di ~ON_ERROR_STOP~ che fa quello che il nome suggerisce, il parametro ~ON_ERROR_ROLLBACK~ fa il suo opposto:
+/When set to on, if a statement in a transaction block generates an error, the error is ignored and the transaction continues./
+**** End of block                                           :B_ignoreheading:
+:PROPERTIES:
+:BEAMER_env: ignoreheading
+:END:
+
+
 ** Interazione: ruoli, database, tabelle
 *** Ruoli e Utenti
    Dalla versione 8.1 in poi PostgreSQL non distingue piu' fra utenti e gruppi
@@ -1696,6 +1705,19 @@ In generale la regola è
    ~xmin == current_xid || xmin committed~ per candidarla come possibile tupla visibile:
 e
    ~xmax == 0 || xmax == current_xid || xmax ! committed~ per stabilire se non è stata invalidata.
+*** Savepoint
+I ~SAVEPOINT~ sono delle sotto-transazioni che consentono di rendere persistente una parte di transazione.
+Questo ha delle implicazioni sull'uso dei campi ~xmin~ e ~xmax~ poiché all'interno di uno stesso blocco ~BEGIN...END~
+possono esserci piu' transazioni in esecuzione.
+
+**** ON_ERROR_ROLLBACK                                         :B_definition:
+Il parametro di configurazione ~ON_ERROR_ROLLBACK~ di ~psql~ utilizza dei savepoint
+appunto per simulare questo comportamento ed evitare di abortire tutta una transazione.
+**** End of block                                           :B_ignoreheading:
+:PROPERTIES:
+:BEAMER_env: ignoreheading
+:END:
+
 *** Un esempio di utilizzo dei campi
 #+begin_src sql
 > CREATE TABLE foo( i int );
