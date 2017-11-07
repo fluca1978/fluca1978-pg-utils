@@ -3289,6 +3289,18 @@ Le CTE ricorsive sono composte di due parti:
 SELECT * FROM foo LIMIT 10;
 #+end_src
 * TODO Foreign Data Wrapper
+** SQLMED & FDW
+*** Introduzione
+/SQLMED (SQL Management of External Data)/ è una specifica per la gestione di "dati esterni" aggiunta allo standard nel 2003.
+
+PostgreSQL disponeva di ~dbi-link~, un modulo Perl che permetteva la connessioni (tramite ~DBI~) a origini dati esterne implementando così un /SQLMED del poveraccio!/.
+
+Con il ramo di sviluppo 9 sono stati introdotti i /Foreign Data Wrapper (FDW)/, un meccanismo formale per permettere ad un cluster PostgreSQL di accedere dati esterni.
+*** Tipologie di FDW
+PostgreSQL supporta diversi tipi di Foreign Data Wrapper, da quelli /SQL/ (verso altri database), a quelli di tipo /file/ (es. accesso a CSV), a quelli Internet (web e repository di codice come ~git~).
+
+I data wrapper possono essere estesi implementando una serie di funzioni specifiche.
+La maggior parte dei FDW sono "nativi", altri sono scritti in Python, Rust e linguaggi di piu' alto livello.
 * TODO Extensions
 * TODO Configurazione del Server
 ** Configurazione
