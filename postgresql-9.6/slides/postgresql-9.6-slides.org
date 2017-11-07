@@ -3361,6 +3361,41 @@ Diego;Ferrari;FRRDGI78L19F257B
  Luca  | Ferrari | FRRLCU78L19F257B
  Diego | Ferrari | FRRDGI78L19F257B
 #+end_src
+** Esempio di FDW: file system fdw
+*** Introduzione
+E' un modulo /Multicorn/ che permette di esplorare il filesystem locale come fosse una tabella.
+*** Fase 1: creazione del server
+#+begin_src sql
+# CREATE EXTENSION multicorn;
+
+# CREATE SERVER filesystem_server
+  FOREIGN DATA WRAPPER multicorn
+  OPTIONS ( wrapper 'multicorn.fsfdw.FilesystemFdw' );
+#+end_src
+*** Fase 2: creare la tabella esterna
+#+begin_src sql
+# CREATE FOREIGN TABLE posts(
+   posted_on text,
+   short_title text,
+   content text, --bytea per file binari
+   full_file_name text )
+  SERVER filesystem_server
+  OPTIONS( root_dir '/home/luca/fluca1978.github.io/_posts/',
+           pattern '{posted_on}-{short_title}.md',
+           content_column 'content',
+           filename_column 'full_file_name' );
+#+end_src
+
+/NOTA: non posso usare una data concreta per ~posted_on~ perché alcuni post hanno dei nomi errati che confondono il ~pattern~!/
+*** Fase 3: vedere la tabella
+#+begin_src sql
+# SELECT posted_on, full_file_name FROM posts LIMIT 3;
+    posted_on     |      full_file_name
+------------------+--------------------------
+ 2017-09-20-Perl6 | 2017-09-20-Perl6-IO.md
+ 2017-09-21       | 2017-09-21-KDE3.5.10.md
+ 2017-07-13       | 2017-07-13-HelloWorld.md
+#+end_src
 ** Esempio di FDW: postgres_fdw
 *** Introduzione
 Il data wrapper ~postgres_fdw~ consente di leggere un0istanza PostgreSQL remota (è stato uno degli ultimi FDW sviluppati...).
@@ -3567,6 +3602,7 @@ Le ~FOREIGN TABLE~ non sono delle tabelle vere e proprie, quindi non possono sup
    REFERENCES remote_persona(pk);
 ERROR:  referenced relation "remote_persona" is not a table
 #+end_src
+** Esempio di FDW: git
 * TODO Extensions
 * TODO Configurazione del Server
 ** Configurazione
