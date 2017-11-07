@@ -3306,6 +3306,14 @@ Lo schema di utilizzo segue questo workflow:
 - creare un /server remoto/ che incapsula la /connessione/ (qualunque cosa significhi) all'origine dati remota;
 - eventualmente, se necessario, creare uno /user mapping/, ossia una traduzione da utente locale ad utente remoto;
 - creare una mappatura di ogni tabella che deve essere accessibile sul server remoto.
+*** ~OPTIONS~
+Sia i server che le foreign table accettano una serie di opzioni specificate tramite ~OPTIONS~ e una sintassi come la seguente:
+#+begin_src sql
+OPTIONS( name 'value', name 'value', ... )
+#+end_src
+con valori stringa.
+
+*Le opzioni sono definite dal server e dalla foreign table stessa*.
 *** CREATE SERVER
 Il comando SQL ~CREATE SERVER~ consente di specificare una connessione remota da usarsi con un FDW. Ogni server deve avere un nome univoco e una serie di opzioni, tipo e versione che vengono interpretati dal FDW di riferimento.
 
@@ -3321,6 +3329,11 @@ Il comando SQL ~CREATE FOREIGN TABLE~ crea una mappatura fra una tabella locale 
 Il comando deve essere agganciato ad un server remoto, affinché sia chiaro che la tabella locale punta ad una tabella remota.
 
 Una foreign table segue le stesse regole di creazione di una tabella normale (schema, nome, ecc.).
+*** Multicorn
+Il progetto /Multicorn/ fornisce una serie di implementazioni di FDW scritte in Python.
+Una volta installato il modulo e creata la relativa estensione, tutti i FDW sono disponibili.
+
+/La documentazione non è esaustiva!/
 ** Esempio di FDW: file_fdw
 *** Introduzione
 Il modulo ~file_fdw~ consente di leggere dei dati da un file testuale (ad esempio CSV).
