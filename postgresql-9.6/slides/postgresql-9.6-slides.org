@@ -3636,6 +3636,31 @@ Il modulo ~GitFdw~ è un /Multicorn/ e dipende dal modulo Python ~brigit~.
  426dd99ac3 | 2017-11-04 | Fix some typos in a post
  868980d676 | 2017-11-02 | FreeBSD and PostgreSQL rc blog post.
 #+end_src
+** Esempio di FDW: Google
+*** Introduzione
+Il ~GoogleFdw~ è un modulo /Multicorn/.
+*** Fase 1: definizione del server
+#+begin_src sql
+# CREATE SERVER google_server
+  FOREIGN DATA WRAPPER multicorn
+  OPTIONS( wrapper 'multicorn.googlefdw.GoogleFdw' );
+#+end_src
+*** fase 2: creazione della tabella
+#+begin_src sql
+# CREATE FOREIGN TABLE google_search(
+    url text,
+    title text,
+    search text )
+SERVER google_server;
+#+end_src
+*** Fase 3: effettuare una ricerca
+/Non funziona!/ Vedere: [[https://github.com/Kozea/Multicorn/issues/199][issue 199]].
+
+#+begin_src sql
+SELECT * FROM google_search WHERE search = 'postgresql';
+ERROR:  Error in python: TypeError
+DETAIL:  'NoneType' object has no attribute '__getitem__'
+#+end_src
 * TODO Extensions
 * TODO Configurazione del Server
 ** Configurazione
