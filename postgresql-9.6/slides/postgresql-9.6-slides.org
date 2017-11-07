@@ -3603,6 +3603,39 @@ Le ~FOREIGN TABLE~ non sono delle tabelle vere e proprie, quindi non possono sup
 ERROR:  referenced relation "remote_persona" is not a table
 #+end_src
 ** Esempio di FDW: git
+*** Introduzione
+Il modulo ~GitFdw~ è un /Multicorn/ e dipende dal modulo Python ~brigit~.
+*** Fase 1: creazione del server
+#+begin_src sql
+# CREATE SERVER git_server
+  FOREIGN DATA WRAPPER multicorn
+  OPTIONS ( wrapper 'multicorn.gitfdw.GitFdw' );
+#+end_src
+*** Fase 2: creazione di una tabella
+#+begin_src sql
+# CREATE FOREIGN TABLE github(
+   author_name text,
+   author_email text,
+   message text,
+   hash text,
+   date date )
+ SERVER git_server
+ OPTIONS( path '/home/luca/fluca1978.github.io' );
+#+end_src
+
+/~path~ è l'unica opzione disponibile per questo tipo di wrapper!/
+*Il repository deve essere locale (è forse una limitazione di ~brigit~?)*
+*** Fase 3: interrogare la tabella
+#+begin_src sql
+# SELECT substring( hash from 1 for 10 ),
+         date, message
+  FROM github LIMIT 2;
+
+ substring  |    date    |               message
+------------+------------+--------------------------------------
+ 426dd99ac3 | 2017-11-04 | Fix some typos in a post
+ 868980d676 | 2017-11-02 | FreeBSD and PostgreSQL rc blog post.
+#+end_src
 * TODO Extensions
 * TODO Configurazione del Server
 ** Configurazione
