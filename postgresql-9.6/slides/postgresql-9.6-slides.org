@@ -3321,7 +3321,47 @@ Il comando SQL ~CREATE FOREIGN TABLE~ crea una mappatura fra una tabella locale 
 Il comando deve essere agganciato ad un server remoto, affinché sia chiaro che la tabella locale punta ad una tabella remota.
 
 Una foreign table segue le stesse regole di creazione di una tabella normale (schema, nome, ecc.).
-** Esempio di FWD: postgres_fdw
+** Esempio di FDW: file_fdw
+*** Introduzione
+Il modulo ~file_fdw~ consente di leggere dei dati da un file testuale (ad esempio CSV).
+
+Si suppnga di avere un file di testo con il seguente contenuto:
+#+begin_src shell
+% cat anagrafica.csv                                                                                                     ~
+Nome;Cognome;CodiceFiscale
+Luca;Ferrari;FRRLCU78L19F257B
+Diego;Ferrari;FRRDGI78L19F257B
+#+end_src
+*** Fase 1: caricare il FDW
+#+begin_src sql
+# CREATE EXTENSION file_fdw;
+#+end_src
+*** Fase 2: creare il server
+#+begin_src sql
+# CREATE SERVER csv_server
+  FOREIGN DATA WRAPPER file_fdw;
+#+end_src
+*** Fase 3: mappare il file su una tabella
+#+begin_src sql
+# CREATE FOREIGN TABLE remote_persona (
+   nome text,
+   cognome text,
+   codice_fiscale text )
+ SERVER csv_server
+ OPTIONS ( filename '/home/luca/anagrafica.csv',
+           format 'csv',
+           delimiter ';',
+           header 'true' );
+#+end_src
+*** Fase 4: interrogazione della tabella
+#+begin_src sql
+# SELECT * FROM remote_persona;
+ nome  | cognome |  codice_fiscale
+-------+---------+------------------
+ Luca  | Ferrari | FRRLCU78L19F257B
+ Diego | Ferrari | FRRDGI78L19F257B
+#+end_src
+** Esempio di FDW: postgres_fdw
 *** Introduzione
 Il data wrapper ~postgres_fdw~ consente di leggere un0istanza PostgreSQL remota (è stato uno degli ultimi FDW sviluppati...).
 
