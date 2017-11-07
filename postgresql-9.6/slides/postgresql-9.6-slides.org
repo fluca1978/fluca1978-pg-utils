@@ -3301,6 +3301,232 @@ PostgreSQL supporta diversi tipi di Foreign Data Wrapper, da quelli /SQL/ (verso
 
 I data wrapper possono essere estesi implementando una serie di funzioni specifiche.
 La maggior parte dei FDW sono "nativi", altri sono scritti in Python, Rust e linguaggi di piu' alto livello.
+*** Come si utilizzano i FDW?
+Lo schema di utilizzo segue questo workflow:
+- creare un /server remoto/ che incapsula la /connessione/ (qualunque cosa significhi) all'origine dati remota;
+- eventualmente, se necessario, creare uno /user mapping/, ossia una traduzione da utente locale ad utente remoto;
+- creare una mappatura di ogni tabella che deve essere accessibile sul server remoto.
+*** CREATE SERVER
+Il comando SQL ~CREATE SERVER~ consente di specificare una connessione remota da usarsi con un FDW. Ogni server deve avere un nome univoco e una serie di opzioni, tipo e versione che vengono interpretati dal FDW di riferimento.
+
+E' obbligatorio specificare per quale FDW si sta creando il server.
+*** CREATE USER MAPPING
+Il comando SQL ~CREATE USER MAPPING~ consente di mappare un utente locale su un utente remoto.
+Va usato per quei server collegati a FDW che richiedono un qualche processo di autorizzazione (ad esempio un database esterno).
+
+Lo user mapping viene specificato per un server remoto, ed è quindi collegato al server stesso.
+*** CREATE FOREIGN TABLE
+Il comando SQL ~CREATE FOREIGN TABLE~ crea una mappatura fra una tabella locale (fittizia) e una tabella remota.
+
+Il comando deve essere agganciato ad un server remoto, affinché sia chiaro che la tabella locale punta ad una tabella remota.
+
+Una foreign table segue le stesse regole di creazione di una tabella normale (schema, nome, ecc.).
+** Esempio di FWD: postgres_fdw
+*** Introduzione
+Il data wrapper ~postgres_fdw~ consente di leggere un0istanza PostgreSQL remota (è stato uno degli ultimi FDW sviluppati...).
+
+I passi per collegare un altro database PostgreSQL sono i seguenti (come amministratore del database):
+1. installare l'estensione ~postgres_fdw~ (nativa);
+2. creare il server remoto con la relativa stringa di connessione;
+3. creare uno /user mapping/ per identificare con quale ruolo si andrà ad operare sul server remoto;
+4. creare le tabelle remote (ognuna deve essere /mappata/).
+*** Istanze di prova
+Si supponga di avere l'istanza principale che contiene il database ~testdb~, mentre l'istanza remota (in esecuzione sulla porta ~5433~
+contiene il database ~anagraficadb~ con la tabella ~persona~ che si vuole importare nel cluster principale.
+*** Fase 1: caricare FDW
+#+begin_src sql
+# CREATE EXTENSION postgres_fdw;
+#+end_src
+*** Fase 2: creare il server remoto
+#+begin_src sql
+# CREATE SERVER another_pg
+  FOREIGN DATA WRAPPER postgres_fdw
+  OPTIONS ( host 'localhost',
+            port '5433',
+            dbname 'anagraficadb' );
+#+end_src
+*** Fase 3: creazione di uno user mapping
+#+begin_src sql
+# CREATE USER MAPPING FOR CURRENT_USER
+  SERVER another_pg
+  OPTIONS( user 'luca',
+          password 'xxxx' );
+#+end_src
+
+Questo /mappa/ l'utente corrente sulla prima istanza come utente ~luca~ sull'istanza remota.
+*** Fase 4: mappare le tabelle
+#+begin_src sql
+# CREATE FOREIGN TABLE remote_persona (
+   pk SERIAL,
+   nome text,
+   cognome text,
+   codice_fiscale text NOT NULL )
+   SERVER another_pg
+   OPTIONS ( schema_name 'public',
+             table_name 'persona' );
+#+end_src
+
+*La dichiarazione della tabella deve rispecchiare esattamente quella della tabella remota!*
+
+Tuttavia i vincoli di ~PRIMARY KEY~ e ~UNIQUE~ non vanno replicati!
+*** Fase 5: vedere il risultato
+#+begin_src sql
+# \d remote_persona
+                                Foreign table "public.remote_persona"
+     Column     |  Type   |                          Modifiers                          | FDW Options
+----------------+---------+-------------------------------------------------------------+-------------
+ pk             | integer | not null default nextval('remote_persona_pk_seq'::regclass) |
+ nome           | text    |                                                             |
+ cognome        | text    |                                                             |
+ codice_fiscale | text    | not null                                                    |
+Server: another_pg
+FDW Options: (schema_name 'public', table_name 'persona')
+#+end_src
+
+*** Interrogare la tabella remota
+#+begin_src sql
+# SELECT * FROM remote_persona;
+ pk | nome  | cognome |  codice_fiscale
+----+-------+---------+------------------
+  1 | Luca  | Ferrari | FRRLCU78L19F257B
+  2 | Diego | Ferrari | FRRDGI78L19F257B
+
+# EXPLAIN SELECT * FROM remote_persona;
+                                QUERY PLAN
+--------------------------------------------------------------------------
+ Foreign Scan on remote_persona  (cost=100.00..129.80 rows=660 width=100)
+#+end_src
+*** Join fra tabella remota e locale
+Si immagini di avere una tabella di indirizzi locale:
+#+begin_src sql
+# CREATE TABLE address( pk SERIAL PRIMARY KEY,
+                        persona_pk integer NOT NULL,
+                        address text );
+# INSERT INTO address( persona_pk, address )
+  VALUES( 1, 'Formigine' );
+# INSERT INTO address( persona_pk, address )
+  VALUES( 2, 'Modena' );
+#+end_src
+
+e di voler fare il join con la tabella remota delle persone:
+
+#+begin_src sql
+# SELECT nome, cognome, address
+  FROM remote_persona rp JOIN address a ON a.persona_pk = rp.pk
+  ORDER BY cognome, nome;
+ nome  | cognome |  address
+-------+---------+-----------
+ Diego | Ferrari | Modena
+ Luca  | Ferrari | Formigine
+#+end_src
+*** Join fra tabella remota e locale: piano di esecuzione
+Le tabelle sono piccole: /merge join/!
+#+begin_src sql
+# EXPLAIN SELECT nome, cognome, address
+  FROM remote_persona rp JOIN address a ON a.persona_pk = rp.pk
+  ORDER BY cognome, nome;
+                                          QUERY PLAN
+----------------------------------------------------------------------------------------------
+ Sort  (cost=678.84..692.19 rows=5340 width=96)
+   Sort Key: rp.cognome, rp.nome
+   ->  Merge Join  (cost=263.67..348.22 rows=5340 width=96)
+         Merge Cond: (rp.pk = a.persona_pk)
+         ->  Sort  (cost=180.30..182.52 rows=890 width=68)
+               Sort Key: rp.pk
+               ->  Foreign Scan on remote_persona rp  (cost=100.00..136.70 rows=890 width=68)
+         ->  Sort  (cost=83.37..86.37 rows=1200 width=36)
+               Sort Key: a.persona_pk
+               ->  Seq Scan on address a  (cost=0.00..22.00 rows=1200 width=36)
+#+end_src
+
+*** Inserimento di un nuovo record
+Siccome la sequenza è locale, non si riesce ad inserire il record per chiave duplicata:
+#+begin_src sql
+# INSERT INTO remote_persona( nome, cognome, codice_fiscale )
+  VALUES( 'Emanuela', 'Santunione', 'SNTMNL11M11A944U' );
+ERROR:  duplicate key value violates unique constraint "persona_pkey"
+DETAIL:  Key (pk)=(1) already exists.
+STATEMENT:  INSERT INTO public.persona(pk, nome, cognome, codice_fiscale) VALUES ($1, $2, $3, $4)
+ERROR:  duplicate key value violates unique constraint "persona_pkey"
+DETAIL:  Key (pk)=(1) already exists.
+CONTEXT:  Remote SQL command: INSERT INTO public.persona(pk, nome, cognome, codice_fiscale) VALUES ($1, $2, $3, $4)
+#+end_src
+*** Inserimento di un nuovo record: prima soluzione
+Un possibile /workaround/ consiste nel definire la tabella locale come sottoinsieme della tabella remote, escludendo i campi /autogenerati/.
+Questo potrebbe rompere alcuni vincoli (ad esempio il join con ~address~ che va riprogettato): *le tabelle remote devono avere delle chiavi naturali e le chiavi surrogate possono essere escluse il piu' delle volte quando si /importano/ localmente*.
+#+begin_src sql
+# DROP FOREIGN TABLE remote_persona;
+# CREATE FOREIGN TABLE remote_persona (
+  -- pk SERIAL,
+  nome text,
+  cognome text,
+  codice_fiscale text NOT NULL )
+  SERVER another_pg
+  OPTIONS ( schema_name 'public', table_name 'persona' );
+#+end_src
+
+e adesso
+
+#+begin_src sql
+# INSERT INTO remote_persona( nome, cognome, codice_fiscale )
+  VALUES( 'Emanuela', 'Santunione', 'SNTMNL11M11A944U' );
+
+INSERT 0 1
+#+end_src
+*** Inserimento di un nuovo record: seconda soluzione
+Occorre in qualche modo esportare la sequenza remota da usare come valore per la tabella esterna.
+Sulla seconda instanza (remota) occorre definire una tabella che fornisca il valore della sequenza (questo perché è possibile esportare solo tabelle!):
+#+begin_src sql
+> CREATE VIEW persona_seq_wrapper
+  AS SELECT nextval( 'persona_pk_seq'::regclass ) AS val;
+#+end_src
+
+poi sul server locale si importa la vista remota:
+
+#+begin_src sql
+# CREATE FOREIGN TABLE remote_persona_seq ( val integer )
+  SERVER another_pg
+  OPTIONS ( schema_name 'public',
+           table_name 'persona_seq_wrapper' );
+#+end_src
+*** Inserimento di un nuovo record: seconda soluzione (2)
+Sul server locale si definisce una funzione che preleva un valore dalla foreign table, che a sua volta preleva un valore dalla sequenza sul server remoto:
+#+begin_src sql
+# CREATE FUNCTION remote_persona_seq_nextval()
+  RETURNS integer
+  AS $BODY$ SELECT val FROM remote_persona_seq; $BODY$
+  LANGUAGE SQL;
+#+end_src
+
+ora si può definire la tabella remota assegnando come valore di default quello ritornato dalla funzione appena creata:
+
+#+begin_src sql
+# CREATE FOREIGN TABLE remote_persona (
+  pk integer DEFAULT remote_persona_seq_nextval(),
+  nome text,
+  cognome text,
+  codice_fiscale text NOT NULL )
+  SERVER another_pg
+  OPTIONS ( schema_name 'public', table_name 'persona' );
+#+end_src
+*** Inserimento di un nuovo record: seconda soluzione (3)
+A qeusto punto è possibile inserire un nuovo record nella tabella:
+#+begin_src sql
+# INSERT INTO remote_persona( nome, cognome, codice_fiscale )
+  VALUES( 'Emanuela', 'Santunione', 'SNTMNL11M11A944K' );
+#+end_src
+
+*ATTENZIONE: in questo caso viene aperto un cursore per leggere la tabella remota, che in realtà legge la sequenza remota*, ne consegue che si ha un calo di performance che in questo caso non giustifica il lavoro extra.
+
+*** Foreign keys & foreign tables
+Le ~FOREIGN TABLE~ non sono delle tabelle vere e proprie, quindi non possono supportare tutti i vincoli di una tabella regolare:
+
+#+begin_src sql
+# ALTER TABLE address
+   ADD FOREIGN KEY (persona_pk)
+   REFERENCES remote_persona(pk);
+ERROR:  referenced relation "remote_persona" is not a table
+#+end_src
 * TODO Extensions
 * TODO Configurazione del Server
 ** Configurazione
