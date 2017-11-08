@@ -1643,7 +1643,50 @@ Ci sono molte funzioni di utilità per convertire dati da e per JSON:
 ---------------
  [1,2,3,4]
 #+end_src
-** TODO Backup e restore
+* TODO Backup e restore
+** Backup
+*** ~pg_dump~
+Il comando shell ~pg_dump~ consente di effettuare un /backup logico/ di un determinato database.
+
+Il backup viene fornito come script SQL o archivio compresso.
+
+Supporta il dump /parallelo/.
+
+*** ~pg_dump~: dump SQL
+#+begin_src sql
+% pg_dump -h localhost -U postgres \
+  -C \
+  -f testdb.sql \
+  testdb
+#+end_src
+
+Verrà creato un file ~testdb.sql~ che contiene i comandi SQL per la creazione (~-C~) del database e il relativo popolamento.
+
+#+begin_src sql
+% less testdb.sql
+
+CREATE DATABASE testdb WITH TEMPLATE = template0 ENCODING = 'UTF8' LC_COLLATE = 'C' LC_CTYPE = 'C';
+ALTER DATABASE testdb OWNER TO luca;
+\connect testdb
+...
+#+end_src
+
+*** ~pg_dump~: opzioni comuni e utili
+- *~-C~ indica di inserire i comandi di creazione del database*;
+- *~-f~ indica il file di output (o la directory di output)*;
+  - ~-F~ può valere ~p~ (plain SQL), ~t~ (tar), ~d~ (directory);
+- *~-s~ solo definizione dei dati (DDL), non i dati stessi*;
+- *~-a~ effettua il dump dei soli dati, senza i comandi DDL*;
+- ~--inserts~ effettua il popolamento con una serie di ~INSERT~ invece che con il comando ~COPY~ (aumenta la dimensione del file ma lo rende piu' portabile);
+- ~--column-inserts~ effettua il popolamento con una serie di ~INSERT~ con anche i nomi delle colonne, massima portabilità SQL;
+- ~-j~ numero di thread paralleli per il dump;
+- ~-Z~ indica il livello di compressio (0..9).
+*** ~pg_dumpall~
+Il comando ~pg_dumpall~ effettua il backup di un intero cluster:
+- richiama ~pg_dump~ per ogni database utente definito;
+- effettua il dump anche degli oggetti "intra-database" (ruoli, tablespaces, ecc).
+
+Le opzioni sono simili a quelle di ~pg_dump~.
 * TODO MVCC, Vacuum e Autovacuum
 ** Multi Version Concurrency Control (MVCC)
 *** Introduzione
