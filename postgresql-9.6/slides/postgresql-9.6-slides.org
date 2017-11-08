@@ -3687,7 +3687,12 @@ Il control file governa la /relocation/ di una estensione:
 | ~schema~      | ~<schema_name>~ |             |
 |---------------+-----------------+-------------|
 
+*** Dump dei dati di una estensione
+Una estensione può creare tabelle (o sequenze) da usare come spazio di configurazione.
+*Tali dati non saranno sottoposti a /dump/ del database*: l'estensione tornerà a creare tali dati!
+Tuttavia potrebbe capitare che l'utente modifichi tali dati di configurzione, nel qual caso è importante farne il dump.
 
+L'estensione deve informare il catalogo di sistema che gli oggetti devono essere sottoposti a dump: la funzione ~pg_catalog.pg_extension_config_dump()~ accetta il nome dell'oggetto da inserire nel dump.
 
 * Foreign Data Wrapper
 ** SQLMED & FDW
