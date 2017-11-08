@@ -3367,6 +3367,41 @@ CHECK ( sesso IN ( 'M', 'F' ) ) );
     CHECK ( sesso = 'F' )
   ) INHERITS( persona );
 #+end_src
+*** Spostamento dei dati: maschi
+#+begin_src sql
+> WITH move_persona AS (
+       DELETE FROM ONLY persona
+       WHERE sesso = 'M'
+       RETURNING * )
+  INSERT INTO persona_maschio
+  SELECT * FROM move_persona;
+
+> SELECT count(*),sesso
+  FROM ONLY persona
+  GROUP BY sesso;
+ count | sesso
+-------+-------
+  5000 | F
+#+end_src
+
+*Si noti l'uso di ~FROM ONLY~ nelle query!*
+La clausola ~FROM ONLY~ indica a PostgreSQL di /spezzare/ la catena di ereditarietà senza percorrerla, fermandosi solo alla tabella indicata senza andare a ricercare anche nelle tabelle figlie.
+*** Spostamento dei dati: femmine
+#+begin_src sql
+> WITH move_persona AS (
+      DELETE FROM ONLY persona
+      WHERE sesso = 'F'
+      RETURNING * )
+  INSERT INTO persona_femmina
+  SELECT * FROM move_persona;
+
+> SELECT count(*),sesso
+  FROM ONLY persona
+  GROUP BY sesso;
+ count | sesso
+-------+-------
+(0 rows)
+#+end_src
 * TODO Extensions
 * Foreign Data Wrapper
 ** SQLMED & FDW
