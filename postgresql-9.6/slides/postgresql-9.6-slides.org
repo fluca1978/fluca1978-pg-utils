@@ -3371,6 +3371,273 @@ Le CTE ricorsive sono composte di due parti:
 
 SELECT * FROM foo LIMIT 10;
 #+end_src
+* Partitioning
+** Cos'è il partitioning?
+*** Partitioning
+Per /partitioning/ si intende la possibilità di "dividere" i dati orizzontalmente, ovvero per quantità (non per tipologia) in modo da consentire un miglior accesso agli stessi.
+
+Quando i dati tendono ad acculumarsi, è infatti possibile avere un rallentamento di performance, che può essere mitigato spezzando i dati in /gruppi (partizioni)/ da interrogare "intelligentemente".
+
+*** Quando si può effettuare il partitioning?
+In linea di principio è sempre possibile effettuare il partitioning, ma farlo con dei dati "live" necessita di una ristrutturazione del database e del conseguente spostamento delle tuple.
+Ad ogni modo non è sempre possibile "anticipare" le necessità di paritioning (e occorre ricordarsi che l'ottimizzazione preventiva è spesso causa di mal di testa!).
+
+In generale:
+- se si effettua il partitioning *prima* dell'inserimento dei dati si è nel caso /facile/: si strutturano i dati opportunamente da subito;
+- se si effettua il partitioning *con dati live* si è nel caso /difficile/, ma non impossibile!
+
+*** Come si effettua il partitioning?
+PostgreSQL supporta alcuni meccanismi che, combinati, possono fornire l'infrastruttura di partitioning:
+1. */table inheritance/* che permette di ereditare (nel senso OOP) la struttura da una tabella;
+2. */rules/* o */triggers/* che permettono di instradare (routing) le query verso la tabella della partizione giusta;
+3. */constraint exclusion/* che permette un uso efficace degli indici nel caso di partizionamento.
+
+*ATTENZIONE: in default PostgreSQL percorre tutta la catena di ereditarietà (instradamento automatico)!*
+
+**** PostgreSQL 10 partitioning                                :B_definition:
+In PostgreSQL 10 esiste una apposita sintassi che /racchiude/ tutti i passi in uno unico gestendo in maniera molto piu' semplice il partizionamento.
+**** End of block                                           :B_ignoreheading:
+:PROPERTIES:
+:BEAMER_env: ignoreheading
+:END:
+
+
+*** Rules o Triggers?
+La logica di partitioning può essere implementata con /triggers/ o /rules/, la scelta in molti casi è indifferente.
+*** Su cosa si partiziona?
+Trovare il vincolo di discriminazione fra le partizioni dei dati è il quesito principale.
+
+*Lo scopo dovrebbe essere quello di ottenere partizioni omogenee (in termini di dimensioni) e "stabili" (ossia con poche variazioni)*/: piu' una partizione è "fissa" e piu' facile è ottimizzarla.
+
+La scelta della colonna/colonne di partizionamento e del relativo valore dipende dal dominio dei dati.
+*** Workflow per il partizionamento
+Dipende dal dominio dei dati, dalla loro quantità, ecc., ma in generale:
+1. definire le partizioni e dichiarare le tabelle;
+2. abilitare l'instradamento delle query dalla tabella principale alle partizioni, in modo da impedire che la tabella principale sia "sporcata" con nuovi dati;
+3. eventualmente spostare i dati dalla tabella principale a quella con il vincolo corretto;
+4. verificare ~constraint_exclusion~ per aiutare l'ottimizzatore a instradare subito le query sulla partizione giusta.
+** Esempio (banale)
+*** Esempio
+Supponiamo di avere una tabella ~persona~ che memorizza il ~sesso~, e di voler partizionare appunto sul sesso.
+Si supponga di essere nel caso "difficile": dati già presenti.
+
+/Questo esempio è volutamente semplice per mostrare i concetti del partitioning!/
+*** Esepio: preparazione
+#+begin_src sql
+> CREATE TABLE persona (
+    pk SERIAL PRIMARY KEY,
+    nome text,
+    cognome text,
+    codice_fiscale text NOT NULL UNIQUE,
+    sesso char(1) DEFAULT 'M',
+CHECK ( sesso IN ( 'M', 'F' ) ) );
+#+end_src
+*** Esempio: popolamento
+#+begin_src sql
+> WITH random_seq AS (
+    SELECT generate_series( 1, 10000 )
+           AS random_val
+  )
+ INSERT INTO persona( nome, cognome, codice_fiscale, sesso )
+ SELECT 'Nome' || random_val,
+        'Cognome' || random_val,
+        substring( md5( random_val::text ) from 1 for 16 ),
+        CASE  WHEN random_val % 2 = 0 THEN 'M'
+              ELSE 'F'
+        END
+  FROM random_seq;
+
+> SELECT count(*), sesso FROM persona GROUP  BY sesso;
+ count | sesso
+-------+-------
+  5000 | F
+  5000 | M
+#+end_src
+*** Setup delle tabelle
+#+begin_src sql
+> CREATE TABLE persona_maschio(
+    -- nessun campo !
+    CHECK ( sesso = 'M' )
+  ) INHERITS( persona );
+
+> CREATE TABLE persona_femmina(
+    -- nessun campo !
+    CHECK ( sesso = 'F' )
+  ) INHERITS( persona );
+#+end_src
+*** Partitioning by rule
+Si vuole /instradare/ ogni inserimento di una tupla "maschio" nella relativa tabella:
+#+begin_src sql
+> CREATE OR REPLACE RULE r_partition_insert_persona_maschio AS
+   ON INSERT
+   TO persona
+   WHERE sesso = 'M'
+   DO INSTEAD
+ INSERT INTO persona_maschio SELECT NEW.*;
+#+end_src
+
+*Vanno create le realtive rule per ogni casistica (~INSERT~, ~UPDATE~, ~DELETE~) e instradamento (/maschio/, /femmina/).*
+*** Partitioning by trigger
+Si vogliono instradare gli inserimenti nella tabella corretta:
+#+begin_src sql
+> CREATE OR REPLACE FUNCTION f_tr_persona_insert()
+  RETURNS TRIGGER
+  AS $BODY$
+ DECLARE
+   BEGIN
+   IF NEW.sesso = 'M' THEN
+     INSERT INTO persona_maschio SELECT NEW.*;
+   ELSIF NEW.sesso = 'F' THEN
+     INSERT INTO persona_femmina SELECT NEW.*;
+   END IF;
+ RETURN NULL;
+ END;
+ $BODY$
+ LANGUAGE plpgsql;
+#+end_src
+*** Partitioning by trigger (2)
+Si aggancia il trigger:
+#+begin_src sql
+> CREATE TRIGGER tr_persona_insert
+    BEFORE INSERT
+    ON persona
+    FOR EACH ROW
+    EXECUTE PROCEDURE f_tr_persona_insert();
+#+end_src
+*** Spostamento dei dati: maschi
+#+begin_src sql
+> WITH move_persona AS (
+       DELETE FROM ONLY persona
+       WHERE sesso = 'M'
+       RETURNING * )
+  INSERT INTO persona_maschio
+  SELECT * FROM move_persona;
+
+> SELECT count(*),sesso
+  FROM ONLY persona
+  GROUP BY sesso;
+ count | sesso
+-------+-------
+  5000 | F
+#+end_src
+
+*Si noti l'uso di ~FROM ONLY~ nelle query!*
+La clausola ~FROM ONLY~ indica a PostgreSQL di /spezzare/ la catena di ereditarietà senza percorrerla, fermandosi solo alla tabella indicata senza andare a ricercare anche nelle tabelle figlie.
+*** Spostamento dei dati: femmine
+#+begin_src sql
+> WITH move_persona AS (
+      DELETE FROM ONLY persona
+      WHERE sesso = 'F'
+      RETURNING * )
+  INSERT INTO persona_femmina
+  SELECT * FROM move_persona;
+
+> SELECT count(*),sesso
+  FROM ONLY persona
+  GROUP BY sesso;
+ count | sesso
+-------+-------
+(0 rows)
+#+end_src
+*** Test di inserimento
+#+begin_src sql
+> INSERT INTO persona( nome, cognome, codice_fiscale, sesso )
+  VALUES( 'Luca', 'Ferrari', 'FRRLCU78L19F257B', 'M' );
+#+end_src
+
+Dove è finita la tupla?
+
+#+begin_src sql
+-- la trovo con una query generica senza
+-- indicare le tabelle figlie !
+> SELECT * FROM persona
+  WHERE codice_fiscale = 'FRRLCU78L19F257B';
+  pk   | nome | cognome |  codice_fiscale  | sesso
+-------+------+---------+------------------+-------
+ 12001 | Luca | Ferrari | FRRLCU78L19F257B | M
+
+-- NON e' nella tabella generale!
+> SELECT * FROM ONLY persona
+  WHERE codice_fiscale = 'FRRLCU78L19F257B';
+ pk | nome | cognome | codice_fiscale | sesso
+----+------+---------+----------------+-------
+(0 rows)
+
+-- è nella tabella figlia giusta !
+> SELECT * FROM ONLY persona_maschio
+  WHERE codice_fiscale = 'FRRLCU78L19F257B';
+  pk   | nome | cognome |  codice_fiscale  | sesso
+-------+------+---------+------------------+-------
+ 12001 | Luca | Ferrari | FRRLCU78L19F257B | M
+#+end_src
+*** Instradamento automatico
+Le query di ~SELECT~ e di ~DELETE~ vengono instradate su tutte le tabelle figlie, quindi non importa impostare delle regole o dei trigger per gestirle. Ovviamente dovendo percorrere tutte le tabelle della partizione si incorre in un rischio di calo di performance, quindi l'unica ragione per scendere a livello di dettaglio su questi statement è un aumento di prestazioni.
+
+#+begin_src sql
+-- cancello senza sapere dove si trova la tupla
+> DELETE FROM persona
+  WHERE codice_fiscale = 'FRRLCU78L19F257B';
+
+> SELECT * FROM persona
+  WHERE codice_fiscale = 'FRRLCU78L19F257B';
+ pk | nome | cognome | codice_fiscale | sesso
+----+------+---------+----------------+-------
+(0 rows)
+#+end_src
+*** Instradamento automatico: svantaggio
+L'instradamento automatico e il calo di performance è visibile nel piano di esecuzione:
+#+begin_src sql
+ > EXPLAIN SELECT * FROM persona WHERE codice_fiscale = 'FRRLCU78L19F257B';
+                               QUERY PLAN
+------------------------------------------------------------------------
+ Append  (cost=0.00..219.00 rows=3 width=42)
+   ->  Seq Scan on persona  (cost=0.00..0.00 rows=1 width=42)
+         Filter: (codice_fiscale = 'FRRLCU78L19F257B'::text)
+   ->  Seq Scan on persona_maschio  (cost=0.00..109.50 rows=1 width=42)
+         Filter: (codice_fiscale = 'FRRLCU78L19F257B'::text)
+   ->  Seq Scan on persona_femmina  (cost=0.00..109.50 rows=1 width=42)
+         Filter: (codice_fiscale = 'FRRLCU78L19F257B'::text)
+#+end_src
+
+*Vengono percorse tutte le tabelle nella partizione!*
+*** Instradamento automatico: ~constraint_exclusion~
+Il parametro ~constraint_exclusion~ permette all'ottimizzatore di analizzare i vincoli (/constraint/) di tabella al fine di "comprendere" meglio come instradare una query. I valori possibili per questo parametro sono:
+- ~on~: abilitato per tutte le query (aumenta lo /sforzo/ del planner);
+- ~off~: disabilitato per tutte le query;
+- ~partition~: abilita il meccanismo solo in caso di tabelle con ~INHERITS~.
+
+#+begin_src shell
+constraint_exclusion = partition
+#+end_src
+*** Instradamento automatico *con ~constraint_exclusion~*
+#+begin_src sql
+> EXPLAIN SELECT * FROM persona WHERE sesso = 'M' AND codice_fiscale like 'FRR%';
+                                  QUERY PLAN
+------------------------------------------------------------------------------
+ Append  (cost=0.00..122.00 rows=2 width=42)
+   ->  Seq Scan on persona  (cost=0.00..0.00 rows=1 width=42)
+         Filter: ((codice_fiscale ~~ 'FRR%'::text) AND (sesso = 'M'::bpchar))
+   ->  Seq Scan on persona_maschio  (cost=0.00..122.00 rows=1 width=42)
+         Filter: ((codice_fiscale ~~ 'FRR%'::text) AND (sesso = 'M'::bpchar))
+#+end_src
+
+La tabella ~persona_femmina~ non viene presa in considerazione poiché il planner è in grado di stabilire a priori che il vincolo della query esclude tale tabella.
+*** Instradamento automatico *senza ~constraint_exclusion~*
+#+begin_src sql
+> EXPLAIN SELECT * FROM persona WHERE sesso = 'M' AND codice_fiscale like 'FRR%';
+                                  QUERY PLAN
+------------------------------------------------------------------------------
+ Append  (cost=0.00..244.00 rows=3 width=42)
+   ->  Seq Scan on persona  (cost=0.00..0.00 rows=1 width=42)
+         Filter: ((codice_fiscale ~~ 'FRR%'::text) AND (sesso = 'M'::bpchar))
+   ->  Seq Scan on persona_maschio  (cost=0.00..122.00 rows=1 width=42)
+         Filter: ((codice_fiscale ~~ 'FRR%'::text) AND (sesso = 'M'::bpchar))
+   ->  Seq Scan on persona_femmina  (cost=0.00..122.00 rows=1 width=42)
+         Filter: ((codice_fiscale ~~ 'FRR%'::text) AND (sesso = 'M'::bpchar))
+#+end_src
+
+Il planner non sa che ottimizzazioni fare sulla partizione, quindi percorre tutte le tabelle!
+
 * TODO Extensions
 * Foreign Data Wrapper
 ** SQLMED & FDW
