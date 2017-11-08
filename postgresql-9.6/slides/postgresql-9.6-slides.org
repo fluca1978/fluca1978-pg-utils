@@ -3702,6 +3702,143 @@ Lo script file deve includere nel nome del file la versione di partenza e quella
 
 Nel caso di upgrade ad una versione, sono eseguiti tutti i file script in ordine per garantire il salto di versione finale.
 
+*** 
+** Esempio di estensione
+*** Fase 1: script file
+Il file ~software--1.0.sql~:
+#+begin_src sql
+CREATE TYPE sw_version
+  AS ENUM ( 'stable',
+            'unstable',
+            'EOL',
+            'development' );
+
+CREATE TYPE sw_repository
+  AS ( url text,
+       branch text,
+       author text );
+
+--tabella configurazione
+CREATE TABLE repositories(
+   pk SERIAL PRIMARY KEY,
+   repo sw_repository,
+   -- flag boolean per indicare se la tupla
+   -- è di configurazione o inserita da un utente
+   user_defined boolean DEFAULT true
+);
+
+INSERT INTO repositories( repo, user_defined )
+VALUES( ( 'git@github.com:fluca1978/fluca1978-pg-utils.git', true ),
+        false
+     );
+
+-- salviamo i dati degli utenti!
+SELECT pg_catalog.pg_extension_config_dump( 'repositories',
+                                            'WHERE user_defined = true' );
+#+end_src
+
+*** Fase 2: definizione del file di controllo
+Il file ~software.control~:
+#+begin_Src shell
+comment = 'Una semplice estensione'
+default_version = '1.0'
+relocatable = true
+#+end_src
+
+*** Fase 3: (opzionale) Makefile
+Il file ~Makefile~ utilizza ~pg_config~ per sapere dove installare i file (/sharedir/):
+#+begin_src shell
+EXTENSION = software
+DATA = software--1.0.sql
+
+PG_CONFIG = pg_config
+PGXS := $(shell $(PG_CONFIG) --pgxs)
+include $(PGXS)
+#+end_src
+
+*** Fase 4: installare l'estensione
+#+begin_src shell
+% sudo make install                                          
+/bin/mkdir -p '/usr/share/postgresql/9.5/extension'
+/bin/mkdir -p '/usr/share/postgresql/9.5/extension'
+/usr/bin/install -c -m 644 .//software.control '/usr/share/postgresql/9.5/extension/'
+/usr/bin/install -c -m 644 .//software--1.0.sql  '/usr/share/postgresql/9.5/extension/'
+#+end_src
+*** Fase 5: usare l'estensione
+Nel database si può usare ~CREATE EXTENSION~ per creare l'estensione dentro *ad uno specifico database*:
+#+begin_src sql
+# CREATE EXTENSION software;
+
+# SELECT (repo).author, (repo).branch FROM repositories;
+    author    |     branch     
+--------------+----------------
+ Luca Ferrari | postgresql-9.6
+#+end_src
+
+*** Fase 6: creare un aggiornamento dell'esntesione
+Il file ~software--1.0--1.1.sql~:
+#+begin_Src sql
+INSERT INTO repositories( repo, user_defined )
+VALUES( ( 'git@github.com:fluca1978/fluca1978-coding-bits.git',
+          'master',
+	  'Luca Ferrari' ),
+        false
+     );
+
+ALTER TABLE repositories ADD COLUMN active boolean DEFAULT true;
+#+end_src
+
+e il ~Makefile~
+#+begin_src sql
+EXTENSION = software
+DATA = software--1.0--1.1.sql
+
+PG_CONFIG = pg_config
+PGXS := $(shell $(PG_CONFIG) --pgxs)
+include $(PGXS)
+#+end_Src
+
+*** Fase 7: installare l'aggiornamento
+Installare i file dove il cluster li può trovare:
+#+begin_src shell
+% sudo make install
+#+end_src
+
+e poi si aggiorna l'esntesione:
+#+begin_src sql
+# ALTER EXTENSION software UPDATE TO '1.1';
+
+# SELECT (repo).author, (repo).branch FROM repositories;
+    author    |     branch     
+--------------+----------------
+ Luca Ferrari | postgresql-9.6
+ Luca Ferrari | master
+#+end_Src
+
+*** Spostare l'esntesione
+Supponiamo di voler spostare l'estensione in un altro schema:
+
+#+begin_src sql
+# CREATE SCHEMA sw_ext;
+
+# ALTER EXTENSION software SET SCHEMA sw_ext;
+
+# SELECT (repo).author, (repo).branch 
+  FROM sw_ext.repositories; -- nuovo schema!
+    author    |     branch     
+--------------+----------------
+ Luca Ferrari | postgresql-9.6
+ Luca Ferrari | master
+#+end_src
+
+*** Eliminare l'estesione
+Con il comando ~DROP EXTENSION~ tutti gli oggetti sono eliminati in un colpo solo:
+#+begin_src sql
+# DROP EXTENSION software;
+#+end_src
+
+
+
 * Foreign Data Wrapper
 ** SQLMED & FDW
 *** Introduzione
