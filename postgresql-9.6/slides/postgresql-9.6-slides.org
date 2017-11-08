@@ -3367,6 +3367,45 @@ CHECK ( sesso IN ( 'M', 'F' ) ) );
     CHECK ( sesso = 'F' )
   ) INHERITS( persona );
 #+end_src
+*** Partitioning by rule
+Si vuole /instradare/ ogni inserimento di una tupla "maschio" nella relativa tabella:
+#+begin_src sql
+> CREATE OR REPLACE RULE r_partition_insert_persona_maschio AS
+   ON INSERT
+   TO persona
+   WHERE sesso = 'M'
+   DO INSTEAD
+ INSERT INTO persona_maschio SELECT NEW.*;
+#+end_src
+
+*Vanno create le realtive rule per ogni casistica (~INSERT~, ~UPDATE~, ~DELETE~) e instradamento (/maschio/, /femmina/).*
+*** Partitioning by trigger
+Si vogliono instradare gli inserimenti nella tabella corretta:
+#+begin_src sql
+> CREATE OR REPLACE FUNCTION f_tr_persona_insert()
+  RETURNS TRIGGER
+  AS $BODY$
+ DECLARE
+   BEGIN
+   IF NEW.sesso = 'M' THEN
+     INSERT INTO persona_maschio SELECT NEW.*;
+   ELSIF NEW.sesso = 'F' THEN
+     INSERT INTO persona_femmina SELECT NEW.*;
+   END IF;
+ RETURN NULL;
+ END;
+ $BODY$
+ LANGUAGE plpgsql;
+#+end_src
+*** Partitioning by trigger (2)
+Si aggancia il trigger:
+#+begin_src sql
+> CREATE TRIGGER tr_persona_insert
+    BEFORE INSERT
+    ON persona
+    FOR EACH ROW
+    EXECUTE PROCEDURE f_tr_persona_insert();
+#+end_src
 *** Spostamento dei dati: maschi
 #+begin_src sql
 > WITH move_persona AS (
@@ -3400,6 +3439,51 @@ La clausola ~FROM ONLY~ indica a PostgreSQL di /spezzare/ la catena di ereditari
   GROUP BY sesso;
  count | sesso
 -------+-------
+(0 rows)
+#+end_src
+*** Test di inserimento
+#+begin_src sql
+> INSERT INTO persona( nome, cognome, codice_fiscale, sesso )
+  VALUES( 'Luca', 'Ferrari', 'FRRLCU78L19F257B', 'M' );
+#+end_src
+
+Dove è finita la tupla?
+
+#+begin_src sql
+-- la trovo con una query generica senza
+-- indicare le tabelle figlie !
+> SELECT * FROM persona
+  WHERE codice_fiscale = 'FRRLCU78L19F257B';
+  pk   | nome | cognome |  codice_fiscale  | sesso
+-------+------+---------+------------------+-------
+ 12001 | Luca | Ferrari | FRRLCU78L19F257B | M
+
+-- NON e' nella tabella generale!
+> SELECT * FROM ONLY persona
+  WHERE codice_fiscale = 'FRRLCU78L19F257B';
+ pk | nome | cognome | codice_fiscale | sesso
+----+------+---------+----------------+-------
+(0 rows)
+
+-- è nella tabella figlia giusta !
+> SELECT * FROM ONLY persona_maschio
+  WHERE codice_fiscale = 'FRRLCU78L19F257B';
+  pk   | nome | cognome |  codice_fiscale  | sesso
+-------+------+---------+------------------+-------
+ 12001 | Luca | Ferrari | FRRLCU78L19F257B | M
+#+end_src
+*** Instradamento automatico
+Le query di ~SELECT~ e di ~DELETE~ vengono instradate su tutte le tabelle figlie, quindi non importa impostare delle regole o dei trigger per gestirle. Ovviamente dovendo percorrere tutte le tabelle della partizione si incorre in un rischio di calo di performance, quindi l'unica ragione per scendere a livello di dettaglio su questi statement è un aumento di prestazioni.
+
+#+begin_src sql
+-- cancello senza sapere dove si trova la tupla
+> DELETE FROM persona
+  WHERE codice_fiscale = 'FRRLCU78L19F257B';
+
+> SELECT * FROM persona
+  WHERE codice_fiscale = 'FRRLCU78L19F257B';
+ pk | nome | cognome | codice_fiscale | sesso
+----+------+---------+----------------+-------
 (0 rows)
 #+end_src
 * TODO Extensions
