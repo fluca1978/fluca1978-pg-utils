@@ -3312,6 +3312,14 @@ PostgreSQL supporta alcuni meccanismi che, combinati, possono fornire l'infrastr
 
 *ATTENZIONE: in default PostgreSQL percorre tutta la catena di ereditarietà (instradamento automatico)!*
 
+**** PostgreSQL 10 partitioning                                :B_definition:
+In PostgreSQL 10 esiste una apposita sintassi che /racchiude/ tutti i passi in uno unico gestendo in maniera molto piu' semplice il partizionamento.
+**** End of block                                           :B_ignoreheading:
+:PROPERTIES:
+:BEAMER_env: ignoreheading
+:END:
+
+
 *** Rules o Triggers?
 La logica di partitioning può essere implementata con /triggers/ o /rules/, la scelta in molti casi è indifferente.
 *** Su cosa si partiziona?
