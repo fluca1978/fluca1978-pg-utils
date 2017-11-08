@@ -3639,6 +3639,21 @@ La tabella ~persona_femmina~ non viene presa in considerazione poiché il planne
 Il planner non sa che ottimizzazioni fare sulla partizione, quindi percorre tutte le tabelle!
 
 * TODO Extensions
+** Concetti generali
+*** Introduzione alle estensioni
+PostgreSQL indica con il termine */extension/* un /pacchetto/ di oggetti correlati fra di loro e che devono essere gestiti coerentemente in blocco.
+
+Ad esempio una estensione può includere la definizione di procedure, trigger, tipi di dato personalizzato, ecc., che vengono /racchiusi/ in un pacchetto (l'estensione stessa) che viene gestita in blocco.
+
+Gestire una estensione in blocco significa essere in grado di installare, spostare, aggiornare ed eliminare l'intero insieme di oggetti con comandi singoli. Inoltre PostgreSQL riconoscerà ogni singolo oggetto come appartenente all'estensione e ne impedirà la movimentazione/cancellazione scorrelata dagli altri oggetti.
+
+*** Componenti di una estensione
+Una /extension/ è formata almeno da:
+- /un file script/ che contiene gli statement SQL necessari per definire e caricare l'estensione stessa (es. ~CREATE FUNCTION~, ~CREATE TYPE~, ...);
+- /un file di controllo/ che identifica degli attributi dell'estensione (versione, ecc.);
+- /eventuali librerie (shared objects)/ da caricare nel server assieme all'estensione (qualora questa dipenda da codice compilato).
+
+
 * Foreign Data Wrapper
 ** SQLMED & FDW
 *** Introduzione
