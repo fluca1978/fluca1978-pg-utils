@@ -3288,7 +3288,8 @@ Le CTE ricorsive sono composte di due parti:
 
 SELECT * FROM foo LIMIT 10;
 #+end_src
-* TODO Foreign Data Wrapper
+* TODO Extensions
+* Foreign Data Wrapper
 ** SQLMED & FDW
 *** Introduzione
 /SQLMED (SQL Management of External Data)/ è una specifica per la gestione di "dati esterni" aggiunta allo standard nel 2003.
@@ -3674,7 +3675,6 @@ SELECT * FROM google_search WHERE search = 'postgresql';
 ERROR:  Error in python: TypeError
 DETAIL:  'NoneType' object has no attribute '__getitem__'
 #+end_src
-* TODO Extensions
 * TODO Configurazione del Server
 ** Configurazione
 *** postgresql.conf
