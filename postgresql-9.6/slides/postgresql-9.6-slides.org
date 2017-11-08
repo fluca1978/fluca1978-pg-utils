@@ -3638,7 +3638,7 @@ La tabella ~persona_femmina~ non viene presa in considerazione poiché il planne
 
 Il planner non sa che ottimizzazioni fare sulla partizione, quindi percorre tutte le tabelle!
 
-* TODO Extensions
+* Extensions
 ** Concetti generali
 *** Introduzione alle estensioni
 PostgreSQL indica con il termine */extension/* un /pacchetto/ di oggetti correlati fra di loro e che devono essere gestiti coerentemente in blocco.
@@ -3836,7 +3836,6 @@ Con il comando ~DROP EXTENSION~ tutti gli oggetti sono eliminati in un colpo sol
 #+begin_src sql
 # DROP EXTENSION software;
 #+end_src
-
 
 ** PGXS
 *** Infrastruttura per le estensioni
