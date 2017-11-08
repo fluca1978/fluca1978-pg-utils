@@ -3319,12 +3319,12 @@ Trovare il vincolo di discriminazione fra le partizioni dei dati è il quesito p
 
 La scelta della colonna/colonne di partizionamento e del relativo valore dipende dal dominio dei dati.
 ** Esempio (banale)
-*** Esempio banale
+*** Esempio
 Supponiamo di avere una tabella ~persona~ che memorizza il ~sesso~, e di voler partizionare appunto sul sesso.
 Si supponga di essere nel caso "difficile": dati già presenti.
 
 /Questo esempio è volutamente semplice per mostrare i concetti del partitioning!/
-*** Esepio banale: preparazione
+*** Esepio: preparazione
 #+begin_src sql
 > CREATE TABLE persona (
     pk SERIAL PRIMARY KEY,
@@ -3334,7 +3334,7 @@ Si supponga di essere nel caso "difficile": dati già presenti.
     sesso char(1) DEFAULT 'M',
 CHECK ( sesso IN ( 'M', 'F' ) ) );
 #+end_src
-*** Esempio banale: popolamento
+*** Esempio: popolamento
 #+begin_src sql
 > WITH random_seq AS (
     SELECT generate_series( 1, 10000 )
@@ -3354,6 +3354,18 @@ CHECK ( sesso IN ( 'M', 'F' ) ) );
 -------+-------
   5000 | F
   5000 | M
+#+end_src
+*** Setup delle tabelle
+#+begin_src sql
+> CREATE TABLE persona_maschio(
+    -- nessun campo !
+    CHECK ( sesso = 'M' )
+  ) INHERITS( persona );
+
+> CREATE TABLE persona_femmina(
+    -- nessun campo !
+    CHECK ( sesso = 'F' )
+  ) INHERITS( persona );
 #+end_src
 * TODO Extensions
 * Foreign Data Wrapper
