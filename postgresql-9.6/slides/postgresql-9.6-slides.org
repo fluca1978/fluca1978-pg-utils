@@ -3653,6 +3653,41 @@ Una /extension/ è formata almeno da:
 - /un file di controllo/ che identifica degli attributi dell'estensione (versione, ecc.);
 - /eventuali librerie (shared objects)/ da caricare nel server assieme all'estensione (qualora questa dipenda da codice compilato).
 
+*Entrambi i file hanno un nome che deve iniziare con il nome dell'estensione stessa*.
+
+*Ogni estensione ha un numero di versione*: PostgreSQL utilizza i numeri di versione (che devono comparire nel nome del file di script e, opzionalmente, in quello di controllo) per effettuare gli aggiornamenti.
+
+*** Il control file
+Il /control file/ è un file con dei metadati relativi all'estensione. La sintassi è nel formato ~chiave = valore~ e il nome del file deve quello dell'estensione stessa con il suffisso ~.control~.
+
+E' anche possibile specificare un file di controllo dipendente dalla versione specifica di una estensione, nel qual caso il nome del file deve essere con il suffisso ~--<version>.control~.
+
+*** Il file di script
+Lo /script file/ è un file con nome pari a quello dell'estensione, seguito da due trattini e il numero di versione, infine il suffisso ~.sql~, ovvero:
+   ~<extension>--1.2.sql~
+
+*** Movimentazione di una estensione
+Una estensione si dice /relocatable/ (spostabile) se può essere migrata da uno schema ad un altro.
+
+Le estensioni hanno tre livelli di movimentazione:
+- /fully relocatable/ l'estensione non dipende dallo schema in cui gira;
+- /partially relocatable/ l'estensione può essere installata in qualunque schema ma poi non può essere spostata;
+- /non-relocatable/ l'estensione deve essere installata in uno schema specifico e da lì non può essere mossa.
+
+Il control file governa la /relocation/ di una estensione:
+| parametro     | valore          | relocatable |
+|---------------+-----------------+-------------|
+| ~relocatable~ | ~true~          | /fully/     |
+| ~schema~      |                 |             |
+|---------------+-----------------+-------------|
+| ~relocatable~ | ~false~         | /partial/   |
+| ~schema~      |                 |             |
+|---------------+-----------------+-------------|
+| ~relocatable~ | ~false~         | /none/      |
+| ~schema~      | ~<schema_name>~ |             |
+|---------------+-----------------+-------------|
+
+
 
 * Foreign Data Wrapper
 ** SQLMED & FDW
