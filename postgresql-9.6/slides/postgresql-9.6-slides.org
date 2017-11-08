@@ -1645,6 +1645,19 @@ Ci sono molte funzioni di utilità per convertire dati da e per JSON:
 #+end_src
 * TODO Backup e restore
 ** Backup
+*** Introduzione
+Ci sono due tipi di backup:
+- /logico/ effettua un "dump" degli oggetti del database essendo collegato al database stesso e quindi eseguendo una transazione sottoposta a tutte le regole di visibilità dei dati. Il dump è *sempre coerente*, ma a seconda della dimensione dei dati, potrebbe non includere tutti gli ultimi dati;
+- /fisico/ effettua una copia del filesystem del cluster (~$PGDATA~). Il problema è che questo tipo di backup non è coerente con le transazioni in corso nel cluster e quindi i dati sono *inconsistenti* (sostanzialmente è un /crash-recovery/ pre-annunciato).
+
+PostgreSQL mette a disposizione appositi programmi per il *backup logico* (coerente) che possono essere schedulati e automatizzati.
+Il backup fisico viene solitamente affidato a strumenti del sistema operativo (/snapshosts/, ~rsync~, ecc.), ma per essere usabile richiede un setup del cluster particolare (es. /Point In Time Recovery/).
+
+Esistono anche applicazioni esterne che aumentano la consistenza/automazione/sicurezza dei backup, ad esempio /pgBackRest/.
+*** Backup logico da parte del sistema operativo
+Diversi sistemi operativi installano anche degli script pre-configurati per il backup schedulato (/backup logico/).
+
+Un ottimo punto di partenza è lo script ~502.pgsql~ usato con ~periodic(8)~ di FreeBSD.
 *** ~pg_dump~
 Il comando shell ~pg_dump~ consente di effettuare un /backup logico/ di un determinato database.
 
@@ -1653,7 +1666,7 @@ Il backup viene fornito come script SQL o archivio compresso.
 Supporta il dump /parallelo/.
 
 *** ~pg_dump~: dump SQL
-#+begin_src sql
+#+begin_src shell
 % pg_dump -h localhost -U postgres \
   -C \
   -f testdb.sql \
@@ -1687,6 +1700,32 @@ Il comando ~pg_dumpall~ effettua il backup di un intero cluster:
 - effettua il dump anche degli oggetti "intra-database" (ruoli, tablespaces, ecc).
 
 Le opzioni sono simili a quelle di ~pg_dump~.
+** Restore
+*** Restore via ~psql~
+Se il dump fornito è SQL si deve procedere con ~psql~ per il restore:
+
+#+begin_src sql
+% psql -h localhost -U luca template1 < testdb.sql
+#+end_src
+
+o in modalità interattiva:
+
+#+begin_src sql
+% psql -h localhost -U luca template1
+>\i testdb.sql
+#+end_src
+
+*** Restore via ~pg_restore~
+Il comando ~pg_restore~ consente di ripristinare un archivio non SQL creato con ~pg_dump~ e formato /custom/ (~-Fc~).
+In default il comando produce uno script SQL corrispondente all'archivio fornito come backup.
+Se si vuole operare un restore /in place/ occorre specificare a quale database collegarsi per avviare una sessione, e lasciare che ~pg_restore~ ricarichi tutto dentro al database specificato nell'archivio:
+
+#+begin_src shell
+% pg_restore -h localhost -U postgres \
+    -C \
+    -d template1 \
+    testdb.dump
+#+end_src
 * TODO MVCC, Vacuum e Autovacuum
 ** Multi Version Concurrency Control (MVCC)
 *** Introduzione
