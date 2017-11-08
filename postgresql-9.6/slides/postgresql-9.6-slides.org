@@ -1497,7 +1497,7 @@ subtype_diff = f_versions_diff );
  [9.6,10)
 #+end_src
 
-** TODO JSON & JSONB
+** JSON & JSONB
 *** Tipi di dato JSON
 PostgreSQL supporta due tipi di dato /JSON (JavaScript Object Notation):
 - ~json~ tipo di dato testuale che richiede un nuovo /parsing/ ogni volta che
