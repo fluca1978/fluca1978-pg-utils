@@ -3838,6 +3838,44 @@ Con il comando ~DROP EXTENSION~ tutti gli oggetti sono eliminati in un colpo sol
 #+end_src
 
 
+** PGXS
+*** Infrastruttura per le estensioni
+la /PGXS/ è una infrastruttura per la gestione delle estensioni, in particolare quelle che includono codice nativo.
+
+Le estensioni che vogliano usare /PGXS/ devono usare un ~Makefile~ che includa quello di /PGXS/.
+
+#+begin_src shell
+EXTENSION = software
+DATA = software--1.0.sql
+
+PG_CONFIG = pg_config
+PGXS := $(shell $(PG_CONFIG) --pgxs)
+include $(PGXS)
+#+end_src
+
+*** PGXN
+La /PostgreSQL eXtension Network (PGXN)/ è un repository online di
+estensioni che possono essere scaricate, disponibile all'URL
+~https://pgxn.org/~.
+
+Le estensioni possono essere scaricate e installate con la procedura ~make~ vista in precedenza.
+
+*** ~pgxnclient~
+Esiste un client che funge da shell per la /PGXN/. Va installato come pacchetto dipendente dalla distribuzione, ad esempio:
+#+begin_src shell
+% sudo apt-get install pgxnclient
+#+end_src
+
+Esempio di installazione:
+
+#+begin_Src shell
+% sudo pgxn install multicorn 
+INFO: best version: multicorn 1.3.3
+INFO: saving /tmp/tmpSnXQ15/multicorn-1.3.3.zip
+INFO: unpacking: /tmp/tmpSnXQ15/multicorn-1.3.3.zip
+INFO: building extension
+...
+#+end_src
 
 * Foreign Data Wrapper
 ** SQLMED & FDW
