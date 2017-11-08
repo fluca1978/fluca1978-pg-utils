@@ -3486,6 +3486,60 @@ Le query di ~SELECT~ e di ~DELETE~ vengono instradate su tutte le tabelle figlie
 ----+------+---------+----------------+-------
 (0 rows)
 #+end_src
+*** Instradamento automatico: svantaggio
+L'instradamento automatico e il calo di performance è visibile nel piano di esecuzione:
+#+begin_src sql
+ > EXPLAIN SELECT * FROM persona WHERE codice_fiscale = 'FRRLCU78L19F257B';
+                               QUERY PLAN
+------------------------------------------------------------------------
+ Append  (cost=0.00..219.00 rows=3 width=42)
+   ->  Seq Scan on persona  (cost=0.00..0.00 rows=1 width=42)
+         Filter: (codice_fiscale = 'FRRLCU78L19F257B'::text)
+   ->  Seq Scan on persona_maschio  (cost=0.00..109.50 rows=1 width=42)
+         Filter: (codice_fiscale = 'FRRLCU78L19F257B'::text)
+   ->  Seq Scan on persona_femmina  (cost=0.00..109.50 rows=1 width=42)
+         Filter: (codice_fiscale = 'FRRLCU78L19F257B'::text)
+#+end_src
+
+*Vengono percorse tutte le tabelle nella partizione!*
+*** Instradamento automatico: ~constraint_exclusion~
+Il parametro ~constraint_exclusion~ permette all'ottimizzatore di analizzare i vincoli (/constraint/) di tabella al fine di "comprendere" meglio come instradare una query. I valori possibili per questo parametro sono:
+- ~on~: abilitato per tutte le query (aumenta lo /sforzo/ del planner);
+- ~off~: disabilitato per tutte le query;
+- ~partition~: abilita il meccanismo solo in caso di tabelle con ~INHERITS~.
+
+#+begin_src shell
+constraint_exclusion = partition
+#+end_src
+*** Instradamento automatico *con ~constraint_exclusion~*
+#+begin_src sql
+> EXPLAIN SELECT * FROM persona WHERE sesso = 'M' AND codice_fiscale like 'FRR%';
+                                  QUERY PLAN
+------------------------------------------------------------------------------
+ Append  (cost=0.00..122.00 rows=2 width=42)
+   ->  Seq Scan on persona  (cost=0.00..0.00 rows=1 width=42)
+         Filter: ((codice_fiscale ~~ 'FRR%'::text) AND (sesso = 'M'::bpchar))
+   ->  Seq Scan on persona_maschio  (cost=0.00..122.00 rows=1 width=42)
+         Filter: ((codice_fiscale ~~ 'FRR%'::text) AND (sesso = 'M'::bpchar))
+#+end_src
+
+La tabella ~persona_femmina~ non viene presa in considerazione poiché il planner è in grado di stabilire a priori che il vincolo della query esclude tale tabella.
+*** Instradamento automatico *senza ~constraint_exclusion~*
+#+begin_src sql
+> EXPLAIN SELECT * FROM persona WHERE sesso = 'M' AND codice_fiscale like 'FRR%';
+                                  QUERY PLAN
+------------------------------------------------------------------------------
+ Append  (cost=0.00..244.00 rows=3 width=42)
+   ->  Seq Scan on persona  (cost=0.00..0.00 rows=1 width=42)
+         Filter: ((codice_fiscale ~~ 'FRR%'::text) AND (sesso = 'M'::bpchar))
+   ->  Seq Scan on persona_maschio  (cost=0.00..122.00 rows=1 width=42)
+         Filter: ((codice_fiscale ~~ 'FRR%'::text) AND (sesso = 'M'::bpchar))
+   ->  Seq Scan on persona_femmina  (cost=0.00..122.00 rows=1 width=42)
+         Filter: ((codice_fiscale ~~ 'FRR%'::text) AND (sesso = 'M'::bpchar))
+#+end_src
+
+Il planner non sa che ottimizzazioni fare sulla partizione, quindi percorre tutte le tabelle!
+
 * TODO Extensions
 * Foreign Data Wrapper
 ** SQLMED & FDW
