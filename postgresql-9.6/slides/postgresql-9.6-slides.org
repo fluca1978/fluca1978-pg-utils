@@ -3318,6 +3318,7 @@ Trovare il vincolo di discriminazione fra le partizioni dei dati è il quesito p
 *Lo scopo dovrebbe essere quello di ottenere partizioni omogenee (in termini di dimensioni) e "stabili" (ossia con poche variazioni)*/: piu' una partizione è "fissa" e piu' facile è ottimizzarla.
 
 La scelta della colonna/colonne di partizionamento e del relativo valore dipende dal dominio dei dati.
+** Esempio (banale)
 *** Esempio banale
 Supponiamo di avere una tabella ~persona~ che memorizza il ~sesso~, e di voler partizionare appunto sul sesso.
 Si supponga di essere nel caso "difficile": dati già presenti.
