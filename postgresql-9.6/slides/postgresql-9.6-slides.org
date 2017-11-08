@@ -3694,6 +3694,14 @@ Tuttavia potrebbe capitare che l'utente modifichi tali dati di configurzione, ne
 
 L'estensione deve informare il catalogo di sistema che gli oggetti devono essere sottoposti a dump: la funzione ~pg_catalog.pg_extension_config_dump()~ accetta il nome dell'oggetto da inserire nel dump.
 
+*** Upgrade di una estensione
+Per effettuare un upgrade di una estensione si può usare il comando ~ALTER EXTENSION~.
+
+Lo script file deve includere nel nome del file la versione di partenza e quella di arrivo, ad esempio:
+    ~<extension_name>--1.0--1.1-sql~
+
+Nel caso di upgrade ad una versione, sono eseguiti tutti i file script in ordine per garantire il salto di versione finale.
+
 * Foreign Data Wrapper
 ** SQLMED & FDW
 *** Introduzione
