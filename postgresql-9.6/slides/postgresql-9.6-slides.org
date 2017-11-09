@@ -3702,7 +3702,7 @@ Lo script file deve includere nel nome del file la versione di partenza e quella
 
 Nel caso di upgrade ad una versione, sono eseguiti tutti i file script in ordine per garantire il salto di versione finale.
 
-*** 
+***
 ** Esempio di estensione
 *** Fase 1: script file
 Il file ~software--1.0.sql~:
@@ -3758,7 +3758,7 @@ include $(PGXS)
 
 *** Fase 4: installare l'estensione
 #+begin_src shell
-% sudo make install                                          
+% sudo make install
 /bin/mkdir -p '/usr/share/postgresql/9.5/extension'
 /bin/mkdir -p '/usr/share/postgresql/9.5/extension'
 /usr/bin/install -c -m 644 .//software.control '/usr/share/postgresql/9.5/extension/'
@@ -3770,7 +3770,7 @@ Nel database si può usare ~CREATE EXTENSION~ per creare l'estensione dentro *ad
 # CREATE EXTENSION software;
 
 # SELECT (repo).author, (repo).branch FROM repositories;
-    author    |     branch     
+    author    |     branch
 --------------+----------------
  Luca Ferrari | postgresql-9.6
 #+end_src
@@ -3809,7 +3809,7 @@ e poi si aggiorna l'esntesione:
 # ALTER EXTENSION software UPDATE TO '1.1';
 
 # SELECT (repo).author, (repo).branch FROM repositories;
-    author    |     branch     
+    author    |     branch
 --------------+----------------
  Luca Ferrari | postgresql-9.6
  Luca Ferrari | master
@@ -3823,9 +3823,9 @@ Supponiamo di voler spostare l'estensione in un altro schema:
 
 # ALTER EXTENSION software SET SCHEMA sw_ext;
 
-# SELECT (repo).author, (repo).branch 
+# SELECT (repo).author, (repo).branch
   FROM sw_ext.repositories; -- nuovo schema!
-    author    |     branch     
+    author    |     branch
 --------------+----------------
  Luca Ferrari | postgresql-9.6
  Luca Ferrari | master
@@ -3846,8 +3846,10 @@ Le estensioni che vogliano usare /PGXS/ devono usare un ~Makefile~ che includa q
 #+begin_src shell
 EXTENSION = software
 DATA = software--1.0.sql
-
 PG_CONFIG = pg_config
+
+# imposta PGXS al file Makefile appropriato
+# e lo include!
 PGXS := $(shell $(PG_CONFIG) --pgxs)
 include $(PGXS)
 #+end_src
@@ -3859,20 +3861,73 @@ estensioni che possono essere scaricate, disponibile all'URL
 
 Le estensioni possono essere scaricate e installate con la procedura ~make~ vista in precedenza.
 
+** PGXN
 *** ~pgxnclient~
 Esiste un client che funge da shell per la /PGXN/. Va installato come pacchetto dipendente dalla distribuzione, ad esempio:
+
+#+begin_src shell
+% sudo pkg install pgxnclient-1.2.1_1
+#+end_src
+
+o anche
+
 #+begin_src shell
 % sudo apt-get install pgxnclient
 #+end_src
 
-Esempio di installazione:
+*** Workflow con ~pgxn~
+Il comando shell ~pgxn~ ricorda un po' ~cpan~ di Perl (e gli analoghi per altri ecosistemi).
 
-#+begin_Src shell
-% sudo pgxn install multicorn 
-INFO: best version: multicorn 1.3.3
-INFO: saving /tmp/tmpSnXQ15/multicorn-1.3.3.zip
-INFO: unpacking: /tmp/tmpSnXQ15/multicorn-1.3.3.zip
-INFO: building extension
+Il workflow solitamente è:
+- /cercare/ un pacchetto e vederne le informazioni;
+- /installarlo/ azione in piu' fasi che richiede un /download/, /build/ e /install/.
+
+*** Esempio di workflow con ~pgxn~: ricerca di un pacchetto
+*~pgxn~ in default cerca nella documentazione!* Occorre specificare ~--ext~ per cercare fra le estensioni.
+
+Si supponga di voler cercare qualcosa relativo al table partitioning:
+
+#+begin_src shell
+% pgxn search --ext partitioning
+pg_pathman 1.4.7
+    *Partitioning* tool
+
+pg_part 0.1.0
+    Table *partitioning* extention
+...
+#+end_src
+
+*** Esempio di workflow con ~pgxn~: info di un pacchetto
+Stabilito il nome di un pacchetto da un ~search~, si può usare il comando ~info~ per ottenerne delle informazioni:
+
+#+begin_src shell
+% pgxn info pg_part
+name: pg_part
+abstract: Table partitioning utility for PostgreSQL
+WARNING: data key 'description' not found
+maintainer: Satoshi Nagayasu <snaga@uptime.jp>
+license: gpl_2
+release_status: stable
+version: 0.1.0
+date: 2013-01-04T03:16:26Z
+sha1: c376651dcbe3fddf01f24824e68c2774f48ef434
+provides: pg_part: 0.1.0
+#+end_src
+
+*** Esempio di workflow con ~pgxn~: installazione di un pacchetto
+A questo punto si può procedere all'installazione:
+
+#+begin_src shell
+% sudo pgxn install pg_part
+...
+#+end_src
+
+In default ~pgxn~ installa solo pacchetti marcati come ~stable~ (nella sezione ~release_status~). E' possibile forzare l'installazione di un pacchetto con le opzioni auto-esplicative ~--testing~ e ~--unstable~.
+
+Su alcune piattaforme è bene specificare il comando ~make~ da usare con ~--make~, ad esempio:
+
+#+begin_src shell
+% sudo pgxn install --make `which gmake`  pg_part
 ...
 #+end_src
 
