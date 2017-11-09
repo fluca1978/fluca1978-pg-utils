@@ -1,0 +1,258 @@
+* Using PostgreSQL Foreign Data Wrapper to keep track of files
+
+** Abstract
+In this paper you will see how PostgreSQL can be /extended/ to pull data out of so called /Foreign Data Wrapper/s, that are special /data sources/ that allow the database cluster to query the outside world. There are many implementations of FDW that allow PostgreSQL to live-query other database, as well as other data sources like web pages, files, processes and so on.
+
+This paper proposes a simple setup of a /File System FDW/ that allows a system administrator or an application to query the filesystem to get information about files, as well as storing at least one historical version of the latter. The approach presented here is not meant to any extent to a substitute of a traditional and more well suited /Source Control Management/ software (like RCS and alike), and all the examples provided aim only to present the reader with a simple background about the capabilities that FDW allow.
+
+** Introduction
+Imagine you want to keep some information about your system configuration file into a database. The solution is quite easy: build an application that can perform some sort of /DML (data Manipulation Language)/ against a database.
+
+Another approach is to use a /File System FDW/, a layer that connects your database directly to a /File System Data Source/, so that instead of being the database waiting for new data to come in, it can automatically (to some extent) pull itself.
+
+In this article I will show you how you can use the /Multicorn/ FDW to achieve a kind of /poor-man database-SCM/.
+
+In order to execute the code snippets you need:
+- ~git~ and ~gmake~ installed;
+- ~python~ version 2.7 or higher;
+- PostgreSQL (a recent version, for this article I used version ~9.6.5~);
+- access to a privileged user capabilities (e.g., using ~sudo~).
+
+You will also need some basic knowledge about PostgreSQL and how to create a database, a superuser role, and so on. You can get more information reading the online documentation or my previous articles on the matter.
+
+** Compiling and Installing the Foreign Data Wrapper
+There are several Foreign Data Wrappers (/FDW/) available for PostgreSQL. In this example we are going to use the /Multicorn/ FDW, a set of Python modules that provide several FDW implementations within the same installation. One of such implementation is the /File System FDW/.
+
+The first step is to get the latest /Multicorn/ implementation. In this example you will install the development version, obtained via /Git/:
+
+#+begin_src shell
+% git clone git://github.com/Kozea/Multicorn.git
+#+end_src
+
+Before you can actually compile /Multicorn/, you need to adjust it to compile on FreeBSD:
+1. edit the ~preflight-chech.sh~ file and change the first line with the current available /Bash/, that is:
+#+begin_src shell
+% head -n1 preflight-check.sh
+#!/usr/local/bin/bash
+#+end_src
+2. remember to run ~gmake~ instead of ~make~, so:
+
+#+begin_src shell
+% gmake && sudo gmake install
+#+end_src
+
+** Create the Extension
+In order to create the extension you need to connect to the PostgreSQL database as superuser, and then load the /Multicorn/ extension. After that you need to define a /Data Server/, that is an entry point for external data to come into the database.
+
+Therefore:
+
+#+begin_src sql
+# CREATE EXTENSION multicorn;
+
+# CREATE SERVER filesystem_server
+  FOREIGN DATA WRAPPER multicorn
+  OPTIONS ( wrapper 'multicorn.fsfdw.FilesystemFdw' );
+#+end_src
+
+** Create the File System Table
+Suppose we want to collect information about the ~/usr/local/etc/~ configuration files. Therefore, you need to define a table that will contain various data:
+- the /filename/;
+- the /content/ (as text);
+
+and we can elaborate a little more adding an /hash/ column and the date the file has been /inspected/.
+
+Therefore the table will be defined as:
+
+#+begin_src sql
+# CREATE FOREIGN TABLE usr_local_etc (
+    full_file_name text,
+    content        text,
+    service        text
+
+) SERVER filesystem_server
+  OPTIONS( root_dir '/usr/local/etc',
+           pattern '{service}.conf',
+           content_column 'content',
+           filename_column 'full_file_name' );
+#+end_src
+
+And now you can try it with a simple ~SELECT~ statement:
+
+#+begin_src sql
+# SELECT service, full_file_name
+  FROM usr_local_etc;
+
+ service  | full_file_name
+----------+----------------
+ pkg      | pkg.conf
+ tcsd     | tcsd.conf
+ pcp      | pcp.conf
+ pgpool   | pgpool.conf
+ pool_hba | pool_hba.conf
+ idn      | idn.conf
+ idnalias | idnalias.conf
+#+end_src
+
+but there is an hidden problem: while the user can run simple /stat/ commands on the filesystem, she cannot get the content of the files and in fact if you try to get the content of a file you get an error:
+
+#+begin_src sql
+# SELECT service, content FROM usr_local_etc;
+ERROR:  Error in python: OSError
+DETAIL:  [Errno 13] Permission denied: '/usr/local/etc/tcsd.conf'
+#+end_src
+
+The problem above arises from the fact that ~/usr/local/etc/tcsd.conf~ has no world-readable flag, so a quick solution is to allow another user to read by either changing the file mode (e.g., ~644~) or to invite the user running the PostgreSQL server to the group of the file owner (in this case ~_tss~) and setting the mode to ~640~.
+
+#+begin_src shell
+% id postgres
+uid=770(postgres) gid=770(postgres) groups=770(postgres)
+
+% sudo pw usermod -n postgres -G _tss
+
+% id postgres
+uid=770(postgres) gid=770(postgres) groups=770(postgres),601(_tss)
+#+end_src
+
+Once the above is fixed, and the trick can be applied to any problematic file, you can query the table to get living data from the underlying file system:
+
+#+begin_src sql
+# SELECT service, content
+  FROM usr_local_etc
+  WHERE service = 'pkg';
+
+ service |                               content
+---------+---------------------------------------------------------------------
+ pkg     | # System-wide configuration file for pkg(8)                        +
+         | # For more information on the file format and                      +
+         | # options please refer to the pkg.conf(5) man page                 +
+         |                                                                    +
+         | # Note: you don't need to have a pkg.conf file.  Many installations+
+         | # will work well with no pkg.conf at all or with an empty pkg.conf +
+         | # (other than comment lines).  You can also override any of these  +
+         | # settings from the environment.                                   +
+         |                                                                    +
+         | # Configuration options -- default values.                         +
+         |                                                                    +
+         | #PKG_DBDIR = "/var/db/pkg";                                        +
+         | #PKG_CACHEDIR = "/var/cache/pkg";                                  +
+...
+#+end_src
+
+** Creating a Snapshot of files
+Using the Foreign Data Wrapper the database will /query/ the filesystem each time you issue a query, and this means the data into the ~usr_local_etc~ table will change accordingly to changes performed outside the database. If you need to keep a /snapshot/ of the file content, let's say to implement a /poor-man/ file control management, you can use a /materialized view/.
+
+A materialized view is a /view/ over data that is populated by a snapshot of data pulled out from a table. Each time you refresh the view, new data is pulled out of the table, otherwise the view will provide a static snapshot of the data at the time the view was last updated.
+
+In order to better explain it, let's create a materialized view to get the content of the files into the file system:
+
+#+begin_src sql
+# CREATE MATERIALIZED VIEW usr_local_etc_snapshot AS
+    SELECT service, full_file_name, content,
+       current_timestamp AS ts,
+       md5( content ) AS hash
+    FROM usr_local_etc
+    ORDER BY service
+    WITH NO DATA;
+#+end_src
+
+When you decide to pull updated data from the filesystem into your snapshot, do the following:
+
+#+begin_src sql
+# REFRESH MATERIALIZED VIEW usr_local_etc_snapshot;
+#+end_src
+
+Let's check that the data into the view is coherent with what is in the database:
+
+#+begin_src sql
+# SELECT full_file_name, hash, ts
+  FROM usr_local_etc_snapshot;
+
+ full_file_name |               hash               |              ts
+----------------+----------------------------------+-------------------------------
+ pkg.conf       | 84925257b233f69068214cdaf3f630a2 | 2017-11-09 16:54:30.668574+01
+...
+#+end_src
+
+and check the /MD5/ outside of the database:
+
+#+begin_src shell
+% sudo md5 /usr/local/etc/pkg.conf                                                                                       ~
+MD5 (/usr/local/etc/pkg.conf) = 84925257b233f69068214cdaf3f630a2
+#+end_src
+
+As you can see, the /MD5/ is the same, so the data into the materialized view do really represent the current snapshot of the filesystem.
+
+Now imagine you modify the ~pkg.conf~ file so that it is updated outside of the database:
+
+#+begin_src shell
+% sudo emacs /usr/local/etc/pkg.conf
+...
+% sudo md5 /usr/local/etc/pkg.conf
+MD5 (/usr/local/etc/pkg.conf) = a82431a939e221dd5fc8b702542a30d4
+#+end_src
+
+and let's see what the materialized view reports:
+
+#+begin_src sql
+# SELECT full_file_name, hash, ts
+  FROM usr_local_etc_snapshot
+  WHERE service = 'pkg';
+
+ full_file_name |               hash               |              ts
+----------------+----------------------------------+-------------------------------
+ pkg.conf       | 84925257b233f69068214cdaf3f630a2 | 2017-11-09 16:54:30.668574+01
+#+end_src
+
+As expected, *it does still report the old hash*, that is the data within the materialized view has not been modified!
+What this means is that the ~content~ column of the view also has a track of the old (i.e., before editing) content of the same file, allowing for a quick (and dirty) restore of the file content.
+
+** What has Changed?
+
+The fact that the materialized view does contain the snapshot of the filesystem allows for querying the status of the filesystem itself against the previous (last) snapshot:
+
+#+begin_src sql
+# WITH current AS (
+    SELECT service, md5( content ) AS hash
+    FROM usr_local_etc
+  )
+ SELECT service, ts AS ModifiedSince
+    FROM usr_local_etc_snapshot snapshot
+    WHERE snapshot.hash <> (
+                  SELECT hash
+                  FROM current
+                  WHERE service = snapshot.service )
+
+ UNION
+
+ SELECT service, ts AS ModifiedSince
+    FROM usr_local_etc_snapshot snapshot
+    WHERE NOT EXISTS (
+                 SELECT service
+                 FROM current
+                 WHERE service = snapshot.service );
+#+end_src
+
+The above query is made up by three parts:
+1. ~current~ is a CTE (/Common Table Expression/), a sub-query that computes the hash on the current file system data (i.e., querying the FDW);
+2. the first ~SELECT~ extracts all files that have been modified since the last snapshot (i.e., since the last ~REFRESH MATERIALIZED VIEW~);
+3. the second ~SELECT~ extracts all files deleted since the last snapshot.
+
+Running the above query provides the following result:
+
+#+begin_src sql
+ service |         modifiedsince
+---------+-------------------------------
+ pkg     | 2017-11-09 16:54:30.668574+01
+#+end_src
+
+meaning that the ~pkg~ service has been modified since the last time it was taken into the materialized view.
+** Conclusions
+This article has demonstrated a concrete application of PostgreSQL Foreign Data Wrappers feature in order to allow the database to query other data sources, in particular a file system to get and track file information.
+There are a lot of FDW implementation allowing even more, like web browsing and parsing, other database querying, web service interactions and so on. These can all be used as building blocks for a more complex layer of data management.
+
+* About Luca Ferrari
+Luca lives in Italy with his beautiful wife, his great son and two female cats.
+
+Computer science passionate since the Commodore 64 era, he holds a master degree and a PhD on Computer Science. He is a PostgreSQL enthusiast, a Perl lover, an Operating System passionate and performs as much tasks as possible within Emacs. He consider the Open Source the only truly sane way of doing software and services.
+
+His web site is available at http://fluca1978.github.io
