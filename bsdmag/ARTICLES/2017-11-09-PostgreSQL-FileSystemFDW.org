@@ -253,6 +253,11 @@ There are a lot of FDW implementation allowing even more, like web browsing and 
 * About Luca Ferrari
 Luca lives in Italy with his beautiful wife, his great son and two female cats.
 
-Computer science passionate since the Commodore 64 era, he holds a master degree and a PhD on Computer Science. He is a PostgreSQL enthusiast, a Perl lover, an Operating System passionate and performs as much tasks as possible within Emacs. He consider the Open Source the only truly sane way of doing software and services.
+Computer science passionate since the Commodore 64 era, he holds a master degree and a PhD on Computer Science. He is a PostgreSQL enthusiast, a Perl lover, an Operating System passionate, a Unix fan  and performs as much tasks as possible within Emacs. He consider the Open Source the only truly sane way of doing software and services.
+
+* References
+- PostgreSQL web site: http://www.postgresql.org
+- PostgreSQL FDW: https://wiki.postgresql.org/wiki/Foreign_data_wrappers
+- Multicorn FDW: http://multicorn.org/
 
 His web site is available at http://fluca1978.github.io
