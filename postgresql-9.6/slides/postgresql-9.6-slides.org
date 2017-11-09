@@ -5763,6 +5763,30 @@ LOG:  MultiXact member wraparound protections are now enabled
 LOG:  database system is ready to accept connections
 LOG:  autovacuum launcher started
 #+end_src
+* Background Workers
+** Concetti e definizioni
+*** Background Workers
+I /background workers/ sono processi esterni lanciati e gestiti da PostgreSQL. A tali processi sono consentiti accessi alla shared memory, ai database e al sistema interno di PostgreSQL.
+
+Devono aderire ad una specifica interfaccia affinché il cluster li possa gestire correttamente.
+
+*Introducono un potenziale rischio di stabilità e sicurezza!*
+
+*** Quando inizializzare un backgroud worker
+I processi worker possono essere inizializzati all'avvio del cluster o in una fase successiva. La differenza è nella chiamata di funzione per la registrazione del worker stesso:
+- ~RegisterBackgroundWorker(BackgroundWorker *worker)~ nel caso di avvio assieme al cluster;
+- ~RegisterDynamicBackgroundWorker(BackgroundWorker *worker, BackgroundWorkerHandle **handle)~ per inizializzazione in un qualunque momento di vita del cluster.
+*** La struttura ~BackgroundWorker~
+La struttura C ~BackgroundWorker~ fornisce le informazioni di gestione del processo worker stesso, quali ad esempio:
+- nome del processo;
+- flags (ad esempio ~BGWORKER_SHMEM_ACCESS~ per accedere alla shared memory, ~BGWORKER_BACKEND_DATABASE_CONNECTION~ per richiedere connessione ad un database e la capacità di eseguire transazioni);
+- istante di avvio:
+  - ~BgWorkerStart_PostmasterStart~ avvia il prima possibile;
+  - ~BgWorkerStart_ConsistentState~ avvia quando sono possibili le connessioni utente (ad esempio in /hot standby/);
+  - ~BgWorkerStart_RecoveryFinished~ avvia quando è possibile accedere in lettura/scrittura al cluster.
+- istante di riavvio: indica dopo quanti secondi PostgreSQL deve riavviare il processo a seguito di un crash del processo stesso, o ~BGW_NEVER_RESTART~;
+- funzione da richiamare (e ~Datum~ come argomenti);
+- eventuale pid di un processo PostgreSQL a cui inviare ~SIGUSR1~ quando il worker viene avviato o terminato.
 * Licenza
 This work is licensed under the *Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License*.
 To view a copy of this license,
