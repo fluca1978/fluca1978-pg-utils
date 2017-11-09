@@ -5787,6 +5787,131 @@ La struttura C ~BackgroundWorker~ fornisce le informazioni di gestione del proce
 - istante di riavvio: indica dopo quanti secondi PostgreSQL deve riavviare il processo a seguito di un crash del processo stesso, o ~BGW_NEVER_RESTART~;
 - funzione da richiamare (e ~Datum~ come argomenti);
 - eventuale pid di un processo PostgreSQL a cui inviare ~SIGUSR1~ quando il worker viene avviato o terminato.
+** Un esempio pratico
+*** ~alive_worker~
+~alive_worker~ è uno /scheletro/ di background worker ispirato da ~worker_spi~ (disponibile nell'albero dei sorgenti di PostgreSQL) il cui scopo è quello di inserire una riga di /log/ in una /log table/ ogni 10 secondi, simulando quindi il logging di una attività continua.
+*** Makefile
+Il ~Makefile~:
+#+begin_src shell
+MODULES = alive_worker
+
+PG_CONFIG = pg_config
+PGXS := $(shell $(PG_CONFIG) --pgxs)
+include $(PGXS)
+#+end_src
+*** Installare e attivare il worker
+Occorre compilarlo, installarlo, listarlo nelle shared libraries e riavviare il cluster:
+
+#+begin_src shell
+% gmake && sudo gmake install
+#+end_src
+
+Nel file ~postgresql.conf~ occorre inserire la libreria condivisa ~alive_worker~ (corrispondente ad ~alive_worker.so~) e almeno un worker abilitato:
+#+begin_src shell
+shared_preload_libraries = 'alive_worker'
+max_worker_processes = 8
+#+end_src
+*** Avvio del worker
+Quando viene riavviato il cluster, il worker si registra e inizia il suo lavoro. Nei log di PostgreSQL si può trovare qualcosa di simile:
+
+#+begin_src shell
+ INFO:   alive_worker::_PG_init registering worker [alive worker]
+ DEBUG:  registering background worker "alive worker"
+ DEBUG:  loaded library "alive_worker"
+ DEBUG:  starting alive_worker::worker_main
+ DEBUG:  alive_worker in main loop
+ DEBUG:  alive_worker executing query [INSERT INTO public.log_table( message ) VALUES( 'STILL ALIVE and counting! 1' ) ] by [luca]
+ DEBUG:  alive_worker query OK!
+ DEBUG:  alive_worker in main loop
+ DEBUG:  alive_worker executing query [INSERT INTO public.log_table( message ) VALUES( 'STILL ALIVE and counting! 2' ) ] by [luca]
+ DEBUG:  alive_worker query OK!
+ DEBUG:  alive_worker in main loop
+#+end_src
+
+*** Worker in funzione
+Durante la sua vita il worker andrà ad inserire in una apposita tabella ~log_table~ un messaggio di log con incremento:
+#+begin_src sql
+ > SELECT * FROM log_table;
+ pk |           message            |             ts
+----|------------------------------|----------------------------
+  4 | STILL ALIVE and counting! 1  | 2017-11-09 15:05:09.446884
+  5 | STILL ALIVE and counting! 2  | 2017-11-09 15:05:19.44873
+  6 | STILL ALIVE and counting! 3  | 2017-11-09 15:05:29.52069
+  7 | STILL ALIVE and counting! 4  | 2017-11-09 15:05:39.527419
+  8 | STILL ALIVE and counting! 5  | 2017-11-09 15:05:49.557702
+  9 | STILL ALIVE and counting! 6  | 2017-11-09 15:05:59.624813
+#+end_src
+
+*** Interagire con il worker
+Il worker si registrerà nella process table del sistema operativo con il nome ~alive_worker~ e può quindi essere terminato con un segnale ~SIGTERM~:
+#+begin_src shell
+% ps -auxw | grep alive_worker
+ postgres 3312   0.0  5.4 201368 26636  -  Ss   15:07     0:00.01 postgres: bgworker: alive worker    (postgres)
+
+% sudo kill -TERM 3312
+#+end_src
+
+*** Un estratto di codice del worker
+Si crea una struttura ~BackgroundWorker~ con i relativi dati:
+#+begin_src c
+void _PG_init(void)
+{
+	BackgroundWorker worker;
+	worker.bgw_flags        = BGWORKER_SHMEM_ACCESS
+                            | BGWORKER_BACKEND_DATABASE_CONNECTION;
+	worker.bgw_start_time   = BgWorkerStart_RecoveryFinished;
+	worker.bgw_restart_time = BGW_NEVER_RESTART;
+	worker.bgw_main         = worker_main;
+	snprintf(worker.bgw_name, BGW_MAXLEN, "alive worker");
+  worker.bgw_notify_pid   = 0;
+  ...
+	RegisterBackgroundWorker( &worker );
+}
+#+end_src
+
+*** Un estratto del codice del worker
+Il loop principale del worker nella funzione ~worker_main~ effettua:
+#+begin_src c
+	while ( ! sigterm_activated )
+	{
+		int	ret;
+		int	rc;
+
+		rc = WaitLatch( &MyProc->procLatch,
+					          WL_LATCH_SET | WL_TIMEOUT | WL_POSTMASTER_DEATH,
+                    10000L ); /* 10 secondi */
+		ResetLatch( &MyProc->procLatch );
+
+		SetCurrentStatementStartTimestamp();
+		StartTransactionCommand();
+		SPI_connect();
+		PushActiveSnapshot( GetTransactionSnapshot() );
+		pgstat_report_activity( STATE_RUNNING, queryStringData.data );
+
+		resetStringInfo( &queryStringData );
+		appendStringInfo( &queryStringData,
+                      "INSERT INTO %s.%s( message ) "
+                      "VALUES( '%s %d' ) ",
+                      log_table_schema,
+                      log_table_name,
+                      log_table_message,
+                      ++log_entry_counter );
+
+
+		ret = SPI_execute( queryStringData.data, /* query to execute */
+                       false,                /* not readonly query */
+                       0 );                  /* no count limit */
+
+		if ( ret != SPI_OK_INSERT )
+			elog( FATAL, "alive_worker cannot execute query, error code [%d]", ret );
+
+		SPI_finish();
+		PopActiveSnapshot();
+		CommitTransactionCommand();
+		pgstat_report_activity( STATE_IDLE, NULL );
+	}
+#+end_src
+
 * Licenza
 This work is licensed under the *Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License*.
 To view a copy of this license,
