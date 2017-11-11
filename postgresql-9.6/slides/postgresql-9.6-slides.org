@@ -4581,6 +4581,101 @@ Solitamente la query viene "smontata" in piu' piani di esecuzione, ciascuno cole
 Le varie bitmap (una per indice) sono poi aggregate logicamente con ~AND~ o ~OR~ per costruire la mappa finale delle tuple che hanno passato ogni indice.
 
 La mappa finale è ordinata naturalmente per posizione /fisica/ delle tuple, quindi se c'è un ~ORDER BY~ sarà necessario un ulteriore passaggio di sorting.
+** EXPLAIN
+*** ~EXPLAIN~ e ~ANALYZE~
+Il comando ~EXPLAIN~ fornisce indicazione sul piano che sarà usato per fare l'accesso alle tuple.
+
+*Il comando ~EXPLAIN~ non effettua la query*, simula solo l'accesso ai dati. Può essere accompagnato da ~ANALYZE~ per eseguire effettivamente la query e aggiornare anche le statistiche di sistema.
+
+*** Output di ~EXPLAIN~
+Il comando ~EXPLAIN~ fornisce come output una serie di nodi, ciascuno che indica:
+- /tipo di accesso/ ossia come vengono percorsi i dati;
+- /costo/ in unità imparziali, diviso in costo iniziale (setup) e finale (ossia per il completamento del nodo);
+- /numero di tuple/ quante tuple sono estratte da ogni nodo;
+- /dimensione delle tuple/ dimensione dei dati estratti.
+
+*** Esempio di ~EXPLAIN~
+Si consideri:
+#+begin_src sql
+>  EXPLAIN SELECT * FROM persona WHERE eta > 48;
+                         QUERY PLAN                         
+------------------------------------------------------------
+ Seq Scan on persona  (cost=0.00..219.00 rows=175 width=46)
+   Filter: (eta > 48)
+#+end_src
+
+C'è un solo nodo, di tipo ~Seq Scan~ (accesso sequenziale) che ha un costo iniziale nullo (non è richiesto alcun setup) e costo finale di ~219~. Saranno estratte ~175~ tuple, ciascuna di ~46 bytes~.
+
+*** Esempio di ~EXPLAIN ANALYZE~
+Con l'aggiunta di ~ANALYZE~ viene effettivamente eseguita la query e si può verificare se le statistiche erano aggiornate: la query riporta effettivo tempo di esecuzione e dati sulle tuple realmente trovate.
+
+#+begin_src sql
+>  EXPLAIN ANALYZE SELECT * FROM persona WHERE eta > 48;
+                                               QUERY PLAN                                               
+--------------------------------------------------------------------------------------------------------
+ Seq Scan on persona  (cost=0.00..219.00 rows=175 width=46) 
+                (actual time=0.027..3.886 rows=175 loops=1)
+   Filter: (eta > 48)
+   Rows Removed by Filter: 9825
+ Planning time: 0.098 ms
+ Execution time: 4.174 ms
+#+end_src
+
+*** Formati di output di ~EXPLAIN~
+E' possibile ottenere diversi formati di output di ~EXPLAIN~ mediante l'opzione ~FORMAT~. Tali formati possono essere usati per una migliore interpretazione da parte di programmi automatici e includono:
+- /text/ output di default;
+- /json/;
+- /xml/;
+- /yaml/.
+
+#+begin_src sql
+> EXPLAIN ( FORMAT JSON ) 
+  SELECT * FROM persona WHERE eta > 48;
+            QUERY PLAN             
+-----------------------------------
+ [                                +
+   {                              +
+     "Plan": {                    +
+       "Node Type": "Seq Scan",   +
+       "Relation Name": "persona",+
+       "Alias": "persona",        +
+       "Startup Cost": 0.00,      +
+       "Total Cost": 219.00,      +
+       "Plan Rows": 175,          +
+       "Plan Width": 46,          +
+       "Filter": "(eta > 48)"     +
+     }                            +
+   }                              +
+ ]
+#+end_src
+
+*** Nodi annidati in ~EXPLAIN~
+#+begin_src sql
+> EXPLAIN 
+  SELECT * FROM persona 
+  WHERE eta > 48 AND sesso IN ( 
+      SELECT sesso FROM persona 
+      GROUP BY sesso HAVING COUNT(*) > 20 );
+                                       QUERY PLAN                                        
+-----------------------------------------------------------------------------------------
+ Hash Semi Join  (cost=244.07..465.48 rows=175 width=46)
+   Hash Cond: (persona.sesso = persona_1.sesso)
+   ->  Seq Scan on persona  (cost=0.00..219.00 rows=175 width=46)
+         Filter: (eta > 48)
+   ->  Hash  (cost=244.05..244.05 rows=2 width=2)
+         ->  HashAggregate  (cost=244.00..244.03 rows=2 width=2)
+               Group Key: persona_1.sesso
+               Filter: (count(*) > 20)
+               ->  Seq Scan on persona persona_1  (cost=0.00..194.00 rows=10000 width=2)
+#+end_src
+
+*** Output di ~EXPLAIN~: come si legge?
+/Tendenzialmente si legge da destra verso sinistra, dal basso verso l'alto/; i nodi con costo minori sono eseguiti per primi.
+Nell'esempio di prima si parte con un ~Seq Scan~ su ~persona_1~ (costo nullo), query inner. 
+Successivamente viene eseguito un ~HashAggregate~ che implementa il ~GROUP BY~; tutto questo viene racchiuso in un nodo ~Hash~ che fornisce due tuple e che ha un costo di ~244~.
+Parallelamente si esegue un ~Seq Scan~ sulla tabella ~persona~ (outer) per ottnere un ~Hash~ sulla condizione di ~eta~.
+Infine i due hash sono uniti in un ~Semi Join~, si noti che il costo di partenza di questo nodo è ~244~ pari al massimo costo dei due nodi intermedi (un nodo non può partire prima dei suoi figli).
+
 ** Tipi di accesso
 *** Sequential Scan (~Seq Scan~)
 E' il tipo di scansione di default (ossia quando non vi sono indici o il loro utilizzo è inutile e/o costoso).
