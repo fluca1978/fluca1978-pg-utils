@@ -976,6 +976,21 @@ fra doppi apici (sconsigliato):
 > CREATE TABLE "Foo"( "Bar" int, "bAz" int );
 > SELECT "Bar", "bAz" FROM "Foo";
 #+end_src
+*** ~SHOW~ e ~SET~
+Il comando speciale ~SHOW~ mostra il valore di alcuni parametri /run-time/, e analogamente il parametro ~SET~ consente di impostarne il valore.
+
+#+begin_src sql
+#  SHOW enable_seqscan;
+ enable_seqscan 
+----------------
+ off
+(1 row)
+
+# SET enable_seqscan TO 'on';
+#+end_src
+
+Il comando ~SET~ modifica solo il comportamento della sessione, a meno che non sia specificato ~LOCAL~ che allora persiste solo alla fine (positiva o meno) di una transazione (~SET~ normale svanisce se la transazione abortisce).
+
 ** Tipi di dato
 *** Numerici
 Sono presenti i tipi interni ~integer~, ~smallint~, ~bigint~.
