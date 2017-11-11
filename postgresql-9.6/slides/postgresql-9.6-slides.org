@@ -976,6 +976,34 @@ fra doppi apici (sconsigliato):
 > CREATE TABLE "Foo"( "Bar" int, "bAz" int );
 > SELECT "Bar", "bAz" FROM "Foo";
 #+end_src
+** Tipi di dato
+*** Numerici
+Sono presenti i tipi interni ~integer~, ~smallint~, ~bigint~.
+
+I tipi *esatti* con virgola sono ~decimal~ e ~numeric~, da definirsci con una /precisione/ (cifre significative) e una /scala/ (cifre dopo la virgola). Ad esempio ~123.456789~ ha precisione 9 e scala 6.
+
+I tipi *inesatti* ~real~ e ~double~ sono a virgola mobile con arrotondamenti.
+
+I tipi ~serial~, ~bigserial~, ~smallserial~ sono collegati ai relativi tipi interi e alle sequenze.
+*** Valute
+Il tipo ~money~ rappresenta una valuta con cifre dopo la virgole. Può essere convertito in ~numeric~ senza perdita di precisione, ma convertirlo in altri formati (intero, reale) produce perdita di precisione.
+*** Stringhe
+Ci sono i tipi standard ~varchar(n)~ (~character varying(n)~ e ~char(n)~, entrambi che contengono fino a un massimo di ~n~ caratteri (con padding a blank nel caso di ~char~.
+
+Il tipo ~text~ non pone limite sulla lunghezza della stringa.
+
+C'è anche un tipo ~name~ corrispondente a una stringa di 64 byte ma usato internamente solo da PostgreSQL per il catalogo di sistema.
+*** Bytea
+~bytea~ è una stringa binaria illimitata con un header variabile da 1 a 4 byte. Usa generalmente il formato esadecimale per input e output.
+*** Tempo
+Ci sono tipi di ~date~, ~time~, ~timestamp~ con e senza timezone. Il tipo ~timestampz~ è un sinonimo di ~timestamp with time zone~.
+
+Si noti che, nonostante lo standard SQL lo permetta, il timezone ha senso solo quando è presente sia la data che l'ora.
+*** Booleani
+Il tipo di dato ~boolean~ rappresenta un booleano che accetta come input:
+- ~TRUE~ oppure una delle stringhe ~'t'~, ~'true'~, ~'on'~, ~'yes'~;
+- ~FALSE~ oppure una delle stringhe ~'f'~, ~'false'~, ~'off'~, ~'no'~;
+
 ** INSERT
 *** Valori di uscita di una INSERT
 In default una istruzione di ~INSERT~ restituisce due valori:
