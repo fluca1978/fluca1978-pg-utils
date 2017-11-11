@@ -1094,6 +1094,49 @@ RETURNING nome, cognome;
  Luca | Ferrari
 
 #+end_src
+** Search Path
+*** Cos'è il search path?
+Ogni utente definisce un /percorso/ (simile al ~PATH~ di una shell) che rappresenta dove trovare gli oggetti del database (tabelle, funzioni, ecc.).
+
+In default il ~search_path~ contiene uno schema che si chiama come l'utente, identificato dalla stringa speciale ~"$user"~ e ~public~. Se l'utente modifica il ~search_path~ ogni oggetto non qualificato non sarà piu' visibile a meno che non si trovi in un path specificato.
+
+#+begin_src sql
+>  SHOW search_path;
+   search_path   
+-----------------
+ "$user", public
+
+>  SELECT count(*) FROM persona;
+  -- ok !
+> SELECT count(*) FROM public.persona;
+  -- ditto
+
+#+end_src
+
+*** A cosa server ~"$user"~?
+L'idea è quella di permettere ad ogni utente di avere oggetti omonimi ma con valori differenti.
+
+Ad esempio tabelle e funzioni di configurazione, che piazzati opportunamente nello schema del nome utente diventano "visibili" a lui senza andare a interferire con quelli degli altri utenti.
+
+*** Modificare il search path
+Il comando ~SET~ permette di impostare il valore del ~search_path~:
+
+#+begin_src sql
+> SET search_path="$user", private;
+> SHOW search_path;
+   search_path    
+------------------
+ "$user", private
+
+
+> SELECT count(*) FROM persona;
+ERROR:  relation "persona" does not exist
+LINE 1: SELECT count(*) FROM persona;
+                             ^
+> SELECT count(*) FROM public.persona;
+  -- ok !
+#+end_src
+
 ** Cast
 *** Modalità di cast
 In PostgreSQL il cast può essere effettuato in quattro modi:
