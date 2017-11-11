@@ -4734,14 +4734,14 @@ Si supponga di avere la tabella ~persona~ popolata con 10000 nomi a caso, come n
   SELECT * 
   FROM persona 
   WHERE sesso = 'M' 
-  AND nome like 'Nome2%';
-                           QUERY PLAN                           
-----------------------------------------------------------------
- Seq Scan on persona  (cost=0.00..244.00 rows=556 width=42)
-   Filter: ((nome ~~ 'Nome2%'::text) AND (sesso = 'M'::bpchar))
+  AND nome < 'Nome1177';
+                           QUERY PLAN                            
+-----------------------------------------------------------------
+ Seq Scan on persona  (cost=0.00..244.00 rows=100 width=46)
+   Filter: ((nome < 'Nome1177'::text) AND (sesso = 'M'::bpchar))
 #+end_src
 
-Il sistema indica che verranno estratte ~556~ tuple, ma come fa a saperlo?
+Il sistema indica che verranno estratte ~100~ tuple, ma come fa a saperlo?
 
 *** Calcolare la selettività
 
@@ -4755,20 +4755,26 @@ In ~pg_operator~ si ha che:
 #+begin_src sql
 > SELECT oprname, oprkind, oprleft, oprright, oprrest 
    FROM pg_operator
-   WHERE oprname = '='
+   WHERE ( oprname = '<' OR oprname = '=' )
    AND oprleft = ( SELECT oid 
                    FROM pg_type 
                    WHERE typname = 'char' )
    AND oprright = oprleft;
--[ RECORD 1 ]---
+-[ RECORD 1 ]---------
 oprname  | =
 oprkind  | b
 oprleft  | 18
 oprright | 18
 oprrest  | eqsel
+-[ RECORD 2 ]---------
+oprname  | <
+oprkind  | b
+oprleft  | 18
+oprright | 18
+oprrest  | scalarltsel
 #+end_src
 
-Quindi nella query di esempio la selettività è data dalla funzione ~eqsel~.
+Quindi nella query di esempio la selettività è data dalla funzione ~eqsel~ e dalla funzione ~scalarltsel~.
 
 *** Most Common Values (MCVs)
 La funzione ~eqsel~ controlla i valori piu' comuni per le colonne specificate, ossia ~most_common_vals~ e ~most_common_freqs~. Dai valori si ottiene che nel caso della colonna ~sesso~:
@@ -4781,7 +4787,7 @@ most_common_freqs | {0.5,0.5}
 ossia la selettività della colonna su uno dei due valori è del 50% (~0.5~).
 
 *** Histograms
-Nel caso della colonna ~nome~ i valori da usare sono in un /istogramma/ che riporta dei "bucket" di valori ipotizzandoli a distribuzione costante (ossia a pari frequenza):
+Nel caso della colonna ~nome~, e quindi della funzione ~scalarltsel~, i valori da usare sono in un /istogramma/ che riporta dei "bucket" di valori ipotizzandoli a distribuzione costante (ossia a pari frequenza):
 
 #+begin_Src sql
 histogram_bounds  | {Nome1,Nome1087,Nome1177,Nome1267,Nome1357,Nome1447,
@@ -4793,19 +4799,19 @@ histogram_bounds  | {Nome1,Nome1087,Nome1177,Nome1267,Nome1357,Nome1447,
 
 *L'istogramma divide i valori in /bucket/ con pari frequenza*.
 
-In questo caso ci sono *11 bukect con ~Nome2%~ su un totale di 100 buckets* (si può usare ~array_upper()~ allo scopo), quindi questo significa che la selettività è data da ~11 / 100 = 0.11~.
+In particolare il valore di filtro della clausola ~WHERE ... nome < 'Nome1177`~ individua appunto il terzo bucket, quindi ci sono ~2~ bucket che soddisfano la condizione. I bucket in totale sono 100 (/statistic target/), quindi la selettività è data da ~2/100 = 0.02~.
 
 *** Selettività complessiva
 
 La selettività complessiva della clausola in ~AND~ logico è data dalla moltiplicazione dei valori di selettività individuale, ovvero:
 
-   ~ 0.5 * 0.11 = 0.055~
+#+begin_src 
+10000 tuple * ( 0.5 * 0.02 ) = 100
+#+end_src
 
-A questo punto il numero delle tuple è dato dal numero delle tuple totali a cui viene applicato l'indice di selettività:
+che è appunto il risultato fornito dal comando ~EXPLAIN~.
 
-   ~10000 * 0.055 = 550~
-
-*** Altro esempio analogo
+\_*** Altro esempio analogo
 Si supponga di variare la query come segue:
 
 #+begin_src sql
@@ -4822,22 +4828,56 @@ Il procedimento è lo stesso descritto in precedenza, e la selettività ora risu
 
 ovvero ~10000 tuple * 0.5 * 0.12 = 600~
 
-*** Il numero dei valori nell'istogramma
-Non è un caso che il numero di valori dell'istogramma siano 100: quello è il default per una colonna scalare.
-E' possibile aumentare il numero dei valori:
 
-#+begin_src sql
-> ALTER TABLE persona ALTER COLUMN nome SET STATISTICS 200;
-> EXPLAIN  SELECT * FROM persona 
-    WHERE sesso = 'F' AND nome like 'Nome1%';
-                           QUERY PLAN                           
-----------------------------------------------------------------
- Seq Scan on persona  (cost=0.00..244.00 rows=553 width=42)
-   Filter: ((nome ~~ 'Nome1%'::text) AND (sesso = 'F'::bpchar))
+*** Controesempio
+Si supponga di usare la query:
+#+begin_Src sql
+> EXPLAIN 
+   SELECT * 
+   FROM persona 
+   WHERE sesso <> 'F' 
+   AND nome > 'Nome1177';
+                            QUERY PLAN                            
+------------------------------------------------------------------
+ Seq Scan on persona  (cost=0.00..244.00 rows=4900 width=46)
+   Filter: ((sesso <> 'F'::bpchar) AND (nome > 'Nome1177'::text))
 #+end_src
 
-In questo caso il numero di bucket si raddoppia (~200~) ma anche il numero di campioni con ~Nome1~, o meglio si hanno ~23~ bucket che forniscono una selettività di ~23/200 = 0.115~ che quindi porta ad un numero di tuple:
-  ~10000 * 0.5 * 0.115 = 575~
+che è l'esatto opposto della precedente. Gli operatori hanno funzioni di selettività differente che ragionano in modo opposto:
+#+begin_src sql
+ SELECT oprname, oprkind, oprleft, oprright, oprrest 
+   FROM pg_operator
+   WHERE ( oprname = '>' OR oprname = '<>' )
+   AND oprleft = ( SELECT oid 
+                   FROM pg_type 
+                   WHERE typname = 'char' )
+   AND oprright = oprleft;
+-[ RECORD 1 ]---------
+oprname  | <>
+oprkind  | b
+oprleft  | 18
+oprright | 18
+oprrest  | neqsel
+-[ RECORD 2 ]---------
+oprname  | >
+oprkind  | b
+oprleft  | 18
+oprright | 18
+oprrest  | scalargtsel
+#+end_src
+
+*** Calcolare la selettività complessiva
+Le selettività risultano ora date da:
+- /la selettività restante nel caso di ~sesso~/, ovvero ~1 - 0.5 = 0.5~;
+- /la selettività restante nel caso di ~nome~/, ovvero ~(100 - 2 ) bucket / 100 = 0.98~.
+
+La selettività complessiva è data dalla composizione delle selettività individuali, quindi il numero delle tuple può essere calcolato come:
+#+begin_Src sql
+10000 tuple * ( 0.5 * 0.98 ) = 4900
+#+end_src
+
+che è appunto il risultato fornito da ~EXPLAIN~.
+
 
 *** Caso analogo ma con valori interi
 Aggiungiamo una età random (compresa fra 0 e 50 anni):
@@ -4889,53 +4929,72 @@ A questo punto l'ottimizzatore assume che la selettività della condizione sia d
    ~10000 * 0.0218 = 218~
 
 *** Ulteriore esempio
-
+#+begin_src sql
+ EXPLAIN SELECT * FROM persona WHERE eta < 48;
+                         QUERY PLAN                          
+-------------------------------------------------------------
+ Seq Scan on persona  (cost=0.00..219.00 rows=9623 width=46)
+   Filter: (eta < 48)
+#+end_src
 
 *** Calcolo della selettività
-Ci sono 27 valori /MCVs/ minori di 28, per una somma di frequenze complessiva di ~0.5412~, che produce un numero di tuple pari a ~10000 * 0.5412 = 5412~.
+Ci sono due bucket che soddisfano la condizione di diseguaglianza:
+- ~48~ con frequenza ~0.0202~;
+- ~49~ con frequenza ~0.0175~.
+
+La frequenza dei bucket che rimangono (e che soddisfano la condizione) è quindi data dalla somma dei relativi valori di frequenza, o anche dalla differenza di quelli sopra che non soddsifano la condizione, ossia:
+#+begin_Src
+10000 tuple * ( 1 - ( 0.0202 + 0.0175 ) ) = 9623
+#+end_src
+
+*** Controesempio
+#+begin_src sql
+>  EXPLAIN SELECT * FROM persona WHERE eta > 48; 
+                        QUERY PLAN                         
+------------------------------------------------------------
+ Seq Scan on persona  (cost=0.00..219.00 rows=175 width=46)
+   Filter: (eta > 48)
+#+end_Src
+
+C'è un solo bucket che verifica la condizione ~eta > 48~, ossia quello con ~49~ e frequenza ~0.0175~, e quindi le tuple in uscita sono:
+#+begin_src sql
+10000 tuple * 0.0175 = 175
+#+end_Src
 
 *** Calcolo della selettività: esempio piu' complesso
 #+begin_Src sql
-EXPLAIN SELECT * 
+> EXPLAIN SELECT * 
    FROM persona 
-   WHERE eta < 28
+   WHERE eta > 48
    AND sesso = 'M'
-   AND nome like 'Nome1%';
-                                  QUERY PLAN                                   
--------------------------------------------------------------------------------
- Seq Scan on persona  (cost=0.00..269.00 rows=311 width=46)
-   Filter: ((eta < 28) AND (nome ~~ 'Nome1%'::text) AND (sesso = 'M'::bpchar))
+   AND nome > 'Nome1177';
+                             QUERY PLAN                                  
+------------------------------------------------------------------------------
+ Seq Scan on persona  (cost=0.00..269.00 rows=86 width=46)
+   Filter: ((eta > 48) AND (nome > 'Nome1177'::text) AND (sesso = 'M'::bpchar))
 #+end_Src
 
 Le singole selettività di filtro sono:
-- ~0.5412~ per la colonna ~età~;
+- ~0.0175~ per la colonna ~età~;
 - ~0.5~ per la colonna ~sesso~;
-- ~0.12~ per la colonna ~nome~;
+- ~0.98~ per la colonna ~nome~;
 
-La selettività complessiva è quindi ~0.5412 * 0.5 * 0.12 = 0.032~, che risulta quindi in un numero di tuple in uscita pari a ~10000 * 0.032 = 320~.
+#+begin_src
+10000 tuple * ( 0.0175 * 0.5 * 0.98 ) = 85.75 = 86
+#+end_src
 
 *** Selettività: riassunto
 L'ottimizzatore esegue alcuni passaggi fondamentali per comprendere quanto una clausola ~WHERE~ sia selettiva sui dati:
 
 1. controlla da ~pg_stat~ quante sono le tuple e quante le pagine dati, se i due numeri non combcaciano si aggiusta il numero delle tuple;
 2. affida alla funzione stabilita dall'operatore (~pg_operator~) il compito di restituire l'indice di selettività:
-   - nel caso di /euqlità/ si controllano i /Most Common Values/:
+   - nel caso di /uguaglianza/ si controllano i /Most Common Values/:
      + se il valore è fra quelli comuni la selettività è data dalla frequenza del valore;
      + se il valore non è fra quelli comuni si sommano le frequenze dei MCVs che soddisfano la condizione, tale somma è la selettività (lineare);
-   - nel caso di non equalità si controlla l'/istogramma/ dei valori, supporti a frequenza costante:
+   - nel caso di disigueglianza si controlla l'/istogramma/ dei valori, supporti a frequenza costante:
      + si cerca di capire in quale/i bucket cade il valore;
      + se cade in un solo bucket si calcola l'andamento lineare: ampiezza del bucket rispetto al numero di bucket totali;
      + se cade in piu' bucket si calcola la percentuale di bucket colpiti.
-#+begin_Src sql
-> EXPLAIN SELECT * 
-   FROM persona 
-   WHERE eta < 28;
-                         QUERY PLAN                          
--------------------------------------------------------------
- Seq Scan on persona  (cost=0.00..219.00 rows=5618 width=46)
-   Filter: (eta < 28)
-#+end_Src
-
 
 * Write Ahead Log
 ** Introduzione ai WAL
