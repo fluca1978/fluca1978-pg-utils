@@ -1812,6 +1812,23 @@ Se si vuole operare un restore /in place/ occorre specificare a quale database c
     -d template1 \
     testdb.dump
 #+end_src
+* Large Objects
+** Large Objects vs TOAST
+PostgreSQL supporta due meccanismi di memorizzazione di oggetti binari "grossi":
+- /large object/ che fornisce un'API a stream (quindi utile per memorizzare e recuperare parti dell'oggetto);
+- /TOAST/ (The Oversize Attribute Storage Techinique) che si usa quando l'oggetto è piu' grande di una singola pagina dati.
+
+Si tenga presente che  i large object memorizzano dati fino a *4TB* mentre TOAST permette di memorizzare non piu' di *!GB* su singolo campo.
+
+** Large Objects: alcuni dettagli
+Tutti i /large objects/ dispongono di una API a stream e sono memorizzati *sempre* nella tabella ~pg_largeobject~ e la sua duale ~pg_largeobject_metadata~.
+
+I large objects sono divisi in /chunk/, ovvero pezzi di stream binario da memorizzare come tuple. I large objects supportano *dati sparsi*, ovvero è possibile scrivere parti di un large object senza partire dall'inizio (le letture vedranno degli zeri per le parti non ancora allocate).
+
+** API dei Large Objects
+Le funzioni messe a disposizione da PostgreSQL per manipolare i large objects sono un clone delle funzioni di sistema Unix per la manipolazione dei file (es. ~open(2)~).
+
+*I file descriptor di un large object (denominati ~Oid~) persistono solo all'interno di un blocco di transazione, quindi i large objects vanno gestiti all'interno di una transazione!*
 * TODO MVCC, Vacuum e Autovacuum
 ** Multi Version Concurrency Control (MVCC)
 *** Introduzione
