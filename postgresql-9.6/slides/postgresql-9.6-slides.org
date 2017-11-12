@@ -1019,6 +1019,53 @@ Il tipo di dato ~boolean~ rappresenta un booleano che accetta come input:
 - ~TRUE~ oppure una delle stringhe ~'t'~, ~'true'~, ~'on'~, ~'yes'~;
 - ~FALSE~ oppure una delle stringhe ~'f'~, ~'false'~, ~'off'~, ~'no'~;
 
+** Tabelle fuori dall'ordinario
+*** Temporary Tables
+Le /Temporary Tables/ sono tabelle che persistono (in memoria) solo per la durata della sessione (o della transazione).
+
+Analogamente, ogni indice costruito su una tabella temporanea viene automaticamente eliminato assieme alla tabella.
+
+/Rappresentano l'analogo dei file temporanei di un sistema operativo!/
+
+*** Temporary Tables: caratteristiche
+La tabella appartiene ad uno schema particolare, quindi non può essere creata in uno schema imposto dall'utente.
+
+Una tabella temporanea con lo stesso nome di una persistente nasconde quest'ultima (a meno che non sia referenziata completamente) per tutta la vita della tabella temporanea.
+
+Il processo ~autovacuum~ non può analizzare una tabella temporanea, quindi i comandi ~ANALYZE~ e/o ~VACUUM~ devono essere tutti impartiti manualmente!
+
+*** Creare una tabella temporanea
+
+#+begin_src sql
+> CREATE TEMPORARY TABLE persona( nome text );
+-- nasconde una 'public.persona' se esiste!
+#+end_src
+
+*** Manipolare una tabella temporanea in transazione
+Una tabella temporanea può essere /agganciata/ ad una transazione con la clausola ~ON COMMIT~:
+- ~PRESERVE ROWS~ è il default, la tabella si comporta come una normale tabella (eccetto che sparirà con la sessione);
+- ~DELETE ROWS~ al commit della transazione la tabella è troncata automaticamente;
+- ~DROP~ al commit della transazione la tabella viene distrutta senza attendere che la sessione finisca.
+
+*** Tabella temporanea e transazione: esempio
+#+begin_src sql
+> BEGIN;
+> CREATE TEMPORARY TABLE foo( f text ) ON COMMIT DELETE ROWS;
+> INSERT INTO foo VALUES( 'hello' );
+> INSERT INTO foo VALUES( 'world' );
+> SELECT COUNT(*) FROM foo;
+ count 
+-------
+     2
+(1 row)
+
+> COMMIT;
+> SELECT COUNT(*) FROM foo;
+ count 
+-------
+     0
+#+end_src
+
 ** INSERT
 *** Valori di uscita di una INSERT
 In default una istruzione di ~INSERT~ restituisce due valori:
