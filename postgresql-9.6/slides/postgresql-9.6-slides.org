@@ -1149,6 +1149,32 @@ ERROR:  duplicate key value violates unique constraint "c_val_key"
 DETAIL:  Key (val)=(1) already exists.
 #+end_src
 
+*** Commenti
+L'istruzione speciale ~COMMENT~ permette di agganciare dei commenti agli oggetti definiti nel database.
+La sintassi è ~COMMENT ON <type> IS 'BLAH'~.
+
+#+begin_src sql
+> COMMENT ON TABLE persona IS 'Tabella anagrafica';
+> COMMENT ON COLUMN persona.pk IS 'Chiave primari surrogata';
+#+end_src
+
+*** Vedere i commenti
+Non esiste un modo "comodo" per vedere i commenti, i tool di amminitrazione li mostrano, ma in generale occorre andare sulla tabella ~pg_description~:
+
+#+begin_src sql
+> SELECT description 
+     FROM pg_description 
+     WHERE objoid = 'public.persona'::regclass;
+       description        
+--------------------------
+ Tabella anagrafica
+ Chiave primari surrogata
+#+end_src
+
+In ~psql~ usare:
+- ~\d+~ sul nome della tabella per vedere anche la descrizione delle colonne;
+- ~\dt+~ sul nome della tabella per vedere anche la descrizione della tabella.
+
 ** INSERT
 *** Valori di uscita di una INSERT
 In default una istruzione di ~INSERT~ restituisce due valori:
