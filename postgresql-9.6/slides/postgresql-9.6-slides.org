@@ -1829,6 +1829,79 @@ I large objects sono divisi in /chunk/, ovvero pezzi di stream binario da memori
 Le funzioni messe a disposizione da PostgreSQL per manipolare i large objects sono un clone delle funzioni di sistema Unix per la manipolazione dei file (es. ~open(2)~).
 
 *I file descriptor di un large object (denominati ~Oid~) persistono solo all'interno di un blocco di transazione, quindi i large objects vanno gestiti all'interno di una transazione!*
+
+** Funzioni client-side e server-side
+I large objects sono manipolati con funzioni /client-side/ (~libpq~) o server-side.
+L'unica differenza è che le ultime richiedono accesso come superutente, mentre quelle client-side no.
+
+** Funzioni server-side
+Le principali funzioni server-side sono:
+- ~lo_creat()~ crea l'oggetto con l'oid specificato o ne seleziona uno nuovo se ~-1~;
+- ~lo_unlink()~ distrugge il large object con l'oid specificato;
+- ~lo_import()~ importa il file specificato (eventualmente nell'oid specificato);
+- ~lo_export()~ esporta il large object specificato come oid indicandone il file fisico;
+- ~loread()~, ~lowrite()~ leggono dei byte da un large object;
+- ~lo_lseek()~ effettua un /lseek/ sul large specificato come oid.
+
+** Large Objects con API Server-Side: esempi
+*** Tabella di esempio
+Si deve creare una tabella con un dato di tipo ~oid~ per poterla collegare al ~pg_largeobject~:
+
+#+begin_Src sql
+> CREATE TABLE picture( 
+   pk SERIAL PRIMARY KEY,
+   data oid NOT NULL,
+   description text );
+#+end_Src
+*** Importare un large object in un colpo solo
+#+begin_src sql
+> INSERT INTO picture( description, data )
+  VALUES ( 'Bud Spencer & Terence Hill', 
+           lo_import( '/home/luca/Downloads/bud.jpg' ) );
+#+end_src
+
+*** Dove è finita l'immagine?
+All'immagine è stato assegnato ~oid~ ~16691~:
+
+#+begin_Src sql
+> SELECT * FROM picture;
+ pk | data  |        description         
+----+-------+----------------------------
+  1 | 16691 | Bud Spencer & Terence Hill
+#+end_Src
+
+delle informazioni fisiche sono state iserite nella tabella ~pg_largeobject~, in particolare l'immagine è stata /divisa/ nei chunk:
+
+#+begin_src sql
+> SELECT loid, count( pageno ) 
+   FROM pg_largeobject 
+   WHERE loid = 16691 
+   GROUP BY loid;
+ loid  | count 
+-------+-------
+ 16691 |   104
+#+end_src
+
+ossia ci sono ~184~ chunk, la cui somma di lunghezza:
+
+#+begin_src sql
+> SELECT SUM( length( data ) ) 
+  FROM pg_largeobject 
+  WHERE loid = 16691;
+ sum   
+--------
+ 212164
+#+end_src
+
+ossia circa ~207.2 kB~, coerente con l'informazione riportata nel file system:
+
+#+begin_Src shell
+% ls ~/Downloads/bud.jpg -lh 
+-rw-rw-r-- 1 luca luca 208K set 22 20:50 /home/luca/Downloads/bud.jpg
+#+end_Src
+
+
+
 * TODO MVCC, Vacuum e Autovacuum
 ** Multi Version Concurrency Control (MVCC)
 *** Introduzione
