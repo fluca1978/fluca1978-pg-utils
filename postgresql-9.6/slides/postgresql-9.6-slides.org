@@ -1066,6 +1066,19 @@ Una tabella temporanea può essere /agganciata/ ad una transazione con la clauso
      0
 #+end_src
 
+
+*** Unlogged Tables
+Una tabella può essere marcata come /unlogged/: essa sarà persistente ma i suoi dati no.
+Di fatto una tabella /unlogged/ non viene memorizzata nei WAL, e quindi non sopravvive ad un crash e non viene nemmeno replicata. Di conseguenza PostgreSQL effettua un truncate di una /unlogged/ table ogni volta che il sistema riparte dopo un crash.
+
+*Il vantaggio è che, non dovendo sincronizzarsi con i WAL, la tabella risulta piu' veloce ma al tempo stesso insicura rispetto ai crash*.
+
+Gli indici creati su una tabella /unlogged/ sono anch'essi automaticamente unlogged.
+
+*** Unlogged table: creazione
+#+begin_src sql
+> CREATE UNLOGGED TABLE baz( b text );
+#+end_src
 ** INSERT
 *** Valori di uscita di una INSERT
 In default una istruzione di ~INSERT~ restituisce due valori:
