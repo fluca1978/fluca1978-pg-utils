@@ -1840,6 +1840,7 @@ Le principali funzioni server-side sono:
 - ~lo_unlink()~ distrugge il large object con l'oid specificato;
 - ~lo_import()~ importa il file specificato (eventualmente nell'oid specificato);
 - ~lo_export()~ esporta il large object specificato come oid indicandone il file fisico;
+- ~lo_put()~, ~lo_get()~ scrivono e leggono dati collegati a un large object;
 - ~loread()~, ~lowrite()~ leggono dei byte da un large object;
 - ~lo_lseek()~ effettua un /lseek/ sul large specificato come oid.
 
@@ -1900,7 +1901,43 @@ ossia circa ~207.2 kB~, coerente con l'informazione riportata nel file system:
 -rw-rw-r-- 1 luca luca 208K set 22 20:50 /home/luca/Downloads/bud.jpg
 #+end_Src
 
+*** Esportare il file
+#+begin_src sql
+> SELECT lo_export( 16691, '/tmp/export.jpg' );
+#+end_src
 
+*ATTENZIONE: si devono avere i permessi di scrittura sull'oggetto!*
+
+e da un controllo sul file system i due oggetti sono gli stessi:
+#+begin_src shell
+% md5sum ~/Downloads/bud.jpg /tmp/export.jpg     
+e39cbea9c8f95be157dd6c5abc82c50d  /home/luca/Downloads/bud.jpg
+e39cbea9c8f95be157dd6c5abc82c50d  /tmp/export.jpg
+#+end_Src
+
+*** Sovrascrivere un large object
+
+Si può importare un large object sopra ad uno esistente usando lo stesso ~oid~:
+
+#+begin_Src sql
+> SELECT lo_unlink( 16691 );
+> SELECT lo_import( '/home/luca/Downloads/sofia.png', 
+                    16691 );
+#+end_src
+
+*Si noti che non è stata manipolata la tabella ~picture~!*
+
+*** Leggere dati da un large object
+Dal lato server-side è meglio usare le funzioni ~lo_get~ e ~lo_put~:
+
+#+begin_src sql
+> SELECT lo_get( 16691, 0, 10 );
+         lo_get         
+------------------------
+ \x89504e470d0a1a0a0000
+#+end_src
+
+che legge i primi 10 byte e restituisce un ~bytea~ come risultato.
 
 * TODO MVCC, Vacuum e Autovacuum
 ** Multi Version Concurrency Control (MVCC)
