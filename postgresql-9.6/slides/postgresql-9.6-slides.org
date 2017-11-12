@@ -1079,6 +1079,76 @@ Gli indici creati su una tabella /unlogged/ sono anch'essi automaticamente unlog
 #+begin_src sql
 > CREATE UNLOGGED TABLE baz( b text );
 #+end_src
+
+*** Foreign Keys
+Vegono specificate con ~REFERENCES~ o ~FOREIGN KEY~ e supportano piu' colonne.
+Entrambe le sintassi permettono di specificare una strategia di ~NATCH~:
+- ~MATCH FULL~ non sono tollerati valori nulli nella tabella corrente se non sull'intero insieme di valori che referenziano un'altra tabella;
+- ~MATCH SIMPLE~ (default) se una colonna locale è nulla allora non si pretende che ci sia corrispondenza con i valori dell'altra colonna.
+
+e anche una strategia di modifica alla tabella referenziata ~ON DELETE~ e ~ON UPDATE~:
+- ~NO ACTION~ produce un errore e blocca la ~DELETE~ o la ~UPDATE~ perchè spezzerebbero la chiave esterna;
+- ~RESTRICT~ uguale a ~NO ACTION~ ma non posticipabile;
+- ~CASCADE~ propaga l'aggiornamento/cancellazione anche alla tabella referenziante;
+- ~SET NULL~ imposta a null i valori delle colonne referenzianti;
+- ~SET DEFAULT~ imposta al valore di default le colonne referenzianti (ma deve esistere una tupla referenziata con tali valori).
+
+*** Foreign Keys: esempio
+#+begin_src sql
+> CREATE TABLE a( 
+   pk SERIAL PRIMARY KEY, 
+   a1 int, 
+   a2 int, 
+   UNIQUE (a1), 
+   UNIQUE(a2) );
+
+> CREATE TABLE b( pk SERIAL PRIMARY KEY,
+    b1 int,
+    b2 int,
+    FOREIGN KEY (b1) REFERENCES a(a1) ON DELETE CASCADE ON UPDATE SET NULL,
+    FOREIGN KEY (b2) REFERENCES a(a2) ON DELETE CASCADE ON UPDATE SET NULL
+    );
+#+end_src
+
+*** Foreign key: effetti
+Si inseriscono un po' di tuple e le si cancellano:
+#+begin_src sql
+> INSERT INTO a( a1, a2 ) VALUES (1,1), (2,2);
+> INSERT INTO b( b1, b2 ) VALUES (1,1), (2,2);
+
+> UPDATE a SET a1 = 3 WHERE a1 = 1;
+  -- forza a nulla b(b1)!
+
+> SELECT * FROM b;
+ pk | b1 | b2 
+----+----+----
+  2 |  2 |  2
+  1 |    |  1
+
+> DELETE FROM a WHERE a2=2;
+  -- forza cancellazione anche di b
+> SELECT * FROM b;
+ pk | b1 | b2 
+----+----+----
+  1 |    |  1
+#+end_src
+
+*** Vincoli posticipabili
+Tutti i vincoli, con l'essclusione di ~NOT NULL~ e ~CHECK~ sono posticipabili: un vincolo posticipabile viene controllato non ad ogni statement ma alla fine della transazione.
+
+#+begin_src sql
+> CREATE TABLE c( val int NOT NULL, 
+                  UNIQUE(val) DEFERRABLE );
+
+> BEGIN;
+> SET CONSTRAINTS ALL DEFERRED;
+> INSERT INTO c VALUES (1), (1);
+  -- le due tuple sembrano essere passate!
+> COMMIT;
+ERROR:  duplicate key value violates unique constraint "c_val_key"
+DETAIL:  Key (val)=(1) already exists.
+#+end_src
+
 ** INSERT
 *** Valori di uscita di una INSERT
 In default una istruzione di ~INSERT~ restituisce due valori:
