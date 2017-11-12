@@ -1939,6 +1939,29 @@ Dal lato server-side è meglio usare le funzioni ~lo_get~ e ~lo_put~:
 
 che legge i primi 10 byte e restituisce un ~bytea~ come risultato.
 
+
+** TOAST
+*** Superare la dimensione delle pagine dati
+Le pagine dati in PostgreSQL sono a dimensione fissa, solitamente 8kB; per questo nessun attributo di tabella può superare la dimensione fisica di una pagina dati.
+
+Per evitare il problema quando un attributo diventa troppo grande per una pagina dati PostgreSQL collega automaticamente e trasparentemente una tabella /TOAST/ (collegata mediante ~pg_class.reltoastrelid~ che contiene l'attributo /spezzato/ su piu' tuple.
+
+*Perché si attivi TOAST il tipo di attributo deve essere TOAST-abile (lunghezza variabile)*. TOAST usa due bit dei 32 a disposizione per funzionamento interno e quindi ogni attributo diventa al massimo di ~2^30 = 1GB~ grosso.
+
+Il sistema TOAST si attiva quando un attributo supera solitamente i ~2kB~, ovvero quando non riescono a essere contenuti 4 tuple con quell'attributo in una singola pagina dati.
+
+*** Vantaggi di TOAST
+L'idea dietro a TOAST è semplice: solitamente le query prevedono clausole costruite su valori /piccoli/ e quindi l'ottimizzatore può continuare a lavorare trasparentemente. Quando è ora di estrarre i dati, questi vengono de-toastati opportunamente.
+
+Se il dato si trova ancora sulla tabella principale si dice che è /on-line/, se è stato spostato nella tabella TOAST si dice che è /offline/.
+
+*** Tipi di memorizzazione TOAST
+Ci sono quattro strategie di memorizzazione TOAST:
+- ~PLAIN~ il dato non può essere toastato, ossia non viene compresso e non viene messo offline nella tabella toast;
+- ~MAIN~ il dato viene compresso ma non può essere spostato offline nella tabella di appoggio TOAST;
+- *~EXTENDED~ è il default, il dato viene compresso e spostato offline nella tabella TOAST*;
+- ~EXTERNAL~ il dato viene messo offline ma non può essere compresso.
+
 * TODO MVCC, Vacuum e Autovacuum
 ** Multi Version Concurrency Control (MVCC)
 *** Introduzione
