@@ -2125,6 +2125,24 @@ CPU 0.14s/0.30u sec elapsed 0.82 sec.
           56344576 |     6878 |     1e+06
 #+end_src
 
+** Mappe
+*** Free Space Map
+PostgreSQL memorizza su file system, per ogni relazione, una /Free Space Map/, identificata da un file con nome pari all'oid della relazione e suffisso ~.fsm~.
+
+La mappa è organizzata come un albero binario: 
+- ogni foglia memorizza la quantità di spazio disponibile nella relativa pagina dati della relazione;
+- i livelli intermedi memorizzano il valore massimo dato dai figli.
+
+In questo modo è possibile sapere sempre lo spazio ancora disponibile nella relazione.
+
+*** Visibility Map
+Ogni pagina dati di una relazione ha una /Visibility Map/, fisicamente memorizzata su disco con nome pari a quello della relazione e suffisso ~.vm~.
+
+La mappa contiene due bit per pagina ad indicare:
+- se tutte le tuple sono visibili  (nessuna necessità di ~VACUUM~) e quindi si può effettuare un /INdex Only Scan/;
+- se tutte le tuple sono /frozen/ e quindi non necessitano di nessun ~VACUUM~ per evitare perfino il wraparound dello ~xid~.
+
+La mappa è conservativa: se i bit sono attivi allora la condizione relativa è sicuramente vera, se non lo sono potrebbe essere vera o falsa.
 * Transazioni
 ** Livello di isolamento
 *** Livelli di isolamento
