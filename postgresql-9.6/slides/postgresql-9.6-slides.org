@@ -1968,6 +1968,156 @@ Se si vuole operare un restore /in place/ occorre specificare a quale database c
     -d template1 \
     testdb.dump
 #+end_src
+* Large Objects
+** Large Objects vs TOAST
+PostgreSQL supporta due meccanismi di memorizzazione di oggetti binari "grossi":
+- /large object/ che fornisce un'API a stream (quindi utile per memorizzare e recuperare parti dell'oggetto);
+- /TOAST/ (The Oversize Attribute Storage Techinique) che si usa quando l'oggetto è piu' grande di una singola pagina dati.
+
+Si tenga presente che  i large object memorizzano dati fino a *4TB* mentre TOAST permette di memorizzare non piu' di *!GB* su singolo campo.
+
+** Large Objects: alcuni dettagli
+Tutti i /large objects/ dispongono di una API a stream e sono memorizzati *sempre* nella tabella ~pg_largeobject~ e la sua duale ~pg_largeobject_metadata~.
+
+I large objects sono divisi in /chunk/, ovvero pezzi di stream binario da memorizzare come tuple. I large objects supportano *dati sparsi*, ovvero è possibile scrivere parti di un large object senza partire dall'inizio (le letture vedranno degli zeri per le parti non ancora allocate).
+
+** API dei Large Objects
+Le funzioni messe a disposizione da PostgreSQL per manipolare i large objects sono un clone delle funzioni di sistema Unix per la manipolazione dei file (es. ~open(2)~).
+
+*I file descriptor di un large object (denominati ~Oid~) persistono solo all'interno di un blocco di transazione, quindi i large objects vanno gestiti all'interno di una transazione!*
+
+** Funzioni client-side e server-side
+I large objects sono manipolati con funzioni /client-side/ (~libpq~) o server-side.
+L'unica differenza è che le ultime richiedono accesso come superutente, mentre quelle client-side no.
+
+** Funzioni server-side
+Le principali funzioni server-side sono:
+- ~lo_creat()~ crea l'oggetto con l'oid specificato o ne seleziona uno nuovo se ~-1~;
+- ~lo_unlink()~ distrugge il large object con l'oid specificato;
+- ~lo_import()~ importa il file specificato (eventualmente nell'oid specificato);
+- ~lo_export()~ esporta il large object specificato come oid indicandone il file fisico;
+- ~lo_put()~, ~lo_get()~ scrivono e leggono dati collegati a un large object;
+- ~loread()~, ~lowrite()~ leggono dei byte da un large object;
+- ~lo_lseek()~ effettua un /lseek/ sul large specificato come oid.
+
+** Large Objects con API Server-Side: esempi
+*** Tabella di esempio
+Si deve creare una tabella con un dato di tipo ~oid~ per poterla collegare al ~pg_largeobject~:
+
+#+begin_Src sql
+> CREATE TABLE picture( 
+   pk SERIAL PRIMARY KEY,
+   data oid NOT NULL,
+   description text );
+#+end_Src
+*** Importare un large object in un colpo solo
+#+begin_src sql
+> INSERT INTO picture( description, data )
+  VALUES ( 'Bud Spencer & Terence Hill', 
+           lo_import( '/home/luca/Downloads/bud.jpg' ) );
+#+end_src
+
+*** Dove è finita l'immagine?
+All'immagine è stato assegnato ~oid~ ~16691~:
+
+#+begin_Src sql
+> SELECT * FROM picture;
+ pk | data  |        description         
+----+-------+----------------------------
+  1 | 16691 | Bud Spencer & Terence Hill
+#+end_Src
+
+delle informazioni fisiche sono state iserite nella tabella ~pg_largeobject~, in particolare l'immagine è stata /divisa/ nei chunk:
+
+#+begin_src sql
+> SELECT loid, count( pageno ) 
+   FROM pg_largeobject 
+   WHERE loid = 16691 
+   GROUP BY loid;
+ loid  | count 
+-------+-------
+ 16691 |   104
+#+end_src
+
+ossia ci sono ~184~ chunk, la cui somma di lunghezza:
+
+#+begin_src sql
+> SELECT SUM( length( data ) ) 
+  FROM pg_largeobject 
+  WHERE loid = 16691;
+ sum   
+--------
+ 212164
+#+end_src
+
+ossia circa ~207.2 kB~, coerente con l'informazione riportata nel file system:
+
+#+begin_Src shell
+% ls ~/Downloads/bud.jpg -lh 
+-rw-rw-r-- 1 luca luca 208K set 22 20:50 /home/luca/Downloads/bud.jpg
+#+end_Src
+
+*** Esportare il file
+#+begin_src sql
+> SELECT lo_export( 16691, '/tmp/export.jpg' );
+#+end_src
+
+*ATTENZIONE: si devono avere i permessi di scrittura sull'oggetto!*
+
+e da un controllo sul file system i due oggetti sono gli stessi:
+#+begin_src shell
+% md5sum ~/Downloads/bud.jpg /tmp/export.jpg     
+e39cbea9c8f95be157dd6c5abc82c50d  /home/luca/Downloads/bud.jpg
+e39cbea9c8f95be157dd6c5abc82c50d  /tmp/export.jpg
+#+end_Src
+
+*** Sovrascrivere un large object
+
+Si può importare un large object sopra ad uno esistente usando lo stesso ~oid~:
+
+#+begin_Src sql
+> SELECT lo_unlink( 16691 );
+> SELECT lo_import( '/home/luca/Downloads/sofia.png', 
+                    16691 );
+#+end_src
+
+*Si noti che non è stata manipolata la tabella ~picture~!*
+
+*** Leggere dati da un large object
+Dal lato server-side è meglio usare le funzioni ~lo_get~ e ~lo_put~:
+
+#+begin_src sql
+> SELECT lo_get( 16691, 0, 10 );
+         lo_get         
+------------------------
+ \x89504e470d0a1a0a0000
+#+end_src
+
+che legge i primi 10 byte e restituisce un ~bytea~ come risultato.
+
+
+** TOAST
+*** Superare la dimensione delle pagine dati
+Le pagine dati in PostgreSQL sono a dimensione fissa, solitamente 8kB; per questo nessun attributo di tabella può superare la dimensione fisica di una pagina dati.
+
+Per evitare il problema quando un attributo diventa troppo grande per una pagina dati PostgreSQL collega automaticamente e trasparentemente una tabella /TOAST/ (collegata mediante ~pg_class.reltoastrelid~ che contiene l'attributo /spezzato/ su piu' tuple.
+
+*Perché si attivi TOAST il tipo di attributo deve essere TOAST-abile (lunghezza variabile)*. TOAST usa due bit dei 32 a disposizione per funzionamento interno e quindi ogni attributo diventa al massimo di ~2^30 = 1GB~ grosso.
+
+Il sistema TOAST si attiva quando un attributo supera solitamente i ~2kB~, ovvero quando non riescono a essere contenuti 4 tuple con quell'attributo in una singola pagina dati.
+
+*** Vantaggi di TOAST
+L'idea dietro a TOAST è semplice: solitamente le query prevedono clausole costruite su valori /piccoli/ e quindi l'ottimizzatore può continuare a lavorare trasparentemente. Quando è ora di estrarre i dati, questi vengono de-toastati opportunamente.
+
+Se il dato si trova ancora sulla tabella principale si dice che è /on-line/, se è stato spostato nella tabella TOAST si dice che è /offline/.
+
+*** Tipi di memorizzazione TOAST
+Ci sono quattro strategie di memorizzazione TOAST:
+- ~PLAIN~ il dato non può essere toastato, ossia non viene compresso e non viene messo offline nella tabella toast;
+- ~MAIN~ il dato viene compresso ma non può essere spostato offline nella tabella di appoggio TOAST;
+- *~EXTENDED~ è il default, il dato viene compresso e spostato offline nella tabella TOAST*;
+- ~EXTERNAL~ il dato viene messo offline ma non può essere compresso.
+
 * TODO MVCC, Vacuum e Autovacuum
 ** Multi Version Concurrency Control (MVCC)
 *** Introduzione
@@ -2281,6 +2431,24 @@ CPU 0.14s/0.30u sec elapsed 0.82 sec.
           56344576 |     6878 |     1e+06
 #+end_src
 
+** Mappe
+*** Free Space Map
+PostgreSQL memorizza su file system, per ogni relazione, una /Free Space Map/, identificata da un file con nome pari all'oid della relazione e suffisso ~.fsm~.
+
+La mappa è organizzata come un albero binario: 
+- ogni foglia memorizza la quantità di spazio disponibile nella relativa pagina dati della relazione;
+- i livelli intermedi memorizzano il valore massimo dato dai figli.
+
+In questo modo è possibile sapere sempre lo spazio ancora disponibile nella relazione.
+
+*** Visibility Map
+Ogni pagina dati di una relazione ha una /Visibility Map/, fisicamente memorizzata su disco con nome pari a quello della relazione e suffisso ~.vm~.
+
+La mappa contiene due bit per pagina ad indicare:
+- se tutte le tuple sono visibili  (nessuna necessità di ~VACUUM~) e quindi si può effettuare un /INdex Only Scan/;
+- se tutte le tuple sono /frozen/ e quindi non necessitano di nessun ~VACUUM~ per evitare perfino il wraparound dello ~xid~.
+
+La mappa è conservativa: se i bit sono attivi allora la condizione relativa è sicuramente vera, se non lo sono potrebbe essere vera o falsa.
 * Transazioni
 ** Livello di isolamento
 *** Livelli di isolamento
