@@ -1957,6 +1957,41 @@ spcowner   | 16387
 spcacl     |
 spcoptions | {seq_page_cost=2}
 #+end_src
+
+** Copy
+*** Importare dati con ~COPY~
+Il comando ~COPY~ permette di importare dati da un file in una tabella.
+#+begin_src sql
+# COPY persona( nome, cognome, codice_fiscale )
+   FROM '/home/luca/anagrafica.csv'
+   WITH
+   ( DELIMITER ';',
+     FORMAT 'csv',
+     HEADER 'on') ;
+#+end_src
+
+*Se si copia da un file occorre essere superutenti*, per copiare da standard input non serve.
+
+*** Esportare dati con ~COPY~
+Il comando ~COPY~ consente anche di esportare i dati verso un file:
+#+begin_src sql
+# COPY evento TO '/tmp/evento.csv'
+   WITH ( FORMAT 'csv',
+          HEADER true,
+          QUOTE '"',
+          DELIMITER ';' );
+#+end_src
+
+*** ~COPY~ da e verso un programma
+Il comando ~COPY~ permette di specificare anche un programma come sorgente dati o output:
+#+begin_src sql
+# COPY persona( nome, cognome, codice_fiscale )
+   FROM PROGRAM '/bin/cat /home/luca/anagrafica.csv'
+  WITH
+   ( DELIMITER ';',
+     FORMAT 'csv',
+     HEADER 'on') ;
+#+end_src
 * Backup e restore
 ** Backup
 *** Introduzione
