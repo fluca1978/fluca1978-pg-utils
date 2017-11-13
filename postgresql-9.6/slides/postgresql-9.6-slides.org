@@ -5031,6 +5031,38 @@ heap_blks_hit  | 31156
 idx_blks_read  | 5
 idx_blks_hit   | 5
 #+end_src
+*** Informazioni sui WAL: ~pg_stat_archiver~
+La vista ~pg_stat_archiver~ contiene esattamente una tupla con le informazioni circa lo stato di archiviazione dei WAL:
+#+begin_src sql
+> SELECT * FROM pg_stat_archiver;
+-[ RECORD 1 ]------+------------------------------
+archived_count     | 27
+last_archived_wal  | 0000000100000003000000FA
+last_archived_time | 2017-11-02 10:38:25.898059+01
+failed_count       | 0
+last_failed_wal    |
+last_failed_time   |
+stats_reset        | 2017-10-31 13:53:29.891094+01
+#+end_src
+*** Informazioni sul demone di scrittura: ~pg_stat_bgwriter~
+La vista ~pg_stat_bgwriter~ contiene esattamente una tupla che indica lo stato di scrittura su disco dei dati:
+#+begin_src sql
+SELECT * FROM pg_stat_bgwriter;
+-[ RECORD 1 ]---------+------------------------------
+checkpoints_timed     | 273
+checkpoints_req       | 16
+checkpoint_write_time | 995400
+checkpoint_sync_time  | 3340
+buffers_checkpoint    | 22220
+buffers_clean         | 0
+maxwritten_clean      | 0
+buffers_backend       | 506196
+buffers_backend_fsync | 0
+buffers_alloc         | 58248
+stats_reset           | 2017-10-31 13:53:29.891094+01
+#+end_src
+
+dove ~checkpoints_timed~ indica quanti checkpoint schedulati sono stati eseguiti e ~checkpoint_req~ quanti ne sono richiesti (es. manualmente), e le colonne ~checkpoint_write_time~ e ~checkpoint_sync_time~ indicano in millisecondi il tempo speso per la scrittura su disco e la sincronizzazione (due fasi interne del checkpoint).
 * Indici
 ** Tipi di indici
 *** Introduzione
