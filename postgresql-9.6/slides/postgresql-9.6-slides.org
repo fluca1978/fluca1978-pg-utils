@@ -1972,6 +1972,8 @@ Il comando ~COPY~ permette di importare dati da un file in una tabella.
 
 *Se si copia da un file occorre essere superutenti*, per copiare da standard input non serve.
 
+*Il file deve essere locale al server!*
+
 *** Esportare dati con ~COPY~
 Il comando ~COPY~ consente anche di esportare i dati verso un file:
 #+begin_src sql
@@ -1991,6 +1993,16 @@ Il comando ~COPY~ permette di specificare anche un programma come sorgente dati 
    ( DELIMITER ';',
      FORMAT 'csv',
      HEADER 'on') ;
+#+end_src
+
+*** Il comando ~\copy~
+Il comando  ~\copy~ del client ~psql~ effettua un ~COPY~ ma dal client verso il server, quindi trasferendo i dati tramite la connessione al server. La sintassi è identica a quella del comando ~COPY~, per esempio:
+#+begin_src sql
+> \copy persona(nome, cognome, codice_fiscale)
+   from 'anagrafica.csv'
+   with ( header true,
+          format 'csv',
+          delimiter ';' )
 #+end_src
 * Backup e restore
 ** Backup
