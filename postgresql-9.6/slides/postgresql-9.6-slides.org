@@ -4891,7 +4891,8 @@ Questi parametri su alcuni sistemi operativi rappresentano un collo di bottiglia
 *** Logging: quando
 - ~log_min_messages~ e ~client_min_messages~ indica la soglia di logging dei messaggi di log del server e delle connessioni utente;
 - ~log_min_duration_statement~ indica di inserire nei log tutte le query di durata superiore (in millisecondi) superiore a quella stabilita;
-- ~log_duration~ inserisce la durata di ogni statement eseguito (ma non la query eseguita!).
+- ~log_duration~ inserisce la durata di ogni statement eseguito (ma non la query eseguita!);
+- ~log_autovacuum_min_duration~ inserisce nei log le azioni di autovacuum che sono durate piu' dei millisecondi specificati.
 *** Logging: cosa
 - ~log_checkpoints~ inserisce una riga di log ad ogni checkpoint;
 - ~log_connections~ e ~log_disconnections~ inserisce una riga di log per ogni connessione e disconnessione;
@@ -4921,7 +4922,15 @@ Siccome ~VACUUM~ e ~ANALYZE~ sono operazioni intense per l'I/O, i seguenti param
 - ~vacuum_cost_page_hit~, ~vacuum_cost_page_miss~, ~vacuum_cost_page_dirty~ indicano rispettivamente il punteggio di costo di una pagina trovata nello shared buffers, non trovata e modificata (mentre prima era pulita).
 
 *** Autovacuum
+- ~autovacuum~ indica se il demone di autovacuum deve essere abilitato (anche se impostato ad ~off~ un autovacuum sarà lanciato per evitare lo xid wraparound);
+- ~autovacuum_max_workers~ indica il numero di processi di autovacuum che possono essere al massimo attivi contemporaneamente (oltre all'autovacuum launcher);
 - ~autovacuum_work_mem~ indica la memoria da usare per ogni /worker/ di autovacuum. Se vale ~-1~ indica di usare ~maintanance_work_mem~;
+- ~autovacuum_naptime~ indica il tempo di pausa fra un ciclo di autovacuum e l'altro;
+- ~autovacuum_vacuum_threshold~ e ~autovacuum_analyze_threshold~ indicano il numero di tuple aggiunte/modificate prima di lanciare un processo di ~VACUUM~ o ~ANALYZE~ su quella determinata tabella;
+- ~autovacuum_vacuum_scale_factor~ e ~autovacuum_analyze_scale_factor~ indicano una percentuale di dimensione della tabella da aggiungere a ai relativi parametri di threshold per stabilire se è necessario un'azione;
+- ~autovacuum_freeze_max_age~ stabilisce quante transazioni prima di effettuare un azione (per prevenire il wraparound o rimuovere file in ~pg_clog~);
+- ~autovacuum_vacuum_cost_delay~ simile a ~vacuum_cost_delay~ indica per quanto tempo fermarsi se si supera la soglia di costo;
+- ~autovacuum_vacuum_cost_limit~ simile a ~vacuum_cost_limit~ indica il punteggio soglia di costo (fra tutti i worker) per sospendere l'atuovacuum.
 *** Background Worker
 Il processo /Background Worker/ è in carico di prelevare le pagine /sporche/ (modificate) nello shared buffers e renderle persistenti su disco.
 Il background worker esegue ciclicamente scaricando le /Least Recently Used/ pagine su disco, stimando anche quanti nuovi buffer sono necessari (deve fare spazio per nuovi dati).
