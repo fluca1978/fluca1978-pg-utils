@@ -4921,7 +4921,7 @@ Le statistche sono visibili tramite una serie di viste speciali, denominate ~pg_
 In ~postgresql.conf~ vi sono una serie di parametri ~track_xxx~ che abilitano o disabilitano la collezione delle statistiche. Tali parametri possono anche essere impostati a livello di sessione (ma solo per i superutenti, per evitare utilizzi maliziosi). I parametri sono:
 - ~track_activities~ informazioni sulle attività utente correntemente in atto (visibile solo dal proprietario e dai superutenti);
 - ~tack_counts~ informazioni sulle attività di database, necessario per autovacuum;
-- ~tack_functions~ informazioni sulle chiamate di funzione (bisogna specificare quale linguaggio, es ~pglpgsql~, va tracciato)
+- ~tack_functions~ informazioni sulle chiamate di funzione (bisogna specificare quale *tipo* di linguaggio va tracciato, es ~pl~);
 - ~track_io_timing~ informazioni temporali sulla durata delle operazioni di I/O, molto "costoso" e solitamente disabilitato (può servire per monitorare nuovo hardware).
 *** Interazione con lo statistic collector
 Occorre tenere presente che le statistiche non sono aggiornate in /real time/:
@@ -5006,6 +5006,18 @@ Si noti che ~idx_tup_read~ sono le tuple di indice lette, mentre ~idx_tup_fetch~
 Le viste speciali ~pg_stat_xact_user_tables~, ~pg_stat_xact_sys_tables~ e ~pg_stat_xact_all_tables~ sono strutturate in maniera identica a ~pg_stat_user_tables~ e similari, ma *considerano le statistiche solo per la transazione corrente*.
 
 Sono quindi da considerarsi un sottoinsieme limitato alla transazione corrente delle relative informazioni statistiche di tabella.
+*** Informazioni sulle funzioni: ~pg_stat_user_functions~
+La vista speciale ~pg_stat_user_functions~ fonrisce indicazioni circa le /chiamate/ alle funzioni utente:
+#+begin_src sql
+> SELECT funcname, calls, total_time, self_time
+   FROM pg_stat_user_functions;
+ funcname | calls | total_time | self_time
+----------+-------+------------+-----------
+ somma    |     2 |       0.43 |      0.43
+#+end_src
+
+Il ~self_time~ è il tempo speso *solo* nel codice della funzione, il ~total_time~ include il tempo speso anche nelle altre funzioni eventualmente richiamate.
+
 * Indici
 ** Tipi di indici
 *** Introduzione
