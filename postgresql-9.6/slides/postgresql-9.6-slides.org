@@ -4919,7 +4919,9 @@ La ~work_mem~ specifica quanta memoria viene messa a disposizione di operazioni 
 Siccome ~VACUUM~ e ~ANALYZE~ sono operazioni intense per l'I/O, i seguenti parametri cercano di contenere l'impatto:
 - ~vacuum_cost_limit~ indica il /punteggio/ di soglia per un ~VACUUM~ affinché si sospenda il processo per un certo periodo;
 - ~vacuum_cost_delay~ (multipli di 10 ms) indica per quanto tempo il processo di ~VACUUM~ (manuale) sarà interrotto al raggiungimento della soglia di costo;
-- ~vacuum_cost_page_hit~, ~vacuum_cost_page_miss~, ~vacuum_cost_page_dirty~ indicano rispettivamente il punteggio di costo di una pagina trovata nello shared buffers, non trovata e modificata (mentre prima era pulita).
+- ~vacuum_cost_page_hit~, ~vacuum_cost_page_miss~, ~vacuum_cost_page_dirty~ indicano rispettivamente il punteggio di costo di una pagina trovata nello shared buffers, non trovata e modificata (mentre prima era pulita);
+- ~vacuum_freeze_table_age~ indica a quale età il ~VACUUM~ deve percorrere anche le pagine dati con tuple non congelate;
+- ~vacuum_freeze_min_age~ numero di transazioni prima di forzare ~VACUUM~ a percorrere anche le pagine dati con tuple non congelate.
 
 *** Autovacuum
 - ~autovacuum~ indica se il demone di autovacuum deve essere abilitato (anche se impostato ad ~off~ un autovacuum sarà lanciato per evitare lo xid wraparound);
