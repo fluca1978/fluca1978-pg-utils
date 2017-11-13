@@ -4922,7 +4922,7 @@ In ~postgresql.conf~ vi sono una serie di parametri ~track_xxx~ che abilitano o 
 - ~track_activities~ informazioni sulle attività utente correntemente in atto (visibile solo dal proprietario e dai superutenti);
 - ~tack_counts~ informazioni sulle attività di database, necessario per autovacuum;
 - ~tack_functions~ informazioni sulle chiamate di funzione (bisogna specificare quale *tipo* di linguaggio va tracciato, es ~pl~);
-- ~track_io_timing~ informazioni temporali sulla durata delle operazioni di I/O, molto "costoso" e solitamente disabilitato (può servire per monitorare nuovo hardware).
+- ~track_io_timing~ informazioni sulle operazioni di I/O, molto "costoso" e solitamente disabilitato (può servire per monitorare nuovo hardware o configurazioni aggressive).
 *** Interazione con lo statistic collector
 Occorre tenere presente che le statistiche non sono aggiornate in /real time/:
 - vengono aggiornate ogni 500 ms;
@@ -5018,6 +5018,19 @@ La vista speciale ~pg_stat_user_functions~ fonrisce indicazioni circa le /chiama
 
 Il ~self_time~ è il tempo speso *solo* nel codice della funzione, il ~total_time~ include il tempo speso anche nelle altre funzioni eventualmente richiamate.
 
+*** Informazioni di I/O: ~pg_statio_xxx~
+Le viste speciali ~pg_statio_user_tables~, ~pg_statio_user_indexes~ e le similari versioni di sistema e complessive, forniscono informazioni sulle attività di input/output:
+#+begin_src sql
+> SELECT relname, heap_blks_read, heap_blks_hit,
+         idx_blks_read, idx_blks_hit
+   FROM pg_statio_user_tables;
+-[ RECORD 1 ]--+-----------------------
+relname        | evento
+heap_blks_read | 77359
+heap_blks_hit  | 31156
+idx_blks_read  | 5
+idx_blks_hit   | 5
+#+end_src
 * Indici
 ** Tipi di indici
 *** Introduzione
