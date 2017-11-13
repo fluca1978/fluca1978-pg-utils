@@ -4732,6 +4732,26 @@ DETAIL:  'NoneType' object has no attribute '__getitem__'
 #+end_src
 * TODO Configurazione del Server
 ** Configurazione
+*** ~pg_config~
+Il comando shell ~pg_config~ fornisce molte informazioni circa l'installazione corrente di PostgreSQL: dove si trovano i file eseguibili, le directory di configurazione, gli header, ecc.
+
+Senza alcun argomento ~pg_config~ mostra tutte le opzioni di compilazione e installazione di PostgreSQL (output molto verbose).
+
+Con specifiche opzioni il comando mostra come è stato compilato PostgreSQL. Ad esempio:
+
+#+begin_src shell
+# con quali lib è stato linkato PostgreSQL?
+% /usr/local/bin/pg_config --libs
+-lpgcommon -lpgport -lintl -lssl -lcrypto -lz -lreadline -lcrypt -lm  -lpthread
+
+# dove sono gli eseguibili?
+% /usr/local/bin/pg_config --bindir
+/usr/local/bin
+
+# dove si trova il makefile per pgxs?
+% /usr/local/bin/pg_config --pgxs
+/usr/local/lib/postgresql/pgxs/src/makefiles/pgxs.mk
+#+end_src
 *** postgresql.conf
 Il file principale di configurazione è ~postgresql.conf~, contenuto solitamente
 in ~$PGDATA~ (alcune distribuzioni lo inseriscono nell'albero ~/etc~).
@@ -4820,26 +4840,7 @@ server signaled
 #+begin_src sql
 % sudo pg_ctlcluster 9.5 main reload
 #+end_src
-*** ~pg_config~
-Il comando shell ~pg_config~ fornisce molte informazioni circa l'installazione corrente di PostgreSQL: dove si trovano i file eseguibili, le directory di configurazione, gli header, ecc.
 
-Senza alcun argomento ~pg_config~ mostra tutte le opzioni di compilazione e installazione di PostgreSQL (output molto verbose).
-
-Con specifiche opzioni il comando mostra come è stato compilato PostgreSQL. Ad esempio:
-
-#+begin_src shell
-# con quali lib è stato linkato PostgreSQL?
-% /usr/local/bin/pg_config --libs
--lpgcommon -lpgport -lintl -lssl -lcrypto -lz -lreadline -lcrypt -lm  -lpthread
-
-# dove sono gli eseguibili?
-% /usr/local/bin/pg_config --bindir
-/usr/local/bin
-
-# dove si trova il makefile per pgxs?
-% /usr/local/bin/pg_config --pgxs
-/usr/local/lib/postgresql/pgxs/src/makefiles/pgxs.mk
-#+end_src
 ** Benchmarking
 *** pgbench
 Il sistema include un comando denominato ~pgbench~ che aiuta ad eseguire una serie di transazioni (anche
