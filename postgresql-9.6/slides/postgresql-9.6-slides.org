@@ -4994,6 +4994,42 @@ Solitamente la query viene "smontata" in piu' piani di esecuzione, ciascuno cole
 Le varie bitmap (una per indice) sono poi aggregate logicamente con ~AND~ o ~OR~ per costruire la mappa finale delle tuple che hanno passato ogni indice.
 
 La mappa finale è ordinata naturalmente per posizione /fisica/ delle tuple, quindi se c'è un ~ORDER BY~ sarà necessario un ulteriore passaggio di sorting.
+** Quanto viene usato un indice?
+*** Quali sono le tabelle che potenzialmente richiedono un indice?
+La vista ~pg_stat_user_tables~ può fornire delle indicazione sull'utilizzo delle tabelle e dei relativi indici. Ove ci sono dei /sequential scan/ elevati si può ipotizzare sia necessario un indice:
+#+begin_src sql
+> SELECT relname, seq_scan, idx_scan,
+         n_tup_ins, n_tup_upd, n_tup_del,
+         n_live_tup, n_dead_tup, last_vacuum
+  FROM pg_stat_user_tables
+  ORDER BY seq_scan DESC;
+        relname         | seq_scan | idx_scan | n_tup_ins | n_tup_upd | n_tup_del | n_live_tup | n_dead_tup | last_vacuum
+------------------------+----------+----------+-----------+-----------+-----------+------------+------------+-------------
+ usr_local_etc_snapshot |       11 |          |         0 |         0 |         0 |          0 |          0 |
+ log_table              |        4 |        0 |        22 |         0 |         0 |         20 |          2 |
+ persona                |        2 |        0 |         0 |         0 |         0 |          0 |          0 |
+ address                |        1 |        0 |         2 |         0 |         0 |          2 |          0 |
+ pgbench_accounts       |        1 |        0 |   1000000 |         0 |         0 |    1000000 |          0 |
+ pgbench_branches       |        1 |        0 |        10 |         0 |         0 |         10 |          0 |
+ pgbench_tellers        |        1 |        0 |       100 |         0 |         0 |        100 |          0 |
+ evento                 |        1 |        0 |   2110336 |         0 |         0 |    2110336 |          0 |
+ persona_femmina        |        0 |          |      5000 |         0 |         0 |       5000 |          0 |
+ persona_maschio        |        0 |          |      5001 |         0 |         0 |       5001 |          0 |
+#+end_src
+
+*** Qual'è lo stato degli indici?
+La vista speciale ~pg_user_stat_indexes~ fornisce indicazioni sull'utilizzo degli indici:
+
+#+begin_src sql
+> SELECT relname, indexrelname,
+         idx_scan, idx_tup_read, idx_tup_fetch
+   FROM pg_stat_user_indexes;
+     relname      |        indexrelname        | idx_scan | idx_tup_read | idx_tup_fetch
+------------------+----------------------------+----------+--------------+---------------
+ address          | address_pkey               |        0 |            0 |             0
+ evento           | idx_desc                   |        2 |            1 |             1
+ evento           | evento_pkey                |        0 |            0 |             0
+#+end_src
 ** EXPLAIN
 *** ~EXPLAIN~ e ~ANALYZE~
 Il comando ~EXPLAIN~ fornisce indicazione sul piano che sarà usato per fare l'accesso alle tuple.
