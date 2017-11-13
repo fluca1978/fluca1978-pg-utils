@@ -4873,7 +4873,30 @@ server signaled
 #+begin_src sql
 % sudo pg_ctlcluster 9.5 main reload
 #+end_src
+*** Processi
+I seguenti parametri permettono di modificare il nome dei processi in esecuzione:
+- ~cluster_name~ una stringa di massimo 64 bytes che indica ulteriorermente il nome del cluster;
+- ~update_process_title~ riporta nel nome del processo lo stato del processo stesso.
 
+Questi parametri su alcuni sistemi operativi rappresentano un collo di bottiglia (es. FreeBSD).
+*** Logging: dove
+- ~log_destination~ indica dove inviare i log del server:
+  + ~syslog~ invia al sistema di logging tramite ~syslog_facility~, ma richiede solitamente modifiche al demone /syslogd/ per accettare i log;
+  + ~csv~ memorizza i log in modo /Comma Separated Values/ (utile per analizzare i log in modo automatico;
+  + ~stderr~ invia i log direttamente allo standard error;
+- ~log_collector~ abilita la cattura dei log tramite un processo /collector/ che li invia ai file di log (usato con ~stderr~ e ~csv~);
+  + ~log_directory~ e ~log_filename~ indica la directory (relativa a ~$PGDATA~ o assoluta) e il nome di file da usare per i log (come stringa sottoposta a escape come ~strftime(2)~);
+  + ~log_rotation_age~ e ~log_rotation_size~ indicano dopo quanto tempo o dimensione il file di log deve essere ruotato;
+- ~syslog_ident~ e ~syslog_facility~ indicano la stringa di identity (~postgres~) e il livello di logging verso /syslogd/.
+*** Logging: quando
+- ~log_min_messages~ e ~client_min_messages~ indica la soglia di logging dei messaggi di log del server e delle connessioni utente;
+- ~log_min_duration_statement~ indica di inserire nei log tutte le query di durata superiore (in millisecondi) superiore a quella stabilita;
+- ~log_duration~ inserisce la durata di ogni statement eseguito (ma non la query eseguita!).
+*** Logging: cosa
+- ~log_checkpoints~ inserisce una riga di log ad ogni checkpoint;
+- ~log_connections~ e ~log_disconnections~ inserisce una riga di log per ogni connessione e disconnessione;
+- ~log_line_prefix~ permette di specificare la linea di log con delle sequenze di escape;
+- ~log_statement~ indica se loggare gli statement di /DDL/ o di /DML/ o tutti (~off, ddl, mod, all~).
 *** Parametri di networking
 - ~listen_address~ indica su quale indirizzo IPv4/IPv6 o nome host il server deve attendere connessioni (sistemi multi-home);
 - ~port~ indica la porta su cui rimanere in ascolto di connessioni (default ~5432~);
@@ -4882,6 +4905,75 @@ server signaled
 - ~tcp_keepalives_idle~, ~tcp_keepalives_interval~, ~tcp_keepalives_count~ specificano il comportamento dei /TCP KEEPALIVES/ specificando dopo quanti secondi di connessione idle deve essere inviato un pacchetto keepalive, dopo quanti secondi deve essere ritrasmesso in caso di mancato acknowledgment e dopo quanti pacchetti keepalive senza risposta la connessione è da considerarsi /morta/;
 - ~authentication_timeout~ numero di secondi per terminare la fase di autenticazione di un client;
 - ~ssl~ indica se si deve accettare e gestire connessioni SSL (attraverso OpenSSL).
+*** ~shared_buffers~
+E' uno dei parametri chiave di una istanza.
+
+PostgreSQL mantiene un'area di memoria ove vengono /trasferite/ le pagine dati lette da disco. Questo spazio di memoria è denominato /shared buffers/. Solitamente non va incrementato oltre il 40% della memoria disponibile sulla macchina (dedicata) per consentire anche alla cache del sistema operativo di funzionare.
+*** ~work_mem~ e ~maintanance_work_mem~
+La ~work_mem~ specifica quanta memoria viene messa a disposizione di operazioni di /sorting/ e /hashing/ prima che le query inizi a scrivere i dati su disco (temporaneamente). Va tenuto presente che ogni sessione parallela può usare questa quantità di memoria.
+
+~maintanance_work_mem~ indica la memoria assegnata ai comandi di gestione dei dati, quali ad esempio ~VACUUM~, ~CREATE INDEX~. Anche qui il parametro indica la memoria usabile per ogni sessione in parallelo, anche se una sessione può eseguire solo uno di tali comandi in un dato momento. Inoltre con /autovacuum/ attivo, la memoria usata può diventare moltiplicata per ~autovacuum_max_workers~.
+
+*** Parametri relativi a VACUUM e ANALYZE
+Siccome ~VACUUM~ e ~ANALYZE~ sono operazioni intense per l'I/O, i seguenti parametri cercano di contenere l'impatto:
+- ~vacuum_cost_limit~ indica il /punteggio/ di soglia per un ~VACUUM~ affinché si sospenda il processo per un certo periodo;
+- ~vacuum_cost_delay~ (multipli di 10 ms) indica per quanto tempo il processo di ~VACUUM~ (manuale) sarà interrotto al raggiungimento della soglia di costo;
+- ~vacuum_cost_page_hit~, ~vacuum_cost_page_miss~, ~vacuum_cost_page_dirty~ indicano rispettivamente il punteggio di costo di una pagina trovata nello shared buffers, non trovata e modificata (mentre prima era pulita).
+
+*** Autovacuum
+- ~autovacuum_work_mem~ indica la memoria da usare per ogni /worker/ di autovacuum. Se vale ~-1~ indica di usare ~maintanance_work_mem~;
+*** Background Worker
+Il processo /Background Worker/ è in carico di prelevare le pagine /sporche/ (modificate) nello shared buffers e renderle persistenti su disco.
+Il background worker esegue ciclicamente scaricando le /Least Recently Used/ pagine su disco, stimando anche quanti nuovi buffer sono necessari (deve fare spazio per nuovi dati).
+I parametri principali sono:
+- ~bgwriter_delay~ indica, in multipli di 10 ms, di quanto sospendere il Background Writer fra un ciclo e un altro.
+- ~bgwriter_lru_maxpgaes~ indica quante pagine modificate il background worker deve scaricare ad ogni ciclo;
+- ~bgwriter_lru_multiplier~ indica di quanto moltiplicare il numero di pagine stimate come /nuove/ per il prossimo ciclo;
+- ~bgwriter_flush_after~ indica di forzare un /flush/ del sistema operativo dopo che sono stati scritti dal Background Writer questi bytes di dati.
+*** WAL Levels
+Il parametro ~wal_level~ stabilisce il tipo di funzionamento per l'archiviazione dei WAL. In base al livello sono aggiunte piu' o meno informazioni nei WAL.
+I valori possibili sono:
+- ~minimal~ scrive il numero di dati minimo, necessari solo per riprendersi da un crash;
+- ~replica~ scrive informazioni sufficienti per il ripristino dei dati da parte di un /base backup/;
+- ~logical~ aggiunge informazioni per il logical decoding.
+*** Fsync etc.
+Il parametro ~fsync~ stabilisce come rendere persistenti le modifiche. Disabilitarlo è altamente rischioso e andrebbe fatto solo quando si può ripristinare completamente il database senza perdita di dati (es. caricamento iniziale).
+
+Il parametro ~wal_sync_method~ è comandato solo da ~fsync = on~ e indica quale metodo si deve usare per forzare il flush dei dati dei WAL. Il parametro di *default è ~fsync~* e comunque i valori dipendono dal sistema operativo e dalla system calls messe a disposizione.
+
+Il parametro ~syncrhonous_commit~ indica come viene gestito il commit di una transazione. Questo parametro può essere impostato per ogni singola transazione e non produce perdita di consistenza. I valori possibili sono:
+- ~on~ (default) si attende che il sistema operativo dia conferma della scrittura (non significa che i dati siano persistenti!);
+- ~off~ non si attende nessuna conferma, e si possono perdere transazioni per un certo periodo (3 volte il delay del WAL writer);
+- ~remote_apply~ e ~remote_write~ sono usati con la replica sincrona e indicano rispettivamente se la replica ha ricevuto e applicato il commit e se lo ha anche reso persistente su disco;
+- ~local~ attende che il sistema operativo abbia conferma il flush.
+
+*** Parametri dei WAL
+- ~full_page_writes~ indica se ad ogni checkpoint una pagina modifica va scritta interamente nei WAL, aumenta la sicurezza di crash recovery al costo di maggior spazio di archiviazione;
+- ~wal_compression~ abilita la compressione delle /full pages/ ad ogni checkpoint;
+- ~commit_delay~ indica il tempo di delay (microsecondi) per un commit, in modo da raggruppare transazioni tutte assieme;
+- ~wal_buffers~ indica la quantita di memoria dello /shared buffers/ (default 1/32) usabili per le pagine WAL ancora da scaricare su disco, utile per transazioni che committano contemporaneamente;
+- ~wal_writer_delay~ indica quanti millisecondi attendere fra un flush verso il sistema operativo dei WAL e il successivo;
+- ~wal_writer_flush_after~ indica dopo quanti dati forzare un flush verso il sistema operativo.
+
+*** Checkpoints
+- ~checkpoint_timeout~ numero di secondi prima di forzare un checkpoint automatico;
+- ~max_wal_size~ dimensione dei dati prima di forzare un checkpoint automatico;
+- ~checkpoint_completion_target~ indica il target di completamento del checkpoint per il throttling.
+
+*** Metodi di accesso ai dati
+I seguenti parametri abilitano o disabilitano la gestione di alcuni metodi di accesso ai dati:
+~enable_bitmapscan,  enable_hashagg,  enable_hashjoin, enable_indexonlyscan, enable_indexscan, enable_material,~
+~enable_mergejoin, enable_nestloop, enable_seqscan, enable_sort, enable_tidscan~
+
+*** Costi dell'ottimizzatore
+I costi dell'ottimizzatore sono in valori arbitrari e relativi: quello che conta è solo la loro differenza.
+I parametri sono:
+- ~seq_page_cost~ costo per il recupero di una pagina dati in modalità sequenziale;
+- ~random_page_cost~ costo per l'accesso non sequenziale ad una pagina dati (tramite indice);
+- ~cpu_tuple_cost~, ~cpu_index_tuple_cost~, ~cpu_operator_cost~ indicano il costo di /analisi/ di una tupla, indice e operatore;
+- ~default_statistics_target~ il valore di default per il campionamento di /Most Common Values/ e degli istogrammi;
+- ~constraint_exclusion~ permette di sfruttare le /constraint/ di tabella per ottimizzare le query.
+
 ** Benchmarking
 *** pgbench
 Il sistema include un comando denominato ~pgbench~ che aiuta ad eseguire una serie di transazioni (anche
