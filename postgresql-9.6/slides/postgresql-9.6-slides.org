@@ -4963,6 +4963,30 @@ tup_inserted  | 3121466
 tup_updated   | 242
 tup_deleted   | 119
 #+end_src
+*** Informazioni sulle tabelle: ~pg_stat_user_tables~
+Le viste speciali ~pg_stat_user_tables~, ~pg_stat_sys_tables~ e l'unione ~pg_stat_all_tables~ forniscono dati sull'utilizzo delle tabelle utente, di sistema (catalogo) o complessive:
+#+begin_src sql
+> SELECT relname, seq_scan, idx_scan,
+         n_tup_ins, n_tup_del, n_tup_upd, n_tup_hot_upd,
+         n_live_tup, n_dead_tup,
+         last_vacuum, last_autovacuum,
+         last_analyze, last_autoanalyze
+         FROM pg_stat_user_tables;
+
+relname          | evento
+seq_scan         | 3
+idx_scan         | 2
+n_tup_ins        | 2110336
+n_tup_del        | 0
+n_tup_upd        | 0
+n_tup_hot_upd    | 0
+n_live_tup       | 2110336
+n_dead_tup       | 0
+last_vacuum      |
+last_autovacuum  |
+last_analyze     | 2017-11-13 09:54:49.332696+01
+last_autoanalyze | 2017-11-08 14:13:15.982416+01
+#+end_src
 * Indici
 ** Tipi di indici
 *** Introduzione
