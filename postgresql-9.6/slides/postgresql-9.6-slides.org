@@ -4911,6 +4911,58 @@ tps = 518.212526 (excluding connections establishing)
 
 Siccome due client hanno fallito entrambi una transazione, e quindi in tutto sono fallite due transazioni, il sistema
 riporta che *98/100* transazioni sono state attualmente processate!
+** Statistics Collector
+*** Introduzione
+Con il termine /statistic collector/ si intende una parte di PostgreSQL dedicata a monitorare l'attività, intesa come accesso per numero di tuple, tabelle, indici, attività utente, ecc.
+
+Le statistche sono visibili tramite una serie di viste speciali, denominate ~pg_stat_xxx~ e sono mantenute in file temporanei all'interno di ~pg_stat_tmp~, per poi essere consolidate allo shutdown in ~pg_stat~ (questo garantisce la possibilita' di mantenere le statisiche fra avvi differenti del server).
+*In caso di crash le statistische sono azzerate!*
+*** Configurazione dello statistic collector
+In ~postgresql.conf~ vi sono una serie di parametri ~track_xxx~ che abilitano o disabilitano la collezione delle statistiche. Tali parametri possono anche essere impostati a livello di sessione (ma solo per i superutenti, per evitare utilizzi maliziosi). I parametri sono:
+- ~track_activities~ informazioni sulle attività utente correntemente in atto (visibile solo dal proprietario e dai superutenti);
+- ~tack_counts~ informazioni sulle attività di database, necessario per autovacuum;
+- ~tack_functions~ informazioni sulle chiamate di funzione (bisogna specificare quale linguaggio, es ~pglpgsql~, va tracciato)
+- ~track_io_timing~ informazioni temporali sulla durata delle operazioni di I/O, molto "costoso" e solitamente disabilitato (può servire per monitorare nuovo hardware).
+*** Interazione con lo statistic collector
+Occorre tenere presente che le statistiche non sono aggiornate in /real time/:
+- vengono aggiornate ogni 500 ms;
+- ogni processo invia le proprie statistiche al collector solo quando diventa /idle/;
+- le statistiche sono /congelate/ all'interno di una stessa transazione.
+
+In particolare l'ultimo punto significa che una transazione che interroghi le statistiche vedrà gli stessi dati statistici per tutta la durata della transazione, essendo quindi abilitata a effettuare correlazioni fra i dati senza "paura" che questi cambino.
+*** Vedere cosa fanno gli utenti: ~pg_stat_activity~
+La vista ~pg_stat_activity~ contiene una tupla per ogni processo di backend, consentendo di vedere cosa i singoli processi stanno facendo:
+#+begin_src sql
+ > SELECT usename, client_addr, application_name,
+          backend_start, query_start,
+          state, backend_xid, query
+   FROM pg_stat_activity;
+-[ RECORD 1 ]----+-----------------------------------
+usename          | luca
+client_addr      | 127.0.0.1
+application_name | psql
+backend_start    | 2017-11-13 09:45:38.589523+01
+query_start      | 2017-11-13 11:09:09.484301+01
+state            | active
+backend_xid      |
+query            | FETCH FORWARD 20 FROM _psql_cursor
+#+end_src
+*** Vedere come stanno i database: ~pg_stat_database~
+La vista ~pg_stat_database~ fornisce una indicazione di massima sull'utilizzo dei database:
+#+begin_src sql
+> SELECT datname, xact_commit, xact_rollback, blks_read,
+         tup_fetched, tup_inserted, tup_updated, tup_deleted
+FROM pg_stat_database;
+
+datname       | testdb
+xact_commit   | 1600
+xact_rollback | 13
+blks_read     | 111456
+tup_fetched   | 27087
+tup_inserted  | 3121466
+tup_updated   | 242
+tup_deleted   | 119
+#+end_src
 * Indici
 ** Tipi di indici
 *** Introduzione
