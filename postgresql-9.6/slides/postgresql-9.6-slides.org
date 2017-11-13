@@ -4731,7 +4731,7 @@ ERROR:  Error in python: TypeError
 DETAIL:  'NoneType' object has no attribute '__getitem__'
 #+end_src
 * TODO Configurazione del Server
-** Configurazione
+** Configurazione: concetti
 *** ~pg_config~
 Il comando shell ~pg_config~ fornisce molte informazioni circa l'installazione corrente di PostgreSQL: dove si trovano i file eseguibili, le directory di configurazione, gli header, ecc.
 
@@ -4840,6 +4840,8 @@ server signaled
 #+begin_src sql
 % sudo pg_ctlcluster 9.5 main reload
 #+end_src
+
+** Configurazione: parametri principali
 
 ** Benchmarking
 *** pgbench
