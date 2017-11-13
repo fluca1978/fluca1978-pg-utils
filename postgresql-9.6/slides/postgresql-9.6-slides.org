@@ -981,7 +981,7 @@ Il comando speciale ~SHOW~ mostra il valore di alcuni parametri /run-time/, e an
 
 #+begin_src sql
 #  SHOW enable_seqscan;
- enable_seqscan 
+ enable_seqscan
 ----------------
  off
 (1 row)
@@ -1054,14 +1054,14 @@ Una tabella temporanea può essere /agganciata/ ad una transazione con la clauso
 > INSERT INTO foo VALUES( 'hello' );
 > INSERT INTO foo VALUES( 'world' );
 > SELECT COUNT(*) FROM foo;
- count 
+ count
 -------
      2
 (1 row)
 
 > COMMIT;
 > SELECT COUNT(*) FROM foo;
- count 
+ count
 -------
      0
 #+end_src
@@ -1095,11 +1095,11 @@ e anche una strategia di modifica alla tabella referenziata ~ON DELETE~ e ~ON UP
 
 *** Foreign Keys: esempio
 #+begin_src sql
-> CREATE TABLE a( 
-   pk SERIAL PRIMARY KEY, 
-   a1 int, 
-   a2 int, 
-   UNIQUE (a1), 
+> CREATE TABLE a(
+   pk SERIAL PRIMARY KEY,
+   a1 int,
+   a2 int,
+   UNIQUE (a1),
    UNIQUE(a2) );
 
 > CREATE TABLE b( pk SERIAL PRIMARY KEY,
@@ -1120,7 +1120,7 @@ Si inseriscono un po' di tuple e le si cancellano:
   -- forza a nulla b(b1)!
 
 > SELECT * FROM b;
- pk | b1 | b2 
+ pk | b1 | b2
 ----+----+----
   2 |  2 |  2
   1 |    |  1
@@ -1128,7 +1128,7 @@ Si inseriscono un po' di tuple e le si cancellano:
 > DELETE FROM a WHERE a2=2;
   -- forza cancellazione anche di b
 > SELECT * FROM b;
- pk | b1 | b2 
+ pk | b1 | b2
 ----+----+----
   1 |    |  1
 #+end_src
@@ -1137,7 +1137,7 @@ Si inseriscono un po' di tuple e le si cancellano:
 Tutti i vincoli, con l'essclusione di ~NOT NULL~ e ~CHECK~ sono posticipabili: un vincolo posticipabile viene controllato non ad ogni statement ma alla fine della transazione.
 
 #+begin_src sql
-> CREATE TABLE c( val int NOT NULL, 
+> CREATE TABLE c( val int NOT NULL,
                   UNIQUE(val) DEFERRABLE );
 
 > BEGIN;
@@ -1162,10 +1162,10 @@ La sintassi è ~COMMENT ON <type> IS 'BLAH'~.
 Non esiste un modo "comodo" per vedere i commenti, i tool di amminitrazione li mostrano, ma in generale occorre andare sulla tabella ~pg_description~:
 
 #+begin_src sql
-> SELECT description 
-     FROM pg_description 
+> SELECT description
+     FROM pg_description
      WHERE objoid = 'public.persona'::regclass;
-       description        
+       description
 --------------------------
  Tabella anagrafica
  Chiave primari surrogata
@@ -1273,7 +1273,7 @@ In default il ~search_path~ contiene uno schema che si chiama come l'utente, ide
 
 #+begin_src sql
 >  SHOW search_path;
-   search_path   
+   search_path
 -----------------
  "$user", public
 
@@ -1295,7 +1295,7 @@ Il comando ~SET~ permette di impostare il valore del ~search_path~:
 #+begin_src sql
 > SET search_path="$user", private;
 > SHOW search_path;
-   search_path    
+   search_path
 ------------------
  "$user", private
 
@@ -2005,7 +2005,7 @@ Le principali funzioni server-side sono:
 Si deve creare una tabella con un dato di tipo ~oid~ per poterla collegare al ~pg_largeobject~:
 
 #+begin_Src sql
-> CREATE TABLE picture( 
+> CREATE TABLE picture(
    pk SERIAL PRIMARY KEY,
    data oid NOT NULL,
    description text );
@@ -2013,7 +2013,7 @@ Si deve creare una tabella con un dato di tipo ~oid~ per poterla collegare al ~p
 *** Importare un large object in un colpo solo
 #+begin_src sql
 > INSERT INTO picture( description, data )
-  VALUES ( 'Bud Spencer & Terence Hill', 
+  VALUES ( 'Bud Spencer & Terence Hill',
            lo_import( '/home/luca/Downloads/bud.jpg' ) );
 #+end_src
 
@@ -2022,7 +2022,7 @@ All'immagine è stato assegnato ~oid~ ~16691~:
 
 #+begin_Src sql
 > SELECT * FROM picture;
- pk | data  |        description         
+ pk | data  |        description
 ----+-------+----------------------------
   1 | 16691 | Bud Spencer & Terence Hill
 #+end_Src
@@ -2030,11 +2030,11 @@ All'immagine è stato assegnato ~oid~ ~16691~:
 delle informazioni fisiche sono state iserite nella tabella ~pg_largeobject~, in particolare l'immagine è stata /divisa/ nei chunk:
 
 #+begin_src sql
-> SELECT loid, count( pageno ) 
-   FROM pg_largeobject 
-   WHERE loid = 16691 
+> SELECT loid, count( pageno )
+   FROM pg_largeobject
+   WHERE loid = 16691
    GROUP BY loid;
- loid  | count 
+ loid  | count
 -------+-------
  16691 |   104
 #+end_src
@@ -2042,10 +2042,10 @@ delle informazioni fisiche sono state iserite nella tabella ~pg_largeobject~, in
 ossia ci sono ~184~ chunk, la cui somma di lunghezza:
 
 #+begin_src sql
-> SELECT SUM( length( data ) ) 
-  FROM pg_largeobject 
+> SELECT SUM( length( data ) )
+  FROM pg_largeobject
   WHERE loid = 16691;
- sum   
+ sum
 --------
  212164
 #+end_src
@@ -2053,7 +2053,7 @@ ossia ci sono ~184~ chunk, la cui somma di lunghezza:
 ossia circa ~207.2 kB~, coerente con l'informazione riportata nel file system:
 
 #+begin_Src shell
-% ls ~/Downloads/bud.jpg -lh 
+% ls ~/Downloads/bud.jpg -lh
 -rw-rw-r-- 1 luca luca 208K set 22 20:50 /home/luca/Downloads/bud.jpg
 #+end_Src
 
@@ -2066,7 +2066,7 @@ ossia circa ~207.2 kB~, coerente con l'informazione riportata nel file system:
 
 e da un controllo sul file system i due oggetti sono gli stessi:
 #+begin_src shell
-% md5sum ~/Downloads/bud.jpg /tmp/export.jpg     
+% md5sum ~/Downloads/bud.jpg /tmp/export.jpg
 e39cbea9c8f95be157dd6c5abc82c50d  /home/luca/Downloads/bud.jpg
 e39cbea9c8f95be157dd6c5abc82c50d  /tmp/export.jpg
 #+end_Src
@@ -2077,7 +2077,7 @@ Si può importare un large object sopra ad uno esistente usando lo stesso ~oid~:
 
 #+begin_Src sql
 > SELECT lo_unlink( 16691 );
-> SELECT lo_import( '/home/luca/Downloads/sofia.png', 
+> SELECT lo_import( '/home/luca/Downloads/sofia.png',
                     16691 );
 #+end_src
 
@@ -2088,7 +2088,7 @@ Dal lato server-side è meglio usare le funzioni ~lo_get~ e ~lo_put~:
 
 #+begin_src sql
 > SELECT lo_get( 16691, 0, 10 );
-         lo_get         
+         lo_get
 ------------------------
  \x89504e470d0a1a0a0000
 #+end_src
@@ -2435,7 +2435,7 @@ CPU 0.14s/0.30u sec elapsed 0.82 sec.
 *** Free Space Map
 PostgreSQL memorizza su file system, per ogni relazione, una /Free Space Map/, identificata da un file con nome pari all'oid della relazione e suffisso ~.fsm~.
 
-La mappa è organizzata come un albero binario: 
+La mappa è organizzata come un albero binario:
 - ogni foglia memorizza la quantità di spazio disponibile nella relativa pagina dati della relazione;
 - i livelli intermedi memorizzano il valore massimo dato dai figli.
 
@@ -2449,6 +2449,9 @@ La mappa contiene due bit per pagina ad indicare:
 - se tutte le tuple sono /frozen/ e quindi non necessitano di nessun ~VACUUM~ per evitare perfino il wraparound dello ~xid~.
 
 La mappa è conservativa: se i bit sono attivi allora la condizione relativa è sicuramente vera, se non lo sono potrebbe essere vera o falsa.
+
+*** NULL Map
+Per ogni tupla la pagina datai contiene una mappa con un bit che indica se la relativa tupla contiene valori ~NULL~ nella colonna specificata.
 * Transazioni
 ** Livello di isolamento
 *** Livelli di isolamento
@@ -5008,7 +5011,7 @@ Il comando ~EXPLAIN~ fornisce come output una serie di nodi, ciascuno che indica
 Si consideri:
 #+begin_src sql
 >  EXPLAIN SELECT * FROM persona WHERE eta > 48;
-                         QUERY PLAN                         
+                         QUERY PLAN
 ------------------------------------------------------------
  Seq Scan on persona  (cost=0.00..219.00 rows=175 width=46)
    Filter: (eta > 48)
@@ -5021,9 +5024,9 @@ Con l'aggiunta di ~ANALYZE~ viene effettivamente eseguita la query e si può ver
 
 #+begin_src sql
 >  EXPLAIN ANALYZE SELECT * FROM persona WHERE eta > 48;
-                                               QUERY PLAN                                               
+                                               QUERY PLAN
 --------------------------------------------------------------------------------------------------------
- Seq Scan on persona  (cost=0.00..219.00 rows=175 width=46) 
+ Seq Scan on persona  (cost=0.00..219.00 rows=175 width=46)
                 (actual time=0.027..3.886 rows=175 loops=1)
    Filter: (eta > 48)
    Rows Removed by Filter: 9825
@@ -5039,9 +5042,9 @@ E' possibile ottenere diversi formati di output di ~EXPLAIN~ mediante l'opzione 
 - /yaml/.
 
 #+begin_src sql
-> EXPLAIN ( FORMAT JSON ) 
+> EXPLAIN ( FORMAT JSON )
   SELECT * FROM persona WHERE eta > 48;
-            QUERY PLAN             
+            QUERY PLAN
 -----------------------------------
  [                                +
    {                              +
@@ -5061,12 +5064,12 @@ E' possibile ottenere diversi formati di output di ~EXPLAIN~ mediante l'opzione 
 
 *** Nodi annidati in ~EXPLAIN~
 #+begin_src sql
-> EXPLAIN 
-  SELECT * FROM persona 
-  WHERE eta > 48 AND sesso IN ( 
-      SELECT sesso FROM persona 
+> EXPLAIN
+  SELECT * FROM persona
+  WHERE eta > 48 AND sesso IN (
+      SELECT sesso FROM persona
       GROUP BY sesso HAVING COUNT(*) > 20 );
-                                       QUERY PLAN                                        
+                                       QUERY PLAN
 -----------------------------------------------------------------------------------------
  Hash Semi Join  (cost=244.07..465.48 rows=175 width=46)
    Hash Cond: (persona.sesso = persona_1.sesso)
@@ -5081,7 +5084,7 @@ E' possibile ottenere diversi formati di output di ~EXPLAIN~ mediante l'opzione 
 
 *** Output di ~EXPLAIN~: come si legge?
 /Tendenzialmente si legge da destra verso sinistra, dal basso verso l'alto/; i nodi con costo minori sono eseguiti per primi.
-Nell'esempio di prima si parte con un ~Seq Scan~ su ~persona_1~ (costo nullo), query inner. 
+Nell'esempio di prima si parte con un ~Seq Scan~ su ~persona_1~ (costo nullo), query inner.
 Successivamente viene eseguito un ~HashAggregate~ che implementa il ~GROUP BY~; tutto questo viene racchiuso in un nodo ~Hash~ che fornisce due tuple e che ha un costo di ~244~.
 Parallelamente si esegue un ~Seq Scan~ sulla tabella ~persona~ (outer) per ottnere un ~Hash~ sulla condizione di ~eta~.
 Infine i due hash sono uniti in un ~Semi Join~, si noti che il costo di partenza di questo nodo è ~244~ pari al massimo costo dei due nodi intermedi (un nodo non può partire prima dei suoi figli).
@@ -5193,10 +5196,10 @@ Tale valore viene definito *statistic target* e rappresenta il *massimo numero d
 Il catalogo ~pg_class~ contiene il numero di tuple e pagine dati di una relazione, questo viene usato dall'ottimizzatore per stimare la quantità di lavoro da fare. Il numero di pagine viene controllato rispetto a quello di ~pg_class~ (*è un'operazione non costosa e non richiede I/O*) e se i due valori non coincidono si aggiorna il numero delle tuple di conseguenza.
 
 #+begin_Src sql
-> SELECT relpages, reltuples 
-  FROM pg_class 
+> SELECT relpages, reltuples
+  FROM pg_class
   WHERE relname = 'persona';
- relpages | reltuples 
+ relpages | reltuples
 ----------+-----------
        94 |     10000
 #+end_Src
@@ -5204,19 +5207,19 @@ Il catalogo ~pg_class~ contiene il numero di tuple e pagine dati di una relazion
 La vista speciale ~pg_stats~ sul catalogo ~pg_statistic~ (e tabelle collegate) fornisce una visione piu' "comoda" di accesso alle statistiche:
 
 #+begin_src sql
-> SELECT null_frac, 
-  n_distinct, 
-  most_common_vals, 
-  most_common_freqs, 
-  histogram_bounds 
-  FROM pg_stats 
-  WHERE tablename = 'persona' 
+> SELECT null_frac,
+  n_distinct,
+  most_common_vals,
+  most_common_freqs,
+  histogram_bounds
+  FROM pg_stats
+  WHERE tablename = 'persona'
   AND attname IN ( 'sesso', 'nome' );
 -[ RECORD 1 ]-
 null_frac         | 0
 n_distinct        | -1
-most_common_vals  | 
-most_common_freqs | 
+most_common_vals  |
+most_common_freqs |
 histogram_bounds  | {Nome1,Nome1087,Nome1177,Nome1267,Nome1357,Nome1447,
                      Nome1537,Nome1627,Nome1717,Nome1807,Nome1898,Nome1988,
                      Nome2077,Nome2167,Nome2257,Nome2347,Nome2437,Nome2527,
@@ -5227,7 +5230,7 @@ null_frac         | 0
 n_distinct        | 2
 most_common_vals  | {F,M}
 most_common_freqs | {0.5,0.5}
-histogram_bounds  | 
+histogram_bounds  |
 #+end_src
 
 ** Istogrammi, valori comuni, selettività
@@ -5235,12 +5238,12 @@ histogram_bounds  |
 Si supponga di avere la tabella ~persona~ popolata con 10000 nomi a caso, come nell'esempio di partizionamento.
 
 #+begin_src sql
-> EXPLAIN 
-  SELECT * 
-  FROM persona 
-  WHERE sesso = 'M' 
+> EXPLAIN
+  SELECT *
+  FROM persona
+  WHERE sesso = 'M'
   AND nome < 'Nome1177';
-                           QUERY PLAN                            
+                           QUERY PLAN
 -----------------------------------------------------------------
  Seq Scan on persona  (cost=0.00..244.00 rows=100 width=46)
    Filter: ((nome < 'Nome1177'::text) AND (sesso = 'M'::bpchar))
@@ -5258,11 +5261,11 @@ In ~pg_operator~ si ha che:
 . ~oprleft~, ~oprright~, ~oprresult~ indicano it ~pg_type~ tipo dell'operando o risultato.
 
 #+begin_src sql
-> SELECT oprname, oprkind, oprleft, oprright, oprrest 
+> SELECT oprname, oprkind, oprleft, oprright, oprrest
    FROM pg_operator
    WHERE ( oprname = '<' OR oprname = '=' )
-   AND oprleft = ( SELECT oid 
-                   FROM pg_type 
+   AND oprleft = ( SELECT oid
+                   FROM pg_type
                    WHERE typname = 'char' )
    AND oprright = oprleft;
 -[ RECORD 1 ]---------
@@ -5310,7 +5313,7 @@ In particolare il valore di filtro della clausola ~WHERE ... nome < 'Nome1177`~ 
 
 La selettività complessiva della clausola in ~AND~ logico è data dalla moltiplicazione dei valori di selettività individuale, ovvero:
 
-#+begin_src 
+#+begin_src
 10000 tuple * ( 0.5 * 0.02 ) = 100
 #+end_src
 
@@ -5321,7 +5324,7 @@ Si supponga di variare la query come segue:
 
 #+begin_src sql
 > EXPLAIN  SELECT * FROM persona WHERE sesso = 'F' AND nome like 'Nome1%';
-                           QUERY PLAN                           
+                           QUERY PLAN
 ----------------------------------------------------------------
  Seq Scan on persona  (cost=0.00..244.00 rows=556 width=42)
    Filter: ((nome ~~ 'Nome1%'::text) AND (sesso = 'F'::bpchar))
@@ -5337,12 +5340,12 @@ ovvero ~10000 tuple * 0.5 * 0.12 = 600~
 *** Controesempio
 Si supponga di usare la query:
 #+begin_Src sql
-> EXPLAIN 
-   SELECT * 
-   FROM persona 
-   WHERE sesso <> 'F' 
+> EXPLAIN
+   SELECT *
+   FROM persona
+   WHERE sesso <> 'F'
    AND nome > 'Nome1177';
-                            QUERY PLAN                            
+                            QUERY PLAN
 ------------------------------------------------------------------
  Seq Scan on persona  (cost=0.00..244.00 rows=4900 width=46)
    Filter: ((sesso <> 'F'::bpchar) AND (nome > 'Nome1177'::text))
@@ -5350,11 +5353,11 @@ Si supponga di usare la query:
 
 che è l'esatto opposto della precedente. Gli operatori hanno funzioni di selettività differente che ragionano in modo opposto:
 #+begin_src sql
- SELECT oprname, oprkind, oprleft, oprright, oprrest 
+ SELECT oprname, oprkind, oprleft, oprright, oprrest
    FROM pg_operator
    WHERE ( oprname = '>' OR oprname = '<>' )
-   AND oprleft = ( SELECT oid 
-                   FROM pg_type 
+   AND oprleft = ( SELECT oid
+                   FROM pg_type
                    WHERE typname = 'char' )
    AND oprright = oprleft;
 -[ RECORD 1 ]---------
@@ -5388,7 +5391,7 @@ che è appunto il risultato fornito da ~EXPLAIN~.
 Aggiungiamo una età random (compresa fra 0 e 50 anni):
 #+begin_src sql
 > ALTER TABLE persona
-   ADD COLUMN eta integer 
+   ADD COLUMN eta integer
    DEFAULT mod( (random() * 1000)::int, 50 );
 
 > ANALYZE persona;
@@ -5396,8 +5399,8 @@ Aggiungiamo una età random (compresa fra 0 e 50 anni):
 
 Le statistiche di sistema riportano:
 #+begin_Src sql
-> SELECT * FROM pg_stats 
-  WHERE tablename = 'persona' 
+> SELECT * FROM pg_stats
+  WHERE tablename = 'persona'
   AND attname = 'eta';
 -[ RECORD 1 ]--
 ...
@@ -5412,15 +5415,15 @@ most_common_vals       | {32,8,28,15,14,38,22,16,37,41,
 most_common_freqs      | {0.0222,0.0219,0.0218,0.0217,0.0216,
                           0.0216,0.0214,0.0213,0.0213,0.0212,
                            ... }
-histogram_bounds       | 
+histogram_bounds       |
 #+end_Src
 
 *** Query di esempio
 #+begin_src sql
->  EXPLAIN SELECT * 
-    FROM persona 
+>  EXPLAIN SELECT *
+    FROM persona
     WHERE eta = 28;
-                         QUERY PLAN                         
+                         QUERY PLAN
 ------------------------------------------------------------
  Seq Scan on persona  (cost=0.00..219.00 rows=218 width=46)
    Filter: (eta = 28)
@@ -5436,7 +5439,7 @@ A questo punto l'ottimizzatore assume che la selettività della condizione sia d
 *** Ulteriore esempio
 #+begin_src sql
  EXPLAIN SELECT * FROM persona WHERE eta < 48;
-                         QUERY PLAN                          
+                         QUERY PLAN
 -------------------------------------------------------------
  Seq Scan on persona  (cost=0.00..219.00 rows=9623 width=46)
    Filter: (eta < 48)
@@ -5454,8 +5457,8 @@ La frequenza dei bucket che rimangono (e che soddisfano la condizione) è quindi
 
 *** Controesempio
 #+begin_src sql
->  EXPLAIN SELECT * FROM persona WHERE eta > 48; 
-                        QUERY PLAN                         
+>  EXPLAIN SELECT * FROM persona WHERE eta > 48;
+                        QUERY PLAN
 ------------------------------------------------------------
  Seq Scan on persona  (cost=0.00..219.00 rows=175 width=46)
    Filter: (eta > 48)
@@ -5468,12 +5471,12 @@ C'è un solo bucket che verifica la condizione ~eta > 48~, ossia quello con ~49~
 
 *** Calcolo della selettività: esempio piu' complesso
 #+begin_Src sql
-> EXPLAIN SELECT * 
-   FROM persona 
+> EXPLAIN SELECT *
+   FROM persona
    WHERE eta > 48
    AND sesso = 'M'
    AND nome > 'Nome1177';
-                             QUERY PLAN                                  
+                             QUERY PLAN
 ------------------------------------------------------------------------------
  Seq Scan on persona  (cost=0.00..269.00 rows=86 width=46)
    Filter: ((eta > 48) AND (nome > 'Nome1177'::text) AND (sesso = 'M'::bpchar))
