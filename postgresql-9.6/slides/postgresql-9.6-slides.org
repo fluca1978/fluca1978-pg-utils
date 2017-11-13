@@ -5002,6 +5002,10 @@ idx_tup_fetch | 1
 #+end_src
 
 Si noti che ~idx_tup_read~ sono le tuple di indice lette, mentre ~idx_tup_fetch~ sono le tuple di relazione estratte.
+*** Informazioni di transazione: ~pg_stat_xact_user_tables~
+Le viste speciali ~pg_stat_xact_user_tables~, ~pg_stat_xact_sys_tables~ e ~pg_stat_xact_all_tables~ sono strutturate in maniera identica a ~pg_stat_user_tables~ e similari, ma *considerano le statistiche solo per la transazione corrente*.
+
+Sono quindi da considerarsi un sottoinsieme limitato alla transazione corrente delle relative informazioni statistiche di tabella.
 * Indici
 ** Tipi di indici
 *** Introduzione
