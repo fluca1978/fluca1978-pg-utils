@@ -4874,6 +4874,14 @@ server signaled
 % sudo pg_ctlcluster 9.5 main reload
 #+end_src
 
+*** Parametri di networking
+- ~listen_address~ indica su quale indirizzo IPv4/IPv6 o nome host il server deve attendere connessioni (sistemi multi-home);
+- ~port~ indica la porta su cui rimanere in ascolto di connessioni (default ~5432~);
+- ~max_connections~ stabilisce il massimo numero di connessioni concorrenti;
+- ~superuser_reserved_connections~ è la parte di ~max_connections~ che deve essere riservata per il collegamento dei super-utenti;
+- ~tcp_keepalives_idle~, ~tcp_keepalives_interval~, ~tcp_keepalives_count~ specificano il comportamento dei /TCP KEEPALIVES/ specificando dopo quanti secondi di connessione idle deve essere inviato un pacchetto keepalive, dopo quanti secondi deve essere ritrasmesso in caso di mancato acknowledgment e dopo quanti pacchetti keepalive senza risposta la connessione è da considerarsi /morta/;
+- ~authentication_timeout~ numero di secondi per terminare la fase di autenticazione di un client;
+- ~ssl~ indica se si deve accettare e gestire connessioni SSL (attraverso OpenSSL).
 ** Benchmarking
 *** pgbench
 Il sistema include un comando denominato ~pgbench~ che aiuta ad eseguire una serie di transazioni (anche
