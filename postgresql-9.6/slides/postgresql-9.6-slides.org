@@ -2118,7 +2118,7 @@ Ci sono quattro strategie di memorizzazione TOAST:
 - *~EXTENDED~ è il default, il dato viene compresso e spostato offline nella tabella TOAST*;
 - ~EXTERNAL~ il dato viene messo offline ma non può essere compresso.
 
-* TODO MVCC, Vacuum e Autovacuum
+* MVCC, Vacuum e Autovacuum
 ** Multi Version Concurrency Control (MVCC)
 *** Introduzione
 Il /Multi Version Concurrency Control (MVCC)/ è un meccanismo per garantire alta concorrenza in accesso ai dati (tuple).
@@ -2318,7 +2318,7 @@ CPU 0.00s/0.00u sec elapsed 0.00 sec.
 VACUUM
 #+end_src
 
-** TODO Impatti di Vacuum e autovacuum
+** Impatti di Vacuum e autovacuum
 *** Tabella di eventi
    Si immagini di popolare una tabella di eventi:
 
