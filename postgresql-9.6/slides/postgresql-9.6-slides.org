@@ -1885,6 +1885,78 @@ Ci sono molte funzioni di utilità per convertire dati da e per JSON:
 ---------------
  [1,2,3,4]
 #+end_src
+** Tablespaces
+*** Introduzione
+I /tablespaces/ sono un meccanismo per "agganciare" al server altri percorsi fisici di memorizzazione.
+Gli oggetti del database possono poi essere creati/spostati su uno specifico tablespace.
+
+I tablespaces possono sovrascrivere i parametri di costo dell'ottimizzatore (ad esempio perché su dispositivi piu' veloci).
+*** Creazione di un tablespace
+Anzitutto occorre creare la directory fisica (mount-point o altro) e concedere i privilegi all'utente che esegue il cluster.
+#+begin_src shell
+% sudo mkdir /mnt/data2/my_tablespace
+% sudo chown postgres:postgres /mnt/data2/my_tablespace
+% sudo chmod 700 /mnt/data2/my_tablespace
+#+end_src
+
+A questo punto sul server è possibile creare il table space (occorre essere superutenti):
+#+begin_src sql
+# CREATE TABLESPACE my_tablespace
+     OWNER luca  -- opzionale
+     LOCATION '/mnt/data2/my_tablespace'
+     WITH ( seq_page_cost = 2 ); --opzionale
+#+end_src
+*** Usare un tablespace
+E' possibile ora creare gli oggetti sul nuovo tablespace:
+#+begin_src sql
+> CREATE TABLE baz( value int )
+  TABLESPACE my_tablespace;
+
+> \d baz
+      Table "public.baz"
+ Column |  Type   | Modifiers
+--------+---------+-----------
+ value  | integer |
+Tablespace: "my_tablespace"
+#+end_src
+
+*** Spostare oggetti verso un tablespace
+E' possibile spostare gli oggetti da un tablespace ad un altro:
+
+#+begin_src sql
+> ALTER TABLE persona
+  SET TABLESPACE my_tablespace;
+#+end_src
+
+Una volta che gli oggetti sono raggruppati in un tablespace diventa facile spostarli in blocco:
+
+#+begin_src sql
+> ALTER TABLE ALL IN TABLESPACE my_tablespace
+  SET TABLESPACE other_tablespace;
+#+end_src
+
+Le stesse query valgono per ~ALTER INDEX~.
+
+*** Informazioni sui tablespace
+La vista speciale ~pg_tablespace~ fornisce informazioni sui tablespace attivi:
+#+begin_src sql
+> SELECT * FROM pg_tablespace;
+-[ RECORD 1 ]-----------------
+spcname    | pg_default
+spcowner   | 10
+spcacl     |
+spcoptions |
+-[ RECORD 2 ]-----------------
+spcname    | pg_global
+spcowner   | 10
+spcacl     |
+spcoptions |
+-[ RECORD 3 ]-----------------
+spcname    | my_tablespace
+spcowner   | 16387
+spcacl     |
+spcoptions | {seq_page_cost=2}
+#+end_src
 * Backup e restore
 ** Backup
 *** Introduzione
@@ -4841,7 +4913,7 @@ server signaled
 % sudo pg_ctlcluster 9.5 main reload
 #+end_src
 
-** Configurazione: parametri principali
+** Configurazione: parametri principaliq
 
 ** Benchmarking
 *** pgbench
