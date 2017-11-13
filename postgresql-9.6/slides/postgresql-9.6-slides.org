@@ -4741,7 +4741,15 @@ booleani (~on~, ~off~), numerici, stringa.
 
 Il carattere ~#~ identifica un commento.
 
-*** Vedere la configurazione a run-time
+*** Vedere la configurazione a run-time: ~SHOW~
+Il comando speciale ~SHOW~ consente di vedere un parametro a run-time:
+#+begin_src sql
+> SHOW shared_buffers;
+ shared_buffers
+----------------
+ 256MB
+#+end_src
+*** Vedere la configurazione a run-time: ~pg_settings~
 La vista speciale ~pg_settings~ consente di valutare ogni singolo parametro
 con i relativi valori di default, minimo, massimo, descrizione, ecc.
 
@@ -4749,21 +4757,31 @@ con i relativi valori di default, minimo, massimo, descrizione, ecc.
 # SELECT name, setting, min_val, max_val, unit,
   sourcefile, sourceline,
   short_desc,
-  pending_restart
+  pending_restart,
+  context
   FROM pg_settings
   WHERE name like 'shared_buffer%';
-
 -[ RECORD 1 ]---+-------------------------------------------------------------
 name            | shared_buffers
-setting         | 16384
+setting         | 32768
 min_val         | 16
 max_val         | 1073741823
 unit            | 8kB
-sourcefile      | /mnt/data1/pgdata/postgresql.conf
-sourceline      | 113
+sourcefile      |
+sourceline      |
 short_desc      | Sets the number of shared memory buffers used by the server.
 pending_restart | f
+context         | postmaster
 #+end_src
+*** Contesti di configurazione
+Ogni parametro ha un /contesto/ di configurazione che ne determina l'istante di modifica (~pg_settings.context~):
+- ~internal~ modificabile solo ricompilando il server;
+- ~postmaster~ modificabile solo riavviando il server;
+- ~sighup~ modificabile inviando un ~SIGHUP~ al processo postmaster;
+- ~superuser-backend~, ~backend~ modificabile a livello di sessione per superutenti o utenti normali rispettivamente (prima dell'inizio della sessione!);
+- ~superuser~, ~user~ modificabile da un superutente o utente normale.
+
+
 *** Vedere la configurazione a run-time: note su pg_settings
 I dati sul file di configurazione (~sourcefile~, ~sourceline~) non sono visualizzati per utenti
 non amministratori.
