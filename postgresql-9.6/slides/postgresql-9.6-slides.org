@@ -4730,7 +4730,7 @@ SELECT * FROM google_search WHERE search = 'postgresql';
 ERROR:  Error in python: TypeError
 DETAIL:  'NoneType' object has no attribute '__getitem__'
 #+end_src
-* TODO Configurazione del Server
+* Configurazione del Server
 ** Configurazione: concetti
 *** ~pg_config~
 Il comando shell ~pg_config~ fornisce molte informazioni circa l'installazione corrente di PostgreSQL: dove si trovano i file eseguibili, le directory di configurazione, gli header, ecc.
