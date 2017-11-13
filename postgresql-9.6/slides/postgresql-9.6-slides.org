@@ -4930,6 +4930,158 @@ tps = 518.212526 (excluding connections establishing)
 
 Siccome due client hanno fallito entrambi una transazione, e quindi in tutto sono fallite due transazioni, il sistema
 riporta che *98/100* transazioni sono state attualmente processate!
+** Statistics Collector
+*** Introduzione
+Con il termine /statistic collector/ si intende una parte di PostgreSQL dedicata a monitorare l'attività, intesa come accesso per numero di tuple, tabelle, indici, attività utente, ecc.
+
+Le statistche sono visibili tramite una serie di viste speciali, denominate ~pg_stat_xxx~ e sono mantenute in file temporanei all'interno di ~pg_stat_tmp~, per poi essere consolidate allo shutdown in ~pg_stat~ (questo garantisce la possibilita' di mantenere le statisiche fra avvi differenti del server).
+*In caso di crash le statistische sono azzerate!*
+*** Configurazione dello statistic collector
+In ~postgresql.conf~ vi sono una serie di parametri ~track_xxx~ che abilitano o disabilitano la collezione delle statistiche. Tali parametri possono anche essere impostati a livello di sessione (ma solo per i superutenti, per evitare utilizzi maliziosi). I parametri sono:
+- ~track_activities~ informazioni sulle attività utente correntemente in atto (visibile solo dal proprietario e dai superutenti);
+- ~tack_counts~ informazioni sulle attività di database, necessario per autovacuum;
+- ~tack_functions~ informazioni sulle chiamate di funzione (bisogna specificare quale *tipo* di linguaggio va tracciato, es ~pl~);
+- ~track_io_timing~ informazioni sulle operazioni di I/O, molto "costoso" e solitamente disabilitato (può servire per monitorare nuovo hardware o configurazioni aggressive).
+*** Interazione con lo statistic collector
+Occorre tenere presente che le statistiche non sono aggiornate in /real time/:
+- vengono aggiornate ogni 500 ms;
+- ogni processo invia le proprie statistiche al collector solo quando diventa /idle/;
+- le statistiche sono /congelate/ all'interno di una stessa transazione.
+
+In particolare l'ultimo punto significa che una transazione che interroghi le statistiche vedrà gli stessi dati statistici per tutta la durata della transazione, essendo quindi abilitata a effettuare correlazioni fra i dati senza "paura" che questi cambino.
+*** Vedere cosa fanno gli utenti: ~pg_stat_activity~
+La vista ~pg_stat_activity~ contiene una tupla per ogni processo di backend, consentendo di vedere cosa i singoli processi stanno facendo:
+#+begin_src sql
+ > SELECT usename, client_addr, application_name,
+          backend_start, query_start,
+          state, backend_xid, query
+   FROM pg_stat_activity;
+-[ RECORD 1 ]----+-----------------------------------
+usename          | luca
+client_addr      | 127.0.0.1
+application_name | psql
+backend_start    | 2017-11-13 09:45:38.589523+01
+query_start      | 2017-11-13 11:09:09.484301+01
+state            | active
+backend_xid      |
+query            | FETCH FORWARD 20 FROM _psql_cursor
+#+end_src
+*** Vedere come stanno i database: ~pg_stat_database~
+La vista ~pg_stat_database~ fornisce una indicazione di massima sull'utilizzo dei database:
+#+begin_src sql
+> SELECT datname, xact_commit, xact_rollback, blks_read,
+         tup_fetched, tup_inserted, tup_updated, tup_deleted
+FROM pg_stat_database;
+
+datname       | testdb
+xact_commit   | 1600
+xact_rollback | 13
+blks_read     | 111456
+tup_fetched   | 27087
+tup_inserted  | 3121466
+tup_updated   | 242
+tup_deleted   | 119
+#+end_src
+*** Informazioni sulle tabelle: ~pg_stat_user_tables~
+Le viste speciali ~pg_stat_user_tables~, ~pg_stat_sys_tables~ e l'unione ~pg_stat_all_tables~ forniscono dati sull'utilizzo delle tabelle utente, di sistema (catalogo) o complessive:
+#+begin_src sql
+> SELECT relname, seq_scan, idx_scan,
+         n_tup_ins, n_tup_del, n_tup_upd, n_tup_hot_upd,
+         n_live_tup, n_dead_tup,
+         last_vacuum, last_autovacuum,
+         last_analyze, last_autoanalyze
+         FROM pg_stat_user_tables;
+
+relname          | evento
+seq_scan         | 3
+idx_scan         | 2
+n_tup_ins        | 2110336
+n_tup_del        | 0
+n_tup_upd        | 0
+n_tup_hot_upd    | 0
+n_live_tup       | 2110336
+n_dead_tup       | 0
+last_vacuum      |
+last_autovacuum  |
+last_analyze     | 2017-11-13 09:54:49.332696+01
+last_autoanalyze | 2017-11-08 14:13:15.982416+01
+#+end_src
+*** Informazioni sugli indici: ~pg_stat_user_indexes~
+Le viste speciali ~pg_stat_user_indexes~, ~pg_stat_sys_indexes~ e l'unione ~pg_stat_all_indexes~ forniscono informazioni sull'utilizzo degli indici utente, di sistema e complessivi:
+#+begin_src sql
+> SELECT relname, indexrelname,
+         idx_scan, idx_tup_read, idx_tup_fetch
+         FROM pg_stat_user_indexes;
+
+relname       | evento
+indexrelname  | idx_desc
+idx_scan      | 2
+idx_tup_read  | 1
+idx_tup_fetch | 1
+#+end_src
+
+Si noti che ~idx_tup_read~ sono le tuple di indice lette, mentre ~idx_tup_fetch~ sono le tuple di relazione estratte.
+*** Informazioni di transazione: ~pg_stat_xact_user_tables~
+Le viste speciali ~pg_stat_xact_user_tables~, ~pg_stat_xact_sys_tables~ e ~pg_stat_xact_all_tables~ sono strutturate in maniera identica a ~pg_stat_user_tables~ e similari, ma *considerano le statistiche solo per la transazione corrente*.
+
+Sono quindi da considerarsi un sottoinsieme limitato alla transazione corrente delle relative informazioni statistiche di tabella.
+*** Informazioni sulle funzioni: ~pg_stat_user_functions~
+La vista speciale ~pg_stat_user_functions~ fonrisce indicazioni circa le /chiamate/ alle funzioni utente:
+#+begin_src sql
+> SELECT funcname, calls, total_time, self_time
+   FROM pg_stat_user_functions;
+ funcname | calls | total_time | self_time
+----------+-------+------------+-----------
+ somma    |     2 |       0.43 |      0.43
+#+end_src
+
+Il ~self_time~ è il tempo speso *solo* nel codice della funzione, il ~total_time~ include il tempo speso anche nelle altre funzioni eventualmente richiamate.
+
+*** Informazioni di I/O: ~pg_statio_xxx~
+Le viste speciali ~pg_statio_user_tables~, ~pg_statio_user_indexes~ e le similari versioni di sistema e complessive, forniscono informazioni sulle attività di input/output:
+#+begin_src sql
+> SELECT relname, heap_blks_read, heap_blks_hit,
+         idx_blks_read, idx_blks_hit
+   FROM pg_statio_user_tables;
+-[ RECORD 1 ]--+-----------------------
+relname        | evento
+heap_blks_read | 77359
+heap_blks_hit  | 31156
+idx_blks_read  | 5
+idx_blks_hit   | 5
+#+end_src
+*** Informazioni sui WAL: ~pg_stat_archiver~
+La vista ~pg_stat_archiver~ contiene esattamente una tupla con le informazioni circa lo stato di archiviazione dei WAL:
+#+begin_src sql
+> SELECT * FROM pg_stat_archiver;
+-[ RECORD 1 ]------+------------------------------
+archived_count     | 27
+last_archived_wal  | 0000000100000003000000FA
+last_archived_time | 2017-11-02 10:38:25.898059+01
+failed_count       | 0
+last_failed_wal    |
+last_failed_time   |
+stats_reset        | 2017-10-31 13:53:29.891094+01
+#+end_src
+*** Informazioni sul demone di scrittura: ~pg_stat_bgwriter~
+La vista ~pg_stat_bgwriter~ contiene esattamente una tupla che indica lo stato di scrittura su disco dei dati:
+#+begin_src sql
+SELECT * FROM pg_stat_bgwriter;
+-[ RECORD 1 ]---------+------------------------------
+checkpoints_timed     | 273
+checkpoints_req       | 16
+checkpoint_write_time | 995400
+checkpoint_sync_time  | 3340
+buffers_checkpoint    | 22220
+buffers_clean         | 0
+maxwritten_clean      | 0
+buffers_backend       | 506196
+buffers_backend_fsync | 0
+buffers_alloc         | 58248
+stats_reset           | 2017-10-31 13:53:29.891094+01
+#+end_src
+
+dove ~checkpoints_timed~ indica quanti checkpoint schedulati sono stati eseguiti e ~checkpoint_req~ quanti ne sono richiesti (es. manualmente), e le colonne ~checkpoint_write_time~ e ~checkpoint_sync_time~ indicano in millisecondi il tempo speso per la scrittura su disco e la sincronizzazione (due fasi interne del checkpoint).
 * Indici
 ** Tipi di indici
 *** Introduzione
