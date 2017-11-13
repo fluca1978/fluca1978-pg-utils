@@ -4987,6 +4987,21 @@ last_autovacuum  |
 last_analyze     | 2017-11-13 09:54:49.332696+01
 last_autoanalyze | 2017-11-08 14:13:15.982416+01
 #+end_src
+*** Informazioni sugli indici: ~pg_stat_user_indexes~
+Le viste speciali ~pg_stat_user_indexes~, ~pg_stat_sys_indexes~ e l'unione ~pg_stat_all_indexes~ forniscono informazioni sull'utilizzo degli indici utente, di sistema e complessivi:
+#+begin_src sql
+> SELECT relname, indexrelname,
+         idx_scan, idx_tup_read, idx_tup_fetch
+         FROM pg_stat_user_indexes;
+
+relname       | evento
+indexrelname  | idx_desc
+idx_scan      | 2
+idx_tup_read  | 1
+idx_tup_fetch | 1
+#+end_src
+
+Si noti che ~idx_tup_read~ sono le tuple di indice lette, mentre ~idx_tup_fetch~ sono le tuple di relazione estratte.
 * Indici
 ** Tipi di indici
 *** Introduzione
