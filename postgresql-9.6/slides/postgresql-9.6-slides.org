@@ -5708,7 +5708,132 @@ most_common_vals  | {F,M}
 most_common_freqs | {0.5,0.5}
 histogram_bounds  |
 #+end_src
+** Statistiche avanzate
+*** ~pg_stat_statements~
+Il modulo ~pg_stat_statements~ consente di tracciare l'attività di ogni statement sul database, permettendo quindi di "scoprire" query lente o problematiche.
 
+Il modulo richiede la configurazione di una /shared library/ (e quindi il riavvio del server) e la creazione di una estensione nel database ove si vogliono monitorare le statistiche.
+
+*Il modulo raccoglie le informazioni a livello di cluster, ma le esporta solo in un database specifico!*
+
+*** Installazione di ~pg_stat_statements~
+1. aggiungere il modulo a ~shared_preload_libraries~ in ~postgresql.conf~
+#+begin_src shell
+shared_preload_libraries = 'pg_stat_statements'
+#+end_src
+2. riavviare il servizio
+#+begin_src shell
+% sudo service postgresql restart
+#+end_src
+3. creare l'estensione nel database ove si vorranno vedere le statistiche
+#+begin_src sql
+# CREATE EXTENSION pg_stat_statements;
+#+end_src
+
+*** Usare ~pg_stat_statements~
+Il modulo mette a disposizione una vista speciale, ~pg_stat_statements~, che raccoglie le statistiche di utilizzo dei database e delle query. E' bene interrogare la vista come superutente per poter vedere tutti i dati, inclusi i join per la decodifica dell'utente:
+#+begin_src sql
+# SELECT auth.rolname,query, db.datname, calls, min_time, max_time,
+         shared_blks_hit, shared_blks_read, shared_blks_written,
+         blk_read_time, blk_write_time
+ FROM pg_stat_statements
+      JOIN pg_authid auth ON auth.oid = userid
+      JOIN pg_database db ON db.oid = dbid
+ ORDER BY calls DESC;
+
+rolname             | luca
+query               | DECLARE _psql_cursor NO SCROLL CURSOR FOR
+                    | SELECT * FROM pg_stat_statements;
+datname             | testdb
+calls               | 3
+min_time            | 0.181
+max_time            | 1.119
+shared_blks_hit     | 6
+shared_blks_read    | 0
+shared_blks_written | 0
+blk_read_time       | 0
+blk_write_time      | 0
+#+end_src
+
+Quindi ad esempio la query sopra è stat inovata 3 volte ed ha impiegato al massimo 1 secondo per legegre 6 blocchi già presenti nello shared buffer.
+
+*** Funzioni di ~pg_stat_statements~
+Il modulo mette a disposizione due funzioni:
+- ~pg_stat_statements_reset()~ cancella tutte le statistiche collezionate fino ad ora;
+- ~pg_stat_statements()~ una funzione che ritorna le tuple che popolano la vista (in realtà la vista è l'output di questa funzione).
+*** Parametri di ~pg_stat_statements~
+Ci sono diversi parametri di configurazione da inserire in ~postgresql.conf~, in particolare:
+- ~pg_stat_statements.max~ il massimo numero di query da tenere nelle statistiche;
+- ~pg_stat_statements.save~ indica se le statistiche vanno salvate fra un riavvio del cluster e l'altro (in default si).
+*** ~pgstattuple~
+Il module ~pgstattuple~ fornisce informazioni su una tabella o indice in termine di dimensioni, tuple visibili, espirate, ecc.
+
+Viene installata come estensione in un database, poi permettere di accedere (come superutente) ai dati di ogni relazione qualificata:
+#+begin_src sql
+# CREATE EXTENSION pgstattuple;
+#+end_src
+
+*** Funzioni di ~pgstattuple~
+Sono messe a disposizione due funzioni principali:
+- ~pgstattuple()~ accetta il nome (qualificato) della relazione e ritorna le informazioni necessarie;
+- ~pgstattindex()~ analoga, ma per gli indici.
+
+*ATTENZIONE: si richiede uno scan dell'intera relazione per ottenere le informazioni!*
+*** Usare ~pgstattuple~
+#+begin_src sql
+# SELECT * FROM pgstattuple( 'public.evento' );
+-[ RECORD 1 ]------+----------
+table_len          | 110092288
+tuple_count        | 2110336
+tuple_len          | 90411135
+tuple_percent      | 82.12
+dead_tuple_count   | 0
+dead_tuple_len     | 0
+dead_tuple_percent | 0
+free_space         | 2500
+free_percent       | 0
+#+end_src
+*** ~pg_buffercache~
+Il modulo ~pg_buffercache~ consente di ispezionare i dati degli shared buffers.
+
+Viene caricato come estensione e mette a disposizione una vista che consente di verificare lo stato degli shared buffers per ogni relazione:
+#+begin_src shell
+# CREATE EXTENSION pg_buffercache;
+#+end_src
+
+La vista ~pg_buffercache~ fornisce una tupla per ogni buffer nello shared buffer space.
+
+*** Usare ~pg_buffercache~
+#+begin_src sql
+# SELECT c.relname, b.*
+    FROM pg_buffercache b INNER JOIN pg_class c
+         ON b.relfilenode = pg_relation_filenode(c.oid)
+         AND b.reldatabase IN (0, (
+                      SELECT oid FROM pg_database
+                      WHERE datname = current_database()));
+-[ RECORD 283 ]--+-------
+relname          | evento
+bufferid         | 477
+relfilenode      | 19584
+reltablespace    | 1663
+reldatabase      | 19554
+relforknumber    | 0
+relblocknumber   | 3
+isdirty          | f
+usagecount       | 1
+pinning_backends | 0
+-[ RECORD 284 ]--+-------
+relname          | evento
+bufferid         | 478
+relfilenode      | 19584
+reltablespace    | 1663
+reldatabase      | 19554
+relforknumber    | 0
+relblocknumber   | 4
+isdirty          | f
+usagecount       | 1
+pinning_backends | 0
+#+end_src
 ** Istogrammi, valori comuni, selettività
 *** Query di esempio
 Si supponga di avere la tabella ~persona~ popolata con 10000 nomi a caso, come nell'esempio di partizionamento.
