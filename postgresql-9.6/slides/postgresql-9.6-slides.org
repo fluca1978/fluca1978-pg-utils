@@ -2653,6 +2653,23 @@ PostgreSQL mette a disposizione le funzioni ~pg_advisory_lock()~ e ~pg_advisory_
 | SELECT pg_advisory_unlock( pk ) FROM persona WHERE nome = 'Luca'; | -- sbloccata                                                    |
 |-------------------------------------------------------------------+-----------------------------------------------------------------|
 
+*** Vedere i lock
+La vista speciale ~pg_locks~ contiene le informazioni circa le richieste di lock, e può quindi essere usata per ottenere informazioni su chi ad esempio è sospeso in attesa di lock.
+
+#+begin_src sql
+> SELECT a.usename, a.application_name, a.datname, a.query,
+         l.granted, l.mode
+     FROM pg_locks l
+     JOIN pg_stat_activity a ON a.pid = l.pid;
+
+-[ RECORD 13 ]---+-------------------------------------------------------------
+usename          | luca
+application_name | psql
+datname          | testdb
+query            | UPDATE persona SET cognome = 'FERRARI' WHERE nome = 'Diego';
+granted          | t
+mode             | RowExclusiveLock
+#+end_src
 * Transazioni
 ** Livello di isolamento
 *** Livelli di isolamento
