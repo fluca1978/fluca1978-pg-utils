@@ -1020,7 +1020,23 @@ Si noti che, nonostante lo standard SQL lo permetta, il timezone ha senso solo q
 Il tipo di dato ~boolean~ rappresenta un booleano che accetta come input:
 - ~TRUE~ oppure una delle stringhe ~'t'~, ~'true'~, ~'on'~, ~'yes'~;
 - ~FALSE~ oppure una delle stringhe ~'f'~, ~'false'~, ~'off'~, ~'no'~;
+*** Bit
+Sono supportati due tipi di stringhe bit: a lunghezza fissa ~bit(n)~ e variabile ~bit varying(n)~.
 
+Gli operatori logici sulle stringhe di bit sono definiti.
+#+begin_src sql
+> SELECT 35::bit(8);
+   bit
+----------
+ 00100011
+
+> SELECT ( 35::bit(8) | 12::bit(8) )::int;
+ int4
+------
+   47
+#+end_src
+
+*Le stringhe di bit devono avere la stessa lunghezza per essere utilizzate con gli operatori!*
 *** Indirizzi di rete
 PostgreSQL fornisce tre tipi di dato:
 - ~inet~ memorizza un indirizzo IPv4 o IPv6 con relativa rete (ammetta valori sballati di rete!);
