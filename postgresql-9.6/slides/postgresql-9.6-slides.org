@@ -2602,6 +2602,38 @@ I lock a livello di tupla sono usati /automaticamente/ e non bloccano mai l'acce
   + ~FOR NO KEY UPDATE~ come il precedente, ma lock piu' leggero e consente altre transazioni di bloccare le tuple con ~FOR KEY SHARE~;
 - ~FOR SHARE~ lock leggero, permette alle altre transazioni di acquisire un lock dello stesso tipo sulle stesse tuple;
   - ~FOR KEY SHARE~ lock leggero, impedisce alle altre transazioni di acquire lock che modifichino le chiavi ma consente modifiche agli altri dati;
+*** Deadlock
+La possibilità di richiedere lock diversi sugli stessi oggetti da parte di transazioni differenti produce il problema di /deadlock/.
+
+*Un deadlock è un evento naturale* e PostgreSQL può individuare i deadlock facendo terminare le relative transazioni.
+
+*** Deadlock: esempio
+| Transazione A                                                | Transazione B                                                |
+|--------------------------------------------------------------+--------------------------------------------------------------+-
+| BEGIN;                                                       | BEGIN;                                                       |
+| UPDATE persona SET cognome = 'FERRARI' WHERE nome = 'Luca';  | UPDATE persona SET cognome = 'FERRARI' WHERE nome = 'Diego'; |
+| UPDATE persona SET cognome = 'FERRARI' WHERE nome = 'Diego'; |                                                              |
+| -- bloccata in attesa di lock per tupla                      | UPDATE persona SET cognome = 'FERRARI' WHERE nome = 'Luca';  |
+|                                                              | -- bloccata in attesa di lock per tupla                      |
+|--------------------------------------------------------------+--------------------------------------------------------------|
+
+#+begin_src shell
+ERROR:  deadlock detected
+DETAIL:  Process 952 waits for ShareLock on transaction 3019; blocked by process 935.
+Process 935 waits for ShareLock on transaction 3020; blocked by process 952.
+HINT:  See server log for query details.
+CONTEXT:  while updating tuple (0,1) in relation "persona"
+#+end_src
+
+*** Individuare i deadlock
+Il parametro ~deadlock_timeout~ nel file ~postgresql.conf~ specifica un intervallo di tempo affinché il cluster controlli se sono presenti deadlocks e, conseguentemente, uccida le relative transazioni.
+
+#+begin_src shell
+deadlock_timeout = 1s
+#+end_src
+
+La rilevazione dei deadlock è un'operazione costosa, quindi questo tempo indica al cluster con che intervallo preoccuparsi dei deadlocks.
+
 * Transazioni
 ** Livello di isolamento
 *** Livelli di isolamento
