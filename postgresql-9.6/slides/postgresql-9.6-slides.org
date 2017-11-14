@@ -2573,6 +2573,28 @@ La mappa è conservativa: se i bit sono attivi allora la condizione relativa è 
 
 *** NULL Map
 Per ogni tupla la pagina datai contiene una mappa con un bit che indica se la relativa tupla contiene valori ~NULL~ nella colonna specificata.
+** Locks
+*** Introduzione
+Lo scopo di /MVCC/ è quello di ridurre al massimo i lock (e in particolare il lock contention), permetetndo quindi la massima concorrenza.
+
+Nonostante questo, alcuni comandi richiedono dei /lock/ sui dati per garantire un accesso corretto.
+
+PostgreSQL riconosce diversi tipi di lock, ciascuno con alcune incompatibilità con gli altri: le incompatibilità possono creare /contention/, ovvero rallentamenti nella concorrenza, e in alcuni casi perfino dei /deadlock/.
+
+*** Tipi di lock: tabella
+*Tutti i lock sono a livello di tabella*, anche se il nome include la dicitura ~row~ (per retrocompatibilità).
+
+- ~ACCESS_SHARE~ fornisce sola lettura, es. ~SELECT~;
+- ~ROW_SHARE~ fornisce lock in scrittura, es. ~SELECT FOR UPDATE~;
+- ~ROW_EXCLUSIVE~ lock per modifica ai dati, es ~UPDATE~, ~DELETE~, ~INSERT~;
+- ~SHARE_UPDATE_EXCLUSIVE~ modifica di dati da pate di comandi di utilità, ad es. ~VACUUM~, ~CREATE INDEX CONCURRENTLY~, ~ALTER TABLE~, ...;
+- ~SHARE~ per la creazione di indici non concorrenti, ~CREATE INDEX~;
+- ~SHARE_ROW_EXCLUSIVE~ per la creazione di trigger e alcune versioni di ~ALTER TABLE~;
+- ~EXCLUSIVE~ usato per ~REFRESH MATERIALIZED VIEW CONCURRENTLY~;
+- ~ACCESS_EXCLUSIVE~ usato per comandi aggressivi, es. ~DROP~, ~TRUNCATE~, ~VACUUM FULL~, ...
+
+Si noti che una ~SELECT~ viene bloccata solo da un ~ACCESS_EXCLUSIVE~.
+
 * Transazioni
 ** Livello di isolamento
 *** Livelli di isolamento
