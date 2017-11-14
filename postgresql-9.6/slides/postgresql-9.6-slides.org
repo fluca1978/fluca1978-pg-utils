@@ -541,6 +541,8 @@ host    all        all      127.0.0.1/32    md5
 :BEAMER_env: ignoreheading
 :END:
 
+Il modulo /auth_delay/ permette di mitigare attacchi a forza bruta ritardando le risposte di errore del server in caso di fallita autenticazione.
+
 *** Avvio del servizio
 Una volta che i primi pezzi sono al loro posto, è possibile avviare il servizio:
 
