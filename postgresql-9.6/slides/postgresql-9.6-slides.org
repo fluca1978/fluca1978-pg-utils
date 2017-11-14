@@ -2377,6 +2377,12 @@ e contemporaneamente in un'altra sessione:
 #+end_src
 
 quindi la transazione ~2492~ sa che la ~2491~ è ancora attiva e non ancora conclusa, ma tutte quelle prima della ~2491~ sono terminate.
+*** HOT
+Il meccanismo /Heap Only Tuples/ (HOT) permette di ridurre l'I/O necessario in ~UPDATE~ di colonne non in indice.
+
+L'idea è semplice: se la pagina dati contiene ancora spazio per l'inserimento della nuova versione della tupla, questa viene inserita nella pagina dati e la precedente versione è marcata come espirata. Questo significa che non occorre aggiornare l'indice, riducendo quindi il livello di I/O complessivo.
+
+Se la pagina dati non contiene spazio, o le colonne soggette ad aggiornamento fanno parte di un indice, allora HOT non è possibile.
 ** VACUUM
 *** Introduzione
 Il comand ~VACUUM~ permette di "ricompattare" lo spaizo disco andando ad eliminare quelle tuple che non sono piu' /naturalmente/ visibili (ossia sono state invalidate per ogni transazione).
