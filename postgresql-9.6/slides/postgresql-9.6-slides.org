@@ -2670,6 +2670,75 @@ query            | UPDATE persona SET cognome = 'FERRARI' WHERE nome = 'Diego';
 granted          | t
 mode             | RowExclusiveLock
 #+end_src
+
+*** Vedere chi blocca l'acquisizione di un lock
+E' un processo in due fasi:
+1. individuare chi è in attesa di lock (~granted = false~);
+2. individuare chi è che blocca l'acquisizione dei lock (ossia ha il lock su quell'oggetto).
+
+*** Vedere chi blocca i lock: individuare chi è in attesa
+#+begin_src sql
+> SELECT a.usename, a.application_name, a.datname, a.query,
+         l.granted, l.mode, transactionid
+   FROM pg_locks l
+   JOIN pg_stat_activity a ON a.pid = l.pid
+   WHERE granted = false;
+
+-[ RECORD 1 ]----+-------------------------------------------------------------
+usename          | luca
+application_name | psql
+datname          | testdb
+query            | UPDATE persona SET cognome = 'FERRARI' WHERE nome = 'Diego';
+granted          | f
+mode             | ShareLock
+transactionid    | 3029
+#+end_src
+
+/La transazione ~3029~ sta causando l'attesa del lock!/
+
+*** Vedere chi blocca i lock: cosa sta bloccando ?
+#+begin_src sql
+> SELECT a.usename, a.application_name, a.datname, a.query,
+        l.granted, l.mode, transactionid
+   FROM pg_locks l
+   JOIN pg_stat_activity a ON a.pid = l.pid
+   WHERE granted = true AND transactionid = 3029;
+-[ RECORD 1 ]----+-----------------------------------------------
+usename          | luca
+application_name | psql
+datname          | testdb
+query            | UPDATE persona SET cognome = upper( cognome );
+granted          | t
+mode             | ExclusiveLock
+transactionid    | 3029
+#+end_src
+
+La transazione 3029 sta bloccando l'altra, e di conseguenza deve aver acquisito il lock, e lo ha fatto con la query visualizzata.
+
+*** Vedere chi blocca i lock: prendere una decisione
+Unendo le informazioni con ~pg_stat_activity~ è possibile "monitorare" la situazione:
+#+begin_src sql
+> SELECT query, backend_start, xact_start, query_start,
+         state_change, state, now()::timestamp - state_change AS since, pid
+  FROM pg_stat_activity
+  WHERE backend_xid = 3029;
+-[ RECORD 1 ]-+-----------------------------------------------
+query         | UPDATE persona SET cognome = upper( cognome );
+backend_start | 2017-11-14 13:20:54.617436+01
+xact_start    | 2017-11-14 13:32:02.436971+01
+query_start   | 2017-11-14 13:32:14.452611+01
+state_change  | 2017-11-14 13:32:14.4532+01
+state         | idle in transaction
+since         | 00:05:52.845615
+pid           | 1301
+#+end_src
+
+L'ultimo aggiorno dello ~state~ è avvenuto quasi 6 minuti indietro, quindi presumibilmente la transazione è bloccata.
+Si può quindi procedere alla sua eliminazione:
+#+begin_src sql
+# SELECT pg_terminate_backend( 1301 );
+#+end_src
+
 * Transazioni
 ** Livello di isolamento
 *** Livelli di isolamento
