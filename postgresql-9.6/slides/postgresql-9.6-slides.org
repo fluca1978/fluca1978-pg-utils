@@ -5725,6 +5725,34 @@ shared_preload_libraries = 'pg_stat_statements'
 #+begin_src sql
 # CREATE EXTENSION pg_stat_statements;
 #+end_src
+
+*** Usare ~pg_stat_statements~
+Il modulo mette a disposizione una vista speciale, ~pg_stat_statements~, che raccoglie le statistiche di utilizzo dei database e delle query. E' bene interrogare la vista come superutente per poter vedere tutti i dati, inclusi i join per la decodifica dell'utente:
+#+begin_src sql
+# SELECT auth.rolname,query, db.datname, calls, min_time, max_time,
+         shared_blks_hit, shared_blks_read, shared_blks_written,
+         blk_read_time, blk_write_time
+ FROM pg_stat_statements
+      JOIN pg_authid auth ON auth.oid = userid
+      JOIN pg_database db ON db.oid = dbid
+ ORDER BY calls DESC;
+
+rolname             | luca
+query               | DECLARE _psql_cursor NO SCROLL CURSOR FOR
+                    | SELECT * FROM pg_stat_statements;
+datname             | testdb
+calls               | 3
+min_time            | 0.181
+max_time            | 1.119
+shared_blks_hit     | 6
+shared_blks_read    | 0
+shared_blks_written | 0
+blk_read_time       | 0
+blk_write_time      | 0
+#+end_src
+
+Quindi ad esempio la query sopra è stat inovata 3 volte ed ha impiegato al massimo 1 secondo per legegre 6 blocchi già presenti nello shared buffer.
+
 ** Istogrammi, valori comuni, selettività
 *** Query di esempio
 Si supponga di avere la tabella ~persona~ popolata con 10000 nomi a caso, come nell'esempio di partizionamento.
