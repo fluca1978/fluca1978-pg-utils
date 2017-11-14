@@ -2595,6 +2595,13 @@ PostgreSQL riconosce diversi tipi di lock, ciascuno con alcune incompatibilità 
 
 Si noti che una ~SELECT~ viene bloccata solo da un ~ACCESS_EXCLUSIVE~.
 
+*** Tipi di lock: tupla
+I lock a livello di tupla sono usati /automaticamente/ e non bloccano mai l'accesso ai dati in lettura, ma solo in scrittura o per un lock esplicito di tabella.
+
+- ~FOR UPDATE~ spesso usato con ~SELECT FOR UPDATE~ blocca le tuple selezionate da modifiche in altre transazioni;
+  + ~FOR NO KEY UPDATE~ come il precedente, ma lock piu' leggero e consente altre transazioni di bloccare le tuple con ~FOR KEY SHARE~;
+- ~FOR SHARE~ lock leggero, permette alle altre transazioni di acquisire un lock dello stesso tipo sulle stesse tuple;
+  - ~FOR KEY SHARE~ lock leggero, impedisce alle altre transazioni di acquire lock che modifichino le chiavi ma consente modifiche agli altri dati;
 * Transazioni
 ** Livello di isolamento
 *** Livelli di isolamento
