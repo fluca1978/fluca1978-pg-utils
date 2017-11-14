@@ -5472,6 +5472,8 @@ Il comando ~EXPLAIN~ fornisce indicazione sul piano che sarà usato per fare l'a
 
 *Il comando ~EXPLAIN~ non effettua la query*, simula solo l'accesso ai dati. Può essere accompagnato da ~ANALYZE~ per eseguire effettivamente la query e aggiornare anche le statistiche di sistema.
 
+/Esiste anche il modulo ~autoexplain~ che consente di inserire nei log automaticamente un ~EXPLAIN~ delle query che sono durate piu' di un certo tempo/.
+
 *** Output di ~EXPLAIN~
 Il comando ~EXPLAIN~ fornisce come output una serie di nodi, ciascuno che indica:
 - /tipo di accesso/ ossia come vengono percorsi i dati;
