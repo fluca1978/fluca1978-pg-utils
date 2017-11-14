@@ -2634,6 +2634,25 @@ deadlock_timeout = 1s
 
 La rilevazione dei deadlock è un'operazione costosa, quindi questo tempo indica al cluster con che intervallo preoccuparsi dei deadlocks.
 
+*** Advisory locks
+PostgreSQL supporta anche la definizione di lock a livello applicativo, chiamati /advisory lock/.
+
+Questi lock sono interamente a carico dell'applicazione: *per ogni operazione di /lock/ ci deve essere una corrispondente /unlock/*.
+
+I lock possono essere creati a livello di sessione o di transazione, i primi sono pericolosi perché possono persistere una transazione che effettua un ~ROLLBACK~.
+
+PostgreSQL mette a disposizione le funzioni ~pg_advisory_lock()~ e ~pg_advisory_unlock()~ per gestire i lock.
+
+*** Esempio di advisory lock
+| Transazione A                                                     | Transazione B                                                   |
+|-------------------------------------------------------------------+-----------------------------------------------------------------|
+| BEGIN;                                                            | BEGIN;                                                          |
+| SELECT pg_advisory_lock( pk ) FROM persona WHERE nome = 'Luca';   |                                                                 |
+| -- work                                                           | SELECT pg_advisory_lock( pk ) FROM persona WHERE nome = 'Luca'; |
+|                                                                   | -- bloccata                                                     |
+| SELECT pg_advisory_unlock( pk ) FROM persona WHERE nome = 'Luca'; | -- sbloccata                                                    |
+|-------------------------------------------------------------------+-----------------------------------------------------------------|
+
 * Transazioni
 ** Livello di isolamento
 *** Livelli di isolamento
