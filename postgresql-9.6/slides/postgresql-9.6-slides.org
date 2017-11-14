@@ -7541,6 +7541,51 @@ Il loop principale del worker nella funzione ~worker_main~ effettua:
 	}
 #+end_src
 
+* Tools di supporto
+** PgAdmin 4
+*** Installazione
+1. scaricare il pacchetto /wheel/;
+2. installare con ~pip~ dopo aver creato un /virtual environment/:
+#+begin_src shell
+% sudo pip install virtualenv virtualenvwrapper
+% source /usr/local/bin/virtualenvwrapper.sh
+% mkvirtualenv pgadmin4
+% pip install ./pgadmin4-2.0-py2.py3-none-any.whl
+#+end_src
+3. avviare il demone:
+#+begin_src shell
+% sudo python ~/.virtualenvs/pgadmin4/lib/python2.7/site-packages/pgadmin4/pgAdmin4.py
+NOTE: Configuring authentication for SERVER mode.
+
+Enter the email address and password to use for the initial pgAdmin user account:
+
+Email address: fluca1978@gmail.com
+Password:
+Retype password:
+pgAdmin 4 - Application Initialisation
+======================================
+
+Starting pgAdmin 4. Please navigate to http://127.0.0.1:5050 in your browser.
+#+end_src
+
+*** Usare pgadmin4
+Occorre collegarsi con un browser all'indirizzo web ~http://localhost:5050~.
+
+Si forniscono le credenziali specificate all'atto del primo avvio di pgadmin4 e si entra nell'interfaccia grafica.
+
+** PgAdminIII
+*** Installazione
+Esiste un fork di PgAdminIII.
+1. scaricare l'albero dei sorgenti:
+#+begin_src shell
+% git clone https://bitbucket.org/openscg/pgadmin3-lts
+#+end_src
+2. installare /wxWidgets/ almeno versione 2.8:
+#+begin_src shell
+% tar xjvf wxWidgets-3.1.0.tar.bz2 && cd wxWidgets-3.1.0
+% ./configure --with-gtk --enable-gtk2 --enable-unicode --prefix=/opt/wxwidgets310
+% make && sudo make install
+#+end_src
 * Licenza
 This work is licensed under the *Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License*.
 To view a copy of this license,
