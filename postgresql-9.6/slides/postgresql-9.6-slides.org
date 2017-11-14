@@ -5704,7 +5704,27 @@ most_common_vals  | {F,M}
 most_common_freqs | {0.5,0.5}
 histogram_bounds  |
 #+end_src
+** Statistiche avanzate
+*** ~pg_stat_statements~
+Il modulo ~pg_stat_statements~ consente di tracciare l'attività di ogni statement sul database, permettendo quindi di "scoprire" query lente o problematiche.
 
+Il modulo richiede la configurazione di una /shared library/ (e quindi il riavvio del server) e la creazione di una estensione nel database ove si vogliono monitorare le statistiche.
+
+*Il modulo raccoglie le informazioni a livello di cluster, ma le esporta solo in un database specifico!*
+
+*** Installazione di ~pg_stat_statements~
+1. aggiungere il modulo a ~shared_preload_libraries~ in ~postgresql.conf~
+#+begin_src shell
+shared_preload_libraries = 'pg_stat_statements'
+#+end_src
+2. riavviare il servizio
+#+begin_src shell
+% sudo service postgresql restart
+#+end_src
+3. creare l'estensione nel database ove si vorranno vedere le statistiche
+#+begin_src sql
+# CREATE EXTENSION pg_stat_statements;
+#+end_src
 ** Istogrammi, valori comuni, selettività
 *** Query di esempio
 Si supponga di avere la tabella ~persona~ popolata con 10000 nomi a caso, come nell'esempio di partizionamento.
