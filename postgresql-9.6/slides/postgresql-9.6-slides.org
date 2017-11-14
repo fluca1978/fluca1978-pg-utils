@@ -1021,6 +1021,24 @@ Il tipo di dato ~boolean~ rappresenta un booleano che accetta come input:
 - ~TRUE~ oppure una delle stringhe ~'t'~, ~'true'~, ~'on'~, ~'yes'~;
 - ~FALSE~ oppure una delle stringhe ~'f'~, ~'false'~, ~'off'~, ~'no'~;
 
+*** Indirizzi di rete
+PostgreSQL fornisce tre tipi di dato:
+- ~inet~ memorizza un indirizzo IPv4 o IPv6 con relativa rete (ammetta valori sballati di rete!);
+- ~cidr~ analogo, ma non memorizza la maschera di rete (solo valori corretti);
+- ~macaddr~ memorizza un indirizzo hardware.
+
+*Effettuano la matematica degli indirizzi (con interi)!*
+#+begin_src sql
+> SELECT '192.168.222.100/24'::inet + 300;
+      ?column?
+--------------------
+ 192.168.223.144/24
+
+> SELECT '192.168.222.0/24'::cidr + 300;
+     ?column?
+-------------------
+ 192.168.223.44/24
+#+end_src
 ** Tabelle fuori dall'ordinario
 *** Temporary Tables
 Le /Temporary Tables/ sono tabelle che persistono (in memoria) solo per la durata della sessione (o della transazione).
