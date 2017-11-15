@@ -2711,72 +2711,88 @@ granted          | t
 mode             | RowExclusiveLock
 #+end_src
 
-*** Vedere chi blocca l'acquisizione di un lock
-E' un processo in due fasi:
-1. individuare chi è in attesa di lock (~granted = false~);
-2. individuare chi è che blocca l'acquisizione dei lock (ossia ha il lock su quell'oggetto).
+*** Scovare lock contention
+E' un processo in tre fasi:
+1. vedere se esistono query bloccate in attesa di lock, e in particolare se sono attese da molto tempo (è normale che qualche transazione si blocchi in contesti di alta concorrenza);
+2. verificare lo stato dei lock e capire quale transazione ha acquisito il lock senza ancora rilasciarlo;
+3. stabilire se terminare o meno il backend con la query che non ha rilasciato il lock.
 
-*** Vedere chi blocca i lock: individuare chi è in attesa
+*** 1: Scoprire se qualcuno blocca
+Mediante ~pg_stat_activity~ si possono trovare le query che risultano bloccate in attesa di acquisire un lock:
 #+begin_src sql
-> SELECT a.usename, a.application_name, a.datname, a.query,
-         l.granted, l.mode, transactionid
-   FROM pg_locks l
-   JOIN pg_stat_activity a ON a.pid = l.pid
-   WHERE granted = false;
+# SELECT query, backend_start, xact_start, query_start,
+         state_change, state,
+         now()::time - state_change::time AS locked_since,
+         pid, wait_event_type, wait_event
+  FROM pg_stat_activity
+  WHERE wait_event_type IS NOT NULL
+ORDER BY locked_since DESC;
 
--[ RECORD 1 ]----+-------------------------------------------------------------
+-[ RECORD 1 ]---+-----------------------------------------
+query           | UPDATE persona SET nome = upper( nome );
+backend_start   | 2017-11-15 09:37:55.88444+01
+xact_start      | 2017-11-15 09:37:58.186149+01
+query_start     | 2017-11-15 09:38:16.362419+01
+state_change    | 2017-11-15 09:38:16.362424+01
+state           | active
+locked_since    | 00:05:10.078716
+pid             | 786
+wait_event_type | Lock
+wait_event      | transactionid
+#+end_src
+
+La query agganciata al processo ~786~ è in attesa di un ~Lock~ da parte di un'altra transazione (~transactionid~).
+/Il fatto che la query sia in attesa da circa 5 minuti è sospetto/ e quindi è bene investigare.
+
+*** 2: vedere se effettivamente non ha ottenuto il lock
+#+begin_src sql
+# SELECT a.usename, a.application_name, a.datname, a.query,
+         l.granted, l.mode, transactionid
+    FROM pg_locks l
+    JOIN pg_stat_activity a ON a.pid = l.pid
+    WHERE granted = false AND a.pid = 786;
+-[ RECORD 1 ]----+-----------------------------------------
 usename          | luca
 application_name | psql
 datname          | testdb
-query            | UPDATE persona SET cognome = 'FERRARI' WHERE nome = 'Diego';
+query            | UPDATE persona SET nome = upper( nome );
 granted          | f
 mode             | ShareLock
-transactionid    | 3029
+transactionid    | 3031
 #+end_src
 
-/La transazione ~3029~ sta causando l'attesa del lock!/
+Quindi la query con pid ~786~ è in attesa di lock di tipo ~ShareLock~ (per aggiornare dati) dalla transazione ~3031~.
 
-*** Vedere chi blocca i lock: cosa sta bloccando ?
+*** 3: Vedere chi blocca l'acquisizione del lock
 #+begin_src sql
-> SELECT a.usename, a.application_name, a.datname, a.query,
-        l.granted, l.mode, transactionid
+# SELECT a.usename, a.application_name, a.datname, a.query,
+        l.granted, l.mode, transactionid,
+        now()::time - a.state_change::time AS acquired_since,
+        a.pid
    FROM pg_locks l
    JOIN pg_stat_activity a ON a.pid = l.pid
-   WHERE granted = true AND transactionid = 3029;
+   WHERE granted = true AND transactionid = 3031;
 -[ RECORD 1 ]----+-----------------------------------------------
 usename          | luca
 application_name | psql
 datname          | testdb
-query            | UPDATE persona SET cognome = upper( cognome );
+query            | UPDATE persona SET cognome = lower( cognome );
 granted          | t
 mode             | ExclusiveLock
-transactionid    | 3029
+transactionid    | 3031
+acquired_since   | 00:27:20.264908
+pid              | 780
 #+end_src
 
-La transazione 3029 sta bloccando l'altra, e di conseguenza deve aver acquisito il lock, e lo ha fatto con la query visualizzata.
+La transazione ~3031~ ha effettivamente acquisito un lock da circa 27 minuti per eseguire l'~UPDATE~ mostrato.
+
 
 *** Vedere chi blocca i lock: prendere una decisione
-Unendo le informazioni con ~pg_stat_activity~ è possibile "monitorare" la situazione:
-#+begin_src sql
-> SELECT query, backend_start, xact_start, query_start,
-         state_change, state, now()::timestamp - state_change AS since, pid
-  FROM pg_stat_activity
-  WHERE backend_xid = 3029;
--[ RECORD 1 ]-+-----------------------------------------------
-query         | UPDATE persona SET cognome = upper( cognome );
-backend_start | 2017-11-14 13:20:54.617436+01
-xact_start    | 2017-11-14 13:32:02.436971+01
-query_start   | 2017-11-14 13:32:14.452611+01
-state_change  | 2017-11-14 13:32:14.4532+01
-state         | idle in transaction
-since         | 00:05:52.845615
-pid           | 1301
-#+end_src
+Siccome la transazione ~3031~ sta bloccando un'altra transazione da 27 minuti, è bene decidere cosa fare. Qualora la mole di dati da processare sia ridotta rispetto al tempo impiegato, si può desumere che la transazione è stata /abbandonata/.
 
-L'ultimo aggiorno dello ~state~ è avvenuto quasi 6 minuti indietro, quindi presumibilmente la transazione è bloccata.
-Si può quindi procedere alla sua eliminazione:
+Si può quindi procedere alla sua eliminazione tramite il relativo pid:
 #+begin_src sql
-# SELECT pg_terminate_backend( 1301 );
+# SELECT pg_terminate_backend( 780 );
 #+end_src
 
 * Transazioni
