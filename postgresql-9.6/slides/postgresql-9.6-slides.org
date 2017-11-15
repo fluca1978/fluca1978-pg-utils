@@ -716,10 +716,10 @@ Il file non deve essere leggibile da altri utenti (es. permessi ~600~).
 template1=#
 #+end_src
 
-*** Errori comuni
+**** Errori comuni
     *Il file deve avere permessi ~rw~ per il solo proprietario*. Inoltre si deve specificare
     la porta a cui collegarsi dopo l'hostname!
-*** End of block                                               :B_ignoreheading:
+**** End of block                                           :B_ignoreheading:
 :PROPERTIES:
 :BEAMER_env: ignoreheading
 :END:
