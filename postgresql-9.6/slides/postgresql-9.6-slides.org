@@ -7624,7 +7624,9 @@ Esiste un fork di PgAdminIII.
 2. installare /wxWidgets/ almeno versione 2.8:
 #+begin_src shell
 % tar xjvf wxWidgets-3.1.0.tar.bz2 && cd wxWidgets-3.1.0
-% ./configure --with-gtk --enable-gtk2 --enable-unicode --prefix=/opt/wxwidgets310
+% ./configure --prefix=/opt/pgadmin310lts \
+              --with-wx=/opt/wxwidgets310 \
+              --with-wx-version=3.1
 % make && sudo make install
 #+end_src
 * Licenza
