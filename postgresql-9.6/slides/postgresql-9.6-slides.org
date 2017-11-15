@@ -5095,6 +5095,31 @@ Con specifiche opzioni il comando mostra come è stato compilato PostgreSQL. Ad 
 % /usr/local/bin/pg_config --pgxs
 /usr/local/lib/postgresql/pgxs/src/makefiles/pgxs.mk
 #+end_src
+*** ~pg_controldata~
+Il comando ~pg_controldata~ fornisce lo stato attuale del cluster, con diverse informazioni utili quali lo stato dei WAL, la versione del catalogo di sistema, la versione del cluster, ecc. E' solitamente molto utile quando si deve riportare un bug:
+#+begin_src shell
+% sudo  pg_controldata -D /mnt/data1/pgdata
+pg_control version number:            960
+Catalog version number:               201608131
+Database system identifier:           6476345954120890666
+Database cluster state:               in production
+pg_control last modified:             Wed Nov 15 10:11:18 2017
+Latest checkpoint location:           4/42AA9A38
+Prior checkpoint location:            4/42AA9360
+Latest checkpoint's REDO location:    4/42AA9A38
+Latest checkpoint's REDO WAL file:    000000010000000400000042
+Latest checkpoint's TimeLineID:       1
+...
+Time of latest checkpoint:            Wed Nov 15 10:11:17 2017
+...
+wal_level setting:                    minimal
+...
+Database block size:                  8192
+Blocks per segment of large relation: 131072
+WAL block size:                       8192
+Bytes per WAL segment:                16777216
+...
+#+end_src
 *** postgresql.conf
 Il file principale di configurazione è ~postgresql.conf~, contenuto solitamente
 in ~$PGDATA~ (alcune distribuzioni lo inseriscono nell'albero ~/etc~).
