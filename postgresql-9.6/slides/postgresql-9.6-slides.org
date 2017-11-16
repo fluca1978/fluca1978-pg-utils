@@ -6608,6 +6608,7 @@ Di fatto un crash recovery *ripercorre i segmenti di WAL dall'ultimo checkpoint 
 :BEAMER_env: ignoreheading
 :END:
 ** LSN
+*** Introduzione
 Come si fa a sapere quali pagine dati sono /sicure/ per essere scaricate su memoria
 persistente?
 La risposta è *LSN: Log Sequence Number*.
@@ -6615,6 +6616,41 @@ La risposta è *LSN: Log Sequence Number*.
 Ogni pagina dati contiene un numero LSN che indica quale segmento di log contiene le modifiche
 a quella pagina.
 *Una pagina dati non può quindi essere resa persistente se i log fino a quel ~lsn~ non sono stati a loro volta resi persistenti*.
+*** Vedere i LSN
+I /Log Sequence Number/ vengono espressi nella forma ~a/b~ in esadecimale, ad esempio:
+#+begin_src sql
+4/42C2D9C8
+#+end_src
+
+Esiste una funzione apposita, ~pg_xlogfile_name()~, che dato un LSN indica in quale WAL si trova il relativo record:
+
+#+begin_src sql
+> SELECT pg_xlogfile_name( '4/42C2D9C8' );
+     pg_xlogfile_name
+--------------------------
+ 000000010000000400000042
+#+end_src
+
+*** Dove si trovano i LSN nei WAL?
+La funzione ~pg_xlogfile_name_offset()~ consente non solo di avere il nome del file WAL ove si trova un record relativo ad un LSN, ma anche a che offset si trova nel file quel record:
+
+#+begin_src sql
+> SELECT * FROM pg_xlogfile_name_offset( '4/42C2D9C8' );
+        file_name         | file_offset
+--------------------------+-------------
+ 000000010000000400000042 |    12769736
+#+end_src
+
+*** Distanza nei WAL
+La funzione ~pg_xlog_location_diff()~ consente di valutare la differenza nei WAL fra due LSN (ad esempio per capire a che punto si è nella replication):
+
+#+begin_src sql
+> SELECT pg_xlog_location_diff( '4/42C2D9C8', '2/57FFE0C8' );
+ pg_xlog_location_diff
+-----------------------
+            8233613568
+#+end_src
+
 ** Regolare i checkpoint
 I checkpoint sono configurabili attraverso due parametri:
 - ~max_wal_size~ indica quanti segmenti (da 16MB l'uno) sono tollerati fra due checkpoint consecutivi;
