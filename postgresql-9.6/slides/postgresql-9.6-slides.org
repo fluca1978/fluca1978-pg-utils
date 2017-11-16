@@ -523,7 +523,7 @@ avere piu' file nominati con ~oid~, ~oid.1~, ~oid.2~, ecc.
 
 Solitamente i file crescono in dimensione di ~8 kB~ alla volta (ossia della dimensione di una pagina dati).
 
-*** oid2name
+*** ~oid2name~
 L'utility ~oid2name~ (modulo /contrib/) consente di esplorare
 la struttura dati su disco.
 #+begin_src sh
@@ -545,7 +545,7 @@ dei database:
 1       12757   12758
 #+end_src
 
-*** oid2name (2)
+*** ~oid2name~ (2)
  Esploriamo il database ~template1~ su disco e cerchiamo di capire
  cosa contiene:
 
@@ -568,7 +568,7 @@ From database "template1":
 *ATTENZIONE: si deve specificare a quale database si fa riferimento, poiché
 gli stessi oid possono essere riciclati in database differenti*
 
-*** oid2name (3)
+*** ~oid2name~ (3)
 E se si vuole trovare una tabella dato il suo nome?
 
  #+begin_src sh
@@ -582,6 +582,16 @@ From database "template1":
 
 ~oid2name~ va ad interrogare il catalogo di sistema per trovare le informazioni
 necessarie.
+
+*** ~pg_relation_filepath()~
+La funzione di sistema ~pg_relation_filepath()~ permette di trovare un file partendo dal nome di una tabella considerando il nome della tabella:
+#+begin_src sql
+# SELECT pg_relation_filepath( 'evento'::regclass );
+
+pg_relation_filepath | base/19554/19584
+#+end_src
+
+Il percorso è /relativo a ~$PGDATA~/.
 
 ** Connessioni
 *** Connessione al servizio
