@@ -7645,6 +7645,59 @@ Esiste un fork di PgAdminIII.
 Makefile:478: recipe for target 'all' failed
 make: *** [all] Error 2
 #+end_src
+
+* Corruzione dei dati
+*** Individuare una tabella da corrompere
+La seguente query identifica una tabella utente (non ~pg*~) ordinando per numero di pagine dati:
+#+begin_src sql
+# SELECT relname, relpages, reltuples, relfilenode
+FROM pg_class WHERE relkind = 'r' AND relname NOT LIKE 'pg%'
+Order BY relpages DESC;
+-[ RECORD 1 ]------------------------
+relname     | evento
+relpages    | 13439
+reltuples   | 2.11034e+06
+relfilenode | 19584
+#+end_src
+
+La tabella ~evento~ ha quindi ~13439~ pagine dati, è una buona candidata per una possibile corruzione.
+
+#+begin_src sql
+# select pg_relation_filepath( 'evento'::regclass );
+-[ RECORD 1 ]--------+-----------------
+pg_relation_filepath | base/19554/19584
+#+end_src
+
+La tabella si trova quindi nel file ~$PGDATA/base/19554/19584~.
+
+*** Corrompere una tabella
+Il seguente semplice programma Perl corrompe i dati oltre ai primi 8kB (quindi la seconda pagina):
+
+#+begin_src perl
+#!env perl
+
+open my $db_file, "+<", $ARGV[ 0 ] || die "Impossibile aprire il file!\n\n";
+seek $db_file, ( 8 * 1024 ) + 20, 0;
+
+print { $db_file } "Hello Corrupted Database!";
+close $db_file;
+#+end_src
+
+E quindi per corrompere il database è sufficiente:
+#+begin_src shell
+% sudo service postgresql stop
+% sudo perl corrupt.pl /mnt/data1/pgdata/base/19554/19584
+% sudo service postgresql start
+#+end_src
+
+*** Vedere la tabella corrotta
+Quando il sistema si trova a fronteggiare la pagina corrotta informa del problema:
+#+begin_src sql
+> SELECT * FROM evento;
+...
+ERROR:  invalid page in block 1 of relation base/19554/19584
+#+end_src
+
 * Licenza
 This work is licensed under the *Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License*.
 To view a copy of this license,
