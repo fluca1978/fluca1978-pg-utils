@@ -407,11 +407,11 @@ tutti gli oggetti PostgreSQL. Tale directory deve essere inizializzata opportuna
 (creazione struttura directory, impostazione dei permessi, ecc.)
 tramite il programma ~initdb~.
 
-*** Importanza di PGDATA
+**** Importanza di PGDATA                                      :B_definition:
    Un cluster può servire *una sola PGDATA* alla volta.
    La directory PGDATA deve essere protetta opportunamente da accessi involontari
    di altri utenti del sistema.
-*** End of block                                               :B_ignoreheading:
+**** End of block                                           :B_ignoreheading:
 :PROPERTIES:
 :BEAMER_env: ignoreheading
 :END:
