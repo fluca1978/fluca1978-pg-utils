@@ -435,7 +435,7 @@ $ initdb --data-checksum --encoding="UTF-8"
 - ~--pwprompt~: richiede la password del superutente di PostgreSQL (comodo per non impostarlo dopo);
 - *~-D~*: l'opzione principale, indica *dove si troveranno i dati*.
 
-*** $PGDATA
+*** PGDATA
 La directory ~$PGDATA~ contiene diversi file e directory, in particolare:
 - ~PG_VERSION~: file di testo con la versione che serve il cluster;
 - *~postgresql.conf~*: configurazione principale del cluster;
