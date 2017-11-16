@@ -440,6 +440,27 @@ e se si tenta di collegarsi:
 psql: FATAL:  the database system is shutting down
 #+end_src
 
+*** Processi
+Una volta avviato il processo principale, denominato /postmaster/, il sistema avrà una serie di processi differenti in esecuzione:
+
+#+begin_src shell
+% pstre
+ \-+- 02057 postgres /usr/local/bin/postgres -D /mnt/data1/pgdata
+   |--= 02058 postgres postgres: pg9.6.5-FreeBSD: logger process    (postgres)
+   |--= 02060 postgres postgres: pg9.6.5-FreeBSD: checkpointer process    (postgres)
+   |--= 02061 postgres postgres: pg9.6.5-FreeBSD: writer process    (postgres)
+   |--= 02062 postgres postgres: pg9.6.5-FreeBSD: wal writer process    (postgres)
+   |--= 02063 postgres postgres: pg9.6.5-FreeBSD: autovacuum launcher process    (postgres)
+   |--= 02064 postgres postgres: pg9.6.5-FreeBSD: stats collector process    (postgres)
+#+end_src
+
+I processi principali sono:
+- ~wal_writer~ che si occupa di rendere persistenti i record di WAL;
+- ~writer~ (denominato anche /bgwriter/) che si occupa di scrivere le pagine dati delle relazioni su disco;
+- ~logger~ (a seconda della configurazione) cattura i log e li ridireziona verso un altro canale;
+- ~checkpointer~ si occupa di schedulare e gestire i checkpoint, istanti speciali ove il sistema raggiunge uno stato consistente;
+- ~autovacuum launcher~ si occupa di gestire i processi autovacuum che, ciclicamente, "puliscono" il cluster;
+- ~stats collector~ colleziona le statistiche di run-time del sistema fornito da ogni altro processo collegato.
 
 ** Layout su disco
 *** PGDATA
@@ -5375,6 +5396,25 @@ I seguenti parametri permettono di modificare il nome dei processi in esecuzione
 - ~update_process_title~ riporta nel nome del processo lo stato del processo stesso.
 
 Questi parametri su alcuni sistemi operativi rappresentano un collo di bottiglia (es. FreeBSD).
+
+Ad esempio con questa configurazione:
+#+begin_src shell
+cluster_name = 'pg9.6.5-FreeBSD'
+update_process_title = on
+#+end_src
+
+E una connessione utente viene quindi visualizzata come:
+
+#+begin_src shell
+02072 postgres postgres: pg9.6.5-FreeBSD: luca testdb 127.0.0.1(21451) idle (postgres)
+#+end_src
+
+e quando l'utente cambia la query il /process title/ si aggiorna di conseguenza:
+
+#+begin_src shell
+02072 postgres postgres: pg9.6.5-FreeBSD: luca testdb 127.0.0.1(21451) VACUUM (postgres)
+#+end_src
+
 *** Logging: dove
 - ~log_destination~ indica dove inviare i log del server:
   + ~syslog~ invia al sistema di logging tramite ~syslog_facility~, ma richiede solitamente modifiche al demone /syslogd/ per accettare i log;
