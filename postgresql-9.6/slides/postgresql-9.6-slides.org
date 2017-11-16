@@ -1057,16 +1057,30 @@ fra doppi apici (sconsigliato):
 Il comando speciale ~SHOW~ mostra il valore di alcuni parametri /run-time/, e analogamente il parametro ~SET~ consente di impostarne il valore.
 
 #+begin_src sql
-#  SHOW enable_seqscan;
+# SHOW enable_seqscan;
  enable_seqscan
 ----------------
  off
-(1 row)
 
 # SET enable_seqscan TO 'on';
 #+end_src
 
 Il comando ~SET~ modifica solo il comportamento della sessione, a meno che non sia specificato ~LOCAL~ che allora persiste solo alla fine (positiva o meno) di una transazione (~SET~ normale svanisce se la transazione abortisce).
+*** ~current_setting~ e ~set_config~
+Le due funzioni speciali ~current_setting()~ e ~set_config()~ corrispondo al comando ~SHOW~ e ~SET~ e consentono di ottenere e impostare il valore di un parametro di configurazione:
+
+#+begin_src sql
+> SELECT current_setting( 'enable_seqscan' );
+ current_setting
+-----------------
+ on
+
+> SELECT set_config( 'enable_seqscan', 'off', false );
+-- terzo parametro true se valido solo per la transazione corrente!
+ set_config
+------------
+ off
+#+end_src
 
 ** Tipi di dato
 *** Numerici
