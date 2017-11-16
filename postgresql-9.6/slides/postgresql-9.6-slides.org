@@ -2434,6 +2434,8 @@ Il comand ~VACUUM~ permette di "ricompattare" lo spaizo disco andando ad elimina
 Il comando può agire su un intero database o su una singola tabella, ed è I/O intensive (deve riorganizzare le pagine dati).
 
 Il comando ~VACUUM~ può essere combinato con ~ANALYZE~: si ricompattano i dati e si aggiornano le statistiche usate dall'ottimizzatore.
+
+*~VACUUM~ può spostare il file fisico di una relazione (ad esempio se la riscrive elimnando le tuple rimosse)*.
 *** Il problema dello xid wraparound
 PostgreSQL numera le transazioni in un intero a 32 bit denominato /xid/. Ogni transazione ottiene uno xid progressivo (e quindi superiore) rispetto alle transazioni precedenti.
 Questo permette di identificare una transazione nel futuro o nel passato comparando gli /xid/.
