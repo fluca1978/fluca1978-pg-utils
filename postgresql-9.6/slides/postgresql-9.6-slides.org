@@ -4691,6 +4691,8 @@ Su alcune piattaforme è bene specificare il comando ~make~ da usare con ~--make
 *** Introduzione
 Un esempio di estensione interessante è ~psql-http~ che fornisce una serie di funzioni per gestire richieste e risposte /HTTP/.
 
+L'estensione utilizza ~curl(1)~ per il proprio funzionamento, e consente anche di impostare alcune informazioni prima di invocare il processo esterno.
+
 *** Installazione
 #+begin_src shell
 % git clone https://github.com/pramsey/pgsql-http.git
