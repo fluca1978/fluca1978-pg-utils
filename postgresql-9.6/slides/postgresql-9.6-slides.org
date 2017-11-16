@@ -1082,6 +1082,14 @@ Le due funzioni speciali ~current_setting()~ e ~set_config()~ corrispondo al com
  off
 #+end_src
 
+*** Interagire con gli altri processi
+Ci sono un serie di funzioni per inviare dei segnali specifici:
+- ~pg_cancel_backend()~ e ~pg_terminate_backend()~ inviano rispettivamente un ~SIGTERM~ e ~SIGKILL~ ad un altro processo backend;
+- ~pg_rotate_logfile()~ invia un ~SIGHUP~ al processo logger collector per indicare di creare un nuovo file di log;
+- ~pg_reload_conf()~ invia un ~SIGHUP~ al postmaster per rileggere il file di configurazione;
+- ~pg_xlog_switch()~ forza la creazione di un nuovo segmento di WAL;
+- ~pg_current_xlog_flush_location()~ fornisce il /LSN/ attuale;
+- ~pg_is_in_recovery()~ e ~pg_is_in_backup()~ indicano se il cluster è in recovery o backup mode.
 ** Tipi di dato
 *** Numerici
 Sono presenti i tipi interni ~integer~, ~smallint~, ~bigint~.
