@@ -397,6 +397,50 @@ esempio su FreeBSD le variabili di ~rc.conf~ sono visibili da
 #  postgresql_profiles=""
 #+end_src
 
+*** Avvio tramite ~pg_ctl~
+Il comando ~pg_ctl~ consente di avviare una istanza in modo /controllato/ senza dover dipendere da script del sistema operativo.
+L'unico parametro obbligatorio è la ~$PGDATA~.
+
+#+begin_src shell
+% sudo -u postgres  pg_ctl -D /mnt/data3/pgdata start -l /tmp/postgresql.log
+#+end_src
+
+Analogamente, per fermare lo stesso cluster si usa:
+
+#+begin_src shell
+% sudo -u postgres  pg_ctl -D /mnt/data3/pgdata stop                                                                     ~
+waiting for server to shut down.... done
+server stopped
+#+end_src
+*** Arresto del server
+In generale /non si può rompere una istanza PostgreSQL/, anche in caso di un arresto forzato questa saprà come riavviarsi.
+
+Le modalità di arresto "controllato" di una istanza sono tre:
+- ~smart~ (default) impone che il cluster attenda la disconessione volontaria di tutti i client e dei processi di backup, dopodiché si spegnerà;
+- ~fast~ forza una disconnessione di tutti i client e dei processi di backup, e si spegne;
+- ~immediate~ è l'equivalente di un ~SIGKILL~.
+
+Solo il caso ~immediate~ produce un /crash/ del sistema, e quindi al riavvio il sistema dovrà ripercorrere i WAL per riportarsi ad uno stato coerente.
+
+*** Arresto e connesioni in ingresso
+Nei meccanismi di spegimento ~smart~  e ~fast~ il cluster non accetterà nessuna ulteriore connessione in ingresso attendento invece il termine di quelle già attive.
+
+#+begin_src shell
+% sudo -u postgres  pg_ctl -D /mnt/data1/pgdata stop -m smart
+waiting for server to shut down...................
+pg_ctl: server does not shut down
+HINT: The "-m fast" option immediately disconnects sessions rather than
+waiting for session-initiated disconnection.
+#+end_src
+
+e se si tenta di collegarsi:
+
+#+begin_src shell
+% psql -h localhost -U luca testdb
+psql: FATAL:  the database system is shutting down
+#+end_src
+
+
 ** Layout su disco
 *** PGDATA
 PostgreSQL utilizza il filesystem del sistema operativo per salvare i dati in modo
