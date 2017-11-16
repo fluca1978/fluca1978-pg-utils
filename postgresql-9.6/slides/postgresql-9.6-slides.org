@@ -4705,6 +4705,56 @@ e all'interno del database che deve usare le utilità HTTP occorre creare l'este
 #+end_src
 
 *** ~pgsql-http~ informazioni generali
+Sono messe a disposizione una serie di funzioni particolari di tipo ~http*~, le principali:
+- ~http_get()~ e ~http_post~ invocano l'URL specificato con i dati eventualmente passati come metodo /GET/ o /POST/;
+- ~http_head()~ manipola l'header http;
+- ~urlencode~ per creare stringhe con caratteri speciali;
+- ~http_set_curlopt()~ e ~http_reset_curlopt()~ imposta una opzione per ~curl~ o le resetta tutte.
+
+*** ~pgsql-http~ richieste e response
+I metodi di ~pgsql-http~ manipola un tipo particolare ~http_request~ e il corrispondente ~http_reponse~, definiti come:
+#+begin_src sql
+# \d http_request
+
+    Column    |       Type
+--------------+-------------------
+ method       | http_method
+ uri          | character varying
+ headers      | http_header[]
+ content_type | character varying
+ content      | character varying
+
+# \d http_response
+
+    Column    |       Type
+--------------+-------------------
+ status       | integer
+ content_type | character varying
+ headers      | http_header[]
+ content      | character varying
+#+end_src
+
+*** Esempio di utilizzo di ~pgsql-http~
+Quali sono i link da cui scaricare le versioni di PostgreSQL?
+#+begin_src sql
+# SELECT unnest( xpath( '/rss/channel/item/link/text()'::text, content::xml ) )
+    FROM http_get( 'https://www.postgresql.org/versions.rss' );
+
+                                 unnest
+------------------------------------------------------------------------
+ https://www.postgresql.org/docs/10/static/release-10-1.html
+ https://www.postgresql.org/docs/9.6/static/release-9-6-6.html
+ https://www.postgresql.org/docs/9.5/static/release-9-5-10.html
+ https://www.postgresql.org/docs/9.4/static/release-9-4-15.html
+ https://www.postgresql.org/docs/9.3/static/release-9-3-20.html
+ https://www.postgresql.org/docs/9.2/static/release-9-2-24.html
+ https://www.postgresql.org/docs/9.1/static/release-9-1-24.html
+ https://www.postgresql.org/docs/9.0/static/release-9-0-23.html
+ https://www.postgresql.org/docs/8.4/static/release-8-4-22.html
+ https://www.postgresql.org/docs/8.3/static/release-8-3-23.html
+ https://www.postgresql.org/docs/8.2/static/release-8-2-23.html
+...
+#+end_src
 
 * Foreign Data Wrapper
 ** SQLMED & FDW
