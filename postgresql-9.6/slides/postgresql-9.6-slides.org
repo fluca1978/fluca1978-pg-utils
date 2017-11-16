@@ -7629,6 +7629,12 @@ Esiste un fork di PgAdminIII.
               --with-wx-version=3.1
 % make && sudo make install
 #+end_src
+
+/Buona fortuna!/
+#+begni_src shell
+Makefile:478: recipe for target 'all' failed
+make: *** [all] Error 2
+#+end_src
 * Licenza
 This work is licensed under the *Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License*.
 To view a copy of this license,
