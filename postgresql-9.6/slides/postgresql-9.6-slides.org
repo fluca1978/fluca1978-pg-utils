@@ -1994,6 +1994,16 @@ spcacl     |
 spcoptions | {seq_page_cost=2}
 #+end_src
 
+*** Tablespace: cosa avviene fisicamente
+*I tablespaces sono un meccanismo per /scappare/ dalla directory ~$PGDATA~* e vengono infatti linkati all'interno di essa tramite ~pg_tblspc~:
+
+#+begin_src shell
+% sudo ls -l /mnt/data1/pgdata/pg_tblspc
+lrwx------  1 postgres  postgres  24 Nov 13 17:43 19749 -> /mnt/data2/my_tablespace
+lrwx------  1 postgres  postgres  26 Nov 13 17:50 19756 -> /mnt/data2/my_tablespace_2
+#+end_src
+
+Occorre tenere presente questo aspetto quando si decide di spostare in blocco ~$PGDATA~ o qualora un mount point sia malfunzionante.
 ** Copy
 *** Importare dati con ~COPY~
 Il comando ~COPY~ permette di importare dati da un file in una tabella.
