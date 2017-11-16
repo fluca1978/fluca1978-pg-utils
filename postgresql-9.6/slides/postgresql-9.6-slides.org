@@ -4687,6 +4687,25 @@ Su alcune piattaforme è bene specificare il comando ~make~ da usare con ~--make
 ...
 #+end_src
 
+** pgsql-http
+*** Introduzione
+Un esempio di estensione interessante è ~psql-http~ che fornisce una serie di funzioni per gestire richieste e risposte /HTTP/.
+
+*** Installazione
+#+begin_src shell
+% git clone https://github.com/pramsey/pgsql-http.git
+% cd psql-http
+% gmake && sudo gmake install
+#+end_src
+
+e all'interno del database che deve usare le utilità HTTP occorre creare l'estensione:
+
+#+begin_src sql
+# CREATE EXTENSION http;
+#+end_src
+
+*** ~pgsql-http~ informazioni generali
+
 * Foreign Data Wrapper
 ** SQLMED & FDW
 *** Introduzione
