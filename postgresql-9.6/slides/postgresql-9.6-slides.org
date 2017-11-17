@@ -5919,12 +5919,33 @@ La vista speciale ~pg_user_stat_indexes~ fornisce indicazioni sull'utilizzo degl
  evento           | evento_pkey                |        0 |            0 |             0
 #+end_src
 ** EXPLAIN
+*** Introduzione
+~EXPLAIN~ è un comando di utilita' che consente di interagire con l'ottimizzatore.
+
+PostgreSQL usa un ottimizzatore basato sul */costo/*: la query viene spezzata in un albero di */nodi/* da eseguire, *ogni nodo avrà un costo* e la somma dei costi fornisce il costo della query stessa. *Esistono piu' /percorsi/ per estrarre i dati da una query* (es. con o senza indice) e il piano di esecuzione che risulta avere il costo inferiore è quello che PostgreSQL sceglie per l'esecuzione.
+
+**** Costo                                                     :B_definition:
+Il costo di un nodo/piano è espresso in una misura aleatoria relativa e fine a se stessa.
+Talve valore dipende fortemente dal tempo di esecuzione ma anche dall'impiego delle risorse.
+**** End of block                                           :B_ignoreheading:
+:PROPERTIES:
+:BEAMER_env: ignoreheading
+:END:
+
+*** ~EXPLAIN~ fornisce un solo piano di uscita
+Il comando ~EXPLAIN~ visualizza il piano migliore scelto fra quelli possibili, e di conseguenza *NON* indica perché un indice non viene usato, *NON* suggerisce la riscrittura di query per ottimizzare il lavoro, *NON* indica come ottenere risultati migliori.
+
+Occorre prendere dimestichezza con lo strumento e fare dei tentativi per migliorare una query lenta!
+
+/Esiste anche il modulo ~autoexplain~ che consente di inserire nei log automaticamente un ~EXPLAIN~ delle query che sono durate piu' di un certo tempo/.
+
+
 *** ~EXPLAIN~ e ~ANALYZE~
 Il comando ~EXPLAIN~ fornisce indicazione sul piano che sarà usato per fare l'accesso alle tuple.
 
 *Il comando ~EXPLAIN~ non effettua la query*, simula solo l'accesso ai dati. Può essere accompagnato da ~ANALYZE~ per eseguire effettivamente la query e aggiornare anche le statistiche di sistema.
 
-/Esiste anche il modulo ~autoexplain~ che consente di inserire nei log automaticamente un ~EXPLAIN~ delle query che sono durate piu' di un certo tempo/.
+/ATTENZIONE: siccome ~EXPLAIN ANALYZE~ eseguirà la query, se questa modifica le tuple (es. ~INSERT~, ~UPDATE~, ~DELETE~) è bene inserire il blocco in una transazione e fare un rollback!/
 
 *** Output di ~EXPLAIN~
 Il comando ~EXPLAIN~ fornisce come output una serie di nodi, ciascuno che indica:
