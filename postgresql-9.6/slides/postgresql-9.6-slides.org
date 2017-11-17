@@ -5945,6 +5945,7 @@ Il comando ~EXPLAIN~ fornisce indicazione sul piano che sarà usato per fare l'a
 
 *Il comando ~EXPLAIN~ non effettua la query*, simula solo l'accesso ai dati. Può essere accompagnato da ~ANALYZE~ per eseguire effettivamente la query e aggiornare anche le statistiche di sistema.
 
+*Solitamente si vuole usare ~EXPLAIN ANALYZE~* a meno che ci siano effetti sui dati o la query esegua per troppo/infinito tempo.
 /ATTENZIONE: siccome ~EXPLAIN ANALYZE~ eseguirà la query, se questa modifica le tuple (es. ~INSERT~, ~UPDATE~, ~DELETE~) è bene inserire il blocco in una transazione e fare un rollback!/
 
 *** Output di ~EXPLAIN~
@@ -6009,6 +6010,42 @@ E' possibile ottenere diversi formati di output di ~EXPLAIN~ mediante l'opzione 
  ]
 #+end_src
 
+*** Buffers di ~EXPLAIN~
+Il comando ~EXPLAIN ANALYZE~ accetta l'opzione particolare ~buffers~ che consente di indicare dove sono state trovate le informazioni:
+#+begin_src sql
+> EXPLAIN (ANALYZE, BUFFERS)
+   SELECT * FROM evento WHERE description like '%10%';
+                                                   QUERY PLAN
+-----------------------------------------------------------------------------------------------------------------
+ Seq Scan on evento  (cost=0.00..39806.00 rows=107668 width=18) (actual time=0.122..271.319 rows=113094 loops=1)
+   Filter: (description ~~ '%10%'::text)
+   Rows Removed by Filter: 1996586
+   Buffers: shared hit=64 read=13371
+ Planning time: 1.679 ms
+ Execution time: 285.588 ms
+#+end_src
+
+Si ha che ~64~ buffers erano già in memoria e ~13371~ sono stati riletti da disco.
+
+*** Effetti collaterali di un sistema in produzione
+Quando si esegue un ~EXPLAIN ANALYZE~ si deve tenere in considerazione che alcuni dati potrebbero essere già presenti o assenti dallo shared buffer, e questo dipende dal resto delle query che stanno lavorando sul sistema. Ad esempio se si esegue ricorsivamente la query di explain precedente (ad esempio con ~\watch~) si ottiene:
+
+#+begin_src sql
+> EXPLAIN (ANALYZE, BUFFERS)
+  SELECT * FROM evento WHERE description like '%10%';
+                                                   QUERY PLAN
+-----------------------------------------------------------------------------------------------------------------
+ Seq Scan on evento  (cost=0.00..39806.00 rows=107668 width=18) (actual time=0.000..232.473 rows=113094 loops=1)
+   Filter: (description ~~ '%10%'::text)
+   Rows Removed by Filter: 1996586
+   Buffers: shared hit=13435
+ Planning time: 0.085 ms
+ Execution time: 242.981 ms
+#+end_src
+
+/ossia tutti i dati sono già in memoria!/ Si noti che il tempo è calato, anche se non drasticamente.
+*** Verbosità di ~EXPLAIN~
+L'opzione verbose consente di visualizzare alcuni dati in piu' in uscita, come ad esempio il nome delle colonne restituite da ogni nodo e il nome completo di ogni relazione in alias (utile ad esempio con i join).
 *** Nodi annidati in ~EXPLAIN~
 #+begin_src sql
 > EXPLAIN
