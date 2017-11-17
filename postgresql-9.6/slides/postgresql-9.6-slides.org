@@ -1213,6 +1213,7 @@ Gli indici creati su una tabella /unlogged/ sono anch'essi automaticamente unlog
 > CREATE UNLOGGED TABLE baz( b text );
 #+end_src
 
+** Foreign Keys
 *** Foreign Keys
 Vegono specificate con ~REFERENCES~ o ~FOREIGN KEY~ e supportano piu' colonne.
 Entrambe le sintassi permettono di specificare una strategia di ~NATCH~:
@@ -1282,6 +1283,7 @@ ERROR:  duplicate key value violates unique constraint "c_val_key"
 DETAIL:  Key (val)=(1) already exists.
 #+end_src
 
+** Commenti
 *** Commenti
 L'istruzione speciale ~COMMENT~ permette di agganciare dei commenti agli oggetti definiti nel database.
 La sintassi è ~COMMENT ON <type> IS 'BLAH'~.
