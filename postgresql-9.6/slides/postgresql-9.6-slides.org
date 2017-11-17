@@ -1213,6 +1213,27 @@ Gli indici creati su una tabella /unlogged/ sono anch'essi automaticamente unlog
 > CREATE UNLOGGED TABLE baz( b text );
 #+end_src
 
+
+** Tablesample
+*** Estrarre un sottoinsieme dei dati
+Una ~SELECT~ permette di specificare un meccanismo di /sampling/ mediante la clausola ~TABLESAMPLE~ al quale si specifica l'algoritmo e la percentuale di tabella da campionare. Il risultato è l'applicazione dei vincoli della query sul campionamento della tabella.
+Gli algoritmi al momento disponibili sono:
+- ~SYSTEM~ campionamento basato sui blocchi di dati (tutte le tuple della pagina dati selezionata sono ritornate);
+- ~BERNOULLI~ campionamento sulle tuple.
+
+In entrambi i casi la percentuale di tuple ritornate è una approssimazione del valore specificato.
+
+*** Esempio di tablesample
+#+begin_src sql
+> SELECT count(*)
+  FROM evento
+  TABLESAMPLE SYSTEM ( 0.2 )
+  WHERE mod( pk, 2 ) = 0;
+#+end_src
+
+Si seleziona il 20% delle pagine dati della relazione, e poi si filtra per valore di ~pk~ pari.
+*Il sampling è applicato prima delle clausole di filtro!*
+
 ** Foreign Keys
 *** Foreign Keys
 Vegono specificate con ~REFERENCES~ o ~FOREIGN KEY~ e supportano piu' colonne.
