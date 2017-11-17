@@ -6098,7 +6098,7 @@ Tutti i dati sono quindi accessibili solo tramite l'indice, e quindi è possibil
 
 C'è però una complicazione: gli indici non memorizzano i dati di visibilità, quindi l'indice potrebbe referenziare tuple invisibili (MVCC). Per risolvere questo problema ogni pagina heap memorizza un bit che indica se tutte le sue tuple sono visibili. Se non tutte le tuple sono visibili questo accesso si trasforma di fatto in un /Index Scan/.
 *** Nested Loop (~Nested Loop~)
-E' un meccanismo di join fra tabelle.
+E' il meccanismo classico di join.
 La tabella di destra viene percorsa con due strategie:
 - /inner/ ~Seq Scan~
   1. la tabella /outer/ (sinistra) viene percorsa sequenzialmente;
@@ -6116,6 +6116,24 @@ La tabella di destra viene percorsa con due strategie:
   2. la tabella /outer/ (sinistra) viene percorsa sequenzialmente;
   3. per ogni valore della /outer/ si estraggono tutti i valori della /inner/ che fanno match (sono ordinati);
   4. al primo valore della /outer/ che non fa match si avanza al prossimo valore della /inner/ e si riparte dalla stessa posizione della /inner/.
+- ~Lateral Join~ viene usato quando ci sono delle espressioni da calcolare dinamicamente;
+- ~Semi Join~ è un join parziale per la tabella /outer/;
+- ~Anti Join~ viene usato con condizioni di esclusione, ad esempio ~NOT IN(..)~.
+*** Aggregazioni
+Quando si usa una funzione di aggregazione si possono incontrare i seguenti nodi:
+- ~GroupAggregate~ è il caso classico con ~GROUP BY~;
+- ~HashAggregate~ raggruppamento in memoria mediante una tabella hash;
+- ~WindowAgg~ usato quando si ha una window function.
+*** Nodi /di servizio/
+Ci sono una serie di nodi per le operazioni principali:
+- ~Sort~ usato per il sorting esplicito o implicito;
+- ~Limit~ quando compare una clausola ~LIMIT~;
+- ~Unique~ usato per ~DISTINCT~ oppure ~UNION~.
+*** Nodi per l'unione di query
+- ~SubqueryScan~ effettua il join fra una sottoquery e quella principale;
+- ~CTEScan~ effettua il join fra una CTE e la query principale;
+- ~Materialize~ crea un recordset in memoria partendo da una porzione di risultati di un nodo;
+- ~Append~ usata con ~UNION ALL~.
 ** Statistische
 *** Dove sono le statistische?
 Il catalogo ~pg_statistic~ contiene le informazioni statistiche su ogni attributo di ogni tabella, ad sempio:
