@@ -3251,7 +3251,6 @@ END;
 $BODY$ LANGUAGE plpgsql;
 #+end_src
 
-*** RETURN QUERY: esempio
 *** IF...ELSE
 #+begin_src sql
   IF eta >= 18 THEN
@@ -3310,6 +3309,7 @@ Analogo al ciclo /for/ del linguaggio C, senza la definizione di incremento dive
 #+end_src
 o analogamento al ciclo for del linguaggio C:
 #+begin_src sql
+<<LP_ETA>>
   FOR current_eta IN 18..30 BY 2 LOOP
      RAISE INFO 'vALORE %', current_eta;
   END LOOP LP_ETA;
@@ -3386,7 +3386,7 @@ END;
 *** PERFORM: il problema
 Se in una stored procedure si utilizza una query che ritorna dei risultati,
 ma si vuole scartare l'insieme dei risultati stessi, occorre usare ~PERFORM~.
-In altre parole: *nelle stored procedures è possibile usare ogni comando SQL che non ritorni risultati o dove i risultati siano /memorizzati in variabili/ (anche di iterazione)*.
+In altre parole: *nelle stored procedures è possibile usare ogni comando SQL che non ritornino risultati o dove i risultati siano /memorizzati in variabili/ (anche di iterazione)*.
 
 #+begin_src sql
 CREATE OR REPLACE FUNCTION do_select()
@@ -3416,9 +3416,9 @@ END;
 $BODY$ LANGUAGE plpgsql;
 #+end_src
 
-*** PERFORM vs SELECT                                          :B_definition:
+**** PERFORM vs SELECT 					       :B_definition:
     *PERFORM* sostituisce *SELECT* in una query!
-*** End of block                                               :B_ignoreheading:
+**** End of block 					    :B_ignoreheading:
 :PROPERTIES:
 :BEAMER_env: ignoreheading
 :END:
