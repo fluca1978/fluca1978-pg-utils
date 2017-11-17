@@ -8022,6 +8022,11 @@ make: *** [all] Error 2
 #+end_src
 
 * Corruzione dei dati
+*** Page Checksum
+Se il cluster è stato inizializzato opportunamente (opzione ~-k~ di ~initdb~) ogni pagina dati ha associato un /checksum/. Tale checksum viene controllato ogni volta che la pagina dati viene portata da disco nello shared buffer, se il checksum non corrisponde PostgreSQL segnala l'anomalia e si rifiuta di leggere i dati da quella pagina.
+
+Se l'opzione non è abilitata PostgreSQL *non* verifica l'integrità della pagina e quindi può inserire in memoria dati sporchi.
+
 *** Individuare una tabella da corrompere
 La seguente query identifica una tabella utente (non ~pg*~) ordinando per numero di pagine dati:
 #+begin_src sql
@@ -8123,6 +8128,18 @@ INFO:  vacuuming "public.evento"
 WARNING:  page verification failed, calculated checksum 22447 but expected 19660
 WARNING:  invalid page in block 1 of relation base/19554/19857; zeroing out page
 INFO:  "evento": found 0 removable, 2109837 nonremovable row versions in 13437 pages
+#+end_src
+
+*** Autovacuum non ripulisce le pagine corrotte
+Il processo di autovacuum, contrariamente a ~VACUUM~, ignora l'opzione ~zero_damaged_pages~ anche se impostato. Questo perché l'ozione è considerata pericolosa, e sbirciando nel codice sorgente di autovacuum si trova che:
+
+#+begin_Src c
+/*
+ * Force zero_damaged_pages OFF in the autovac process, even if it is set
+ * in postgresql.conf.  We don't really want such a dangerous option being
+ * applied non-interactively.
+ */
+SetConfigOption("zero_damaged_pages", "false", PGC_SUSET, PGC_S_OVERRIDE);
 #+end_src
 
 * Licenza
