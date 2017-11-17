@@ -5477,11 +5477,14 @@ e quando l'utente cambia la query il /process title/ si aggiorna di conseguenza:
 *** ~shared_buffers~
 E' uno dei parametri chiave di una istanza.
 
-PostgreSQL mantiene un'area di memoria ove vengono /trasferite/ le pagine dati lette da disco. Questo spazio di memoria è denominato /shared buffers/. Solitamente non va incrementato oltre il 40% della memoria disponibile sulla macchina (dedicata) per consentire anche alla cache del sistema operativo di funzionare.
+PostgreSQL mantiene un'area di memoria ove vengono /trasferite/ le pagine dati lette da disco. Questo spazio di memoria è denominato /shared buffers/. Solitamente non va incrementato oltre il 40% della memoria disponibile sulla macchina (dedicata) per consentire anche alla cache del sistema operativo di funzionare, e generalmente lo si tiene al 25% della memoria totale disponibile.
 *** ~work_mem~ e ~maintanance_work_mem~
 La ~work_mem~ specifica quanta memoria viene messa a disposizione di operazioni di /sorting/ e /hashing/ prima che le query inizi a scrivere i dati su disco (temporaneamente). Va tenuto presente che ogni sessione parallela può usare questa quantità di memoria.
+Non importa aumentarla oltre 128MB se non per carichi di lavoro intensivi (reporting).
+Ha spesso senso impostarla a ~<memoria RAM>/ (max_connections/2)~.
 
 ~maintanance_work_mem~ indica la memoria assegnata ai comandi di gestione dei dati, quali ad esempio ~VACUUM~, ~CREATE INDEX~. Anche qui il parametro indica la memoria usabile per ogni sessione in parallelo, anche se una sessione può eseguire solo uno di tali comandi in un dato momento. Inoltre con /autovacuum/ attivo, la memoria usata può diventare moltiplicata per ~autovacuum_max_workers~.
+Generalmente la si imposta a 1/32 della memoria totale.
 
 *** Parametri relativi a VACUUM e ANALYZE
 Siccome ~VACUUM~ e ~ANALYZE~ sono operazioni intense per l'I/O, i seguenti parametri cercano di contenere l'impatto:
@@ -5508,7 +5511,8 @@ I parametri principali sono:
 - ~bgwriter_delay~ indica, in multipli di 10 ms, di quanto sospendere il Background Writer fra un ciclo e un altro.
 - ~bgwriter_lru_maxpgaes~ indica quante pagine modificate il background worker deve scaricare ad ogni ciclo;
 - ~bgwriter_lru_multiplier~ indica di quanto moltiplicare il numero di pagine stimate come /nuove/ per il prossimo ciclo;
-- ~bgwriter_flush_after~ indica di forzare un /flush/ del sistema operativo dopo che sono stati scritti dal Background Writer questi bytes di dati.
+- ~bgwriter_flush_after~ indica di forzare un /flush/ del sistema operativo dopo che sono stati scritti dal Background Writer questi bytes di dati;
+- ~effective_io_concurrency~ indica quanti processi di I/O paralleli possono essere generati al massimo. Ad esempio su un RAID-0 si può aumentare questo valore al numero di dischi che compongono l'array.
 *** WAL Levels
 Il parametro ~wal_level~ stabilisce il tipo di funzionamento per l'archiviazione dei WAL. In base al livello sono aggiunte piu' o meno informazioni nei WAL.
 I valori possibili sono:
@@ -5548,7 +5552,7 @@ I seguenti parametri abilitano o disabilitano la gestione di alcuni metodi di ac
 I costi dell'ottimizzatore sono in valori arbitrari e relativi: quello che conta è solo la loro differenza.
 I parametri sono:
 - ~seq_page_cost~ costo per il recupero di una pagina dati in modalità sequenziale;
-- ~random_page_cost~ costo per l'accesso non sequenziale ad una pagina dati (tramite indice);
+- ~random_page_cost~ costo per l'accesso non sequenziale ad una pagina dati, tramite indice (~4~ per disco meccanico, ~1.5~ per disco SSD);
 - ~cpu_tuple_cost~, ~cpu_index_tuple_cost~, ~cpu_operator_cost~ indicano il costo di /analisi/ di una tupla, indice e operatore;
 - ~default_statistics_target~ il valore di default per il campionamento di /Most Common Values/ e degli istogrammi;
 - ~constraint_exclusion~ permette di sfruttare le /constraint/ di tabella per ottimizzare le query.
