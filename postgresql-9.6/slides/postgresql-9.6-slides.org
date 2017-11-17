@@ -1233,6 +1233,53 @@ In entrambi i casi la percentuale di tuple ritornate è una approssimazione del 
 
 Si seleziona il 20% delle pagine dati della relazione, e poi si filtra per valore di ~pk~ pari.
 *Il sampling è applicato prima delle clausole di filtro!*
+** Lateral
+*** Operatore ~LATERAL~
+In unq ~SELECT~ l'uso di ~LATERAL~ consente di aggregare una sottoquery in modo che sia valutata per ogni tupla della query principale.
+
+*** Esempio di utilizzo: senza ~LATERAL~
+Ad esempio, in questa query:
+#+begin_src sql
+> SELECT * FROM evento
+  JOIN (
+      SELECT pk
+      FROM evento
+      WHERE mod( pk, 2 ) <> 0 ) evs
+  ON evs.pk = evento.pk;
+#+end_src
+
+viene prima valutata la query innestata (subquery) e poi la query principale. Questo viene confermato dai nodi di esecuzione della query:
+
+#+begin_src sql
+  QUERY PLAN
+--------------------------------------------------------------------------------------------------------
+ Merge Join  (cost=0.86..178533.01 rows=2099132 width=22)
+   Merge Cond: (evento.pk = evento_1.pk)
+   ->  Index Scan using evento_pkey on evento  (cost=0.43..68235.63 rows=2109680 width=18)
+   ->  Index Only Scan using evento_pkey on evento evento_1  (cost=0.43..78784.03 rows=2099132 width=4)
+         Filter: (mod(pk, 2) <> 0)
+#+end_src
+
+*** Esempio di utilizzo: con ~LATERAL~
+La stessa query riscritta con ~LATERAL~ (attenzione ci vuole una condizione di join, in questo caso fittizia):
+#+begin_src sql
+> SELECT * FROM evento
+  JOIN LATERAL (
+           SELECT pk FROM evento
+           WHERE mod( pk, 2 ) <> 0 ) evs
+  ON TRUE;
+#+end_src
+
+In questo caso per ogni tupla della tabella esterna si valuta la query annidata:
+#+begin_src sql
+ QUERY PLAN
+-------------------------------------------------------------------------------------
+ Nested Loop  (cost=0.00..72655670831.83 rows=4428496797760 width=22)
+   ->  Seq Scan on evento  (cost=0.00..34531.80 rows=2109680 width=18)
+   ->  Materialize  (cost=0.00..63775.86 rows=2099132 width=4)
+         ->  Seq Scan on evento evento_1  (cost=0.00..45080.20 rows=2099132 width=4)
+               Filter: (mod(pk, 2) <> 0)
+#+end_src
 
 ** Foreign Keys
 *** Foreign Keys
