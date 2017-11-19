@@ -6187,8 +6187,8 @@ La tabella di destra viene percorsa con due strategie:
   3. per ogni valore della /outer/ si estraggono tutti i valori della /inner/ che fanno match (sono ordinati);
   4. al primo valore della /outer/ che non fa match si avanza al prossimo valore della /inner/ e si riparte dalla stessa posizione della /inner/.
 - ~Lateral Join~ viene usato quando ci sono delle espressioni da calcolare dinamicamente;
-- ~Semi Join~ è un join parziale per la tabella /outer/;
-- ~Anti Join~ viene usato con condizioni di esclusione, ad esempio ~NOT IN(..)~.
+- ~Semi Join~ e ~Anti Join~ sono dei join /parziali/ usati per verificare l'esistenza o meno di chiavi fra le tabelle, ad esempio clausole ~EXISTS~ e ~IN~ e relative negazioni.
+
 *** Aggregazioni
 Quando si usa una funzione di aggregazione si possono incontrare i seguenti nodi:
 - ~GroupAggregate~ è il caso classico con ~GROUP BY~;
