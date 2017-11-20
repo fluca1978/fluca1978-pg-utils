@@ -3819,6 +3819,57 @@ di una cancellazione ~DELETE FROM <table> WHERE CURRENT OF <cursor>~.
   END LOOP;
   CLOSE my_curs;
 #+end_src
+** Listen/Notify
+*** Comunicazione fra sessioni (IPC)
+PostgreSQL prevede un meccanismo di comunicazione a /canali/ definito tramite due primitive:
+- ~LISTEN~ accetta messaggi su un determinato canale;
+- ~NOTIFY~ invia un messaggio su un determinato canale.
+
+Ogni messaggio dispone di un eventuale /payload/, ovvero di un corpo.
+
+L'interazione è *asincrona*, è compito del client applicativo interrogare il sistema di notifica. Questo significa, ad esempio,
+che il terminale ~psql~ non visualizzerà immediatamente le notifiche ma solo all'esecuzione di un nuovo comando.
+
+*** Primo esempio di ~LISTEN~ e ~NOTIFY~
+Il nome del canale è arbitrario, si deve scegliere opportunamente per evitare sovrapposizioni.
+In una prima sessione:
+#+begin_src sql
+> NOTIFY my_channel, 'First event';
+> NOTIFY my_channel, 'Second event';
+#+end_src
+
+e in un'altra sessione, *quando viene eseguito un qualche statement*:
+#+begin_src sql
+> SELECT * FROM evento;
+...
+Asynchronous notification "my_channel"
+    with payload "First event" received
+    from server process with PID 969.
+Asynchronous notification "my_channel"
+    with payload "Second event" received
+    from server process with PID 969.
+#+end_src
+
+*** Funzioni di supporto
+Il sistema di notifica usa in realtà una coda, e la funzione ~pg_notify()~ può essere usata per notificare un determinato canale con un determinato payload.
+
+Non esiste una funzione di ricezione, essendo quella a carico dell'interfaccia client (ad esempio ~DBI~ di Perl usa un metodo ~pg_notifies~).
+
+*** Esempio di ~NOTIFY~ tramite rule
+#+begin_src sql
+> CREATE OR REPLACE RULE d_evento
+AS ON DELETE TO evento
+DO ALSO
+SELECT pg_notify( 'delete_channel',
+                  'Eliminato evento ' || OLD.pk );
+#+end_src
+
+e quando si effettua una cancellazione si ottiene, in un'altra sessione:
+#+begin_src sql
+Asynchronous notification "delete_channel"
+    with payload "Eliminato evento 1014713" received
+    from server process with PID 969
+#+end_src
 * Triggers
 ** Triggers DML
 *** Introduzione ai triggers
