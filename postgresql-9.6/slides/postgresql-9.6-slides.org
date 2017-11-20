@@ -2221,7 +2221,8 @@ Il comando  ~\copy~ del client ~psql~ effettua un ~COPY~ ma dal client verso il 
 *** Informazioni sulla transazione corrente
 In generale tutti i valori ~current_*~ forniscono informazioni sullo stato attuale, a questo si possono aggiungere alcune funzioni di utilità quali:
 - ~txid_current()~ restituisce il transaction identifier della transazione corrente;
-- ~pg_backend_pid()~ fornisce il process ID (del sistema operativo) della connessione corrente (o meglio del processo backend che sta servendo la connessione corrente).
+- ~pg_backend_pid()~ fornisce il process ID (del sistema operativo) della connessione corrente (o meglio del processo backend che sta servendo la connessione corrente);
+- ~current_role~ e ~current_user~ cono equivalenti!
 
 #+begin_src sql
 > SELECT current_user, current_date,
@@ -2235,6 +2236,26 @@ now            | 2017-11-20 13:29:56.139872+01
 txid_current   | 3063
 pg_backend_pid | 775
 #+end_src
+*** Informazioni di connessione
+Ci sono dei valori speciali:
+- ~current_schema()~ e ~current_database()~ indicano lo schema corrente e il database corrente;
+- ~inte_client_addr()~, ~inet_client_port()~ e le duali ~inet_server_addr()~ e ~inet_server_port()~ forniscono indicazioni TCP/IP.
+
+#+begin_src sql
+# SELECT current_user
+    || '@' || inet_server_addr()
+    || ':' || inet_server_port() AS myself,
+    inet_client_addr() || ':'
+    || inet_client_port() AS connected_from
+    current_database(),
+    current_schema();
+
+myself           | postgres@127.0.0.1/32:5432
+connected_from   | 127.0.0.1/32:12951
+current_database | testdb
+current_schema   | public
+#+end_src
+
 *** Informazioni di dimensione di una tabella
 Le dimensioni di un oggetto sono ottenute tramite una serie di funzioni ~pg_*_size()~:
 - ~pg_column_size()~ fornisce la dimensione in bytes di una colonna;
