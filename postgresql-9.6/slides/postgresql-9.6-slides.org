@@ -3819,6 +3819,50 @@ di una cancellazione ~DELETE FROM <table> WHERE CURRENT OF <cursor>~.
   END LOOP;
   CLOSE my_curs;
 #+end_src
+*** Multicursori
+E' possibile definire una funzione che ritorni piu' di un cursorse alla volta. In questo caso ad ogni cursore viene associato un nome, e all'interno della stessa transazione è possibile recuperare i dati di un cursorse.
+
+*** Multicursori: esempio di funzione
+#+begin_src sql
+> CREATE OR REPLACE FUNCTION f_query_more_than_one()
+  RETURNS SETOF refcursor
+  AS $BODY$
+      DECLARE
+          persona_curs refcursor;
+          evento_curs  refcursor;
+      BEGIN
+         OPEN persona_curs FOR SELECT * FROM persona;
+         RETURN NEXT persona_curs;
+
+         OPEN evento_curs FOR SELECT * FROM evento;
+         RETURN NEXT evento_curs;
+
+      RETURN;
+  END;
+  $BODY$
+  LANGUAGE plpgsql;
+#+end_src
+
+*** Multicursori: esempio di utilizzo
+
+#+begin_src sql
+> BEGIN;
+> SELECT f_query_more_than_one();
+ f_query_more_than_one
+-----------------------
+ <unnamed portal 5>
+ <unnamed portal 6>
+
+> FETCH NEXT FROM "<unnamed portal 5>";
+  pk   | nome | cognome |  codice_fiscale  | sesso | eta
+-------+------+---------+------------------+-------+-----
+ 12007 | Luca | Ferrari | FRRLCU78L19F257B | M     |   1
+
+> FETCH NEXT FROM "<unnamed portal 6>";
+   pk    |  description
+---------+---------------
+ 1017695 |  Evento 15695
+#+end_src
 ** Listen/Notify
 *** Comunicazione fra sessioni (IPC)
 PostgreSQL prevede un meccanismo di comunicazione a /canali/ definito tramite due primitive:
