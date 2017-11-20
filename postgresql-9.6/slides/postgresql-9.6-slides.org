@@ -1534,6 +1534,18 @@ Qualora il cast non sia ambiguo, è possibile ometterlo, ovvero:
 #+begin_src sql
 > SELECT '10' + 3;
 #+end_src
+*** ~pg_typeof~
+La funzione ~pg_typeof~ può essere usata per vedere come il sistema cerca di interpretare i tipi di dato:
+
+#+begin_src sql
+> SELECT pg_typeof( 1234 ) AS first,
+         pg_typeof( 1234.56 ) AS second,
+         pg_typeof( 'Hello' || 'World' ) AS third;
+
+  first  | second  | third
+---------+---------+-------
+ integer | numeric | text
+#+end_src
 
 ** Alcuni statement particolari
 *** CASE
