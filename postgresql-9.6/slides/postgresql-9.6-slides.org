@@ -2256,6 +2256,16 @@ current_database | testdb
 current_schema   | public
 #+end_src
 
+*** Uptime del servizio
+La funzione ~pg_postmaster_start_time()~ indica quando è stato avviato il cluster, e quindi può essere usata per ottenere una sorta di /uptime/ del servizio:
+
+#+begin_src sql
+# SELECT date_trunc( 'second',
+   now() - pg_postmaster_start_time() );
+
+date_trunc | 01:43:48
+#+end_src
+
 *** Informazioni di dimensione di una tabella
 Le dimensioni di un oggetto sono ottenute tramite una serie di funzioni ~pg_*_size()~:
 - ~pg_column_size()~ fornisce la dimensione in bytes di una colonna;
