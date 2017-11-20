@@ -2279,6 +2279,39 @@ La funzione ~pg_database_size()~ indica invece la dimensione di un database.
 pg_size_pretty | 512 bytes
 pg_size_pretty | 371 MB
 #+end_src
+** Interagire con il filesystem
+*** Directory e file
+PostgreSQL mette a disposizione dell'utente amministratore una serie di funzioni per ottenere informazioni (in formato tabellare) su file e directory:
+- ~pg_ls_dir()~ fornisce l'elenco dei file, il percorso deve essere relativo a ~$PGDATA~;
+- ~pg_stat_file()~ fornisce lo ~stat(1)~ del file;
+- ~pg_read_file()~ e ~pg_read_binary_file()~ ritornano rispettivamente il contenuto testuale (~text~) o binario (~bytea~) del file.
+
+*** Esempio di listato di directory
+#+begin_src sql
+# WITH files AS ( SELECT pg_ls_dir( 'pg_log' ) )
+  SELECT * FROM files
+  WHERE pg_ls_dir like '%-2017-11-13%';
+            pg_ls_dir
+----------------------------------
+ postgresql-2017-11-13_093647.log
+ postgresql-2017-11-13_113553.log
+ postgresql-2017-11-13_134555.log
+ postgresql-2017-11-13_144325.log
+#+end_src
+
+*** Esempio di lettura di un file
+#+begin_src sql
+# SELECT regexp_split_to_table(
+            pg_read_file( 'pg_log/postgresql-2017-11-13_093647.log' ),
+                          E'\\n' );
+
+ LOG:  database system was shut down at 2017-11-10 13:26:30 CET
+ DEBUG:  checkpoint record is at 4/429836E8
+ DEBUG:  redo record is at 4/429836E8; shutdown TRUE
+ DEBUG:  next transaction ID: 0:3001; next OID: 19748
+ DEBUG:  next MultiXactId: 1; next MultiXactOffset: 0
+#+end_src
+
 * Backup e restore
 ** Backup
 *** Introduzione
