@@ -5212,6 +5212,12 @@ La /Full Text Search/ (FTS) è un meccanismo di ricerca testuale, supera i norma
 La FTS si basa sulla capacità di suddividere il testo in /tokens/, riconoscendo parole, numeri, ecc., e *normalizzare i token in /lexems/*, ossia riportare le parole alla loro radice (es. plurali e singolari), infine la possibilità di ordinare le ricerche con indici ed effettuare valutazioni di similarità.
 
 Infine la FTS /is basa sul supporto linguistico/, ovvero ci deve essere un meccanismo conosciuto per la lingua specificata di ottnere i lexems dal documento originale.
+*** Dizionari
+Nella terminologia FTS un /dizionario/ è una collezione di termine che permettono di identificare le /stop words/ (parole che non devono essere considerate nella ricerca), riconoscere i sinonimi e i plurali per normalizzare meglio una parola.
+
+Solitamente il dizionario si basa su ~ispell(1)~.
+
+Mediante il dizionario il documento testuale viene ridotto ad un ~tsvector~ (insieme di lexems), analogamente una ricerca viene esegutia tramite un ~tsquery~ che spezza le parole anch'esse in lexems.
 * Foreign Data Wrapper
 ** SQLMED & FDW
 *** Introduzione
