@@ -2376,6 +2376,23 @@ PostgreSQL mette a disposizione dell'utente amministratore una serie di funzioni
  DEBUG:  next MultiXactId: 1; next MultiXactOffset: 0
 #+end_src
 
+** Modificare una tabella esistente
+*** Il comando ~ALTER TABLE~
+Il comando ~ALTER TABLE~ è uno dei piu' potenti e complessi comandi per la gestione di una tabella esistente. Consente di spostare la tabella da uno schema ad un altro, di aggiungere o rimuovere colonne, rinominarle, aggiungere vincoli, cambiare tipi di dato, ecc.
+
+*Il comando può essere eseguito in una transazione*, in realtà molti comandi /DDL/ possono essere eseguiti in una transazione (a parte in generale tutti i ~CREATE~).
+
+~ALTER TABLE~ consente di eseguire piu' operazioni in un colpo solo (ad esempio aggiunta di una colonna e rimozione di un'altra).
+*** Aggiungere una colonna
+#+begin_src sql
+> BEGIN;
+> ALTER TABLE persona
+    ADD COLUMN data_nascita date
+        DEFAULT '1950-01-01'::date;
+> COMMIT;
+#+end_src
+
+*ATTENZIONE: un comando come quello sopra richiede una riscrittura dell'intera tabella!*
 * Backup e restore
 ** Backup
 *** Introduzione
