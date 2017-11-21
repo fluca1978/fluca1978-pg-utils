@@ -1202,6 +1202,20 @@ xmas_date     | 2017-12-25
 santa_arrives | 23:59:59
 make_interval | 25 days
 #+end_src
+*** Convertire il tempo
+Le funzioni ~to_char()~ convertono un tempo (~timestamp~, ~date~, ~interval~) in una stringa, mentre ~to_date()~ e ~to_timestamp()~ convertono una stringa in un tempo.
+I parametri di formattazione del tempo solitamente usati sono:
+- ~HH~, ~HH24~, ~MI~, ~SS~, ~MS~, ~US~ per il tempo da ore fino a microsecondi;
+- ~Y~, ~mon~ (uppercase, lowercase, upperfirst), ~MM~, ~day~ (uppercase, lowercase, uppperfirst), ~DD~ per anno, mese, giorno del mese.
+#+begin_src sql
+> SELECT to_char( current_date, 'YYYY-Mon-DD' ),
+         to_char( current_date, 'DD/MM/YYYY' ),
+         to_date( '25/12/2017', 'DD/MM/YYYY' );
+-[ RECORD 1 ]--------
+to_char | 2017-Nov-21
+to_char | 21/11/2017
+to_date | 2017-12-25
+#+end_src
 *** Booleani
 Il tipo di dato ~boolean~ rappresenta un booleano che accetta come input:
 - ~TRUE~ oppure una delle stringhe ~'t'~, ~'true'~, ~'on'~, ~'yes'~;
