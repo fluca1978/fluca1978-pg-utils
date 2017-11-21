@@ -1147,6 +1147,50 @@ C'è anche un tipo ~name~ corrispondente a una stringa di 64 byte ma usato inter
 Ci sono tipi di ~date~, ~time~, ~timestamp~ con e senza timezone. Il tipo ~timestampz~ è un sinonimo di ~timestamp with time zone~.
 
 Si noti che, nonostante lo standard SQL lo permetta, il timezone ha senso solo quando è presente sia la data che l'ora.
+*** Manipolazione del tempo
+Ci sono alcune regole:
+1. la differenza fra due ~timestamp~ è sempre un ~interval~, e di conseguenza aggiungere un ~interval~ ad un ~timestamp~ produce un altro ~timestamp~;
+2. la somma/differenza di due ~interval~ è sempre un ~interval~ (non un ~timestamp~);
+3. non si sommano/sottraggono due ~timestamp~;
+4. la differenza fra due ~date~ è sempre un valore intero, ovvero il numero di giorni di differenza, e di conseguenza aggiungere un intero ad una data produce un'altra data;
+*** Esempi di manipolazione del tempo
+#+begin_src sql
+> SELECT '2017-11-15T22:00'::timestamp - interval '3 days';
+      ?column?
+---------------------
+ 2017-11-12 22:00:00
+
+> SELECT interval '1 month' - interval '3 days';
+   ?column?
+---------------
+ 1 mon -3 days
+
+> SELECT '2017-11-15'::date + 3 - '2017-10-12'::date;
+ ?column?
+----------
+       37
+
+#+end_src
+*** Funzioni per manipolare il tempo
+- ~age()~ calcola la differenza fra due ~timestamp~, con un solo argomento la differenza dal momento corrente (~now()~);
+- ~extract()~ e l'equivalente ~date_part()~ estraggono una informazione da un ~date~ o ~timestamp~, quali ad esempio:
+  + ~century~, ~millenium~, ~epoch~;
+  + ~year~, ~month~, ~quarter~, ~day~, ~dow~ (day of week), ~doy~ (day of year);
+  + ~hour~, ~minute~, ~seconds~, ~milliseconds~, ~microseconds~;
+- ~date_trunc()~ aggiusta la precisione del ~date~ o del ~timestamp~ alla parte specificata, mettendo a zero ogni campo piu' preciso;
+- ~justify_days~, ~justify_hours~ aggiusta il periodo temporale a frazioni intere di 30 giorni e 24 ore, ~adjust_interval~ applica entrambi.
+*** Esempio di funzioni di manipolazione del tempo
+#+begin_src sql
+> SELECT age( current_timestamp, '2017-12-25T23:59:59'::timestamp ) as to_xmas,
+        extract( 'year' from current_date ),
+        date_part( 'hours', current_time ),
+        justify_days( '35 days'::interval );
+-[ RECORD 1 ]+---------------------------------
+to_xmas      | -1 mons -4 days -05:20:00.051659
+date_part    | 2017
+date_part    | 18
+justify_days | 1 mon 5 days
+#+end_src
 *** Booleani
 Il tipo di dato ~boolean~ rappresenta un booleano che accetta come input:
 - ~TRUE~ oppure una delle stringhe ~'t'~, ~'true'~, ~'on'~, ~'yes'~;
