@@ -6571,6 +6571,17 @@ most_common_vals  | {F,M}
 most_common_freqs | {0.5,0.5}
 histogram_bounds  |
 #+end_src
+*** Analizzare MCVs e MCFs in una tabella
+E' possibile utilizzare un doppio cast, ~unnest~ e ~rows from~ per ottenere una tabella di correlazione fra un valore e la sua frequenza:
+#+begin_src sql
+> SELECT  mcv, mcf
+  FROM pg_stats,
+   ROWS FROM ( unnest( most_common_vals::text::text[] ),
+               unnest( most_common_freqs ) )
+             r( mcv, mcf )
+  WHERE tablename = 'evento'
+  AND attname IN ( 'description' );
+#+end_src
 ** Statistiche avanzate
 *** ~pg_stat_statements~
 Il modulo ~pg_stat_statements~ consente di tracciare l'attività di ogni statement sul database, permettendo quindi di "scoprire" query lente o problematiche.
