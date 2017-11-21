@@ -5357,6 +5357,56 @@ Si vogliono trovare tutte le email che nel soggetto o nel corpo del messaggio co
  link slides
 
 #+end_src
+
+*** Ranking
+La funzione ~ts_rank()~ permette di calcolare il /ranking/ di una query FTS:
+#+begin_src sql
+> SELECT subject,
+    ts_rank( to_tsvector( 'italian', subject || ' ' || message ),
+             to_tsquery( 'italian',
+                         'slide & (corso | postgres:*)' ) )
+  FROM email ORDER BY 2 DESC;
+
+       subject       |  ts_rank
+---------------------+-----------
+ Corso su PostgreSQL |  0.369819
+ Corso postgres      |  0.334374
+ link slides         | 0.0852973
+ PR-175              |     1e-20
+#+end_src
+
+*** Pesi di un ~tsvector~
+La funzione ~setweight()~ consente di specificare un peso (in termini di lettere fra ~A~ e ~D~) per una ricerca testuale. Solitamente si usa per assegnare ad una parte della ricerca un peso differente, concatenando i ~tsvector~ risultanti.
+Ad esempio:
+#+begin_src sql
+> SELECT subject, ts_rank(
+       setweight( to_tsvector( 'italian', subject ), 'A' )
+       ||
+       setweight( to_tsvector( 'italian', message ), 'C' ),
+       to_tsquery( 'italian', 'corso | slide' ) )
+  FROM email
+  ORDER BY 2 DESC;
+       subject       |  ts_rank
+---------------------+-----------
+ Corso su PostgreSQL |  0.379954
+ Corso postgres      |  0.379954
+ link slides         | 0.0607927
+ PR-175              |         0
+
+> SELECT subject, ts_rank(
+       setweight( to_tsvector( 'italian', subject ), 'C' )
+       ||
+       setweight( to_tsvector( 'italian', message ), 'A' ),
+       to_tsquery( 'italian', 'corso | slide' ) )
+  FROM email
+  ORDER BY 2 DESC;
+       subject       | ts_rank
+---------------------+----------
+ Corso su PostgreSQL |  0.66872
+ Corso postgres      |  0.66872
+ link slides         | 0.303964
+ PR-175              |        0
+#+end_src
 * Foreign Data Wrapper
 ** SQLMED & FDW
 *** Introduzione
