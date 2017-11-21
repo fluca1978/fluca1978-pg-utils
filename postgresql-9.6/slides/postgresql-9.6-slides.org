@@ -5204,6 +5204,14 @@ Quali sono i link da cui scaricare le versioni di PostgreSQL?
 ...
 #+end_src
 
+* Full Text Search
+** FTS: concetti
+*** Introduzione a FTS
+La /Full Text Search/ (FTS) è un meccanismo di ricerca testuale, supera i normali operatori come ~LIKE~ e di regular expression.
+
+La FTS si basa sulla capacità di suddividere il testo in /tokens/, riconoscendo parole, numeri, ecc., e *normalizzare i token in /lexems/*, ossia riportare le parole alla loro radice (es. plurali e singolari), infine la possibilità di ordinare le ricerche con indici ed effettuare valutazioni di similarità.
+
+Infine la FTS /is basa sul supporto linguistico/, ovvero ci deve essere un meccanismo conosciuto per la lingua specificata di ottnere i lexems dal documento originale.
 * Foreign Data Wrapper
 ** SQLMED & FDW
 *** Introduzione
