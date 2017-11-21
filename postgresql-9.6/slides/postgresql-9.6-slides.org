@@ -1053,6 +1053,17 @@ fra doppi apici (sconsigliato):
 > CREATE TABLE "Foo"( "Bar" int, "bAz" int );
 > SELECT "Bar", "bAz" FROM "Foo";
 #+end_src
+*** Camel Case: ~quote_ident~
+La funzione speciale ~quote_ident~ sa cosa deve fare con gli identificativi che non siano minuscoli, e quindi è bene usarla ogni volta che ad esempio si generano statement in automatico:
+#+begin_src sql
+> SELECT quote_ident( 'foo' ),
+         quote_ident( 'FOO' ),
+         quote_ident( 'Foo' );
+-[ RECORD 1 ]------
+quote_ident | foo
+quote_ident | "FOO"
+quote_ident | "Foo"
+#+end_src
 *** ~SHOW~ e ~SET~
 Il comando speciale ~SHOW~ mostra il valore di alcuni parametri /run-time/, e analogamente il parametro ~SET~ consente di impostarne il valore.
 
