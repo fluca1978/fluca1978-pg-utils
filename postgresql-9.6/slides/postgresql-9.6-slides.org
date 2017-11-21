@@ -835,12 +835,12 @@ A differenza di ~ON_ERROR_STOP~ che fa quello che il nome suggerisce, il paramet
    - un ruolo può rappresentare un utente;
    - ad un ruolo si possono aggiungere altri utenti (e quindi rappresenta un gruppo).
 
-*** Ruoli e Connessioni
+**** Ruoli e Connessioni
     *Per collegarsi ad un database occorre sempre un ruolo*, ossia un utente
     PostgreSQL (che è logicamente separato da quello del sistema operativo).
     Quando viene inizializzato un cluster viene creato un ruolo superutente
     per permetterne la gestione (negli esempi ~postgres~).
-*** End of block                                               :B_ignoreheading:
+**** End of block                                           :B_ignoreheading:
 :PROPERTIES:
 :BEAMER_env: ignoreheading
 :END:
@@ -905,14 +905,27 @@ localhost:5432:template1:luca:xxxxxx
 localhost:5432:template1:my_app:xxxxx
 #+end_src
 
-*** Evitare di censire ogni singolo database
+**** Evitare di censire ogni singolo database
     Si ricordi che è possibile usare ~*~ per host, porta e database. Questo semplifica
     il deployment di nuovi database, ma dall'altro lato rende piu' complesso censire
     e controllare i database a cui si accede.
-*** End of block                                               :B_ignoreheading:
+**** End of block                                           :B_ignoreheading:
 :PROPERTIES:
 :BEAMER_env: ignoreheading
 :END:
+*** La vista ~pg_shadow~
+In analogia con i sistemi Unix, è disponibuile una vista ~pg_shadow~ che riassume i dati degli account utente (ruoli) comprensivi di password. Se la password inizia con ~md5~ la password è stata cifrata con tale algoritmo. Ovviamente occorre essere superutente per poter interrogare la vista.
+#+begin_src sql
+# SELECT usename, usecreatedb, usesuper,
+         userepl, passwd
+  FROM pg_shadow;
+-[ RECORD 1 ]------------------------------------
+usename     | postgres
+usecreatedb | t
+usesuper    | t
+userepl     | t
+passwd      | md53175bce1d3201d16594cebf9d7eb3f9d
+#+end_src
 *** Creare un database
    Usando il comando SQL ~CREATE DATABASE~ è possibile aggiungere un nuovo database
    (e /opzionalmente/ aggiungere un commento per indicare lo scopo del database):
