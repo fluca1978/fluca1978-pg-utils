@@ -5893,7 +5893,7 @@ I parametri sono:
 - ~cpu_tuple_cost~, ~cpu_index_tuple_cost~, ~cpu_operator_cost~ indicano il costo di /analisi/ di una tupla, indice e operatore;
 - ~default_statistics_target~ il valore di default per il campionamento di /Most Common Values/ e degli istogrammi;
 - ~constraint_exclusion~ permette di sfruttare le /constraint/ di tabella per ottimizzare le query.
-=======
+
 
 ** Benchmarking
 *** pgbench
