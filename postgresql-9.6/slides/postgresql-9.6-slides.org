@@ -1101,6 +1101,16 @@ Ci sono un serie di funzioni per inviare dei segnali specifici:
 - ~pg_xlog_switch()~ forza la creazione di un nuovo segmento di WAL;
 - ~pg_current_xlog_flush_location()~ fornisce il /LSN/ attuale;
 - ~pg_is_in_recovery()~ e ~pg_is_in_backup()~ indicano se il cluster è in recovery o backup mode.
+
+*** Addormentarsi: ~pg_sleep~
+La funzione ~pg_sleep~ permette di sospendere il backend corrente per /circa/ il numero di secondi specificato (accetta anche le frazioni di secondo):
+#+begin_src sql
+> \timing
+Timing is on.
+> SELECT pg_sleep( 2.5 );
+
+Time: 2573.297 ms
+#+end_src
 ** Tipi di dato
 *** Numerici
 Sono presenti i tipi interni ~integer~, ~smallint~, ~bigint~.
