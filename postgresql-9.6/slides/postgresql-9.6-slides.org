@@ -2383,6 +2383,8 @@ Il comando ~ALTER TABLE~ è uno dei piu' potenti e complessi comandi per la gest
 *Il comando può essere eseguito in una transazione*, in realtà molti comandi /DDL/ possono essere eseguiti in una transazione (a parte in generale tutti i ~CREATE~).
 
 ~ALTER TABLE~ consente di eseguire piu' operazioni in un colpo solo (ad esempio aggiunta di una colonna e rimozione di un'altra).
+
+Molti dei sottocomandi (azioni) di ~ALTER TABLE~ supportano ~IF NOT EXISTS~ e ~IF EXISTS~.
 *** Aggiungere una colonna
 #+begin_src sql
 > BEGIN;
@@ -2426,6 +2428,23 @@ La potenza di ~ALTER TABLE USING~ ovviamente si ottiene quando si cambia il tipo
 > ALTER TABLE persona ALTER COLUMN description
     SET DATA TYPE text
     USING upper(nome) || ' ' || upper(cognome);
+#+end_src
+*** ~ALTER TABLE~ con azioni multiple
+Il comando supporta azioni multiple, se correlate (vedere la documentazione):
+
+#+begin_src sql
+> ALTER TABLE persona
+   ADD COLUMN IF NOT EXISTS
+          description text NOT NULL DEFAULT 'N/A',
+   ADD COLUMN IF NOT EXISTS
+          data_nascita date NOT NULL DEFAULT '1950-01-01'::date,
+   ALTER COLUMN eta_years SET NOT NULL;
+
+
+> ALTER TABLE persona
+    DROP COLUMN IF EXISTS data_nascita,
+    DROP COLUMN IF EXISTS description,
+    ADD COLUMN  IF NOT EXISTS titolo varchar(6);
 #+end_src
 * Backup e restore
 ** Backup
