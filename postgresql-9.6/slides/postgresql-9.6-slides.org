@@ -1191,6 +1191,17 @@ date_part    | 2017
 date_part    | 18
 justify_days | 1 mon 5 days
 #+end_src
+*** Costruttori del tempo
+Oltre al cast esplicito di stringhe, sono disponibili i costruttori ~make_date()~, ~make_time()~ e ~make_timestamp()~. Esiste anche un ~make_interval()~ che ha una serie di valori di default che possono quindi essere specificati uno alla volta:
+#+begin_src sql
+> SELECT make_date( 2017, 12, 25 ) as xmas_date,
+        make_time( 23, 59, 59 ) as santa_arrives,
+        make_interval( days => 25 );
+-[ RECORD 1 ]-+-----------
+xmas_date     | 2017-12-25
+santa_arrives | 23:59:59
+make_interval | 25 days
+#+end_src
 *** Booleani
 Il tipo di dato ~boolean~ rappresenta un booleano che accetta come input:
 - ~TRUE~ oppure una delle stringhe ~'t'~, ~'true'~, ~'on'~, ~'yes'~;
