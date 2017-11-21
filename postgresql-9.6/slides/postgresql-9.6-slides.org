@@ -5218,6 +5218,18 @@ Nella terminologia FTS un /dizionario/ è una collezione di termine che permetto
 Solitamente il dizionario si basa su ~ispell(1)~.
 
 Mediante il dizionario il documento testuale viene ridotto ad un ~tsvector~ (insieme di lexems), analogamente una ricerca viene esegutia tramite un ~tsquery~ che spezza le parole anch'esse in lexems.
+*** Esempio di lexem in atto: ~to_tsvector~
+La funzione speciale ~to_tsvector~ converte un documento di testo in un insieme di lexem specificandone la posizione:
+#+begin_src sql
+> SELECT to_tsvector( 'italian',
+     'PostgreSQL e'' uno dei database piu'' avanzati al mondo!' );
+                      to_tsvector
+-------------------------------------------------------
+ 'avanz':7 'databas':5 'mond':9 'piu':6 'postgresql':1
+#+end_src
+
+Come si può notare ogni termine è stato convertito in minuscolo, dopodiché le stop-words (es., avverbi) sono stati rimossi, e infine ogni parola è stata riportata alla sua radice con la posizione (indice) della parola nel documento. Ad esempio la parola ~database~ viene normalizzata a ~databas~ e si trova all'indice ~5~ nel documento di testo (l'indice parte da 1!).
+
 * Foreign Data Wrapper
 ** SQLMED & FDW
 *** Introduzione
