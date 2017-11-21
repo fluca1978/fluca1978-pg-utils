@@ -5229,7 +5229,42 @@ La funzione speciale ~to_tsvector~ converte un documento di testo in un insieme 
 #+end_src
 
 Come si può notare ogni termine è stato convertito in minuscolo, dopodiché le stop-words (es., avverbi) sono stati rimossi, e infine ogni parola è stata riportata alla sua radice con la posizione (indice) della parola nel documento. Ad esempio la parola ~database~ viene normalizzata a ~databas~ e si trova all'indice ~5~ nel documento di testo (l'indice parte da 1!).
+*** Query FTS
+Una query FTS si compone di un insieme di /termini/ eventualmente uniti da uno dei seguenti operatori:
+- ~&~ and logico, entrambi i termini devono essere presenti in qualunque ordine;
+- ~|~ or logico, almeno uno dei due termini deve comparire;
+- ~!~ not logico, il termine non deve apparire;
+- ~<->~ /followed by/, il primo termine deve essere seguito dal secondo.
+*** Query FTS: ~to_tsquery~
+Analogamente alla costruzione di un ~tsvector~, la funzione speciale ~to_tsquery~ costruisce una query di tipo ~tsquery~ partendo dai termini e dagli operatori indicati:
+#+begin_src sql
+> SELECT to_tsquery( 'italian', 'PostgreSQL & database & ! MySQL' );
+             to_tsquery
+-------------------------------------
+ 'postgresql' & 'databas' & !'mysql'
+#+end_src
 
+Anche qui i termini sono /manipolati/ in accordo alle regole per i lexem e l'uso dei dizionari.
+
+*** Query FTS: ~plainto_tsquery~ e ~phraseto_tsquery~
+Queste due funzioni /non riconoscono gli operatori di ~tsquery~/ e quindi si limitano a inserire rispettivamente l'operatore ~&~ o ~<->~ ai termini normalizzati:
+#+begin_src sql
+> SELECT plainto_tsquery( 'italian',
+        'PostgreSQL & database & ! MySQL' );
+
+------------------------------------
+ 'postgresql' & 'databas' & 'mysql'
+-- è sparito il NOT!!!
+
+> SELECT phraseto_tsquery( 'italian',
+         'PostgreSQL & database & ! MySQL' );
+
+----------------------------------------
+ 'postgresql' <-> 'databas' <-> 'mysql'
+-- considera i termini come costruzione di una frase !!!
+#+end_src
+
+*Tutti gli operatori di ~tsquery~ sono stati automaticamente rimossi!*
 * Foreign Data Wrapper
 ** SQLMED & FDW
 *** Introduzione
