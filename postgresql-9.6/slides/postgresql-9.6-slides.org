@@ -5265,6 +5265,32 @@ Queste due funzioni /non riconoscono gli operatori di ~tsquery~/ e quindi si lim
 #+end_src
 
 *Tutti gli operatori di ~tsquery~ sono stati automaticamente rimossi!*
+
+** Operatori di query FTS
+*** Usare gli operatori fra ~tsvector~ e ~tsquery~
+Una volta che si sono costruiti i ~tsvector~ e ~tsquery~ è possibile applicare i seguenti operatori:
+- *~@@~ match* verifica se un ~tsvector~ fa match con un ~tsquery~;
+- ~||~ concatena due ~tsvector~ o due ~tsquery~;
+- ~&&~ effettua un and logico fra due ~tsquery~;
+- ~!!~ negazione di un ~tsquery~;
+- ~@>~ e ~<@~ indicano se una ~tsquery~ ne contiene un'altra o è contenuta.
+
+*** Esempio di operatori di FTS
+#+begin_src sql
+> SELECT to_tsquery( 'italian', 'database & open <-> source' )
+     && to_tsquery( 'italian', '! avanzato' );
+
+ > SELECT to_tsquery( 'italian', 'database & open <-> source' )
+      <@
+    to_tsquery( 'italian',
+                'database & free <-> libre <-> open <-> source' );
+
+----------
+ t
+
+-------------------------------------------
+ 'databas' & 'open' <-> 'sourc' & !'avanz'
+#+end_src
 * Foreign Data Wrapper
 ** SQLMED & FDW
 *** Introduzione
