@@ -5407,6 +5407,36 @@ Ad esempio:
  link slides         | 0.303964
  PR-175              |        0
 #+end_src
+** Indici FTS
+*** Capire cosa è indicizzabile
+Non tutta la parte di una ~tsquery~ è sempre indicizzabile, la funzione ~querytree()~ consente di capire cosa si può effettivamente indicizzare:
+#+begin_src sql
+> SELECT querytree( to_tsquery( 'italian', 'corso | slide' ) );
+    querytree
+-----------------
+ 'cors' | 'slid'
+#+end_src
+*** Costruire un indice per query FTS
+Si utilizza l'indice /GIN/ specificando su quale ~tsvector~ si vuole indicizzare:
+#+begin_src sql
+> CREATE INDEX fts_email_idx
+   ON email
+   USING GIN ( to_tsvector( 'italian', subject || ' ' || message ) );
+#+end_src
+
+e se ci sono parecchi valori da forzare l'uso dell'indice:
+
+#+begin_src sql
+> EXPLAIN SELECT subject FROM email
+   WHERE to_tsvector( 'italian', subject || ' ' || message )
+       @@ to_tsquery( 'italian', 'corso' );
+                                                     QUERY PLAN
+---------------------------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on email  (cost=2420.44..79786.25 rows=261218 width=13)
+   Recheck Cond: (to_tsvector('italian'::regconfig, ((subject || ' '::text) || message)) @@ '''cors'''::tsquery)
+   ->  Bitmap Index Scan on fts_email_idx  (cost=0.00..2355.13 rows=261218 width=0)
+         Index Cond: (to_tsvector('italian'::regconfig, ((subject || ' '::text) || message)) @@ '''cors'''::tsquery)
+#+end_src
 * Foreign Data Wrapper
 ** SQLMED & FDW
 *** Introduzione
