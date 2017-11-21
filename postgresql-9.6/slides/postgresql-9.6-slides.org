@@ -2393,6 +2393,40 @@ Il comando ~ALTER TABLE~ è uno dei piu' potenti e complessi comandi per la gest
 #+end_src
 
 *ATTENZIONE: un comando come quello sopra richiede una riscrittura dell'intera tabella!*
+*** Rimuovere una colonna, rinominare una colonna
+#+begin_src sql
+> ALTER TABLE persona DROP COLUMN data_nascita;
+
+> ALTER TABLE persona RENAME eta TO eta_years;
+#+end_src
+
+*** ~ALTER TABLE USING~
+Il comando ~ALTER TABLE~ ammette una clausola ~USING~ che consente di specificare come applicare le modifiche, ad esempio il valore di una colonna. Questo comando funziona solo se si cambia un tipo di dato, al limite anche lasciandolo uguale al precedente:
+
+#+begin_src sql
+> BEGIN;
+> ALTER TABLE persona
+   ADD COLUMN data_nascita date
+    NOT NULL DEFAULT '1950-01-01'::date;
+
+> ALTER TABLE persona
+   ALTER COLUMN data_nascita
+   SET DATA TYPE date
+   USING date_trunc( 'year', current_date )::date - ( eta_years * 365 );
+
+> COMMIT;
+#+end_src
+
+In questo caso prima si aggiunge la colonna con un valore di default, poi si istruisce la colonna a ricalcolarsi con un valore approssimato della data di nascita. Lo stesso risultato si sarebbe potuto ottenere con un ~UPDATE~ del valore della colonna.
+
+*** ~ALTER TABLE USING~ (2)
+La potenza di ~ALTER TABLE USING~ ovviamente si ottiene quando si cambia il tipo di dato:
+#+begin_src sql
+-- supponendo di avere description come char
+> ALTER TABLE persona ALTER COLUMN description
+    SET DATA TYPE text
+    USING upper(nome) || ' ' || upper(cognome);
+#+end_src
 * Backup e restore
 ** Backup
 *** Introduzione
