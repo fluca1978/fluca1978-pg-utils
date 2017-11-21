@@ -5274,6 +5274,239 @@ Quali sono i link da cui scaricare le versioni di PostgreSQL?
 ...
 #+end_src
 
+* Full Text Search
+** FTS: concetti
+*** Introduzione a FTS
+La /Full Text Search/ (FTS) è un meccanismo di ricerca testuale, supera i normali operatori come ~LIKE~ e di regular expression.
+
+La FTS si basa sulla capacità di suddividere il testo in /tokens/, riconoscendo parole, numeri, ecc., e *normalizzare i token in /lexems/*, ossia riportare le parole alla loro radice (es. plurali e singolari), infine la possibilità di ordinare le ricerche con indici ed effettuare valutazioni di similarità.
+
+Infine la FTS /is basa sul supporto linguistico/, ovvero ci deve essere un meccanismo conosciuto per la lingua specificata di ottnere i lexems dal documento originale.
+*** Dizionari
+Nella terminologia FTS un /dizionario/ è una collezione di termine che permettono di identificare le /stop words/ (parole che non devono essere considerate nella ricerca), riconoscere i sinonimi e i plurali per normalizzare meglio una parola.
+
+Solitamente il dizionario si basa su ~ispell(1)~.
+
+Mediante il dizionario il documento testuale viene ridotto ad un ~tsvector~ (insieme di lexems), analogamente una ricerca viene esegutia tramite un ~tsquery~ che spezza le parole anch'esse in lexems.
+*** Esempio di lexem in atto: ~to_tsvector~
+La funzione speciale ~to_tsvector~ converte un documento di testo in un insieme di lexem specificandone la posizione:
+#+begin_src sql
+> SELECT to_tsvector( 'italian',
+     'PostgreSQL e'' uno dei database piu'' avanzati al mondo!' );
+                      to_tsvector
+-------------------------------------------------------
+ 'avanz':7 'databas':5 'mond':9 'piu':6 'postgresql':1
+#+end_src
+
+Come si può notare ogni termine è stato convertito in minuscolo, dopodiché le stop-words (es., avverbi) sono stati rimossi, e infine ogni parola è stata riportata alla sua radice con la posizione (indice) della parola nel documento. Ad esempio la parola ~database~ viene normalizzata a ~databas~ e si trova all'indice ~5~ nel documento di testo (l'indice parte da 1!).
+*** Query FTS
+Una query FTS si compone di un insieme di /termini/ eventualmente uniti da uno dei seguenti operatori:
+- ~&~ and logico, entrambi i termini devono essere presenti in qualunque ordine;
+- ~|~ or logico, almeno uno dei due termini deve comparire;
+- ~!~ not logico, il termine non deve apparire;
+- ~<->~ /followed by/, il primo termine deve essere seguito dal secondo.
+*** Query FTS: ~to_tsquery~
+Analogamente alla costruzione di un ~tsvector~, la funzione speciale ~to_tsquery~ costruisce una query di tipo ~tsquery~ partendo dai termini e dagli operatori indicati:
+#+begin_src sql
+> SELECT to_tsquery( 'italian', 'PostgreSQL & database & ! MySQL' );
+             to_tsquery
+-------------------------------------
+ 'postgresql' & 'databas' & !'mysql'
+#+end_src
+
+Anche qui i termini sono /manipolati/ in accordo alle regole per i lexem e l'uso dei dizionari.
+
+*** Query FTS: ~plainto_tsquery~ e ~phraseto_tsquery~
+Queste due funzioni /non riconoscono gli operatori di ~tsquery~/ e quindi si limitano a inserire rispettivamente l'operatore ~&~ o ~<->~ ai termini normalizzati:
+#+begin_src sql
+> SELECT plainto_tsquery( 'italian',
+        'PostgreSQL & database & ! MySQL' );
+
+------------------------------------
+ 'postgresql' & 'databas' & 'mysql'
+-- è sparito il NOT!!!
+
+> SELECT phraseto_tsquery( 'italian',
+         'PostgreSQL & database & ! MySQL' );
+
+----------------------------------------
+ 'postgresql' <-> 'databas' <-> 'mysql'
+-- considera i termini come costruzione di una frase !!!
+#+end_src
+
+*Tutti gli operatori di ~tsquery~ sono stati automaticamente rimossi!*
+
+** Operatori di query FTS
+*** Usare gli operatori fra ~tsvector~ e ~tsquery~
+Una volta che si sono costruiti i ~tsvector~ e ~tsquery~ è possibile applicare i seguenti operatori:
+- *~@@~ match* verifica se un ~tsvector~ fa match con un ~tsquery~;
+- ~||~ concatena due ~tsvector~ o due ~tsquery~;
+- ~&&~ effettua un and logico fra due ~tsquery~;
+- ~!!~ negazione di un ~tsquery~;
+- ~@>~ e ~<@~ indicano se una ~tsquery~ ne contiene un'altra o è contenuta.
+
+*** Esempio di operatori di FTS
+#+begin_src sql
+> SELECT to_tsquery( 'italian', 'database & open <-> source' )
+     && to_tsquery( 'italian', '! avanzato' );
+
+ > SELECT to_tsquery( 'italian', 'database & open <-> source' )
+      <@
+    to_tsquery( 'italian',
+                'database & free <-> libre <-> open <-> source' );
+
+----------
+ t
+
+-------------------------------------------
+ 'databas' & 'open' <-> 'sourc' & !'avanz'
+#+end_src
+
+** Eseguire ricerche FTS
+*** Match
+Una volta che si sono definiti i ~tsvector~ e ~tsquery~ è possibile effettuare le query di match con l'operatore ~@@~:
+#+begin_src sql
+> SELECT to_tsvector( 'italian',
+         'PostgreSQL e'' uno dei database piu'' avanzati al mondo!' )
+    @@
+         to_tsquery( 'italian',
+                     'database | piu'' <-> avanzato' );
+
+----------
+ t
+#+end_src
+*** Ambiente di esempio
+#+begin_src sql
+> CREATE TABLE email( pk serial PRIMARY KEY, subject text, message text );
+> INSERT INTO email( subject, message)
+    VALUES( 'Corso su PostgreSQL',
+            'Ciao, ho preparato le slide del corso e sono pronto a esportarle con beamer.' )
+         , ( 'Corso postgres',
+             'Hai avuto modo di revisionare le slide del corso?' )
+         , ( 'link slides',
+             'Puoi scaricare le slide dal mio repository github, branch postgresql-9.6' )
+         , ( 'PR-175',
+             'Can you please review my pull request #175 and give back some hint?' );
+#+end_src
+
+*** Esempio di ricerca
+Si vogliono trovare tutte le email che nel soggetto hanno informazioni sul corso per PostgreSQL:
+#+begin_src sql
+> SELECT subject FROM email
+    WHERE to_tsvector( 'italian', subject )
+    @@ to_tsquery( 'italian', 'corso & postgres' );
+    subject
+----------------
+ Corso postgres
+#+end_src
+
+/SBAGLIATO!/
+Il sistema non riconosce la parola PostgreSQL come italiana, quindi non sa che di fatto /PostgreSQL/ e /Postgres/ rappresentano la stessa cosa. Si può allora usare l'operatore speciale ~:*~ che indica che la parola rappresenta un /prefisso/ per qualcosa di piu' complesso:
+#+begin_src sql
+> SELECT subject FROM email
+   WHERE to_tsvector( 'italian', subject )
+   @@ to_tsquery( 'italian', 'corso & postgres:*' );
+       subject
+---------------------
+ Corso su PostgreSQL
+ Corso postgres
+#+end_src
+
+*** Ulteriore esempio
+Si vogliono trovare tutte le email che nel soggetto o nel corpo del messaggio contengono dei riferimenti alle slide del corso:
+#+begin_src sql
+> SELECT subject FROM email
+   WHERE to_tsvector( 'italian', subject || ' ' || message )
+    @@ to_tsquery( 'italian',
+                   'slide & (corso | postgres:*)' );
+
+       subject
+---------------------
+ Corso su PostgreSQL
+ Corso postgres
+ link slides
+
+#+end_src
+
+*** Ranking
+La funzione ~ts_rank()~ permette di calcolare il /ranking/ di una query FTS:
+#+begin_src sql
+> SELECT subject,
+    ts_rank( to_tsvector( 'italian', subject || ' ' || message ),
+             to_tsquery( 'italian',
+                         'slide & (corso | postgres:*)' ) )
+  FROM email ORDER BY 2 DESC;
+
+       subject       |  ts_rank
+---------------------+-----------
+ Corso su PostgreSQL |  0.369819
+ Corso postgres      |  0.334374
+ link slides         | 0.0852973
+ PR-175              |     1e-20
+#+end_src
+
+*** Pesi di un ~tsvector~
+La funzione ~setweight()~ consente di specificare un peso (in termini di lettere fra ~A~ e ~D~) per una ricerca testuale. Solitamente si usa per assegnare ad una parte della ricerca un peso differente, concatenando i ~tsvector~ risultanti.
+Ad esempio:
+#+begin_src sql
+> SELECT subject, ts_rank(
+       setweight( to_tsvector( 'italian', subject ), 'A' )
+       ||
+       setweight( to_tsvector( 'italian', message ), 'C' ),
+       to_tsquery( 'italian', 'corso | slide' ) )
+  FROM email
+  ORDER BY 2 DESC;
+       subject       |  ts_rank
+---------------------+-----------
+ Corso su PostgreSQL |  0.379954
+ Corso postgres      |  0.379954
+ link slides         | 0.0607927
+ PR-175              |         0
+
+> SELECT subject, ts_rank(
+       setweight( to_tsvector( 'italian', subject ), 'C' )
+       ||
+       setweight( to_tsvector( 'italian', message ), 'A' ),
+       to_tsquery( 'italian', 'corso | slide' ) )
+  FROM email
+  ORDER BY 2 DESC;
+       subject       | ts_rank
+---------------------+----------
+ Corso su PostgreSQL |  0.66872
+ Corso postgres      |  0.66872
+ link slides         | 0.303964
+ PR-175              |        0
+#+end_src
+** Indici FTS
+*** Capire cosa è indicizzabile
+Non tutta la parte di una ~tsquery~ è sempre indicizzabile, la funzione ~querytree()~ consente di capire cosa si può effettivamente indicizzare:
+#+begin_src sql
+> SELECT querytree( to_tsquery( 'italian', 'corso | slide' ) );
+    querytree
+-----------------
+ 'cors' | 'slid'
+#+end_src
+*** Costruire un indice per query FTS
+Si utilizza l'indice /GIN/ specificando su quale ~tsvector~ si vuole indicizzare:
+#+begin_src sql
+> CREATE INDEX fts_email_idx
+   ON email
+   USING GIN ( to_tsvector( 'italian', subject || ' ' || message ) );
+#+end_src
+
+e se ci sono parecchi valori da forzare l'uso dell'indice:
+
+#+begin_src sql
+> EXPLAIN SELECT subject FROM email
+   WHERE to_tsvector( 'italian', subject || ' ' || message )
+       @@ to_tsquery( 'italian', 'corso' );
+                                                     QUERY PLAN
+---------------------------------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on email  (cost=2420.44..79786.25 rows=261218 width=13)
+   Recheck Cond: (to_tsvector('italian'::regconfig, ((subject || ' '::text) || message)) @@ '''cors'''::tsquery)
+   ->  Bitmap Index Scan on fts_email_idx  (cost=0.00..2355.13 rows=261218 width=0)
+         Index Cond: (to_tsvector('italian'::regconfig, ((subject || ' '::text) || message)) @@ '''cors'''::tsquery)
+#+end_src
 * Foreign Data Wrapper
 ** SQLMED & FDW
 *** Introduzione
