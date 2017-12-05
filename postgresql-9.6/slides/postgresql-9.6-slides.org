@@ -6508,6 +6508,29 @@ stats_reset           | 2017-10-31 13:53:29.891094+01
 #+end_src
 
 dove ~checkpoints_timed~ indica quanti checkpoint schedulati sono stati eseguiti e ~checkpoint_req~ quanti ne sono richiesti (es. manualmente), e le colonne ~checkpoint_write_time~ e ~checkpoint_sync_time~ indicano in millisecondi il tempo speso per la scrittura su disco e la sincronizzazione (due fasi interne del checkpoint).
+
+** pgTAP
+*** Introduzione a pgTAP
+L'estensione ~pgTAP~ consente di caricare in un database una serie di funzioni di utilita' per /testing/ di un database.
+L'idea ricalca quella dell'infrastruttura di test di Perl e utilizza il protocollo /TAP/ (Test Anything Protocol).
+
+*** Installazione di pgTAP
+Mediante ~pgxn~ è possibile scaricare e installare il pacchetto:
+
+#+begin_src shell
+% sudo pgxn install pgtap                                                                                                ~
+
+INFO: best version: pgtap 0.98.0
+...
+#+end_src
+
+e nel database che si vuole testare è possibile creare l'estensione:
+
+#+begin_src sql
+> CREATE EXTENSION pgtap;
+#+end_src
+
+
 * Indici
 ** Tipi di indici
 *** Introduzione
