@@ -6530,6 +6530,100 @@ e nel database che si vuole testare è possibile creare l'estensione:
 > CREATE EXTENSION pgtap;
 #+end_src
 
+*** Verificare il funzionamento di pgTAP
+E' possibile verificare il corretto funzionamento di ~pgTAP~ mediante la funzione ~pass()~, che se eseguita senza un piano fallisce miseramente (ma almeno conferma l'installazione dell'estensione):
+
+#+begin_src sql
+> SELECT pass( 'Hello World' );
+ERROR:  You tried to run a test without a plan! Gotta have a plan
+CONTEXT:  PL/pgSQL function _get_latest(text) line 10 at RAISE
+PL/pgSQL function _todo() line 9 at assignment
+PL/pgSQL function ok(boolean,text) line 9 at assignment
+#+end_src
+
+*** Principali funzioni messe a disposizioni da pgTAP (1)
+Le funzioni utilizzabili in un test sono:
+- ~plan()~ indica quanti test si andranno ad eseguire;
+- ~ok()~ considera un valore booleano che deve essere /vero/;
+- ~is()~ e ~isnt()~ controlla due valori fra loro che devono essere rispettivamente uguali o diversi;
+- ~matches()~, ~imatches()~, ~doesnt_match()~ effettua una comparazione fra una stringa e una regexp (eventuale case insensitive);
+- ~alike()~, ~ialike()~, ~unalike()~, ~unialike()~ utilizza l'operatore ~LIKE~ eventualmente in modalità case insensitive;
+- ~cmp_ok()~ confronta due valori mediante l'operatore specificato;
+- ~pass()~ e ~fail()~ indicano rispettivamente il successo o l'insuccesso del test;
+- ~isa_ok()~ controlla che un tipo sia quello specificato.
+
+*** Principali funzioni messe a disposizione da pgTAP (2)
+Per controllare la presenza di tabelle e altri oggetti:
+- ~has_tablespace()~ e ~hasnt_tablespace()~;
+- ~has_schema()~ e ~hasnt_schema()~;
+- ~has_function()~ e ~hasnt_function()~;
+- ~has_relation()~ e ~hasnt_relation()~ che si specializzano in una delle seguenti:
+  - ~has_table()~, ~hasnt_table()~;
+  - ~has_view()~, ~hasnt_view()~;
+  - ~has_foreign_table()~, ~hasnt_foreign_table()~;
+  - ~has_index()~, ~hasnt_index()~;
+  - ~has_sequence()~, ~hasnt_sequence()~
+- ~has_role()~ e ~hasnt_role()~;
+- ~has_language()~ e ~hasnt_language()~;
+- ~has_extension()~ e ~hasnt_extension()~.
+
+*** Esempio di script di test
+Anzitutto lo script è bene che visualizzi solo alcune informazioni (ad esempio rimuovendo gli header delle tabelle/funzioni). Inoltre è opportuno che tutte le funzioni siano eseguite in una transazione per dare modo a ~pgTAP~ di eseguire il controllo sul plan di esecuzione.
+Quindi un semplice script può essere:
+
+#+begin_src sql
+-- parte fissa per fornire un output
+-- conforme a TAP
+\set ECHO none
+\set QUIET 1
+\pset format unaligned
+\pset tuples_only true
+\pset pager
+
+-- test in una transazione
+BEGIN;
+SELECT plan( 1 ); -- quanti test?
+SELECT has_role( 'luca', 'Ricerca utente LUCA' );
+SELECT * FROM finish(); -- indica la fine del test
+ROLLBACK; -- sempre un rollback di questa transazione
+#+end_src
+
+*** Esecuzione dello script di esempio
+E' sufficiente lanciare l'interpretazione dello script da un terminale SQL per vedere il risultato come TAP:
+
+#+begin_src sql
+> \i test.sql
+1..1
+ok 1 - Ricerca utente LUCA
+#+end_src
+
+*** Eseguire lo script di esempio da riga di comando
+Senza entrare nel terminale ~psql~ è possibile lanciare il comando (sempre via ~psql~) direttamente dalla shell corrente:
+
+#+begin_src shell
+% psql -h localhost -U luca -X -f test.sql testdb                                                                        ~
+1..1
+ok 1 - Ricerca utente LUCA
+#+end_src
+
+L'opzione ~-f~ indica di leggere ed eseguire il contenuto del file ~test.sql~, mentre l'opzione ~-X~ indica di non caricare il file ~.psqlrc~.
+
+*** Eseguire lo script di esemprio da riga di comando: ~pg_prove~
+Esiste un comando simile a ~prove~ di Perl, denominato ~pg_prove~ che viene installato da un modulo CPAN:
+
+#+begin_src shell
+% sudo cpan TAP::Parser::SourceHandler::pgTAP
+#+end_src
+
+mediante ~pg_prove~ è possibile eseguire una intera suite di test in un colpo solo:
+
+#+begin_src shell
+% pg_prove -h localhost -U luca -d testdb test.sql                                                                       ~
+test.sql .. ok
+All tests successful.
+Files=1, Tests=1,  1 wallclock secs ( 0.02 usr  0.03 sys +  0.00 cusr  0.02 csys =  0.06 CPU)
+Result: PASS
+#+end_src
 
 * Indici
 ** Tipi di indici
