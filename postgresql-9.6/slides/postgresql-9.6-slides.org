@@ -6601,7 +6601,7 @@ ok 1 - Ricerca utente LUCA
 Senza entrare nel terminale ~psql~ è possibile lanciare il comando (sempre via ~psql~) direttamente dalla shell corrente:
 
 #+begin_src shell
-% psql -h localhost -U luca -X -f test.sql testdb                                                                        ~
+% psql -h localhost -U luca -X -f test.sql testdb
 1..1
 ok 1 - Ricerca utente LUCA
 #+end_src
@@ -6618,7 +6618,7 @@ Esiste un comando simile a ~prove~ di Perl, denominato ~pg_prove~ che viene inst
 mediante ~pg_prove~ è possibile eseguire una intera suite di test in un colpo solo:
 
 #+begin_src shell
-% pg_prove -h localhost -U luca -d testdb test.sql                                                                       ~
+% pg_prove -h localhost -U luca -d testdb test.sql
 test.sql .. ok
 All tests successful.
 Files=1, Tests=1,  1 wallclock secs ( 0.02 usr  0.03 sys +  0.00 cusr  0.02 csys =  0.06 CPU)
@@ -6648,7 +6648,7 @@ ROLLBACK;
 che produce come risultato:
 
 #+begin_src shell
-% pg_prove -d testdb -h localhost -U luca test.sql                                                                       ~
+% pg_prove -d testdb -h localhost -U luca test.sql
 test.sql .. ok
 All tests successful.
 Files=1, Tests=4,  0 wallclock secs ( 0.01 usr +  0.02 sys =  0.02 CPU)
@@ -6658,7 +6658,7 @@ Result: PASS
 *** Esempio di fallimento di test
 Usando ~pg_prove~:
 #+begin_src shell
-% pg_prove -d testdb -h localhost -U luca test.sql                                                                       ~
+% pg_prove -d testdb -h localhost -U luca test.sql
 test.sql .. 1/5
 # Failed test 5: "Colonna indirizzo tabella persona"
 # Looks like you failed 1 test of 5
@@ -6669,7 +6669,7 @@ Result: FAIL
 mentre usando direttamente i test:
 
 #+begin_src shell
-% psql -h localhost -U luca -X -f test.sql testdb                                                                        ~
+% psql -h localhost -U luca -X -f test.sql testdb
 1..5
 ...
 not ok 5 - Colonna indirizzo tabella persona
@@ -6677,6 +6677,20 @@ not ok 5 - Colonna indirizzo tabella persona
 # Looks like you failed 1 test of 5
 #+end_src
 
+*** Organizzare i test
+In maniera analoga a quanto si fa con Perl e ~prove~ è possibile organizzare i test in directory e farli eseguire tutti in un colpo a ~pg_prove~.
+Si noti che ~pg_prove~ non richiede il setup del terminale ~psql~ consigliato nei passi precedenti.
+
+Ad esempio, supponendo di avere una directory ~t/~ che contiene degli script SQL con i vari test:
+
+#+begin_src shell
+% pg_prove -d testdb -h localhost -U luca t/*.sql
+t/evento.sql ... ok
+t/persona.sql .. ok
+All tests successful.
+Files=2, Tests=7,  1 wallclock secs ( 0.02 usr  0.02 sys +  0.00 cusr  0.01 csys =  0.05 CPU)
+Result: PASS
+#+end_src
 
 
 * Indici
