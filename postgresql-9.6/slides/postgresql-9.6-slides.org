@@ -6625,6 +6625,60 @@ Files=1, Tests=1,  1 wallclock secs ( 0.02 usr  0.03 sys +  0.00 cusr  0.02 csys
 Result: PASS
 #+end_src
 
+
+*** Un esempio di test piu' complesso
+Molte delle funzioni di test accettano lo schema e opzionalmente la descrizione del test, se lo schema è omesso si considera lo schema corrente, se la descrizione è omessa non viene stampato nulla di particolare in caso di fallimento.
+
+#+begin_src sql
+BEGIN;
+SELECT plan( 4 );
+
+SELECT has_role( 'luca', 'Ricerca utente LUCA' );
+SELECT has_table( 'public', 'persona', 'Tabella persona' );
+SELECT has_column( 'public', 'persona',
+                   'pk', 'Chiave surrogata persona' );
+-- senza schema
+SELECT has_column( 'persona', 'cognome',
+                   'Colonna cognome tabella persona' );
+
+Select * FROM finish();
+ROLLBACK;
+#+end_src
+
+che produce come risultato:
+
+#+begin_src shell
+% pg_prove -d testdb -h localhost -U luca test.sql                                                                       ~
+test.sql .. ok
+All tests successful.
+Files=1, Tests=4,  0 wallclock secs ( 0.01 usr +  0.02 sys =  0.02 CPU)
+Result: PASS
+#+end_src
+
+*** Esempio di fallimento di test
+Usando ~pg_prove~:
+#+begin_src shell
+% pg_prove -d testdb -h localhost -U luca test.sql                                                                       ~
+test.sql .. 1/5
+# Failed test 5: "Colonna indirizzo tabella persona"
+# Looks like you failed 1 test of 5
+...
+Result: FAIL
+#+end_src
+
+mentre usando direttamente i test:
+
+#+begin_src shell
+% psql -h localhost -U luca -X -f test.sql testdb                                                                        ~
+1..5
+...
+not ok 5 - Colonna indirizzo tabella persona
+# Failed test 5: "Colonna indirizzo tabella persona"
+# Looks like you failed 1 test of 5
+#+end_src
+
+
+
 * Indici
 ** Tipi di indici
 *** Introduzione
