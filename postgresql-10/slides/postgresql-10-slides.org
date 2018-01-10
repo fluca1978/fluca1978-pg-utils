@@ -344,7 +344,7 @@ Una connessione può essere *TCP/IP* oppure su *socket locale*.
    - mediante pacchetti binari della propria installazione
    - compilando l'albero dei sorgenti
 
-*** Macchina Virtuale                                          :B_definition:
+**** Macchina Virtuale                                         :B_definition:
    Tutte le prove qui mostrate sono state effettuate su una macchina virtuale con
    quattro dischi da 2GB utilizzati come spazio dati:
    #+begin_src sh
@@ -356,7 +356,7 @@ Una connessione può essere *TCP/IP* oppure su *socket locale*.
    /dev/ada3p1 on /mnt/data3 (ufs, local, soft-updates)
    /dev/ada4p1 on /mnt/data4 (ufs, local, soft-updates)
    #+end_src
-*** End of block                                               :B_ignoreheading:
+**** End of block                                           :B_ignoreheading:
 :PROPERTIES:
 :BEAMER_env: ignoreheading
 :END:
@@ -364,15 +364,18 @@ Una connessione può essere *TCP/IP* oppure su *socket locale*.
 *** Installazione
 Compilazione dai ports:
 #+begin_src sh
-# cd /usr/ports/databases/postgresql96-server
-# make PREFIX=/opt/postgresql-9.6 BATCH=yes install clean
+# cd /usr/ports/databases/postgresql10-server
+# make PREFIX=/opt/postgresql-10 BATCH=yes install clean
 #+end_src
 
 oppure il pacchetto binario:
 
 #+begin_src sh
-# pkg install postgresql96-server-9.6.5_1
+# pkg install postgresql10-server-10.1_1
 #+end_src
+
+/Precedenti versioni vengono rimosse dall'installazione binaria!/
+/I moduli ~contrib~ vanno rimossi a mano!/
 
 In FreeBSD il database viene gestito dall'utente di sistema ~postgres~:
 
@@ -489,16 +492,40 @@ binaria):
 #+begin_src sh
 # mkdir /mnt/data1/pgdata
   && chown postgres:postgres /mnt/data1/pgdata
-$ initdb --data-checksum --encoding="UTF-8"
-         --pwprompt
+$ initdb --data-checksum --encoding="UTF-8" \
+         --pwprompt                         \
          -D /mnt/data1/pgdata/
 #+end_src
 
 ~initdb~ deve essere eseguito da un utente non privilegiato, le opzioni indicano:
 - ~--data-checksum~: abilita il controllo sulle pagine dati del database;
 - ~--encoding~: default encoding di ogni database se non sovrascritto;
-- ~--pwprompt~: richiede la password del superutente di PostgreSQL (comodo per non impostarlo dopo);
+- ~--pwprompt~: richiede la password del superutente di PostgreSQL (comodo per non impostarla dopo);
 - *~-D~*: l'opzione principale, indica *dove si troveranno i dati*.
+
+*** initdb: errore comune
+Se la directory specificata come ~PGDATA~ per il cluster non è vuota ~initdb~ si rifiuta
+di continuare (si noti bene che non esiste un'opzione /force/):
+
+#+begin_src shell
+...
+initdb: directory "/mnt/data1/pgdata" exists but is not empty
+If you want to create a new database system, either remove or empty
+the directory "/mnt/data1/pgdata" or run initdb
+with an argument other than "/mnt/data1/pgdata".
+#+end_src
+
+*** initdb: risultato
+Se il comando ~initdb~ completa con successo, viene riportato un modo per avviare
+il cluster con la directory ~PGDATA~ appena specificata:
+
+#+begin_src shell
+$ initdb
+...
+Success. You can now start the database server using:
+
+    pg_ctl -D /mnt/data1/pgdata/ -l logfile start
+#+end_src
 
 *** Struttura di PGDATA
 La directory ~$PGDATA~ contiene diversi file e directory, in particolare:
@@ -509,9 +536,9 @@ La directory ~$PGDATA~ contiene diversi file e directory, in particolare:
 - *~global~*: directory che contiene dati inter-database (es. cataloghi di sistema);
 - ~pg_stat~ e ~pg_stat_tmp~: informazioni per le statistiche di sistema;
 - *~pg_tblscp~*: link ai vari tablespace (oggetti fuori da ~base~);
-- *~pg_xlog~* e ~pg_clog~: rispettivamente WAL e commit log.
+- *~pg_wal~* e ~pg_xact~: rispettivamente WAL e commit log.
 
-Per altre informazioni vedere [[https://www.postgresql.org/docs/9.6/static/storage-file-layout.html][Storage File System Layout]].
+Per altre informazioni vedere [[https://www.postgresql.org/docs/10/static/storage-file-layout.html][Storage File System Layout]].
 *** File fisici su disco
 Ogni /oggetto/ con dei dati (es. tabella) viene memorizzato su disco in un file
 con nome pari al suo /Object IDentifier/ (~OID~) numerico. Questo ha il vantaggio di:
@@ -527,22 +554,24 @@ Solitamente i file crescono in dimensione di ~8 kB~ alla volta (ossia della dime
 L'utility ~oid2name~ (modulo /contrib/) consente di esplorare
 la struttura dati su disco.
 #+begin_src sh
-% oid2name -H localhost -U postgres
-Password:
+% oid2name -H localhost -U postgres                                                                                      ~
 All databases:
     Oid  Database Name  Tablespace
 ----------------------------------
-  12758       postgres  pg_default
-  12757      template0  pg_default
+  12646       postgres  pg_default
+  12645      template0  pg_default
       1      template1  pg_default
 #+end_src
 
 Gli /oid/ visualizzati in questo caso corrispondono al nome *fisico su disco*
-dei database:
+dei database (che a sua volta corrisponde al nome della directory ove sono
+contenuti i dati):
 
 #+begin_src sh
-% sudo ls /mnt/data1/pgdata/base
-1       12757   12758
+% sudo ls -l /mnt/data1/pgdata/base
+drwx------  2 postgres  ... 1
+drwx------  2 postgres  ... 12645
+drwx------  2 postgres  ... 12646
 #+end_src
 
 *** ~oid2name~ (2)
@@ -550,19 +579,18 @@ dei database:
  cosa contiene:
 
 #+begin_src sh
-% sudo stat /mnt/data1/pgdata/base/1/12618
-107 65870 -rw------- 1 postgres postgres 145910 8192
+% sudo stat /mnt/data1/pgdata/base/1/1259
+104 65579 -rw------- 1 postgres postgres ...
 #+end_src
 
-A cosa corrisponde l'oggetto file ~12618~?
+A cosa corrisponde l'oggetto file ~1259~?
 
 #+begin_src sh
-% oid2name -H localhost -U postgres -d template1 -o 12618
-Password:
+% oid2name -H localhost -U postgres -d template1 -o 1259
 From database "template1":
   Filenode  Table Name
 ----------------------
-     12618  sql_sizing
+      1259    pg_class
 #+end_src
 
 *ATTENZIONE: si deve specificare a quale database si fa riferimento, poiché
@@ -572,12 +600,11 @@ gli stessi oid possono essere riciclati in database differenti*
 E se si vuole trovare una tabella dato il suo nome?
 
  #+begin_src sh
-% oid2name -H localhost -U postgres -d template1 -t sql_sizing
-Password:
+% oid2name -H localhost -U postgres -d template1 -t pg_class
 From database "template1":
   Filenode  Table Name
 ----------------------
-     12618  sql_sizing
+      1259    pg_class
  #+end_src
 
 ~oid2name~ va ad interrogare il catalogo di sistema per trovare le informazioni
@@ -586,9 +613,10 @@ necessarie.
 *** ~pg_relation_filepath()~
 La funzione di sistema ~pg_relation_filepath()~ permette di trovare un file partendo dal nome di una tabella considerando il nome della tabella:
 #+begin_src sql
-# SELECT pg_relation_filepath( 'evento'::regclass );
-
-pg_relation_filepath | base/19554/19584
+# SELECT pg_relation_filepath( 'pg_class'::regclass );
+ pg_relation_filepath
+----------------------
+ base/1/1259
 #+end_src
 
 Il percorso è /relativo a ~$PGDATA~/.
