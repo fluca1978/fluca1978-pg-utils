@@ -634,12 +634,12 @@ local   all        all                    trust
 host    all        all      127.0.0.1/32    md5
 #+end_src
 
-*** pg_hba.conf vs sudoers
+**** pg_hba.conf vs sudoers
     Il file ~pg_hba.conf~ è simile al file ~sudoers~, e come tale
     va gestito scrupolosamente.
     La parola ~all~ indica tutti gli utenti/database (a seconda di dove è messa).
     *Il metodo ~trust~ non richiede autenticazione e non va usato!*
-*** End of block                                               :B_ignoreheading:
+**** End of block                                           :B_ignoreheading:
 :PROPERTIES:
 :BEAMER_env: ignoreheading
 :END:
@@ -684,12 +684,12 @@ usati come possibili punti di origine di un nuovo database. In default, se non s
 copia ~template1~, mentre ~template0~ dovrebbe essere lasciato /vergine/ per operazioni particolari
 quali restore (può servire un database vuoto a cui collegarsi).
 
-*** Creare i propri template
+**** Creare i propri template
     E' possibile creare quanti database template si vuole e istruire il comando
     ~CREATE DATABASE~ per usare altri template oltre ~template1~. Si noti però
     che un database template non accetta connessioni durante la creazione, quindi
     questo *non è un meccanismo di /clonazione/ dei database!*
-*** End of block                                               :B_ignoreheading:
+**** End of block                                           :B_ignoreheading:
 :PROPERTIES:
 :BEAMER_env: ignoreheading
 :END:
@@ -702,7 +702,7 @@ che consente di collegarsi al database e svolgere /tutti/ i compiti necessari.
 #+begin_src sh
 % psql -h localhost -U postgres template1
 Password for user postgres:
-psql (9.6.5)
+psql (10.1)
 Type "help" for help.
 
 template1=#
@@ -722,7 +722,7 @@ Oltre a specificare ogni singolo parametro della conessione tramite opzioni di c
 #+begin_src sh
 % psql postgresql://postgres@localhost:5432/template1
 Password:
-psql (9.6.5)
+psql (10.1)
 Type "help" for help.
 
 template1=#
