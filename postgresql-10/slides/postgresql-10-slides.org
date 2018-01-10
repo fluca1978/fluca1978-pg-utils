@@ -749,7 +749,7 @@ Si esce da ~psql~ con ~\q~.
 
 #+begin_src SQL
 template1=# SELECT version();
- PostgreSQL 9.6.5 on amd64-portbld-freebsd11.0, ...
+ PostgreSQL 10.1 on amd64-portbld-freebsd11.1, ...
 (1 row)
 #+end_src
 
@@ -879,10 +879,14 @@ Il catalogo ~pg_roles~ contiene le informazioni sui ruoli e le loro proprietà:
 #+begin_src sql
 # SELECT rolname, rolsuper, rolcreatedb, rolcanlogin
 FROM pg_roles;
-      rolname      | rolsuper | rolcreatedb | rolcanlogin
--------------------+----------+-------------+-------------
- pg_signal_backend | f        | f           | f
- postgres          | t        | t           | t
+       rolname        | rolsuper | rolcreatedb | rolcanlogin
+----------------------+----------+-------------+-------------
+ pg_monitor           | f        | f           | f
+ pg_read_all_settings | f        | f           | f
+ pg_read_all_stats    | f        | f           | f
+ pg_stat_scan_tables  | f        | f           | f
+ pg_signal_backend    | f        | f           | f
+ postgres             | t        | t           | t
 #+end_src
 
 E' possibile creare utenti/gruppi/ruoli con privilegi di super utente, possibilità di creare nuovi
@@ -918,10 +922,10 @@ Si noti l'uso di ~ALTER ROLE~ per correggere un errore.
   FROM pg_roles;
       rolname      | rolsuper | rolcreatedb | rolcanlogin | rolconnlimit
 -------------------+----------+-------------+-------------+--------------
- pg_signal_backend | f        | f           | f           |           -1
  postgres          | t        | t           | t           |           -1
  my_app            | f        | f           | t           |            1
  luca              | f        | t           | t           |           -1
+ ...
 #+end_src
 
 *** Creare i ruoli (3)
@@ -942,7 +946,9 @@ localhost:5432:template1:my_app:xxxxx
 :BEAMER_env: ignoreheading
 :END:
 *** La vista ~pg_shadow~
-In analogia con i sistemi Unix, è disponibuile una vista ~pg_shadow~ che riassume i dati degli account utente (ruoli) comprensivi di password. Se la password inizia con ~md5~ la password è stata cifrata con tale algoritmo. Ovviamente occorre essere superutente per poter interrogare la vista.
+In analogia con i sistemi Unix, è disponibuile una vista ~pg_shadow~ che riassume i dati degli account utente (ruoli) comprensivi di password.
+Se la password inizia con ~md5~ la password è stata cifrata con tale algoritmo.
+Ovviamente occorre essere superutente per poter interrogare la vista.
 #+begin_src sql
 # SELECT usename, usecreatedb, usesuper,
          userepl, passwd
