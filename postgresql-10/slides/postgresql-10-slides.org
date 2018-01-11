@@ -2771,7 +2771,6 @@ Dal lato server-side è meglio usare le funzioni ~lo_get~ e ~lo_put~:
 
 che legge i primi 10 byte e restituisce un ~bytea~ come risultato.
 
-
 ** TOAST
 *** Superare la dimensione delle pagine dati
 Le pagine dati in PostgreSQL sono a dimensione fissa, solitamente 8kB; per questo nessun attributo di tabella può superare la dimensione fisica di una pagina dati.
@@ -4754,59 +4753,71 @@ Quando i dati tendono ad acculumarsi, è infatti possibile avere un rallentament
 
 *** Quando si può effettuare il partitioning?
 In linea di principio è sempre possibile effettuare il partitioning, ma farlo con dei dati "live" necessita di una ristrutturazione del database e del conseguente spostamento delle tuple.
-Ad ogni modo non è sempre possibile "anticipare" le necessità di paritioning (e occorre ricordarsi che l'ottimizzazione preventiva è spesso causa di mal di testa!).
+Non è sempre possibile "anticipare" le necessità di paritioning (e occorre ricordarsi che l'ottimizzazione preventiva è spesso causa di mal di testa!).
 
 In generale:
 - se si effettua il partitioning *prima* dell'inserimento dei dati si è nel caso /facile/: si strutturano i dati opportunamente da subito;
 - se si effettua il partitioning *con dati live* si è nel caso /difficile/, ma non impossibile!
 
 *** Come si effettua il partitioning?
-PostgreSQL supporta alcuni meccanismi che, combinati, possono fornire l'infrastruttura di partitioning:
-1. */table inheritance/* che permette di ereditare (nel senso OOP) la struttura da una tabella;
-2. */rules/* o */triggers/* che permettono di instradare (routing) le query verso la tabella della partizione giusta;
-3. */constraint exclusion/* che permette un uso efficace degli indici nel caso di partizionamento.
+PostgreSQL 10 implementa una sintassi apposita per il /declarative partitioning/, ovvero per indicare come spezzare in gruppi (partizioni) una tabella secondo due possibilità:
+- *list partitioning* ossia si indicano esattamente quali _valori_ di chiave appartengono ad ogni partizione;
+- *range partitioning* si indica la chiave (ma non i valori che assume) sulla quale effettuare il partitioning.
 
-*ATTENZIONE: in default PostgreSQL percorre tutta la catena di ereditarietà (instradamento automatico)!*
+*Il /declarative partitioning/ può essere effettuato solo se i dati _non_ sono gia' presenti*: PostgreSQL non ammette di mutare una tabella ordinaria in una partizionata con la sintassi per il partitioning.
 
-**** PostgreSQL 10 partitioning                                :B_definition:
-In PostgreSQL 10 esiste una apposita sintassi che /racchiude/ tutti i passi in uno unico gestendo in maniera molto piu' semplice il partizionamento.
-**** End of block                                           :B_ignoreheading:
-:PROPERTIES:
-:BEAMER_env: ignoreheading
-:END:
-
-
-*** Rules o Triggers?
-La logica di partitioning può essere implementata con /triggers/ o /rules/, la scelta in molti casi è indifferente.
+E' quindi necessario usare il "vecchio" sistema di partizionamento basato su *table inheritance* + *triggers/rules* + *constraint exclusion*.
 *** Su cosa si partiziona?
 Trovare il vincolo di discriminazione fra le partizioni dei dati è il quesito principale.
 
 *Lo scopo dovrebbe essere quello di ottenere partizioni omogenee (in termini di dimensioni) e "stabili" (ossia con poche variazioni)*/: piu' una partizione è "fissa" e piu' facile è ottimizzarla.
 
 La scelta della colonna/colonne di partizionamento e del relativo valore dipende dal dominio dei dati.
-*** Workflow per il partizionamento
-Dipende dal dominio dei dati, dalla loro quantità, ecc., ma in generale:
+*** Workflow per il /declarative partitioning/
+
+1. definire la tabella /master/ con la relativa struttura che sarà poi "clonata" su ogni partizione. La tabella non ammette chiavi primarie e/o vincoli di univocità. E' necessario specificare il tipo di partizionamento da operare:
+   - ~BY LIST~ implica che ogni partizione indichi esplicitamente i propri valori accettati;
+   - ~BY RANGE~ implica che ogni partizione indichi gli estremi del range dei valori ammessi;
+2. creare le tabelle partizioni senza indicare alcuna struttura dati, ma solo ~PARTITION OF~ seguito dalla lista dei valori (o range) ammessi.
+
+*** Workflow per il partizionamento via ~INHERITS~
+
 1. definire le partizioni e dichiarare le tabelle;
 2. abilitare l'instradamento delle query dalla tabella principale alle partizioni, in modo da impedire che la tabella principale sia "sporcata" con nuovi dati;
 3. eventualmente spostare i dati dalla tabella principale a quella con il vincolo corretto;
 4. verificare ~constraint_exclusion~ per aiutare l'ottimizzatore a instradare subito le query sulla partizione giusta.
-** Esempio (banale)
-*** Esempio
+** Declarative partitioning: esempio (banale)
+*** Esempio by list
 Supponiamo di avere una tabella ~persona~ che memorizza il ~sesso~, e di voler partizionare appunto sul sesso.
-Si supponga di essere nel caso "difficile": dati già presenti.
+Si supponga di essere nel caso "facile": dati *non* presenti.
 
 /Questo esempio è volutamente semplice per mostrare i concetti del partitioning!/
-*** Esepio: preparazione
+*** Esepio by list: preparazione
 #+begin_src sql
 > CREATE TABLE persona (
-    pk SERIAL PRIMARY KEY,
+    pk SERIAL NOT NULL,
     nome text,
     cognome text,
-    codice_fiscale text NOT NULL UNIQUE,
+    codice_fiscale text NOT NULL,
     sesso char(1) DEFAULT 'M',
-CHECK ( sesso IN ( 'M', 'F' ) ) );
+    CHECK ( sesso IN ( 'M', 'F' ) ) )
+    PARTITION BY LIST(sesso);
 #+end_src
-*** Esempio: popolamento
+
+*Nessun vincolo ~UNIQUE~ o ~PRIMARY KEY~ è ammesso su una tabella sottoposta a partizionamento!*
+
+*** Esempio by list: creazione delle partizioni
+#+begin_src sql
+> CREATE TABLE persona_maschio
+  PARTITION OF persona
+  FOR VALUES IN ('M');
+
+> CREATE TABLE persona_femmina
+  PARTITION OF persona
+  FOR VALUES IN ('F');
+#+end_src
+
+*** Esempio by list: popolamento
 #+begin_src sql
 > WITH random_seq AS (
     SELECT generate_series( 1, 10000 )
@@ -4820,12 +4831,156 @@ CHECK ( sesso IN ( 'M', 'F' ) ) );
               ELSE 'F'
         END
   FROM random_seq;
-
+#+end_src
+*** Esempio by list: risultato
+#+begin_src sql
 > SELECT count(*), sesso FROM persona GROUP  BY sesso;
  count | sesso
 -------+-------
   5000 | F
   5000 | M
+
+> SELECT count(*), sesso
+  FROM persona_maschio
+  GROUP BY sesso
+     UNION
+
+  SELECT count(*), sesso
+  FROM persona_femmina
+  GROUP  BY sesso;
+ count | sesso
+-------+-------
+  5000 | F
+  5000 | M
+#+end_src
+
+*** Esempio by range: data di nascita
+Si supponga di voler partizionare per data di nascita:
+#+begin_src sql
+> CREATE TABLE persona (
+    pk SERIAL NOT NULL,
+    nome text,
+    cognome text,
+    data_nascita date NOT NULL,
+    codice_fiscale text NOT NULL,
+    sesso char(1) DEFAULT 'M',
+    CHECK ( sesso IN ( 'M', 'F' ) ) )
+    PARTITION BY RANGE(data_nascita);
+#+end_src
+*** Esempio by range: creazione delle partizioni
+Nelle partizioni occorre inserire il *range* dei valori ammessi:
+#+begin_src sql
+> CREATE TABLE persona_last_century
+  PARTITION OF persona
+  FOR VALUES FROM ('1900-01-01')
+             TO ('1999-12-31');
+
+> CREATE TABLE persona_millenial
+  PARTITION OF persona
+  FOR VALUES FROM ('2000-01-01')
+             TO ('2100-12-31');
+#+end_src
+*** Esempio by range: popolamento
+#+begin_src sql
+> WITH random_seq AS (
+    SELECT generate_series( 1, 10000 )
+           AS random_val
+  )
+ , random_date AS (
+   SELECT '1990-01-01'::date
+          + random() * interval '123 years'
+          - random() * interval '6 months'
+          + random() * interval '852 days'
+          AS random_ts
+  )
+ INSERT INTO persona( nome, cognome, codice_fiscale, sesso, data_nascita )
+ SELECT 'Nome' || random_val,
+        'Cognome' || random_val,
+        substring( md5( random_val::text ) from 1 for 16 ),
+        CASE  WHEN random_val % 2 = 0 THEN 'M'
+              ELSE 'F'
+        END
+        , random_ts::date
+  FROM random_seq, random_date;
+#+end_src
+*** Esempio by range: risultato
+#+begin_src sql
+> SELECT count(*) FROM ONLY persona
+  UNION ALL
+  SELECT count(*) FROM persona_last_century
+  UNION ALL
+  SELECT count(*) FROM persona_millenial;
+ persona
+---------
+       0
+   10000
+   10000
+#+end_src
+
+
+*** Cosa succede se si cerca di spostare una tupla da una partizione ad un'altra?
+Il sistema non permette di spostare tramite ~UPDATE~ una tupla da una partizione ad un'altra:
+
+#+begin_src sql
+> UPDATE persona_millenial
+  SET data_nascita = '1990-01-07'
+  WHERE pk = 1;
+
+ERROR:  new row for relation "persona_millenial" violates partition constraint
+DETAIL:  Failing row contains (1, Nome1, Cognome1, 1990-01-07, c4ca4238a0b92382, F).
+#+end_src
+
+*** Cosa succede se manca una partizione?
+Il sistema non accetta l'inserimento di tuple che non possono ricadere su una partizione:
+
+#+begin_src sql
+> INSERT INTO persona(codice_fiscale,  data_nascita)
+  VALUES( 'FRRLCU77H88F257B', '1800-01-09');
+ERROR:  no partition of relation "persona" found for row
+DETAIL:  Partition key of the failing row contains (data_nascita) = (1800-01-09).
+#+end_src
+
+*** Attaccare una nuova partizione
+#+begin_src sql
+> CREATE TABLE persona_1800
+  PARTITION OF persona
+  FOR VALUES FROM ('1800-01-01')
+             TO ('1899-12-31');
+
+> INSERT INTO persona(codice_fiscale, data_nascita)
+  VALUES( 'FRRLCU77H88F257B', '1800-01-09');
+
+> SELECT count(*) FROM persona_1800;
+ count
+-------
+     1
+#+end_src
+
+
+** Inheritance partitioning: esempio (banale)
+*** Esempio con ~INHERITS~
+Si supponga di essere nel caso in cui la tabella ~persona~ è già stata popolata e la si vuole partizionare a posteriori sulla base dei valori della colonna ~sesso~:
+#+begin_src sql
+> CREATE TABLE persona (
+    pk SERIAL NOT NULL,
+    nome text,
+    cognome text,
+    codice_fiscale text NOT NULL,
+    sesso char(1) DEFAULT 'M',
+    CHECK ( sesso IN ( 'M', 'F' ) ) );
+
+> WITH random_seq AS (
+    SELECT generate_series( 1, 10000 )
+           AS random_val
+  )
+ INSERT INTO persona( nome, cognome, codice_fiscale, sesso )
+ SELECT 'Nome' || random_val,
+        'Cognome' || random_val,
+        substring( md5( random_val::text ) from 1 for 16 ),
+        CASE  WHEN random_val % 2 = 0 THEN 'M'
+              ELSE 'F'
+        END
+  FROM random_seq;
 #+end_src
 *** Setup delle tabelle
 #+begin_src sql
@@ -4983,7 +5138,7 @@ Il parametro ~constraint_exclusion~ permette all'ottimizzatore di analizzare i v
 #+begin_src shell
 constraint_exclusion = partition
 #+end_src
-*** Instradamento automatico *con ~constraint_exclusion~*
+*** Instradamento automatico *con* ~constraint_exclusion~
 #+begin_src sql
 > EXPLAIN SELECT * FROM persona WHERE sesso = 'M' AND codice_fiscale like 'FRR%';
                                   QUERY PLAN
@@ -4996,7 +5151,7 @@ constraint_exclusion = partition
 #+end_src
 
 La tabella ~persona_femmina~ non viene presa in considerazione poiché il planner è in grado di stabilire a priori che il vincolo della query esclude tale tabella.
-*** Instradamento automatico *senza ~constraint_exclusion~*
+*** Instradamento automatico *senza* ~constraint_exclusion~
 #+begin_src sql
 > EXPLAIN SELECT * FROM persona WHERE sesso = 'M' AND codice_fiscale like 'FRR%';
                                   QUERY PLAN
