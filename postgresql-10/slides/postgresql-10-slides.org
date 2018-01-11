@@ -2395,7 +2395,7 @@ Ci sono dei valori speciali:
     || '@' || inet_server_addr()
     || ':' || inet_server_port() AS myself,
     inet_client_addr() || ':'
-    || inet_client_port() AS connected_from
+    || inet_client_port() AS connected_from,
     current_database(),
     current_schema();
 
@@ -2470,26 +2470,24 @@ PostgreSQL mette a disposizione dell'utente amministratore una serie di funzioni
 #+begin_src sql
 # WITH files AS ( SELECT pg_ls_dir( 'pg_log' ) )
   SELECT * FROM files
-  WHERE pg_ls_dir like '%-2017-11-13%';
+  WHERE pg_ls_dir like '%2018-01-__%.log';
             pg_ls_dir
 ----------------------------------
- postgresql-2017-11-13_093647.log
- postgresql-2017-11-13_113553.log
- postgresql-2017-11-13_134555.log
- postgresql-2017-11-13_144325.log
+ postgresql-2018-01-11_104609.log
 #+end_src
 
 *** Esempio di lettura di un file
 #+begin_src sql
 # SELECT regexp_split_to_table(
-            pg_read_file( 'pg_log/postgresql-2017-11-13_093647.log' ),
+            pg_read_file( 'pg_log/postgresql-2018-01-11_104609.log' ),
                           E'\\n' );
 
- LOG:  database system was shut down at 2017-11-10 13:26:30 CET
- DEBUG:  checkpoint record is at 4/429836E8
- DEBUG:  redo record is at 4/429836E8; shutdown TRUE
- DEBUG:  next transaction ID: 0:3001; next OID: 19748
- DEBUG:  next MultiXactId: 1; next MultiXactOffset: 0
+LOG:  database system was shut down at 2018-01-11 10:46:09 CET
+LOG:  database system is ready to accept connections
+ERROR:  could not stat file "pg_log/postgresql-2017-11-13_093647.log": No such file or directory
+STATEMENT:  FETCH FORWARD 20 FROM _psql_cursor
+ERROR:  current transaction is aborted, commands ignored until end of transaction block
+STATEMENT:  CLOSE _psql_cursor
 #+end_src
 
 ** Modificare una tabella esistente
