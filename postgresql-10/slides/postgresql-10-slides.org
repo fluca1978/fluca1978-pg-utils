@@ -2516,6 +2516,23 @@ Molti dei sottocomandi (azioni) di ~ALTER TABLE~ supportano ~IF NOT EXISTS~ e ~I
 > ALTER TABLE persona RENAME eta TO eta_years;
 #+end_src
 
+*** ~ALTER TABLE~ con azioni multiple
+Il comando supporta azioni multiple, se correlate (vedere la documentazione):
+
+#+begin_src sql
+> ALTER TABLE persona
+   ADD COLUMN IF NOT EXISTS
+          description text NOT NULL DEFAULT 'N/A',
+   ADD COLUMN IF NOT EXISTS
+          data_nascita date NOT NULL DEFAULT '1950-01-01'::date,
+   ALTER COLUMN eta_years SET NOT NULL;
+
+
+> ALTER TABLE persona
+    DROP COLUMN IF EXISTS data_nascita,
+    DROP COLUMN IF EXISTS description,
+    ADD COLUMN  IF NOT EXISTS titolo varchar(6);
+#+end_src
 *** ~ALTER TABLE USING~
 Il comando ~ALTER TABLE~ ammette una clausola ~USING~ che consente di specificare come applicare le modifiche, ad esempio il valore di una colonna. Questo comando funziona solo se si cambia un tipo di dato, al limite anche lasciandolo uguale al precedente:
 
@@ -2543,23 +2560,7 @@ La potenza di ~ALTER TABLE USING~ ovviamente si ottiene quando si cambia il tipo
     SET DATA TYPE text
     USING upper(nome) || ' ' || upper(cognome);
 #+end_src
-*** ~ALTER TABLE~ con azioni multiple
-Il comando supporta azioni multiple, se correlate (vedere la documentazione):
 
-#+begin_src sql
-> ALTER TABLE persona
-   ADD COLUMN IF NOT EXISTS
-          description text NOT NULL DEFAULT 'N/A',
-   ADD COLUMN IF NOT EXISTS
-          data_nascita date NOT NULL DEFAULT '1950-01-01'::date,
-   ALTER COLUMN eta_years SET NOT NULL;
-
-
-> ALTER TABLE persona
-    DROP COLUMN IF EXISTS data_nascita,
-    DROP COLUMN IF EXISTS description,
-    ADD COLUMN  IF NOT EXISTS titolo varchar(6);
-#+end_src
 * Backup e restore
 ** Backup
 *** Introduzione
