@@ -4779,6 +4779,8 @@ La scelta della colonna/colonne di partizionamento e del relativo valore dipende
    - ~BY LIST~ implica che ogni partizione indichi esplicitamente i propri valori accettati;
    - ~BY RANGE~ implica che ogni partizione indichi gli estremi del range dei valori ammessi;
 2. creare le tabelle partizioni senza indicare alcuna struttura dati, ma solo ~PARTITION OF~ seguito dalla lista dei valori (o range) ammessi.
+3. creare i constraint (~UNIQUE~ e ~PRIMARY KEY~) per ogni partizione figlia (se necessario);
+
 
 *** Workflow per il partizionamento via ~INHERITS~
 
@@ -4786,6 +4788,17 @@ La scelta della colonna/colonne di partizionamento e del relativo valore dipende
 2. abilitare l'instradamento delle query dalla tabella principale alle partizioni, in modo da impedire che la tabella principale sia "sporcata" con nuovi dati;
 3. eventualmente spostare i dati dalla tabella principale a quella con il vincolo corretto;
 4. verificare ~constraint_exclusion~ per aiutare l'ottimizzatore a instradare subito le query sulla partizione giusta.
+*** Instradamento automatico: ~constraint_exclusion~
+Il partizionamento deve essere *trasparente*: le query devono poter avvenire "contro" la tabella principale ed essere /rimbalzate/ alla partizione corretta.
+
+Il parametro ~constraint_exclusion~ permette all'ottimizzatore di analizzare i vincoli (/constraint/) di tabella al fine di "comprendere" meglio come instradare una query. I valori possibili per questo parametro sono:
+- ~on~: abilitato per tutte le query (aumenta lo /sforzo/ del planner);
+- ~off~: disabilitato per tutte le query;
+- ~partition~ (default): abilita il meccanismo solo in caso di tabelle con ~INHERITS~ e ~PARTITION BY~.
+
+#+begin_src shell
+constraint_exclusion = partition
+#+end_src
 ** Declarative partitioning: esempio (banale)
 *** Esempio by list
 Supponiamo di avere una tabella ~persona~ che memorizza il ~sesso~, e di voler partizionare appunto sul sesso.
@@ -5129,15 +5142,6 @@ L'instradamento automatico e il calo di performance è visibile nel piano di ese
 #+end_src
 
 *Vengono percorse tutte le tabelle nella partizione!*
-*** Instradamento automatico: ~constraint_exclusion~
-Il parametro ~constraint_exclusion~ permette all'ottimizzatore di analizzare i vincoli (/constraint/) di tabella al fine di "comprendere" meglio come instradare una query. I valori possibili per questo parametro sono:
-- ~on~: abilitato per tutte le query (aumenta lo /sforzo/ del planner);
-- ~off~: disabilitato per tutte le query;
-- ~partition~: abilita il meccanismo solo in caso di tabelle con ~INHERITS~.
-
-#+begin_src shell
-constraint_exclusion = partition
-#+end_src
 *** Instradamento automatico *con* ~constraint_exclusion~
 #+begin_src sql
 > EXPLAIN SELECT * FROM persona WHERE sesso = 'M' AND codice_fiscale like 'FRR%';
