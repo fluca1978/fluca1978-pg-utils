@@ -5786,7 +5786,7 @@ Lo schema di utilizzo segue questo workflow:
 - creare un /server remoto/ che incapsula la /connessione/ (qualunque cosa significhi) all'origine dati remota;
 - eventualmente, se necessario, creare uno /user mapping/, ossia una traduzione da utente locale ad utente remoto;
 - creare una mappatura di ogni tabella che deve essere accessibile sul server remoto.
-*** ~OPTIONS~
+*** FDW ~OPTIONS~
 Sia i server che le foreign table accettano una serie di opzioni specificate tramite ~OPTIONS~ e una sintassi come la seguente:
 #+begin_src sql
 OPTIONS( name 'value', name 'value', ... )
@@ -5857,6 +5857,8 @@ Diego;Ferrari;FRRDGI78L19F257B
 ** Esempio di FDW: file system fdw
 *** Introduzione
 E' un modulo /Multicorn/ che permette di esplorare il filesystem locale come fosse una tabella.
+
+Per installare il pacchetto Multicorn occorre usare ~gmake~.
 *** Fase 1: creazione del server
 #+begin_src sql
 # CREATE EXTENSION multicorn;
