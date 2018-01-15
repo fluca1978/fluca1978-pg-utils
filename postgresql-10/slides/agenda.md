@@ -25,11 +25,12 @@
 - Stored Procedures: creare funzioni in linguaggio *plpgsql* e un altro linguaggio (es. *plperl*)
 - Triggers: agganciare le funzioni agli eventi
 - Viste e Rules
+- Partitioning
 
 # Server Side Programming (2)
-- Partitioning
 - Window Functions e Common Table Expressions
 - Estendere PostgreSQL con le estensioni
+- Foreign Data Wrappers
 - Indici e l'ottimizzatore (cenni)
 - Background workers (cenni)
 
@@ -45,6 +46,7 @@
 - Logical Replication (esempi)
 
 ## Varie ed eventuali
-Argomenti non specificatamente trattati.
+Argomenti non specificatamente trattati:
+- Configurazione del server
 
 -
