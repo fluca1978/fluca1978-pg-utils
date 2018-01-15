@@ -1,4 +1,7 @@
-# Introduzione ai database relazionali
+
+
+# PostgreSQL (introduzione)
+## Introduzione ai database relazionali
 - Scenari di utilizzo e introduzione ai sistemi relazionali
 - Il linguaggio SQL di base: ```INSERT, UPDATE, DELETE, SELECT```
 - Tabelle e viste: definire i dati e gestirli
@@ -7,39 +10,41 @@
 - Reagire per mantenere i dati coerenti: triggers e stored procedures
 - Cenni a sistemi NOSQL, CAP, Column-Store
 
-
-# PostgreSQL: primi passi
+## PostgreSQL
 - Introduzione al progetto (storia, cultura, risorse, funzionalità)
 - Concetti di base (cluster, utenti, permessi, ecc.)
 - Installazione di un cluster PostgreSQL
-  - installazione da pacchetto binario
-  - configurazione della directory di lavoro del cluster (```initdb```)
-  - configurazione delle connessioni esterne (```pg_hba.conf```)
-  - connessione al cluster tramite ```psql``` (*template0*, *template1*)
-  - creazione di utenti e database
-- Connessione ad un database specifico
-  - utilizzare ```psql```
-  - definire tabelle, viste, ruoli, e popolare il database
-  - modificare lo schema (cenni)
-- Backup e Restore
-  - backup logico *testuale* con ```pg_dump```
-  - restore manuale con ```psql``` o ```pg_restore```
+- Connessione ad un database specifico (via riga di comando con `psql`)
+- Creazione di oggetti (tabelle, indici, utenti, ecc.)
+- Backup e Restore (logico)
+- SQL PostgreSQL: comandi e istruzioni particolari
+- Cenni ai cataloghi di sistema
 
-# PostgreSQL: Server Side Programming (1)
-- Transazioni: livelli di isolamento
-- Stored Procedures: creare funzioni in linguaggio *plpgsql*
+# Server Side Programming (1)
+- Transazioni: livelli di isolamento, MVCC, vacuum
+- Stored Procedures: creare funzioni in linguaggio *plpgsql* e un altro linguaggio (es. *plperl*)
 - Triggers: agganciare le funzioni agli eventi
+- Viste e Rules
 
-# PostgreSQL: Server Side Programming (2)
-- Usare il proprio linguaggio di programmazione preferito direttamente dentro a PostgreSQL (esempi)
-- Background workers (esempi)
+# Server Side Programming (2)
+- Partitioning
+- Window Functions e Common Table Expressions
 - Estendere PostgreSQL con le estensioni
+- Indici e l'ottimizzatore (cenni)
+- Background workers (cenni)
 
-# PostgreSQL: Replica
+
+
+# Replication (1)
 - Replication: concetti e terminologia, l'uso dei WAL
 - Point in Time Recovery (esempi)
 - Log Shipping Replication (esempi)
+
+# Replication (2)
 - Streaming Replication (esempi)
 - Logical Replication (esempi)
+
+## Varie ed eventuali
+Argomenti non specificatamente trattati.
 
 -
