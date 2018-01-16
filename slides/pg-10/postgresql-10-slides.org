@@ -3390,20 +3390,20 @@ LANGUAGE language [<volatilità>];
 #+end_src
 
 *** Prototiti di funzione
-   - la lista di parametri può includere solo i tipi, nel qual caso i parametri sono accessibili con ~$1~, ~$2~, ecc.;
-   - i parametri possono includere un valore di default specificato con ~DEFAULT~;
-   - i parametri possono essere in ingresso (~IN~, default), in uscita (~OUT~, non importa
-     farne il ~RETURN~) o in entrambi (~INOUT~).
+- la lista di parametri può includere solo i tipi, nel qual caso i parametri sono accessibili con ~$1~, ~$2~, ecc.;
+- i parametri possono includere un valore di default specificato con ~DEFAULT~;
+- i parametri possono essere in ingresso (~IN~, default), in uscita (~OUT~, non importa
+  farne il ~RETURN~) o in entrambi (~INOUT~).
 
 *** Volatilità di una funzione
-   Le funzioni hanno tre livelli di /volatilità/:
-   - ~VOLATILE~: /default/, modifica il database e può dare risultati diversi
-     anche se inocata con gli stessi argomenti;
-   - ~STABLE~: non modifica il database e ritorna lo stesso valore con gli stessi
-     argomenti /per tutte le tuple nello stesso statement/ (è indipendente dal valore
-     delle singole tuple), utile per operatori di confronto (es. negli indici);
-   - ~IMMUTABLE~: non modifica il database e ritorna lo stesso valore con gli stessi
-     argomenti /sempre/.
+Le funzioni hanno tre livelli di /volatilità/:
+- ~VOLATILE~: /default/, modifica il database e può dare risultati diversi
+  anche se inocata con gli stessi argomenti;
+- ~STABLE~: non modifica il database e ritorna lo stesso valore con gli stessi
+  argomenti /per tutte le tuple nello stesso statement/ (è indipendente dal valore
+  delle singole tuple), utile per operatori di confronto (es. negli indici);
+- ~IMMUTABLE~: non modifica il database e ritorna lo stesso valore con gli stessi
+  argomenti /sempre/.
 
   Esempi: ~random()~ è ~VOLATILE~, ~current_timestamp~ è ~STABLE~,
   ~version()~ è ~IMMUTABLE~.
