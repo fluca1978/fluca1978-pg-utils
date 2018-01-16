@@ -4081,15 +4081,21 @@ che il terminale ~psql~ non visualizzerà immediatamente le notifiche ma solo al
 
 *** Primo esempio di ~LISTEN~ e ~NOTIFY~
 Il nome del canale è arbitrario, si deve scegliere opportunamente per evitare sovrapposizioni.
-In una prima sessione:
+Si ricevono gli eventi *notificati solo dopo una listen avvenuta*.
+In una  sessione:
 #+begin_src sql
+-- due
 > NOTIFY my_channel, 'First event';
 > NOTIFY my_channel, 'Second event';
 #+end_src
 
 e in un'altra sessione, *quando viene eseguito un qualche statement*:
 #+begin_src sql
-> SELECT * FROM evento;
+-- uno
+> LISTEN my_channel;
+...
+-- tre
+> SELECT 1 + 1;
 ...
 Asynchronous notification "my_channel"
     with payload "First event" received
