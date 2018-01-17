@@ -6188,18 +6188,18 @@ Con specifiche opzioni il comando mostra come è stato compilato PostgreSQL. Ad 
 Il comando ~pg_controldata~ fornisce lo stato attuale del cluster, con diverse informazioni utili quali lo stato dei WAL, la versione del catalogo di sistema, la versione del cluster, ecc. E' solitamente molto utile quando si deve riportare un bug:
 #+begin_src shell
 % sudo  pg_controldata -D /mnt/data1/pgdata
-pg_control version number:            960
-Catalog version number:               201608131
-Database system identifier:           6476345954120890666
+pg_control version number:            1002
+Catalog version number:               201707211
+Database system identifier:           6509403694562149197
 Database cluster state:               in production
-pg_control last modified:             Wed Nov 15 10:11:18 2017
+pg_control last modified:             Tue Jan 16 13:51:30 2018
 Latest checkpoint location:           4/42AA9A38
 Prior checkpoint location:            4/42AA9360
 Latest checkpoint's REDO location:    4/42AA9A38
 Latest checkpoint's REDO WAL file:    000000010000000400000042
 Latest checkpoint's TimeLineID:       1
 ...
-Time of latest checkpoint:            Wed Nov 15 10:11:17 2017
+Time of latest checkpoint:            Tue Jan 16 13:51:30 2018
 ...
 wal_level setting:                    minimal
 ...
@@ -8026,7 +8026,8 @@ che possono aver sporcato i dati, ecc.
 :END:
 
 *** Preparasi al PITR
-Le fasi da seguire sono sostanzialmente due:
+Le fasi da seguire sono sostanzialmente:
+- configurazione del cluster affinché /esporti/ i WAL segments;
 - eseguire il backup dei file di dati (non importa siano /corrotti/, i WAL aggiusteranno la situazione);
 - eseguire il backup dei segmenti di WAL.
 
@@ -8052,15 +8053,15 @@ ogni volta che un nuovo segmento di WAL viene pronto per l'archiviazione (ossia 
 Il comando può essere un semplice ~cp~ o un complesso programma, tenendo conto che i marcaposto speciali sono
 espansi come segue:
 - ~%f~ è il nome relativo del file di log da archiviare;
-- ~%p~ è il nome del file da archiviare relativo a ~$PGDATA~ (ossia ~pg_xlog/<file>~).
+- ~%p~ è il nome del file da archiviare relativo a ~$PGDATA~ (ossia ~pg_wal/<file>~).
 
 *I file di WAL sono di proprietà dell'utente che esegue il cluster.*
 Si tenga presente che i WAL contengono effettivamente i dati contenuti nel database (e quindi è opportuno siano protetti).
 *** WAL Archiving: impostazioni pratiche
 Si deve definire dove archiviare i WAL (può essere uno spazio locale o remoto):
 #+begin_src sh
-# mkdir /mnt/data2/wal_archive
-  && chown postgres:postgres /mnt/data2/wal_archive
+# mkdir /mnt/data2/wal_archive \
+  && chown postgres:postgres /mnt/data2/wal_archive \
   && chmod 700 /mnt/data2/wal_archive
 #+end_src
 Poi in ~postgresql.conf~ si abilita l'archiving:
@@ -8098,14 +8099,15 @@ cp ${SRC_FILE} ${DST_FILE} \
 Man mano che i dati vengono immessi nel database (o un checkpoint viene raggiunto) lo spazio di archiviazione dei WAL
 si inizia a popolare:
 #+begin_src sh
-% sudo -u postgres ls -lh /mnt/data2/wal_archive                                                                         ~
+% sudo -u postgres ls -lh /mnt/data2/wal_archive
 ...
--rw-------  1 postgres  postgres    16M Oct 30 15:01 0000000100000001000000B8
--rw-------  1 postgres  postgres    16M Oct 30 15:02 0000000100000001000000B9
--rw-------  1 postgres  postgres    16M Oct 30 15:02 0000000100000001000000BA
--rw-------  1 postgres  postgres   1.4K Oct 30 15:02 log.txt
+-rw-------  1 postgres  postgres    16M Jan 17 13:30 000000010000000000000017
+-rw-------  1 postgres  postgres    16M Jan 17 13:30 000000010000000000000018
+-rw-------  1 postgres  postgres    16M Jan 17 13:30 000000010000000000000019
+-rw-------  1 postgres  postgres   405B Jan 17 13:30 log.txt
 #+end_src
 
+/Nota: il file ~log.txt~ è stato generato dallo script di archiviazione, non da PostgreSQL!/
 *** Forzare l'archiviazione
 Il database archivia i WAL segment ogni volta che ha terminato di prepararne uno (es. al checkpoint).
 Questo può rappresentare un problema poiché se ci sono pochi dati o il tempo fra due checkpoint è alto
@@ -8121,9 +8123,9 @@ archive_timeout = 20
 e i log sono archiviati ogni 20 secondi (circa):
 #+begin_src sh
 % sudo -u postgres cat /mnt/data2/wal_archive/log.txt
-OK Mon, 30 Oct 2017 15:06:35 +0100: WAL segment 0000000100000001000000BD copiato
-OK Mon, 30 Oct 2017 15:06:55 +0100: WAL segment 0000000100000001000000BE copiato
-OK Mon, 30 Oct 2017 15:07:16 +0100: WAL segment 0000000100000001000000BF copiato
+OK Wed, 17 Jan 2018 13:39:27 +0100: WAL segment 00000001000000000000001C copiato
+OK Wed, 17 Jan 2018 13:42:08 +0100: WAL segment 00000001000000000000001D copiato
+OK Wed, 17 Jan 2018 13:42:28 +0100: WAL segment 00000001000000000000001E copiato
 #+end_src
 *** Problema di esempio: nuke di una tabella
 Si cancellano dei dati da una tabella:
@@ -8132,18 +8134,19 @@ Si cancellano dei dati da una tabella:
 > INSERT INTO evento( description )
   SELECT 'Evento ' || generate_series( 1, 2000000 );
 > SELECT txid_current(), current_timestamp;
--[ RECORD 1 ]+------------------------------
-txid_current | 1577
-now          | 2017-10-30 18:34:31.951625+01
-
+ txid_current |       current_timestamp
+--------------+-------------------------------
+          967 | 2018-01-17 13:43:54.465174+01
 > COMMIT;
+
+-- si beve qualche birra e...
 
 > BEGIN;
 > DROP TABLE evento;
 > SELECT txid_current(), current_timestamp;
--[ RECORD 1 ]+------------------------------
-txid_current | 1691
-now          | 2017-10-30 18:36:30.701021+01
+ txid_current |       current_timestamp
+--------------+-------------------------------
+          968 | 2018-01-17 13:45:32.395057+01
 
 > COMMIT;
 #+end_src
@@ -8158,8 +8161,9 @@ Una volta che *l'archiviazione dei WAL è attiva* occorre:
 Come superutente del cluster avviare il backup:
 #+begin_src sql
 # SELECT pg_start_backup( 'PITR_BACKUP_MANUAL', true, false );
--[ RECORD 1 ]---+-----------
-pg_start_backup | 2/3C000028
+ pg_start_backup
+-----------------
+ 0/37000108
 #+end_src
 
 I parametri di ~pg_start_backup~ sono:
@@ -8181,14 +8185,13 @@ Nella stessa connessione come utente amministratore eseguire ~pg_stop_backup~:
 # SELECT pg_stop_backup( false );
 NOTICE:  pg_stop_backup complete, all required WAL segments have been archived
 -[ RECORD 1 ]--+----------------------------------------------------------------------------
-pg_stop_backup | (2/3C000130,"START WAL LOCATION: 2/3C000028 (file 00000001000000020000003C)+
-               | CHECKPOINT LOCATION: 2/3C000060                                            +
+pg_stop_backup | (0/38000088,"START WAL LOCATION: 0/37000108 (file 000000010000000000000037)+
+               | CHECKPOINT LOCATION: 0/37000140                                            +
                | BACKUP METHOD: streamed                                                    +
                | BACKUP FROM: master                                                        +
-               | START TIME: 2017-10-30 18:31:44 CET                                        +
+               | START TIME: 2018-01-17 13:46:42 CET                                        +
                | LABEL: PITR_BACKUP_MANUAL                                                  +
                | ","")
-
 #+end_src
 
 Questo produrrà un nuovo WAL segment switch per garantire che anche l'ultimo segmento è stato
@@ -8197,18 +8200,18 @@ reso persistente e archiviato.
 Nello spazio di archiviazione viene creato un file con suffisso ~.backup~ che contiene le informazioni
 riportate da ~pg_stop_backup~ e che sono *vitali* per il backup stesso:
 #+begin_src sh
-% sudo cat /mnt/data2/wal_archive/00000001000000020000003C.00000028.backup                                               ~
-START WAL LOCATION: 2/3C000028 (file 00000001000000020000003C)
-STOP WAL LOCATION: 2/3C000130 (file 00000001000000020000003C)
-CHECKPOINT LOCATION: 2/3C000060
+% sudo cat /mnt/data2/wal_archive/000000010000000000000037.00000108.backup
+START WAL LOCATION: 0/37000108 (file 000000010000000000000037)
+STOP WAL LOCATION: 0/38000088 (file 000000010000000000000038)
+CHECKPOINT LOCATION: 0/37000140
 BACKUP METHOD: streamed
 BACKUP FROM: master
-START TIME: 2017-10-30 18:31:44 CET
+START TIME: 2018-01-17 13:46:42 CET
 LABEL: PITR_BACKUP_MANUAL
-STOP TIME: 2017-10-30 18:32:30 CET
+STOP TIME: 2018-01-17 13:48:27 CET
 #+end_src
-Si noti che il nome file è concatenato dal nome del segmento WAL (~0x3C~), dal punto di inizio del backup
-come riportato da ~pg_start_backup~ (~0x3C0000028~).
+Si noti che il nome file è concatenato dal nome del segmento WAL (~0x37~), dal punto di inizio del backup
+come riportato da ~pg_start_backup~ (~0x370000108~).
 *** Problema di esempio: nuke di una tabella
 Si cancellano dei dati da una tabella:
 #+begin_src sql
@@ -8216,19 +8219,19 @@ Si cancellano dei dati da una tabella:
 > INSERT INTO evento( description )
   SELECT 'Evento ' || generate_series( 1, 2000000 );
 > SELECT txid_current(), current_timestamp;
--[ RECORD 1 ]+------------------------------
-txid_current | 1454
-now          | 2017-10-30 18:10:25.879821+01
-
+ txid_current |       current_timestamp
+--------------+-------------------------------
+          973 | 2018-01-17 14:07:05.806106+01
 > COMMIT;
+
+-- si bevono alcune birre e...
 
 > BEGIN;
 > DROP TABLE evento;
 > SELECT txid_current(), current_timestamp;
--[ RECORD 1 ]+------------------------------
-txid_current | 1569
-now          | 2017-10-30 18:12:16.851949+01
-
+ txid_current |       current_timestamp
+--------------+-------------------------------
+          975 | 2018-01-17 14:09:30.041652+01
 > COMMIT;
 #+end_src
 *** Far ripartire un nuovo cluster
@@ -8241,25 +8244,56 @@ Nello specifico:
 
 #+begin_src sh
 restore_command = 'cp /mnt/data2/wal_archive/%f "%p"'
-recovery_target_time = '2017-10-30 18:36:00'
+recovery_target_time = '2018-01-17 14:09:00'
+# opzionale
+#recovery_target_action = promote
 #+end_src
 *** Avviare il sistema in PITR
 #+begin_src sh
-% sudo -u postgres pg_ctl -D /mnt/data3/pgdata start                                                                     ~
-server starting
-LOG:  database system was interrupted; last known up at 2017-10-30 18:31:44 CET                                        ~
-LOG:  starting point-in-time recovery to 2017-10-30 18:36:29+01
-LOG:  database system was not properly shut down; automatic recovery in progress
-LOG:  redo starts at 2/3C000028
-LOG:  invalid record length at 2/3C000108: wanted 24, got 0
-LOG:  consistent recovery state reached at 2/3C000108
-LOG:  restored log file "00000001000000020000003C" from archive
-LOG:  restored log file "00000001000000020000003D" from archive
-LOG:  restored log file "00000001000000020000003E" from archive
+% sudo -u postgres pg_ctl -D /mnt/data3/pgdata -o "-p 5433" start
+waiting for server to start....2018-01-17 14:11:55.713 CET [1526] LOG:  listening on IPv6 address "::1", port 5433
+2018-01-17 14:11:55.713 CET [1526] LOG:  listening on IPv4 address "127.0.0.1", port 5433
+2018-01-17 14:11:55.715 CET [1526] LOG:  listening on Unix socket "/tmp/.s.PGSQL.5433"
+2018-01-17 14:11:55.866 CET [1527] LOG:  database system was shut down in recovery at 2018-01-17 14:10:41 CET
+2018-01-17 14:11:55.867 CET [1527] LOG:  starting point-in-time recovery to 2018-01-17 14:09:00+01
+2018-01-17 14:11:56.123 CET [1527] LOG:  restored log file "000000010000000000000039" from archive
+2018-01-17 14:11:56.287 CET [1527] LOG:  redo starts at 0/39000060
+2018-01-17 14:11:56.615 CET [1527] LOG:  restored log file "00000001000000000000003A" from archive
+2018-01-17 14:11:56.973 CET [1527] LOG:  restored log file "00000001000000000000003B" from archive
+2018-01-17 14:11:58.442 CET [1527] LOG:  restored log file "00000001000000000000003C" from archive
 ...
-LOG:  redo done at 2/57FFE0C8
-LOG:  last completed transaction was at log time 2017-10-30 18:36:07.564217+01
+2018-01-17 14:12:23.808 CET [1527] LOG:  consistent recovery state reached at 0/4E000000
+2018-01-17 14:12:23.810 CET [1526] LOG:  database system is ready to accept read only connections
+ done
+...
+2018-01-17 14:12:57.263 CET [1527] LOG:  recovery stopping before commit of transaction 975, time 2018-01-17 14:09:38.073761+01
+2018-01-17 14:12:57.263 CET [1527] LOG:  recovery has paused
+2018-01-17 14:12:57.263 CET [1527] HINT:  Execute pg_wal_replay_resume() to continue.
+server started
 #+end_src
+*** Abilitare il sistema in PITR
+Il sistema *automaticamente* si mette in pausa prima di accettare connessioni read/write: questo permette di analizzare lo stato del database
+per capire se tutto è corretto. Occorre abilitare in manuale il sistema indicando con ~pg_wal_replay_resume()~ che
+il recovery è terminato:
+#+begin_src sql
+% psql -h localhost -U postgres -p 5433 testdb
+# SELECT pg_wal_replay_resume();
+#+end_src
+
+e quindi il database risponde con:
+
+#+begin_src shell
+2018-01-17 14:18:39.500 CET [1527] LOG:  redo done at 0/64000F58
+2018-01-17 14:18:39.500 CET [1527] LOG:  last completed transaction was at log time 2018-01-17 14:08:00.652547+01
+2018-01-17 14:18:39.536 CET [1527] LOG:  selected new timeline ID: 2
+2018-01-17 14:18:39.640 CET [1527] LOG:  archive recovery complete
+2018-01-17 14:18:41.014 CET [1526] LOG:  database system is ready to accept connections
+#+end_src
+
+Se non si vuole agire in manuale occorre impostare nel ~recovery.conf~ una delle seguenti opzioni:
+- *non* specificare un ~recovery_target~ (di qualunque tipo), non possibile in PITR;
+- impostare ~recovery_target_action~ a ~promote~.
+
 *** PITR: risultato
 #+begin_src sql
 % psql -h localhost -U luca -p 5433 testdb
@@ -8275,13 +8309,12 @@ Il file ~backup_label~ viene rimosso.
 E' un programma che realizza il backup in modo quasi automatico, ma richiede una riga di configurazione
 nel file ~pg_hba.conf~ per consentire una connessione al database sorgente:
 #+begin_src sh
-host    replication     postgres  127.0.0.1/32   md5
+host    replication     postgres  127.0.0.1/32   trust
 #+end_src
 
-E' inoltre indispensabile assicurarsi di avere almeno un /WAL Sender/ attivo in
-~postgresql.conf~:
+E' inoltre indispensabile assicurarsi di avere almeno due /WAL Sender/ attivi in ~postgresql.conf~:
 #+begin_src sh
-max_wal_senders = 1
+max_wal_senders = 2
 #+end_src
 
 *** ~pg_basebackup~ in azione
@@ -8293,76 +8326,42 @@ max_wal_senders = 1
 
 pg_basebackup: initiating base backup, waiting for checkpoint to complete
 pg_basebackup: checkpoint completed
-NOTICE:  pg_stop_backup complete, all required WAL segments have been archived
+pg_basebackup: write-ahead log start point: 0/6A000028 on timeline 1
+pg_basebackup: starting background WAL receiver
+pg_basebackup: write-ahead log end point: 0/6A0000F8
+pg_basebackup: waiting for background process to finish streaming ...
 pg_basebackup: base backup completed
 #+end_src
 
-*ATTENZIONE: verificare ~postgresql.conf~ e rimuovere ~postmaster.pid~ e ~postmaster.ops~!*
+*ATTENZIONE: verificare ~postgresql.conf~!*
 
 *** ~pg_basebackup~: backup_label
 Il file ~backup_label~ contiene le informazioni necessarie per raccapezzarsi con il backup:
 #+begin_src sh
-% sudo cat /mnt/data3/pgdata/backup_label                                                                                ~
-START WAL LOCATION: 2/C000060 (file 00000001000000020000000C)
-CHECKPOINT LOCATION: 2/C000098
+% sudo cat /mnt/data3/pgdata/backup_label
+START WAL LOCATION: 0/6A000028 (file 00000001000000000000006A)
+CHECKPOINT LOCATION: 0/6A000060
 BACKUP METHOD: streamed
 BACKUP FROM: master
-START TIME: 2017-10-30 17:52:21 CET
+START TIME: 2018-01-17 14:29:26 CET
 LABEL: PITR BACKUP 2
 #+end_src
 *** Costruire il ~recovery.conf~
-Sapendo l'istante temporale al quale è iniziato il problema si può stabilire che il recovery
-si fermi esattamente prima (è meglio cercare di avvicinarsi al tempo del disastro per includere
-i risultati):
+Si consdiera lo stesso esempio visto in precedenza con i seguenti dati:
+- transazione di inserimento tuple: ~xid = 978~, ~current_timestamp = 2018-01-17 14:32:50.604495+01~
+- transazione di nuke: ~xid = 981~, ~current_timestamp = 2018-01-17 14:35:30.640968+01~.
+
+
+Il file ~recovery.conf~ si costruisce in maniera /identica/ al caso visto in precedenza, o per variare
+ci si basa sulla transazione invece che sul tempo:
 
 #+begin_src sh
 restore_command = 'cp /mnt/data2/wal_archive/%f "%p"'
-recovery_target_time = '2017-10-30 18:12:00'
+recovery_target_xid = 981          # transazione di nuke
+recovery_target_inclusive = false  # non vogliamo il nuke!
+recovery_target_action = promote   # siamo sicuri di voler riprendere!
 #+end_src
 
-o se si vuole ragionare per transazioni (escludendo quella problematica):
-
-#+begin_src sh
-restore_command = 'cp /mnt/data2/wal_archive/%f "%p"'
-recovery_target_xid = 1569
-recovery_target_inclusive = false
-#+end_src
-
-*** Avviare il sistema in PITR
-Dopo aver riposizionato il file ~recovery.conf~ e aver fatto gli aggiustamenti necessari a ~postgresql.conf~
-si può avviare l'istanza:
-#+begin_src sh
-% sudo -u postgres pg_ctl -D /mnt/data3/pgdata start                                                                     ~
-server starting
-LOG:  database system was interrupted; last known up at 2017-10-30 17:52:21 CET                                        ~
-LOG:  starting point-in-time recovery to 2017-10-30 18:12:00+01
-LOG:  restored log file "00000001000000020000000C" from archive
-LOG:  redo starts at 2/C000060
-LOG:  consistent recovery state reached at 2/C000130
-LOG:  restored log file "00000001000000020000000D" from archive
-...
-cp: /mnt/data2/wal_archive/00000001000000020000003A: No such file or directory
-LOG:  redo done at 2/39FFCF10
-LOG:  last completed transaction was at log time 2017-10-30 18:11:54.465268+01
-LOG:  restored log file "000000010000000200000039" from archive
-cp: /mnt/data2/wal_archive/00000002.history: No such file or directory
-LOG:  selected new timeline ID: 2
-cp: /mnt/data2/wal_archive/00000001.history: No such file or directory
-LOG:  archive recovery complete
-LOG:  MultiXact member wraparound protections are now enabled
-LOG:  database system is ready to accept connections
-LOG:  autovacuum launcher started
-#+end_src
-*** PITR: risultato
-#+begin_src sql
-% psql -h localhost -U luca -p 5433 testdb
-> SELECT count(*) FROM evento;
--[ RECORD 1 ]--
-count | 2000000
-#+end_src
-
-Il file ~recovery.conf~ viene rinominato in ~recovery.done~ (per evitare altri avvi in /recovery mode/).
-Il file ~backup_label~ viene rimosso.
 ** Timelines e considerazioni
 *** Lo stato di archiviazione
 Man mano che una istanza ripercorre i WAL inserisce nella directory ~pg_xlog/archive_status~
