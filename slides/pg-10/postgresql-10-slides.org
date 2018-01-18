@@ -8127,29 +8127,6 @@ OK Wed, 17 Jan 2018 13:39:27 +0100: WAL segment 00000001000000000000001C copiato
 OK Wed, 17 Jan 2018 13:42:08 +0100: WAL segment 00000001000000000000001D copiato
 OK Wed, 17 Jan 2018 13:42:28 +0100: WAL segment 00000001000000000000001E copiato
 #+end_src
-*** Problema di esempio: nuke di una tabella
-Si cancellano dei dati da una tabella:
-#+begin_src sql
-> BEGIN;
-> INSERT INTO evento( description )
-  SELECT 'Evento ' || generate_series( 1, 2000000 );
-> SELECT txid_current(), current_timestamp;
- txid_current |       current_timestamp
---------------+-------------------------------
-          967 | 2018-01-17 13:43:54.465174+01
-> COMMIT;
-
--- si beve qualche birra e...
-
-> BEGIN;
-> DROP TABLE evento;
-> SELECT txid_current(), current_timestamp;
- txid_current |       current_timestamp
---------------+-------------------------------
-          968 | 2018-01-17 13:45:32.395057+01
-
-> COMMIT;
-#+end_src
 *** PITR Manuale
 Una volta che *l'archiviazione dei WAL è attiva* occorre:
 1. informare il cluster che il backup sta iniziando con ~pg_start_backup()~;
