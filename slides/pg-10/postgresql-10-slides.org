@@ -8438,7 +8438,7 @@ In ~postgresql.conf~:
 wal_level       = replica
 archive_mode    = on
 archive_command = '/usr/local/bin/my_wal_archiver.sh %f %p'
-max_wal_senders = 1 # solo per usare pg_basebackup
+max_wal_senders = 2 # solo per usare pg_basebackup
 #+end_src
 
 e se si usa ~pg_basebackup~ in ~pg_hba.conf~:
@@ -8447,9 +8447,9 @@ host  replication  postgres    127.0.0.1/32  trust
 #+end_src
 *** Fase 2: creazione dello slave
 #+begin_src sh
-% sudo -u postgres pg_basebackup \                                                                                        ~
-   -D /mnt/data3/pgdata \
-   -l 'LOG_SHIPPING_REPLICA' -v \
+% sudo -u postgres pg_basebackup
+   -D /mnt/data3/pgdata
+   -l 'LOG_SHIPPING_REPLICA' -v
    -h localhost -p 5432 -U postgres
 #+end_src
 
@@ -8458,8 +8458,9 @@ Editare il file ~postgresql.conf~ dello slave affinché:
 wal_level       = minimal
 archive_mode    = off
 max_wal_senders = 0
-hot_standby     = on # solo per fare query
-port            = 5433 # solo per test locale!!
+hot_standby     = on       # solo per fare query
+port            = 5433     # solo per test locale!!
+# logging_collector = off # per vedere i log!
 #+end_src
 *** Fase 3: creare il ~recovery.conf~
 Anche nel caso di replication occorre generare un file ~recovery.conf~ che
@@ -8473,13 +8474,15 @@ In sostanza non si specifica a quale istante temporale fermare il recovery e si 
 istruisce lo slave a /seguire/ le transazioni del master.
 *** Fase 4: avvio dello slave
 #+begin_src shell
- sudo -u postgres pg_ctl -D /mnt/data3/pgdata start                                                                      ~
-server starting
-LOG:  database system was interrupted; last known up at 2017-10-31 08:50:52 CET                                         ~
+% sudo -u postgres pg_ctl -D /mnt/data3/pgdata start
+waiting for server to start....2018-01-18 12:00:49.966 CET [1183] LOG:  listening on IPv6 address "::1", port 5433
+LOG:  listening on IPv4 address "127.0.0.1", port 5433
+LOG:  listening on Unix socket "/tmp/.s.PGSQL.5433"
+LOG:  database system was shut down in recovery at 2018-01-18 11:59:58 CET
 LOG:  entering standby mode
-LOG:  restored log file "00000001000000020000005A" from archive
-LOG:  redo starts at 2/5A000060
-LOG:  consistent recovery state reached at 2/5A000130
+LOG:  restored log file "00000001000000000000008C" from archive
+LOG:  redo starts at 0/8C000060
+LOG:  consistent recovery state reached at 0/8D000000
 LOG:  database system is ready to accept read only connections
 ...
 #+end_src
@@ -8488,6 +8491,7 @@ Come si nota il database accetta solo query in lettura ed è pronto.
 *** Interazione con lo slave
 Come già detto, lo slave è in sola lettura:
 #+begin_src sql
+% psql -h localhost -U luca -p 5433 testdb
 > INSERT INTO persona( nome, cognome, codice_fiscale )
   VALUES( 'Luca', 'Stantunione', 'SNTLCU02A20F257T' );
 ERROR:  cannot execute INSERT in a read-only transaction
@@ -8495,6 +8499,7 @@ ERROR:  cannot execute INSERT in a read-only transaction
 *** Perdita di dati sullo slave ?
 Sul master:
 #+begin_src sql
+% psql -h localhost -U luca -p 5432 testdb
 > CREATE TABLE evento( pk SERIAL PRIMARY KEY, description TEXT);
 > INSERT INTO evento( description )
   SELECT 'replication ' || generate_series(1, 2000 );
@@ -8503,33 +8508,34 @@ Sul master:
 ma sullo slave non è ancora visibile:
 
 #+begin_src sql
-> select * from evento;
+% psql -h localhost -U luca -p 5433 testdb
+> SELECT * FROM evento;
 ERROR:  relation "evento" does not exist
 #+end_src
 *** Perdita di dati sullo slave, perché?
 *Non è una perdita di dati*: lo slave non ha ancora ricevuto il file WAL da ripercorrere.
 #+begin_src shell
-cp: /mnt/data2/wal_archive/00000001000000020000005B: No such file or directory
-cp: /mnt/data2/wal_archive/00000001000000020000005B: No such file or directory
-cp: /mnt/data2/wal_archive/00000001000000020000005B: No such file or directory
-cp: /mnt/data2/wal_archive/00000001000000020000005B: No such file or directory
-LOG:  restored log file "00000001000000020000005B" from archive
-LOG:  restored log file "00000001000000020000005C" from archive
-LOG:  restored log file "00000001000000020000005D" from archive
-LOG:  restored log file "00000001000000020000005E" from archive
+cp: /mnt/data2/wal_archive/00000001000000000000008D: No such file or directory
+cp: /mnt/data2/wal_archive/00000001000000000000008D: No such file or directory
+LOG:  restored log file "00000001000000000000008D" from archive
+LOG:  restored log file "00000001000000000000008E" from archive
+LOG:  restored log file "00000001000000000000008F" from archive
+LOG:  restored log file "000000010000000000000090" from archive
 #+end_src
 
-ma quando finalmente il master produce i nuovi WAL allora ecco che lo slave si "allinea":
+ma quando finalmente il master produce i nuovi WAL, in particolare l'atteso ~0x10x08D~
+allora ecco che lo slave si "allinea":
 
 #+begin_src sql
-> select count(*) from evento;
+% psql -h localhost -U luca -p 5433 testdb
+> SELECT count(*) FROM evento;
  count
 -------
   2000
 #+end_src
 
 *** Perdita di dati sullo slave, che fare?
-*Non è una perdita di dati*: lo slave rimane indietro dei segmenti di WAL non ancora archiviati.
+*Non è una perdita di dati*: lo slave rimane indietro dei segmenti di WAL non ancora *archiviati*.
 Occorre allora agire sul master impostando il parametro:
 
 #+begin_src shell
@@ -8538,6 +8544,56 @@ archive_timeout = 10
 
 che forza una archiviazione ogni 10 secondi (ad esempio).
 
+*** Perdita di dati: che fare? La strada sbagliata!
+*Non ci si deve fidare delle date di modifica dei WAL sul master!*
+PostgreSQL sa esattamente quando un WAL è completo, e quando non lo è. Se un WAL è stato scritto
+parzialmente le sue date sul file system saranno aggiornate, ma questo non lo rende
+idoneo all'archiviazione.
+
+Se si forza l'archiviazione si combina un macello: il sistema di archiving deve impedire la copia di uno
+stesso segmento WAL due volte e quindi forzarlo manualmente è sbagliato!
+
+*** Perdita di dati: che fare? La strada sbagliata (esempio)
+Se il master ha generato come ultimo WAL il ~0x010x95~, e lo salve continua a dire che non ha ricevuto
+tale wal, di fatto il sistema di archiviazione non ha inviato all'archivio tale WAL.
+
+Lo slave si lamenta:
+#+begin_src shell
+LOG:  restored log file "000000010000000000000094" from archive
+cp: /mnt/data2/wal_archive/000000010000000000000095: No such file or directory
+#+end_src
+
+il sistema di archiviazione dice di non aver copiato l'ultimo WAL che lo slave si aspetta:
+#+begin_src shell
+OK Thu, 18 Jan 2018 12:11:56 +0100: WAL segment 000000010000000000000094 copiato
+#+end_src
+
+E' possibile forzare una archiviazione manuale del nuovo WAL:
+
+#+begin_src shell
+% sudo -u postgres /usr/local/bin/my_wal_archiver.sh \
+         000000010000000000000095 \
+         /mnt/data1/pgdata/pg_wal/000000010000000000000095
+#+end_src
+
+e lo slave riceve subito il WAL:
+#+begin_src shell
+LOG:  restored log file "000000010000000000000094" from archive
+LOG:  restored log file "000000010000000000000095" from archive
+LOG:  invalid record length at 0/957BD6D0: wanted 24, got 0
+LOG:  restored log file "000000010000000000000095" from archive
+LOG:  invalid record length at 0/957BD6D0: wanted 24, got 0
+#+end_src
+
+Ma da qui in poi lo slave rimarrà indietro perché lo script di archiviazione inizia a riportare il fallimento
+della copia:
+
+#+begin_src shell
+% sudo tail /mnt/data2/wal_archive/log.txt
+KO Thu, 18 Jan 2018 12:38:48 +0100: 000000010000000000000095 esiste gia'
+KO Thu, 18 Jan 2018 12:38:49 +0100: 000000010000000000000095 esiste gia'
+KO Thu, 18 Jan 2018 12:38:50 +0100: 000000010000000000000095 esiste gia'
+#+end_src
 *** Perdita di spazio, che fare?
 L'archiviazione dei WAL non può avvenire all'infinito. Il ~recovery.conf~ consente di specificare un comando
 da effettuare una volta che il segmento è stato ripercoso (a patto che non serva per altri scopi!). Il comando
