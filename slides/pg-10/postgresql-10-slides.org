@@ -8421,7 +8421,7 @@ Esistono fondamentalmente tre tipi di /replication/:
 2. *streaming*: il master invia, su richiesta, i WAL segment allo slave che li richiede. Questo tipo di replica si suddivide ulteriormente in:
    - *sincrona* il master attende che anche lo slave abbia eseguito la transazione (molto sicuro, ma molto "costoso");
    - *asincrona* il master si "fida" che lo slave porterà a termine la transazione.
-3. *logica*: non supportata nel core (occorre la versione ~10.0~), consente di replicare gli statement SQL.
+3. *logical*: supportata solo dalla versione 10, consente di inviare un flusso di /statement/ per la modifica e quindi abilita lo scenario bidirezionale.
 
 **** Cascading Replication                                     :B_definition:
 Ogni slave può a sua volta diventare un punto di "avvio" di replicazione per un
@@ -8430,12 +8430,6 @@ successivo slave.
 :PROPERTIES:
 :BEAMER_env: ignoreheading
 :END:
-*** Setup della replicazione
-La configurazione per la replicazione è simile in tutti gli scenari, ma occorre che vi sia una copia
-fisica del cluster master per inizializzare lo slave.
-
-La copia può essere effettuata con il metodo manuale (~pg_start_backup~, copia del filesystem, ~pg_stop_backup~) o con
-l'utility ~pg_basebackup~.
 ** Log Shipping Replication
 *** Fase 1: configurazione del master
 Occore che il master consenta l'archiviazione dei WAL segment e supporti la connessione per replica (solo se si usa ~pg_basebackup~).
