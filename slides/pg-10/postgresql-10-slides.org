@@ -8341,29 +8341,25 @@ recovery_target_action = promote   # siamo sicuri di voler riprendere!
 
 ** Timelines e considerazioni
 *** Lo stato di archiviazione
-Man mano che una istanza ripercorre i WAL inserisce nella directory ~pg_xlog/archive_status~
+Man mano che una istanza ripercorre i WAL inserisce nella directory ~pg_wal/archive_status~
 dei file ~.done~ che rappresentano il segmento di WAL ripristinato, nonché da che backup si è partiti:
 
 #+begin_src sh
-# ls /mnt/data3/pgdata/pg_xlog/archive_status/
-00000001000000020000000C.00000060.backup.done   000000010000000200000045.done
-00000001000000020000003C.done                   000000010000000200000046.done
-00000001000000020000003D.done                   000000010000000200000047.done
-00000001000000020000003E.done                   000000010000000200000048.done
-00000001000000020000003F.done                   000000010000000200000049.done
-000000010000000200000040.done                   00000001000000020000004A.done
-000000010000000200000041.done                   00000001000000020000004B.done
-000000010000000200000042.done                   00000001000000020000004C.done
-000000010000000200000043.done                   00000001000000020000004D.done
-000000010000000200000044.done                   00000001000000020000004E.done
+# ls /mnt/data3/pgdata/pg_wal/archive_status/
+00000001000000000000006A.done   000000010000000000000070.done
+00000001000000000000006B.done   000000010000000000000071.done
+00000001000000000000006C.done   000000010000000000000072.done
+00000001000000000000006D.done   000000010000000000000073.done
+00000001000000000000006E.done   000000010000000000000074.done
+00000001000000000000006F.done   000000010000000000000075.done
 #+end_src
 
 *** Timelines
-Quando una istanza finisce di ripercorrere dei segmenti di WAL e diventa nuovamente usabile, essa crea
-una nuova /timeline/:
+Quando una istanza finisce di ripercorrere dei segmenti di WAL e diventa nuovamente usabile,
+*essa crea una nuova /timeline/*:
 
 #+begin_src sh
-LOG:  selected new timeline ID: 2
+2018-01-17 14:18:39.536 CET [1527] LOG:  selected new timeline ID: 2
 #+end_src
 
 L'idea è che da lì in avanti il database deve essere capace di distinguere fra i segmenti di WAL generati
@@ -8371,37 +8367,46 @@ dal cluster (riavviato) e quelli provenienti dal cluster originale.
 Per fare questo la /timeline/ fa parte del nome del file di ogni WAL:
 
 #+begin_src sh
-ls /mnt/data3/pgdata/pg_xlog/
+% sudo ls /mnt/data3/pgdata/pg_xlog/
 ...
-000000020000000200000057
-000000020000000200000058
-000000020000000200000059
+000000010000000000000086
+00000002.history
+000000020000000000000087
+000000020000000000000088
 #+end_src
 
 I file con prefisso ~00000002~ appartengono alla seconda timeline, che è un /branch/ della timeline ~00000001~
 del primo cluster.
 
 *** Timeline history file
-Le timeline sono mantenute nella directory ~pg_xlog~ e sono in formato testo, con suffisso ~.history~. Tali
+Le timeline sono mantenute nella directory ~pg_wal~ e sono in formato testo, con suffisso ~.history~. Tali
 file contengono le informazioni sulla timeline di partenza e il momento (ossia il segmento di WAL) che ha generato
 il branch.
 Ad esempio per un recovery:
 
 #+begin_src sh
-LOG:  redo done at 2/57FFE0C8
-LOG:  last completed transaction was at log time 2017-10-30 18:36:07.564217+01
+LOG:  redo done at 0/87000028
+LOG:  last completed transaction was at log time 2018-01-17 14:35:14.034293+01
+LOG:  restored log file "000000010000000000000086" from archive
+LOG:  selected new timeline ID: 2
 #+end_src
 
 si ha una timeline history
 
 #+begin_src sh
-# cat /mnt/data3/pgdata/pg_xlog/00000002.history
-1       2/57FFFDD0      before 2000-01-01 01:00:00+01
+% sudo cat /mnt/data3/pgdata/pg_wal/00000002.history                                                                     ~
+1       0/87000000      before transaction 981
 #+end_src
 
-*** PITR & Timeline
+**** PITR & Timeline :B_definition:
 Il ~recovery.conf~ lavora implicitamente sulla stessa timeline del server di origine.
 E' tuttavia possibile specificare una timeline differente.
+**** End of block                                           :B_ignoreheading:
+:PROPERTIES:
+:BEAMER_env: ignoreheading
+:END:
+
+
 
 ** Replication
 *** Concetti e terminologia
