@@ -8797,6 +8797,9 @@ primary_conninfo = 'host=localhost port=5432 user=postgres password=xxxxx'
 primary_slot_name = 'slave_a_slot'
 #+end_src
 
+E' necessario fermare e riavviare lo slave, qualora non sia stato configurato da subito per usare
+gli slot di replicazione!
+
 *** Replication Slot: configurazione del master
 Nel file ~postgresql.conf~ si deve specificare quanti slot si vogliono mantenere:
 #+begin_src shell
@@ -8821,11 +8824,46 @@ plugin              |
 slot_type           | physical
 datoid              |
 database            |
+temporary           | f
 active              | t
-active_pid          | 2112
+active_pid          | 1323
 xmin                |
 catalog_xmin        |
-restart_lsn         | 3/D7000000
+restart_lsn         | 0/A4480848
+confirmed_flush_lsn |
+#+end_src
+
+*** Replication Slot: esperimento
+Se lo slave viene fermato (svanisce) la vista ~pg_stat_replication~ non riporterà alcun risultato, mentre
+lo slot sarà ancora visibile.
+Se lo slave riprende la sua attività:
+
+#+begin_src shell
+% sudo -u postgres pg_ctl -D /mnt/data3/pgdata start                                                                     ~
+waiting for server to start....
+...
+LOG:  invalid record length at 0/A4480848: wanted 24, got 0
+ done
+server started
+LOG:  started streaming WAL from primary at 0/A4000000 on timeline 1
+#+end_src
+
+e le viste mostrano la situazione aggiornata:
+
+#+begin_src sql
+# SELECT * FROM pg_replication_slots;
+-[ RECORD 1 ]-------+-------------
+slot_name           | slave_a_slot
+plugin              |
+slot_type           | physical
+datoid              |
+database            |
+temporary           | f
+active              | t
+active_pid          | 1411
+xmin                |
+catalog_xmin        |
+restart_lsn         | 0/AD8F0668
 confirmed_flush_lsn |
 #+end_src
 
