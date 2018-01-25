@@ -8681,9 +8681,9 @@ host  replication  postgres    127.0.0.1/32  md5
 #+end_src
 *** Fase 2: creazione dello slave
 #+begin_src sh
-% sudo -u postgres pg_basebackup \                                                                                        ~
-   -D /mnt/data3/pgdata \
-   -l 'LOG_SHIPPING_REPLICA' -v \
+% sudo -u postgres pg_basebackup
+   -D /mnt/data3/pgdata
+   -l 'LOG_SHIPPING_REPLICA' -v
    -h localhost -p 5432 -U postgres
 #+end_src
 
@@ -8706,15 +8706,19 @@ primary_conninfo = 'host=localhost port=5432 user=postgres password=xxxxx'
 In sostanza si specifica a quale server remoto collegarsi per ottenere il *flusso di WAL*.
 *** Fase 4: avvio dello slave
 #+begin_src shell
-% sudo -u postgres pg_ctl -D /mnt/data3/pgdata start                                                                     ~
-server starting
-LOG:  database system was interrupted; last known up at 2017-10-31 12:44:30 CET                                        ~
+% sudo -u postgres pg_ctl -D /mnt/data3/pgdata start
+waiting for server to start....
+LOG:  listening on IPv6 address "::1", port 5433
+LOG:  listening on IPv4 address "127.0.0.1", port 5433
+LOG:  listening on Unix socket "/tmp/.s.PGSQL.5433"
+LOG:  database system was interrupted; last known up at 2018-01-25 15:04:18 CET
 LOG:  entering standby mode
-LOG:  started streaming WAL from primary at 3/2F000000 on timeline 1
-LOG:  redo starts at 3/2F000028
-LOG:  consistent recovery state reached at 3/2F0000F8
+LOG:  redo starts at 0/9A000060
+LOG:  consistent recovery state reached at 0/9A000130
 LOG:  database system is ready to accept read only connections
-...
+LOG:  started streaming WAL from primary at 0/9B000000 on timeline 1
+ done
+server started
 #+end_src
 
 Come si nota il database accetta solo query in lettura ed è pronto.
@@ -8724,23 +8728,56 @@ come superutente):
 #+begin_src sql
 # SELECT * FROM pg_stat_replication;
 -[ RECORD 1 ]----+-----------------------------
-pid              | 2112
+pid              | 1135
 usesysid         | 10
 usename          | postgres
 application_name | walreceiver
 client_addr      | 127.0.0.1
 client_hostname  |
-client_port      | 34332
-backend_start    | 2017-10-31 13:41:00.38603+01
+client_port      | 25829
+backend_start    | 2018-01-25 15:09:52.833939+01
 backend_xmin     |
 state            | streaming
-sent_location    | 3/D8000060
-write_location   | 3/D8000060
-flush_location   | 3/D8000060
-replay_location  | 3/D8000000
+sent_lsn         | 0/9B000140
+write_lsn        | 0/9B000140
+flush_lsn        | 0/9B000140
+replay_lsn       | 0/9B000140
+write_lag        |
+flush_lag        |
+replay_lag       |
 sync_priority    | 0
 sync_state       | async
 #+end_src
+
+
+*** Monitoring: successivamente...
+Man mano che passa il tempo e vengono prodotti dati sul nodo master la situazione di sincronizzazione varia:
+
+#+begin_src sql
+# SELECT * FROM pg_stat_replication;
+-[ RECORD 1 ]----+-----------------------------
+pid              | 1135
+usesysid         | 10
+usename          | postgres
+application_name | walreceiver
+client_addr      | 127.0.0.1
+client_hostname  |
+client_port      | 25829
+backend_start    | 2018-01-25 15:09:52.833939+01
+backend_xmin     |
+state            | streaming
+sent_lsn         | 0/A4479AD0
+write_lsn        | 0/A4479AD0
+flush_lsn        | 0/A4479AD0
+replay_lsn       | 0/A4479AD0
+write_lag        | 00:00:00.000211
+flush_lag        | 00:00:00.000693
+replay_lag       | 00:00:00.000961
+sync_priority    | 0
+sync_state       | async
+
+#+end_src
+
 *** Replication Slot
 Cosa succede se lo slave si disconnette e il master inizia a riciclare i WAL? Lo slave sarà impossibilitato a recuperare
 il suo stato!
