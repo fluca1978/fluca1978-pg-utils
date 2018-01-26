@@ -8965,6 +8965,45 @@ replay_location  | 3/AC000000
 sync_priority    | 1
 sync_state       | sync
 #+end_src
+** Logical Replication
+*** Introduzione alla replicazione logica
+Consente di inviare una parte ridotta di informazioni di replicazione, tipicamente basandosi su un identificativo dei dati (es. la chiave primaria).
+
+Si differenzia da quella fisica perché non prevede un flusso di informazioni binarie (quale pagina dati, a quale offset, quali valori) ma
+prevede un flusso di dati /logici/ per eseguire l'aggiornamento di una specifica tupla.
+
+Prevede un meccanismo di *publish* & *subscribe* dei componenti: il master /pubblica/ i dati di replicazione, i /subscribers/ li consumano.
+
+Il /subscriber/ può essere a sua volta un /publisher/ (quindi si supporta la /cascading replication/).
+Inoltre il /subscriber/ può essere usato in scrittura, ma in questo scenario possono nascere dei conflitti.
+*** Configurazione del master
+#+begin_src shell
+wal_level = logical
+max_replication_slots = 2 # numero di subscribers, meglio se superiore!
+max_wal_senders = 2
+#+end_src
+
+*** Clonazione dello slave
+#+begin_src shell
+% sudo -u postgres pg_basebackup
+       -D /mnt/data3/pgdata
+       -l 'LOGICAL_REPLICA' -v
+       -h localhost -p 5432 -U postgres
+
+pg_basebackup: initiating base backup, waiting for checkpoint to complete
+pg_basebackup: checkpoint completed
+pg_basebackup: write-ahead log start point: 0/B2000028 on timeline 1
+pg_basebackup: starting background WAL receiver
+pg_basebackup: write-ahead log end point: 0/B2000130
+pg_basebackup: waiting for background process to finish streaming ...
+pg_basebackup: base backup completed
+#+end_src
+
+*** Configurazione dello slave
+#+begin_src shell
+wal_level = minimal
+#+end_src
+
 ** Da slave a master
 *** Promote
 Uno slave può diventare un master qualora sia necessario.
