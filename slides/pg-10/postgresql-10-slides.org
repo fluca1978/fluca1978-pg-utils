@@ -945,6 +945,31 @@ localhost:5432:template1:my_app:xxxxx
 :PROPERTIES:
 :BEAMER_env: ignoreheading
 :END:
+*** Gruppi & login
+- ~INHERITS~ non aggiunge il ~LOGIN~!
+#+begin_src sql
+# CREATE ROLE developers WITH LOGIN;
+-- ok to login
+# CREATE ROLE dev1 IN ROLE developers LOGIN;
+-- FATAL:  role "dev2" is not permitted to log in
+# CREATE ROLE dev2 IN ROLE developers;
+#+end_src
+
+- il gruppo non include gli altri utenti quando usato in ~pg_hba.conf~:
+
+#+begin_src shell
+# pg_hba.conf
+host    all   developers   127.0.0.1/32   trus
+
+% psql -h localhost -U dev1 testdb
+FATAL:  no pg_hba.conf entry for host "127.0.0.1", user "dev1", database "testdb", SSL off
+#+end_src
+
+- *occorre usare i gruppi con un ~+~*:
+#+begin_src shell
+# pg_hba.conf
+host    all   +developers   127.0.0.1/32   trus
+#+end_src
 *** La vista ~pg_shadow~
 In analogia con i sistemi Unix, è disponibuile una vista ~pg_shadow~ che riassume i dati degli account utente (ruoli) comprensivi di password.
 Se la password inizia con ~md5~ la password è stata cifrata con tale algoritmo.
