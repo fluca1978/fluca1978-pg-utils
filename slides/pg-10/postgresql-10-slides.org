@@ -965,10 +965,17 @@ host    all   developers   127.0.0.1/32   trus
 FATAL:  no pg_hba.conf entry for host "127.0.0.1", user "dev1", database "testdb", SSL off
 #+end_src
 
+*** Gruppi & login (2)
 - *occorre usare i gruppi con un ~+~*:
 #+begin_src shell
 # pg_hba.conf
 host    all   +developers   127.0.0.1/32   trus
+#+end_src
+
+- per disabiltiare un gruppo e abilitare gli altri utenti al login:
+#+begin_src shell
+host    all     +developers     127.0.0.1/32     reject
+host    all     all             127.0.0.1/32     trust
 #+end_src
 *** La vista ~pg_shadow~
 In analogia con i sistemi Unix, è disponibuile una vista ~pg_shadow~ che riassume i dati degli account utente (ruoli) comprensivi di password.
