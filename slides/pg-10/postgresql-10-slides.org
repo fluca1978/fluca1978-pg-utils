@@ -6483,6 +6483,12 @@ e quando l'utente cambia la query il /process title/ si aggiorna di conseguenza:
 - ~log_connections~ e ~log_disconnections~ inserisce una riga di log per ogni connessione e disconnessione;
 - ~log_line_prefix~ permette di specificare la linea di log con delle sequenze di escape;
 - ~log_statement~ indica se loggare gli statement di /DDL/ o di /DML/ o tutti (~off, ddl, mod, all~).
+
+Esempio:
+#+begin_src shell
+LOG:  connection received: host=127.0.0.1 port=36828
+LOG:  connection authorized: user=postgres database=testdb
+#+end_src
 *** Parametri di networking
 - ~listen_address~ indica su quale indirizzo IPv4/IPv6 o nome host il server deve attendere connessioni (sistemi multi-home);
 - ~port~ indica la porta su cui rimanere in ascolto di connessioni (default ~5432~);
