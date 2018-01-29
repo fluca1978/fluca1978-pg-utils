@@ -861,7 +861,7 @@ A differenza di ~ON_ERROR_STOP~ che fa quello che il nome suggerisce, il paramet
    Dalla versione 8.1 in poi PostgreSQL non distingue piu' fra utenti e gruppi
    ma usa il concetto di *ruolo* che rappresenta entrambi:
    - un ruolo può rappresentare un utente;
-   - ad un ruolo si possono aggiungere altri utenti (e quindi rappresenta un gruppo).
+   - ad un ruolo si possono aggiungere altri ruoli (e quindi rappresenta un gruppo).
 
 **** Ruoli e Connessioni
     *Per collegarsi ad un database occorre sempre un ruolo*, ossia un utente
@@ -873,6 +873,11 @@ A differenza di ~ON_ERROR_STOP~ che fa quello che il nome suggerisce, il paramet
 :BEAMER_env: ignoreheading
 :END:
 
+*** Ruoli e connessioni
+L'accesso al sistema viene garantito dalla configurazione del file ~pg_hba.conf~, che rappresenta
+il listato di quali utenti, database e host possono ottenere una connessione.
+
+*E' sufficiente un ~SIGHUP~ per far riconoscere al cluster le modifiche ai permessi di connessione!*
 *** Vedere i ruoli
 Il catalogo ~pg_roles~ contiene le informazioni sui ruoli e le loro proprietà:
 
