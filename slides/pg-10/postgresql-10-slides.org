@@ -6253,12 +6253,14 @@ pg_control version number:            1002
 Catalog version number:               201707211
 Database system identifier:           6509403694562149197
 Database cluster state:               in production
-pg_control last modified:             Tue Jan 16 13:51:30 2018
-Latest checkpoint location:           4/42AA9A38
-Prior checkpoint location:            4/42AA9360
-Latest checkpoint's REDO location:    4/42AA9A38
-Latest checkpoint's REDO WAL file:    000000010000000400000042
+pg_control last modified:             Mon Jan 29 13:38:59 2018
+Latest checkpoint location:           0/B6000028
+Prior checkpoint location:            0/B5000028
+Latest checkpoint's REDO location:    0/B6000028
+Latest checkpoint's REDO WAL file:    0000000100000000000000B6
 Latest checkpoint's TimeLineID:       1
+Latest checkpoint's PrevTimeLineID:   1
+Latest checkpoint's full_page_writes: on
 ...
 Time of latest checkpoint:            Tue Jan 16 13:51:30 2018
 ...
