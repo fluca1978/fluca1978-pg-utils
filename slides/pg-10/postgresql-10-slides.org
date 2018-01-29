@@ -6284,7 +6284,52 @@ E' possibile usare delle direttive per /spezzare/ la configurazione su piu' file
 - ~include_if_exists~ include un file solo se esiste;
 - ~include_dir~ include tutti i file della directory specificata (è importante nominarli correttamente per avere un ordine naturale di caricamento).
 
+*L'ultima definizione di un valore trovato nella catena degli include è quello a cui viene assegnato!*
+
 In questo modo è possibile gestire configurazioni multiple agilmente.
+*** Estendere ~postgresql.conf~: esempio
+In ~postgresql.conf~:
+#+begin_src shell
+work_mem = 4MB
+include_if_exists = 'conf.d/mem.conf'
+#+end_src
+
+e in ~conf.d/mem.conf~:
+#+begin_src shell
+work_mem = 16MB
+#+end_src
+
+L'ultima definizione *vince*:
+#+begin_src sql
+# SELECT name, setting, category, sourcefile, sourceline
+  FROM pg_settings WHERE name like 'work_mem%';
+-[ RECORD 1 ]---------------------------------
+name       | work_mem
+setting    | 16384
+category   | Resource Usage / Memory
+sourcefile | /mnt/data1/pgdata/conf.d/mem.conf
+sourceline | 1
+#+end_src
+
+*** Estendere ~postgresql.conf~: contro-esempio
+Se si inverte l'ordine di caricamento delle variabili l'ultima definizione è quella che /vince/:
+
+#+begin_src shell
+# postgresql.conf
+include_if_exists = 'conf.d/mem.conf'
+work_mem = 4MB
+#+end_src
+
+#+begin_src sql
+# SELECT name, setting, category, sourcefile, sourceline
+  FROM pg_settings WHERE name like 'work_mem%';
+-[ RECORD 1 ]---------------------------------
+name       | work_mem
+setting    | 4096
+category   | Resource Usage / Memory
+sourcefile | /mnt/data1/pgdata/postgresql.conf
+sourceline | 123
+#+end_src
 *** Vedere la configurazione a run-time: ~SHOW~
 Il comando speciale ~SHOW~ consente di vedere un parametro a run-time:
 #+begin_src sql
