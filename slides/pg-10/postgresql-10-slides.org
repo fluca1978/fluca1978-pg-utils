@@ -9078,7 +9078,7 @@ Inoltre il /subscriber/ può essere usato in scrittura, ma in questo scenario po
 *** Configurazione del master
 #+begin_src shell
 wal_level = logical
-max_replication_slots = 2 # numero di subscribers, meglio se superiore!
+max_replication_slots = 5 # numero di subscribers, meglio se superiore!
 max_wal_senders = 2
 #+end_src
 
@@ -9101,7 +9101,88 @@ pg_basebackup: base backup completed
 *** Configurazione dello slave
 #+begin_src shell
 wal_level = minimal
+port = 5433
+max_wal_senders = 0
+max_replication_slot = 2
 #+end_src
+
+*** Pubblicazione dal master
+Sul nodo master:
+#+begin_src sql
+> CREATE TABLE replicated( pk serial, description text );
+
+> CREATE PUBLICATION replication_test FOR TABLE replicated;
+#+end_src
+*** Ricezione sullo slave
+Sul nodo slave:
+
+#+begin_src sql
+# CREATE SUBSCRIPTION replication_sub_test
+  CONNECTION 'host=localhost port=5432 dbname=testdb'
+  PUBLICATION replication_test;
+#+end_src
+
+e nei log dello slave appare qualcosa del tipo:
+
+#+begin_src shell
+LOG:  logical replication apply worker for subscription "replication_sub_test" has started
+LOG:  logical replication table synchronization worker
+      for subscription "replication_sub_test",
+      table "replicated" has started
+LOG:  logical replication table synchronization worker
+      for subscription "replication_sub_test",
+      table "replicated" has finished
+#+end_src
+*** Monitorare l'andamento
+Sul nodo master:
+
+#+begin_src sql
+# SELECT * FROM pg_replication_slots;
+slot_name           | replication_sub_test
+plugin              | pgoutput
+slot_type           | logical
+datoid              | 16386
+database            | testdb
+temporary           | f
+active              | t
+active_pid          | 1739
+xmin                |
+catalog_xmin        | 1275
+restart_lsn         | 0/FCA3D610
+confirmed_flush_lsn | 0/FCA3D648
+#+end_src
+
+mentre sul nodo slave:
+
+#+begin_src sql
+# SELECT * FROM pg_replication_origin_status;
+local_id    | 1
+external_id | pg_25954
+remote_lsn  | 0/FCA3D468
+local_lsn   | 0/E53A8528
+#+end_src
+
+*** UPDATE/DELETE e REPLICA IDENTITY
+Cosa succede se cancelliamo le tuple sul nodo master?
+
+#+begin_src sql
+# DELETE FROM replicated;
+ERROR:  cannot delete from table "replicated" because it does not have a replica identity and publishes deletes
+HINT:  To enable deleting from the table, set REPLICA IDENTITY using ALTER TABLE.
+#+end_src
+
+occorre assegnare una ~REPLICA IDENTITY~ alla tabella:
+#+begin_src sql
+# ALTER TABLE replicated REPLICA IDENTITY FULL;
+#+end_src
+
+e quindi i comandi di ~INSERT~ e ~UPDATE~ iniziano a funzionare.
+
+*** Limitazioni della replica logica
+- i comandi /DDL/ non sono replicati;
+- ~TRUNCATE~ non viene replicato;
+- replicare tabelle prive di chiave primaria è una pessima idea;
+
 
 ** Da slave a master
 *** Promote
