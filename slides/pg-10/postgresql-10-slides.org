@@ -6511,7 +6511,15 @@ Il parametro ~syncrhonous_commit~ indica come viene gestito il commit di una tra
 *** Checkpoints
 - ~checkpoint_timeout~ numero di secondi prima di forzare un checkpoint automatico;
 - ~max_wal_size~ dimensione dei dati prima di forzare un checkpoint automatico;
-- ~checkpoint_completion_target~ indica il target di completamento del checkpoint per il throttling.
+- ~checkpoint_completion_target~ indica il target di completamento del checkpoint per il throttling;
+- ~min_wal_size~ impedisce a ~pg_wal~ di scendere al di sotto di tale dimensione, così da garantire una occupazione minima costante.
+
+In particolare il sistema cerca di completare il checkpoint in un tempo pari a:
+~checkpoint_completion_target * checkpoint_timeout~
+e quindi valori prossimi a 1 per ~checkpoint_completion_target~ /rallentano/ l'attività di checkpointing
+lasciando il database abile di rispondere ad altre query.
+Tuttavia, all'aumentare del ~checkpoint_completion_target~ aumentano anche i WAL da conservare (perché il checkpoint
+impiega piu' tempo a completare).
 
 *** Metodi di accesso ai dati
 I seguenti parametri abilitano o disabilitano la gestione di alcuni metodi di accesso ai dati:
