@@ -1,0 +1,380 @@
+
+#+TITLE: Managing Multiple Perl 5 Installations with Perlbrew
+
+* Abstract
+Perl 5 is a very stable, feature rich, programming language used in a multitude of environments and applications, including operating system management tasks. Perl 5 is available in several versions, and usually all versions are backwards compatible, but there are edge cases and new features that could not be available on all versions. When dealing with Perl 5 application, it is a relief to know to be able to install the exeact version needed, depending on the specific feature set or compatibility, without having to ask for administrator privileges or the need to touch the system wide Perl 5 installation. Perlbrew allows exactly that.
+
+** What you need to know
+- Basic Perl 5 knowledge and terminology
+- Basic FreeBSD shell knowledge
+
+** What you will learn
+- How to install perlbrew, initialize and run it
+- How to install different Perl 5 interpreters on the same machine, and how to use a specific one depending on your needs
+- How to manage, rename, clone, delete Perl 5 interpreters
+- How to return back to system wide Perl 5
+
+* Introduction
+When developing Perl 5 application, it is quite common to come across a particular feature of the language that is not available on the system you are going to deploy your application or script. This usually happens when you deal with old operating system, or on the other hand, when you deal with very old programs that could not run fine on modern Perl 5 instances.
+
+The problem arises from the wide availability of Perl 5: being a feature rich, easy, quick, stable language, it has been used all around the world to perform several operating system tasks. Thanks to its rich ecosystem, the Comprehensive Perl Archive Network (CPAN), a lot of applications have been developed using Perl 5. This makes pretty much impossible to find out a Unix operating system not running a version of Perl 5.
+However, while keeping interpreters and libraries up-to-date is a good habit, for serveral well known reasons, it is not always possible.
+
+Why should a Perl 5 version not be upgraded to the very latest version? It could be because some application stack has not been verified and tested on such version, or some features strictly requires a specific version that happens to be in the past. It is possible to write any sort of phylosphical essay on that, but the truth is that Perl 5 could be at a version in the past or in the future with regard to the one needed to run/deploy the application(s).
+
+Having to upgrade/downgrade the operating system Perl 5 installation is not a feasible solution in many environments. First of all, it could cause endless discussions about privileges required to change the Perl 5 package itself, and second it could just break things.
+
+There is more than having to /simply/ deploy an application on a particular Perl 5 version: what if the user wants to patch a particular Perl 5 version to test some experimental work (or contribution) without having to nuke all the other users capabilities to run their Perl programs?
+
+A good solution is to install a Perl 5 version in a /private space/, in particular the user's space (e.g., the home directory), so that no privileges are required and no system wide Perl 5 is changed. However, this approach requires some deep knowledge into the Perl 5 executables: knowking variables, modules to load local libs, and so on. Therefore, while this approach is the preferred one for developers, it is not feasible for non-developer users.
+
+Perlbrew fills the gap making it easy to manage several Perl 5 installations in a user's private space therefore removing the need for privileges, without changing the system wide Perl 5 installation, and hiding all the machinery to make a specific Perl 5 version to work.
+
+This papers introduces Perlbrew providing simple instructions to install and run.
+
+* Installing ~perlbrew~
+
+There are three main ways to install ~perlbrew~:
+1. using the /ports/ collection (the port is ~devel/p5-App-perlbrew~);
+2. manually downloading and installing the latest version from the project web site;
+3. installing from the CPAN (the name is ~App::Perlbrew~).
+
+The above are the ways to obtain a /stable/ version of ~perlbrew~, while of course it is possible to checkout the source tree from the Git repository and go with that, but as usual in this approach, it would lead to a not-fully-working installation.
+
+
+** Installing from the Project Web Site
+
+While the installation from the ports collection is, probably, the most FreeBSD-style one, getting the program from the project web site provides a better control on its installation, as well as an always up-to-date version.
+
+Of course, being ~perlbrew~ a Perl 5 application by itself, it is required the system does have a Perl 5 interpreter installed system wide in order to bootstrap ~perlbrew~. It is possible to check the installed Perl 5 version with the ~-v~ flag:
+
+#+begin_src shell
+% perl -v
+
+This is perl 5, version 24, subversion 3
+(v5.24.3) built for amd64-freebsd-thread-multi
+
+Copyright 1987-2017, Larry Wall
+#+end_src
+
+In order to install ~perlbrew~ directly from the project web site it is required a command line utility to download data via HTTP, for instance ~wget(1)~, ~fetch(1)~ (always available on a FreeBSD plain install)  or ~curl(1)~. Assuming ~wget(1)~ is the available one, installing ~perlbrew~ is as easy as providing an URL to the latter command and piping the result trhu a shell interpreter:
+
+#+begin_src shell
+% wget -O - https://install.perlbrew.pl | sh
+...
+## Installing perlbrew
+Using Perl </usr/local/bin/perl>
+perlbrew is installed: ~/perl5/perlbrew/bin/perlbrew
+...
+#+end_src
+
+If everything work fine, ~perlbrew~ creates a directory tree in the user's home directory under the ~perl5/perlbrew~ directory. That's the main directory where ~perlbrew~ will install Perl 5 versions, and ~perl5~ is the local directory to enable per-user modules.
+
+At the end of the installation, the program prints a message about sourcing a file into ~.profile~. The idea is that the command ~perlbrew~ aliases within the user's shell to support all internal commands. At the moment, under ~perl5/perlbrew/etc~ there are configuration files to support bash, fish and csh. The author works with ~zsh(1)~ that, having a variable and aliasing system compatible with the one of ~bash(1)~, works fine.
+Depending on the user's shell, the place and the syntax to /load/ the functions could be sligthly different, but in many case it does suffice to do something like:
+
+#+begin_src shell
+$ echo "source ~/perl5/perlbrew/etc/bashrc" > ~/.profile
+#+end_src
+
+or, in the case of ~zsh(1)~:
+
+#+begin_src shell
+% echo "source ~/perl5/perlbrew/etc/bashrc" > ~/.zprofile
+#+end_src
+
+If the sourcing is placed on the /profile/ file there is the need to start a new shell session, usually logging out and loggin in again. More complex solutions could simply source the perlbrew functions into /rc/ files, so that it simply does suffice to /restart a new shell/. Adding the following piece of code to an /rc/ shell file (e.g., ~.zshrc~, ~.bashrc~ and so on) would do the trick:
+
+#+begin_src shell
+if [ -z "$PERLBREW_SOURCED" ]
+then
+    PERLBREW_SOURCED=~/perl5/perlbrew/etc/bashrc
+    export PERLBREW_SOURCED
+    source $PERLBREW_SOURCED
+fi
+#+end_src
+
+After that, it does suffice to start a new shell simply issuing the shell executable (e.g., ~zsh~, ~bash~, etc) to have perlbrew fully loaded without the need to log-out and log-in again.
+
+** Checking the Installation
+
+Once ~perlbrew~ has been installed and all the shell files have been loaded, it is possible to check the installation just issuing the ~perlbrew~ command, optionally with the ~version~ command to confirm the version installed:
+
+#+begin_src shell
+% perlbrew version
+/home/luca/perl5/perlbrew/bin/perlbrew  - App::perlbrew/0.82
+#+end_src
+
+* Getting to Know ~perlbrew~
+
+The ~perlbrew~ command works thru /commands/: each action to be peformed has to be specified via one /command/ and, optionally, options.
+Running ~perlbrew~ without any command (or with a wrong command) provides an help screen with all the available commands:
+
+#+begin_src shell
+% perlbrew
+Usage:
+    perlbrew command syntax:
+
+        perlbrew <command> [options] [arguments]
+
+    Commands:
+
+        init           Initialize perlbrew environment.
+        info           Show useful information about the perlbrew installation
+
+        install        Install perl
+        uninstall      Uninstall the given installation
+        available      List perls available to install
+        lib            Manage local::lib directories.
+        alias          Give perl installations a new name
+        upgrade-perl   Upgrade the current perl
+...
+#+end_src
+
+
+The ~help~ command accepts the name of another command as optional argument, providing more info about the usage of the latter command.
+For instance ~perlbrew help init~ prints detailed instructions about the ~init~ command.
+
+
+It is worth noting that after having installed ~perlbrew~, it will not automatically activate itself, that is *the user will continue to use the system wide Perl 5*. This can be easily checked either asking the version of the ~perl~ interpreter or asking ~perlbrew~ for some info about the current installation:
+
+#+begin_src shell
+% perl -v
+
+This is perl 5, version 24, subversion 3
+(v5.24.3) built for amd64-freebsd-thread-multi
+
+Copyright 1987-2017, Larry Wall
+...
+
+% perlbrew info
+Current perl:
+Using system perl.
+Shebang: #!/usr/local/bin/perl
+...
+#+end_src
+
+As readers can see, the ~perl~ interpreter has not changed, and in fact even ~perlbrew~ states that the user is still using the /system perl/.
+
+
+Perlbrew identifies Perl 5 versions via the release numbers, so for instance ~5.27.7~ identifies that specific version of Perl 5. If only a version number is provided, perlbrew automatically consider it as a Perl 5 version. Optionally, the prefix ~perl-~ can be used, and often it is displayed thru the commands output (e.g., ~perl-5.7.7~). The usage of a prefix helps avoiding clashes with ~cperl~ instances.
+
+* Installing Perl 5 via ~perlbrew~
+** Initializing Perlbrew
+
+In order to start using ~perlbrew~, the system has to be /initialized/. This is as simple as using the command ~init~:
+
+#+begin_src shell
+ % perlbrew init
+
+perlbrew root (~/perl5/perlbrew) is initialized.
+#+end_src
+
+The initialization step must be performed only one time per installation, and does not enable any specific Perl 5 interpreter.
+In order to use another Perl 5 interpreter it is required to download and install it.
+
+** Installing another Perl 5 Interpreter
+
+In order to install a new Perl 5 interpreter it is required to:
+1. choose the right version from the available ones;
+2. ask ~perlbrew~ to install;
+3. optionally switch to such version of Perl 5.
+
+*** 1) Choose the version among those available
+
+The command ~available~ shows all known Perl 5 versions that can be downloaded and installed. If a version have been already isntalled on the current system, an  ~i~ is placed at the beginning of the line.
+
+#+begin_src shell
+% perlbrew available
+
+   perl-5.27.7  available from  <http://www.cpan.org/src/5.0/perl-5.27.7.tar.gz>
+   perl-5.26.1  available from  <http://www.cpan.org/src/5.0/perl-5.26.1.tar.gz>
+   perl-5.24.3  available from  <http://www.cpan.org/src/5.0/perl-5.24.3.tar.gz>
+   perl-5.22.4  available from  <http://www.cpan.org/src/5.0/perl-5.22.4.tar.gz>
+   perl-5.20.3  available from  <http://www.cpan.org/src/5.0/perl-5.20.3.tar.gz>
+   perl-5.18.4  available from  <http://www.cpan.org/src/5.0/perl-5.18.4.tar.gz>
+   perl-5.16.3  available from  <http://www.cpan.org/src/5.0/perl-5.16.3.tar.gz>
+   perl-5.14.4  available from  <http://www.cpan.org/src/5.0/perl-5.14.4.tar.gz>
+   perl-5.12.5  available from  <http://www.cpan.org/src/5.0/perl-5.12.5.tar.gz>
+   perl-5.10.1  available from  <http://www.cpan.org/src/5.0/perl-5.10.1.tar.gz>
+    perl-5.8.9  available from  <http://www.cpan.org/src/5.0/perl-5.8.9.tar.gz>
+    perl-5.6.2  available from  <http://www.cpan.org/src/5.0/perl-5.6.2.tar.gz>
+...
+#+end_src
+
+Assume the latest Perl 5.27.7 is choosen for the installation. The name ~perlbrew~ recognizes a Perl 5 interpreter is via the first column of the ~available~ output, so in this case ~perl-5.27.7~. As already stated, it is possile to omit the initial ~perl-~, therefore using the name ~5.27.7~, unless it causes clashes with cperl versions.
+
+*** 2) Install the choosen versions
+
+The command ~install~ performs a download of the specified version, compiles it and installs into the perlbrew directory tree.
+
+#+begin_src shell
+% perlbrew install perl-5.27.7
+Fetching perl 5.27.7 as /home/luca/perl5/perlbrew/dists/perl-5.27.7.tar.gz
+Download http://www.cpan.org/src/5.0/perl-5.27.7.tar.gz to /home/luca/perl5/perlbrew/dists/perl-5.27.7.tar.gz
+Installing /home/luca/perl5/perlbrew/build/perl-5.27.7/perl-5.27.7 into ~/perl5/perlbrew/perls/perl-5.27.7
+
+This could take a while. You can run the following command on another shell to track the status:
+
+  tail -f ~/perl5/perlbrew/build.perl-5.27.7.log
+
+perl-5.27.7 is successfully installed.
+#+end_src
+
+The installation could take some time, depending on the resources available on the machine.
+
+It is possible to see all installed versions using the ~list~ command:
+
+#+begin_src shell
+% perlbrew list
+   perl-5.27.7                               (installed on Fri Jan  5 12:05:42 2018)
+#+end_src
+*** 3) Switch to the new installed Perl 5
+
+Installing a Perl 5 interpreter does not mean it will be used immediatly after. In order to start using a specific interpreter the ~switch~ command must be run, specifying of course the version the user wants to run:
+
+#+begin_src shell
+% perlbrew switch perl-5.27.7
+% perl -v
+
+This is perl 5, version 27, subversion 7 (v5.27.7) built for amd64-freebsd
+(with 1 registered patch, see perl -V for more detail)
+
+Copyright 1987-2017, Larry Wall
+...
+#+end_src
+
+As readers can see, immediatly after the switch to the specified Perl 5 interpreter, the ~perl~ command returns the version that is different from the system wide installed Perl 5 (which in this article was 5.24.3).
+
+** Returning to the System Perl 5
+
+If, for any reason, you need to run some commands using the system wide available Perl 5 interpreter, you can turn ~perlbrew~ /off/ with the ~off~ command. The result will be to disable all ~perlbrew~ facilities (i.e., locally installed Perl 5):
+
+#+begin_src shell
+% perl -v
+
+This is perl 5, version 27, subversion 7 (v5.27.7)
+,,,
+
+% perlbrew off
+perlbrew is turned off.
+% perl -v
+
+This is perl 5, version 24, subversion 3 (v5.24.3)
+...
+#+end_src
+
+As readers can see, after turning perlbrew off, the Perl 5 interpreter is /downgraded/ from 5.27.7 to 5.24.3, with the latter being the system wide interpreter.
+
+It is important to note that the ~off~ command works only in the current shell, while the ~switch-off~ command turns off perlbrew on all subsequent shell instances.
+
+In order to activate again the Perl 5 installed via perlbrew, it does suffice to re-run the ~switch~ command:
+
+#+begin_src shell
+% perlbrew switch 5.27.7
+#+end_src
+
+** Managing Perl 5 installations
+
+There are several commands to take care of a Perl 5 installation. One useful command is ~alias~: it allows for a renaming of a Perl 5 installation to a more human-readable name. The ~alias~ command does require a fully qualified name, not a simple version number. For instance, to name the just installed Perl 5.27.7 to /bsdmagv1/ it is possible to create the new alias:
+
+#+begin_src shell
+% perlbrew alias create perl-5.27.7 bsdmagv1
+% perlbrew list
+   bsdmagv1              (5.27.7)            (installed on Fri Jan  5 12:05:42 2018)
+ * perl-5.27.7                               (installed on Fri Jan  5 12:05:42 2018)
+% perlbrew switch bsdmagv1
+#+end_src
+
+As readers can see, ~bsdmagv1~ is now a usable name that refers to version 5.27.7.
+
+The ~alias~ command is useful for post-install management, but the ~install~ command accepts an extra option ~--as~ that allows for specifying a name that will be used as main name for the installed Perl 5:
+
+#+begin_src shell
+% perlbrew install perl-5.8.9 --as my-first-perl
+...
+my-first-perl is successfully installed.
+#+end_src
+
+And the Perl 5 will be available to ~perlbrew~ via the special name ~my-first-perl~:
+
+#+begin_src shell
+% perlbrew list
+ * perl-5.27.7                               (installed on Fri Jan  5 12:05:42 2018)
+   my-first-perl         (5.8.9)             (installed on Fri Jan  5 12:49:37 2018)
+#+end_src
+
+
+In the case a Perl 5 distribution is no longer required, the ~uninstall~ command can be used to delete it.
+
+The ~clean~ command removes the compilation objects and downloaded archives, and that is useful to get back disk space after installations:
+
+#+begin_src shell
+% du -hs ~/perl5
+480M    /home/luca/perl5
+
+% perlbrew clean
+Removing /home/luca/perl5/perlbrew/build/perl-5.27.7
+Removing /home/luca/perl5/perlbrew/build/perl-5.8.9
+Removing /home/luca/perl5/perlbrew/dists/perl-5.27.7.tar.gz
+Removing /home/luca/perl5/perlbrew/dists/perl-5.8.9.tar.bz2
+
+Done
+
+% du -hs ~/perl5
+133M    /home/luca/perl5
+#+end_src
+
+** Installing Modules
+
+Perl 5 is famous for its rich module ecosystem, kept in the CPAN. There are several tools to manage CPAN modules from the command line, and perlbrew uses ~cpanm~, a zero-configuration client.
+
+In order to use ~cpanm~ it is required to install it so that ~perlbrew~ itself can use it: the ~install-cpanm~ command does what it says:
+
+#+begin_src shell
+% perlbrew install-cpanm
+
+cpanm is installed to
+
+    /home/luca/perl5/perlbrew/bin/cpanm
+#+end_src
+
+~cpanm~ is installed widely thru perlbrew, so that it can be used for all the Perl 5 instances with a single installation.
+
+Once ~cpanm~ is working, it is quite easy to install a new module, for instance ~Archive::Zip~:
+
+#+begin_src shell
+% cpanm Archive::Zip
+...
+Successfully installed Archive-Zip-1.60
+4 distributions installed
+#+end_src
+
+It is also easy to /clone/ all installed modules from an instance to another via the command ~clone-modules~, from yours truly:
+
+#+begin_src shell
+% perlbrew clone-modules 5.27.7 5.26.1
+...
+#+end_src
+
+The above command will clone all modules installed on instance 5.27.7 to instance 5.26.1. This command is useful when you have a quite customized Perl 5 installation and want to keep back all modules you have installed during time.
+
+
+* Conclusions
+~perlbrew~ is a powerful tool to manage several Perl 5 installation under a /private/ user space.
+It allows for running either modern or ancient versions of Perl 4 without having the user to be granted administrative privileges or changing the system wide Perl 5 installation.
+
+* About Luca Ferrari
+Luca lives in Italy with his beautiful wife, his great son and two female cats.
+Computer science passionate since the Commodore 64 age, he holds a Master Degree and a PhD in Computer Science.
+He is a PostgreSQL enthusiast, a Perl lover, an Operating System passionate, a Unix fan
+and performs as much tasks as possible within Emacs.
+He considers the Open Source the only sane way of doing software and services.
+
+His web site is available at http://fluca1978.github.io
+
+* References
+- Perlbrew official web site <https://perlbrew.pl/>
+- Perlbrew Git repository <https://github.com/gugod/App-perlbrew>
+- Perl 5 official web site <http://www.perl.org/>
+- CPAN <https://www.cpan.org/>
