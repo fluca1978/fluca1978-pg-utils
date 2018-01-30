@@ -1,4 +1,5 @@
-* Page checksum protection
+* Page checksum protecion
+
 
 ** Abstract
 PostgreSQL does support a feature called /page checksum/ that, if enabled at a cluster wide level, protects the database from data corruption on the disk. The protection does not involve automatic data recover, rather a way to discard a piece of data that is considered no more reliable.
@@ -10,30 +11,25 @@ In this short article, readers will see the effect of data corruption and how Po
 - How to simulate a page corruption
 - How to erase the damaged page
 
+<<<<<<< HEAD
 *** You need to know
 - How to interact with a PostgreSQL (9.6) database
 - How PostgreSQL sets up disk layout
 - How to write and run a small Perl program
 
 ** Introduction
-PostgreSQL supports the /page checksum/ feature since version 9.3; such feature  allows the cluster to check for every /checked-in/ data page in order to determine if the page is reliable or not.
-/A reliable page is a page that has not been corrupted during the path from memory to the disk (writing data to the disk) or the opposite (reading back the data)/.
+PostgreSQL supports the /page checksum/ feature, a way that allows the cluster to check for every /checked-in/ data page in order to determine if the page is reliable or not. A reliable page is a page that has not been corrupted during the path from memory to the disk (writing data to the disk) or the opposite (reading back the data). The corruption can happen because of a bug or a failure in the disk controller, in the memory, and so on. /Please note the corruption detailed here has nothing to do with Write Ahead Logs (WALs), that ensure the database state is always consistent (and are already protected in several ways including a checksum)./
 
-As readers probably know, a data corruption can happen because of a bug or a failure in the disk controller, in the memory, and so on.
-What is the risk of a data corruption from a PostgreSQL point of view? A corrupted data pages does contain wrong tuples, in the sense the data within the tuples is possibly wrong. Using such wrong data could make a single ~SELECT~ statement to report wrong data or, worst, such data can be used to build up other tuples and therefore "import" corrupted data within the database.
-
-It is important to note that the /page checksum/ feature does not enforce the database consistency: the latter is provided by the /Write Ahead Logs (WALs)/ that have always been strongly protected from corruption with several tecniques including a checksum on each segment.
-But while WALs ensure that data is actually made persistent, they don't protect you against a silent data corruption that hits a tuple (or alike), and again this "silent" corruption will be checked in the database in the future.
-
-
-
-What can the database do when a corruption in a data page lays around?
-There are two possibile scenarios:
+What can the database do when a corruption in a data page lays around? There are two possibile scenarios:
+>>>>>>> 1311a89d1d5d1d2016853d0f16f76c1ac045da0f
 1) the data page is checked in and used as if it was reliable (i.e., the corruption is not detected at all);
 2) the data page is discarded, and therefore the data contained in it is not considered at all.
 
 Without /page checksums/ PostgreSQL will default to scenario 1), that is the detection is not perceived and therefore possible corrupted data (e.g., a tuple, a field, a whole range of an index or table) is used in live operations and can, therefore, corrupt other data.
+<<<<<<< HEAD
 
+=======
+>>>>>>> 1311a89d1d5d1d2016853d0f16f76c1ac045da0f
 With /page checksums/ enabled PostgreSQL will discard the page and all the data within it, for instance all the tuples of a table stored in such opage. Is it then the administrator duty to decide what to do with such data page, but there is nothing PostgreSQL can do automatically since it is unknown what the real corruption is and what caused it.
 
 ** Enabling page checksums
@@ -49,7 +45,9 @@ $ initdb --data-checksum
 Once the database has been instrumented like the above, the user can interact with it in the same way as if page checksums was disabled. /the whole feature is totally transoarent to the database user or administrator/.
 
 ** Forcing a corruption
-_*Readers must not execute the following steps in production!*_
+
+*Readers must not execute the following steps in production!*
+
 
 The main aim of this section is to provide an insight on what happens when data is corrupted, but readers do must understand that these4 step will deliberately destroy their data!
 
@@ -71,6 +69,7 @@ relfilenode | 19584
 
 As readers can see, the ~event~ tables has 13439 data pages and a two millions tuple, so it is a large enough table to play with.
 
+<<<<<<< HEAD
 In order to find out the real file on the disk, it is important to get the path of the database, that can be obtained with the following query:
 
 #+begin_src sql
@@ -191,6 +190,7 @@ SetConfigOption("zero_damaged_pages", "false", PGC_SUSET, PGC_S_OVERRIDE);
 #+end_src
 
 As readers can see, the option ~zero_damaged_pages~ is always set to false, so that an autovacuum process will not zero (or clean) a page. The idea is that such an operation is so important that an administrator should be notified and decide manually to perform a clean up. In fact a page corruption often means there is a problem with hardware (or filesystem or other software) that requires more investigation and also a recovery from a reliable backup.
+<<<<<<< HEAD
 
 ** Conclusions
 The /page checksum/ feature allows PostgreSQL to detect silent data corruption that happened outside the WALs, i.e., on real data pages. The database cannot decide automatically how to recover such data, so the only choice left to the administrator is to clean up the wrong page or not. However, once a corruption is detected, PostgreSQL will refuse to /check-in/ such page protecting the other data pages from being polluted.
