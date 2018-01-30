@@ -9075,6 +9075,11 @@ Prevede un meccanismo di *publish* & *subscribe* dei componenti: il master /pubb
 
 Il /subscriber/ può essere a sua volta un /publisher/ (quindi si supporta la /cascading replication/).
 Inoltre il /subscriber/ può essere usato in scrittura, ma in questo scenario possono nascere dei conflitti.
+*** Limitazioni della replica logica
+- i comandi /DDL/ non sono replicati;
+- ~TRUNCATE~ non viene replicato;
+- replicare tabelle prive di chiave primaria è una pessima idea;
+
 *** Configurazione del master
 #+begin_src shell
 wal_level = logical
@@ -9163,7 +9168,8 @@ local_lsn   | 0/E53A8528
 #+end_src
 
 *** UPDATE/DELETE e REPLICA IDENTITY
-Cosa succede se cancelliamo le tuple sul nodo master?
+La tabella creata come esempio *non ha una chiave primaria*, e quindi il sistema non sa come fare
+a riconoscere le tuple /non/ aggiunte!
 
 #+begin_src sql
 # DELETE FROM replicated;
@@ -9171,17 +9177,15 @@ ERROR:  cannot delete from table "replicated" because it does not have a replica
 HINT:  To enable deleting from the table, set REPLICA IDENTITY using ALTER TABLE.
 #+end_src
 
-occorre assegnare una ~REPLICA IDENTITY~ alla tabella:
+Si può ovviare al problema assegnando una  ~REPLICA IDENTITY~ alla tabella:
 #+begin_src sql
 # ALTER TABLE replicated REPLICA IDENTITY FULL;
 #+end_src
 
 e quindi i comandi di ~INSERT~ e ~UPDATE~ iniziano a funzionare.
+La ~REPLICA IDENTITY~ può essere ~DEFAULT~ (usa i vincoli ~UNIQYE~ e quindi le chiavi trovate) o ~FULL~ (fa un flush
+dell'intera tupla).
 
-*** Limitazioni della replica logica
-- i comandi /DDL/ non sono replicati;
-- ~TRUNCATE~ non viene replicato;
-- replicare tabelle prive di chiave primaria è una pessima idea;
 
 
 ** Da slave a master
