@@ -1262,6 +1262,22 @@ date_part    | 2017
 date_part    | 18
 justify_days | 1 mon 5 days
 #+end_src
+*** ~extract~ vs ~date_part~
+Le due funzioni ~extract()~ e ~date_part()~ svolgono sostanzialmente la stessa funzione ma:
+- in ~estract~ la parte da estrarre può non essere quotata, mentre in ~date_part~ deve essere una stringa;
+- in ~extract~ si usa la parola chiave ~from~, in ~date_part~ gli argomenti sono separati da ~,~.
+
+#+begin_src sql
+> SELECT
+  date_part( 'year', '2018-01-31'::date ) AS anno,
+  extract( 'month' from '2018-01-31'::date ) AS mese, -- stringa
+  extract( day from '2018-01-31'::date ) AS giorno;   -- non stringa
+-[ RECORD 1 ]
+anno   | 2018
+mese   | 1
+giorno | 31
+
+#+end_src
 *** Costruttori del tempo
 Oltre al cast esplicito di stringhe, sono disponibili i costruttori ~make_date()~, ~make_time()~ e ~make_timestamp()~. Esiste anche un ~make_interval()~ che ha una serie di valori di default che possono quindi essere specificati uno alla volta:
 #+begin_src sql
