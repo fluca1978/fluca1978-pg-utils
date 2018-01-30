@@ -3957,7 +3957,10 @@ BEGIN
 END;
 $BODY$ LANGUAGE plpgsql;
 #+end_src
-
+*** Security
+Una stored procedure può essere definita in due contesti di sicurezza:
+- *~SECURITY INVOKER~* la funzione esegue con i permessi dell'utente che la invoca (ovvero deve avere le ~GRANT~ sulle tabelle);
+- ~SECURITY DEFINER~ la funzione esegue con i permessi dell'utente che l'ha definita, e quindi non sono necessarie le grant all'utente invocante.
 ** Cursori
 *** Cos'è un cursore?
 Un cursore è un meccanismo che trasforma un record-set in una iterazione fra record: non si ottiene
