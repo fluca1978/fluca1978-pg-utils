@@ -4513,6 +4513,15 @@ sull'oggetto che ha creato.
 Chi possiede il permesso ~GRANT~ può concedere lo stesso permesso
 ad altri ruoli: si può quindi non solo abitare agli oggetti, ma anche
 alle abilitazioni stesse verso altri utenti.
+** Grant sui ruoli
+PostgreSQL supporta un tipo particolare di ~GRANT~: fra ruoli.
+Una ~GRANT~ fra ruoli compone un gruppo fra i ruoli, così facendo i permessi
+dell'utente destinazione vengono ereditati da quelli dell'utente di partenza.
+
+#+begin_src sql
+# GRANT luca TO dev1;
+-- dev1 ora appartiene al gruppo luca
+#+end_src
 ** Esempio di permessi di colonna
 #+begin_src sql
 # REVOKE ALL ON software FROM PUBLIC;
@@ -4541,6 +4550,9 @@ di tupla, denominata /Row Level Security/.
 
 La Row Level Security si basa su delle /policy/ che devono discriminare quali dati
 mostrare/nascondere. Se nessuna policy viene creata si usa un default di /deny all/.
+
+*ATTENZIONE: è bene concedere i permessi di riga solo dopo aver assegnato i permessi ~GRANT~ normali!*
+
 ** Row Level Security: esempio
 #+begin_src sql
 > CREATE POLICY view_maggiorenni
@@ -4562,10 +4574,10 @@ Nel caso di statement ~SELECT~ la condizione è data da ~USING~, nel caso di
 #+begin_src sql
 > CREATE POLICY handle_maggiorenni
   ON persona
-  FOR ALL  -- SELECT, UPDATE, DELETE, INSERT
-  TO PUBLIC   -- quale ruolo ?
-  USING  (eta >= 18) -- condizione di SELECT
-  WITH CHECK (eta >= 18); -- condizione DDL
+  FOR ALL                  -- SELECT, UPDATE, DELETE, INSERT
+  TO PUBLIC                -- quale ruolo ?
+  USING  (eta >= 18)       -- condizione di SELECT
+  WITH CHECK (eta >= 18);  -- condizione DDL
 #+end_src
 ** Row Level Security: un altro esempio
 Tipicamente questo meccanismo viene usato per nascondere le tuple
@@ -4574,10 +4586,10 @@ di altri utenti:
 #+begin_src sql
 > CREATE POLICY handle_my_tuples
   ON usernames
-  FOR ALL  -- SELECT, UPDATE, DELETE, INSERT
-  TO PUBLIC   -- quale ruolo ?
-  USING  (usernam >= CURRENT_USER) -- condizione di SELECT
-  WITH CHECK (usernam >= CURRENT_USER); -- condizione DDL
+  FOR ALL                              -- SELECT, UPDATE, DELETE, INSERT
+  TO PUBLIC                            -- quale ruolo ?
+  USING  (usernam = CURRENT_USER)      -- condizione di SELECT
+  WITH CHECK (usernam = CURRENT_USER); -- condizione DDL
 #+end_src
 
 * Viste & Rules
