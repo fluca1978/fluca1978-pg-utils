@@ -8734,6 +8734,14 @@ archive_timeout = 10
 #+end_src
 
 che forza una archiviazione ogni 10 secondi (ad esempio).
+In alternativa, manualmente, come utente amministratore è possibile invocare la funzione ~pg_switch_wal()~:
+
+#+begin_src sql
+# SELECT pg_switch_wal();
+ pg_switch_wal
+---------------
+ 0/FD000158
+#+end_src
 
 *** Perdita di dati: che fare? La strada sbagliata!
 *Non ci si deve fidare delle date di modifica dei WAL sul master!*
