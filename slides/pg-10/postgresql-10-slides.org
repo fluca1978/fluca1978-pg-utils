@@ -9134,6 +9134,39 @@ LOG:  MultiXact member wraparound protections are now enabled
 LOG:  database system is ready to accept connections
 LOG:  autovacuum launcher started
 #+end_src
+** Archive cleanup
+*** Il problema
+Nella streaming replication (o analoga soluzione), il database clone ha una serie di wal che non sono piu' necessari.
+Il file ~.backup~ contiene infatti tali informazioni:
+
+#+begin_src sh
+% sudo cat /mnt/data2/wal_archive/000000010000000000000037.00000108.backup
+START WAL LOCATION: 0/37000108 (file 000000010000000000000037)
+...
+#+end_src
+
+ovvero tutti i file piu' vecchi di ~0x0037~ possono essere eliminati per creare spazio.
+
+*** ~pg_archivecleanup~
+Il comando ~pg_archivecleanup~ può essere usato come comando stand-alone o come punto finale di un recovery per eliminare i wal non necessari.
+
+#+begin_src shell
+% sudo -u postgres pg_archivecleanup /mnt/data3/pgdata
+          /mnt/data2/wal_archive/000000010000000000000037.00000108.backup
+#+end_src
+
+In alternativa, nel ~recovery.conf~ può usare un comando di fine recovery per fare pulizia:
+
+#+begin_src shell
+# recovery.conf
+...
+restore_command = 'cp /mnt/data2/wal_archive/%f "%p"'
+archive_cleanup_command = 'pg_archivecleanup /mnt/data2/wal_archive/ %r'
+#+end_src
+
+ove ~%r~ indica l'ultimo WAL da tenere, ovvero il restart point.
+
+
 ** Logical Replication
 *** Introduzione alla replicazione logica
 Consente di inviare una parte ridotta di informazioni di replicazione, tipicamente basandosi su un identificativo dei dati (es. la chiave primaria).
