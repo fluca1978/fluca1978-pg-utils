@@ -4239,7 +4239,7 @@ Asynchronous notification "delete_channel"
    2. si /aggancia/ la funzione ad un evento scatenato su una tabella (tramite
       ~CREATE TRIGGER~).
 *** Tipologia di trigger
-I trigger possono essere eseguiti per ~statment~ o per ~riga~.
+I trigger possono essere eseguiti per ~statement~ o per ~riga~.
 Nel caso di esecuzione a livello di statement il valore di ritorno del trigger
 è ignorato (~NULL~), nel caso di esecuzione per riga il valore di ritorno
 può essere ~NULL~ per indicare che l'oeprazione deve abortire o ritornare una
