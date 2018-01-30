@@ -3226,7 +3226,7 @@ In questo modo è possibile sapere sempre lo spazio ancora disponibile nella rel
 Ogni pagina dati di una relazione ha una /Visibility Map/, fisicamente memorizzata su disco con nome pari a quello della relazione e suffisso ~.vm~.
 
 La mappa contiene due bit per pagina ad indicare:
-- se tutte le tuple sono visibili  (nessuna necessità di ~VACUUM~) e quindi si può effettuare un /INdex Only Scan/;
+- se tutte le tuple sono visibili  (nessuna necessità di ~VACUUM~) e quindi si può effettuare un /Index Only Scan/;
 - se tutte le tuple sono /frozen/ e quindi non necessitano di nessun ~VACUUM~ per evitare perfino il wraparound dello ~xid~.
 
 La mappa è conservativa: se i bit sono attivi allora la condizione relativa è sicuramente vera, se non lo sono potrebbe essere vera o falsa.
@@ -9064,6 +9064,61 @@ replay_location  | 3/AC000000
 sync_priority    | 1
 sync_state       | sync
 #+end_src
+** Da slave a master
+*** Promote
+Uno slave può diventare un master qualora sia necessario.
+
+Diventare master (*promote*) significa che lo slave inizierà a percorrere la sua stessa timeline e si sgancerà dal vecchio master (ossia
+sarà completato il recovery).
+
+Ci sono due modi per promuovere uno slave:
+- fare una /promote/ esplicita;
+- usare un trigger file.
+
+*** Promote esplicita
+Usando ~pg_ctl~ si può effettuare il promote di un database:
+#+begin_src shell
+% sudo -u postgres pg_ctl -D /mnt/data3/pgdata promote                                                                   ~
+server promoting
+LOG:  received promote request
+FATAL:  terminating walreceiver process due to administrator command
+LOG:  invalid record length at 3/F7000140: wanted 24, got 0
+LOG:  redo done at 3/F7000108
+LOG:  selected new timeline ID: 2                                                                                      ~
+LOG:  archive recovery complete
+LOG:  MultiXact member wraparound protections are now enabled
+LOG:  database system is ready to accept connections
+LOG:  autovacuum launcher started
+#+end_src
+
+*** Promote via trigger file
+Si deve specificare un'opzione nel file ~recovery.conf~:
+#+begin_src shell
+standby_mode = 'on'
+primary_conninfo = 'host=localhost port=5432 user=postgres password=xxx'
+trigger_file = '/tmp/promote_to_master'
+#+end_src
+
+Quando sarà presente il file ~/tmp/promote_to_master~ (non importa il contenuto!) lo slave si sgancerà dal master.
+
+*** Promote via trigger file: esempio
+#+begin_src shell
+% echo `date` > /tmp/promote_to_master
+#+end_src
+
+e lo slave reagisce con
+
+#+begin_src shell
+LOG:  trigger file found: /tmp/promote_to_master                                                   ~
+FATAL:  terminating walreceiver process due to administrator command
+LOG:  invalid record length at 3/F9000060: wanted 24, got 0
+LOG:  redo done at 3/F9000028
+LOG:  selected new timeline ID: 2
+LOG:  archive recovery complete
+LOG:  MultiXact member wraparound protections are now enabled
+LOG:  database system is ready to accept connections
+LOG:  autovacuum launcher started
+#+end_src
 ** Logical Replication
 *** Introduzione alla replicazione logica
 Consente di inviare una parte ridotta di informazioni di replicazione, tipicamente basandosi su un identificativo dei dati (es. la chiave primaria).
@@ -9188,61 +9243,6 @@ dell'intera tupla).
 
 
 
-** Da slave a master
-*** Promote
-Uno slave può diventare un master qualora sia necessario.
-
-Diventare master (*promote*) significa che lo slave inizierà a percorrere la sua stessa timeline e si sgancerà dal vecchio master (ossia
-sarà completato il recovery).
-
-Ci sono due modi per promuovere uno slave:
-- fare una /promote/ esplicita;
-- usare un trigger file.
-
-*** Promote esplicita
-Usando ~pg_ctl~ si può effettuare il promote di un database:
-#+begin_src shell
-% sudo -u postgres pg_ctl -D /mnt/data3/pgdata promote                                                                   ~
-server promoting
-LOG:  received promote request
-FATAL:  terminating walreceiver process due to administrator command
-LOG:  invalid record length at 3/F7000140: wanted 24, got 0
-LOG:  redo done at 3/F7000108
-LOG:  selected new timeline ID: 2                                                                                      ~
-LOG:  archive recovery complete
-LOG:  MultiXact member wraparound protections are now enabled
-LOG:  database system is ready to accept connections
-LOG:  autovacuum launcher started
-#+end_src
-
-*** Promote via trigger file
-Si deve specificare un'opzione nel file ~recovery.conf~:
-#+begin_src shell
-standby_mode = 'on'
-primary_conninfo = 'host=localhost port=5432 user=postgres password=postgres'
-trigger_file = '/tmp/promote_to_master'
-#+end_src
-
-Quando sarà presente il file ~/tmp/promote_to_master~ (non importa il contenuto!) lo slave si sgancerà dal master.
-
-*** Promote via trigger file: esempio
-#+begin_src shell
-% echo `date` > /tmp/promote_to_master
-#+end_src
-
-e lo slave reagisce con
-
-#+begin_src shell
-LOG:  trigger file found: /tmp/promote_to_master                                                   ~
-FATAL:  terminating walreceiver process due to administrator command
-LOG:  invalid record length at 3/F9000060: wanted 24, got 0
-LOG:  redo done at 3/F9000028
-LOG:  selected new timeline ID: 2
-LOG:  archive recovery complete
-LOG:  MultiXact member wraparound protections are now enabled
-LOG:  database system is ready to accept connections
-LOG:  autovacuum launcher started
-#+end_src
 * Background Workers
 ** Concetti e definizioni
 *** Background Workers
