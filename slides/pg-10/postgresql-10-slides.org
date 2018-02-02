@@ -9748,6 +9748,11 @@ DETAIL:
         SHUTDOWN
 #+end_src
 
+*** ~SHOW CONFIG~
+Illustra tutta la configurazione così come è stata caricata dal file di configurazione.
+
+Utile per introspezione.
+
 *** ~SHOW DATABASES~
 Il comando ~SHOW DATABASES~ mostra i database configurati, lo stato del pool e a quale database puntano effettivamente:
 
