@@ -1,0 +1,274 @@
+* Table Level Security in PostgreSQL
+
+
+** Abstract
+PostreSQL does support a lof of security features that are often not applied to use cases. Such features include the ability for column-level and row-level security constraint.
+This article does present a really simple use case in order to allow readers to better understand the capabilities of this great database.
+
+*** You will learn
+- How to enabled/disable /column-level/ and /row-level/ security
+- How to make functions that can bypass such constraints
+- How PostgreSQL defines row-level policies and how to enable it
+*** You need to know
+- How to interact with a PostgreSQL (9.6 or higher) database
+- How to create tables, users and functions
+- How to run stored procedures
+
+
+** Introduction
+PostgreSQL, as many other relational databases, provides support for ~GRANT~ and ~REVOKE~ commands used to provide priviliges on objects (e.g., tables) to users.
+In PostgreSQL it is possible to /extend/ the priviliges both in a vertical way (i.e., at the column level) or in an horizontal way (i.e., at the row-level).
+
+Enabling column and row level security allows for a better hardening of the data in the database itself, and prevents malicious or corrupted applications to access private data.
+
+In order to better understand the difference between the two directions security can move, allow for a specific explaination:
+1. *column level security* dictates that an user cannot access more columns in a result set than the ones granted by the priviliges. It does not matter which filters (e.g., ~WHERE~ conditions) or sorting the user is going to use in her queries, it will not be able to extract data in private columns.
+2. *row level security* enables a kind of virtual horizontal data split, and dictates that the user will not be able to handle any row outside of specific criterias. This is applied before any query condition or filtering, in other words /it is like the whole result set has been shrinked down/ before it is is actually evaluated for the user.
+
+** A Simple Example
+In order to demonstrate all the above concepts, consider the following simple example:
+a table of products that contains information about /who/ manages (e.g., sells, store, move) the products and about the price of each of them.
+It should be immediatly clear that some users should be able to see the prices, while other should /never be enabled to see the price/, without any regard to the product itself (i.e., the tuple), and this is a perfect candidate for a /column level/ security.
+On the other hand, users should be able to manage only products that have been assigned to them, and this is a perfect candidate for a row-level security.
+
+*** The Table
+Having defined the problem, let's see how it could be defined the ~products~ table:
+
+#+begin_src sql
+CREATE TABLE products (
+       pk          integer     GENERATED ALWAYS AS IDENTITY,
+       id          text,
+       description text,
+       managed_by  text,
+       price       money DEFAULT 0,
+       qty         int   DEFAULT 1,
+       ts          timestamp DEFAULT CURRENT_TIMESTAMP,
+
+       UNIQUE ( id, managed_by ),
+       CHECK  ( qty >= 0 ),
+       CHECK  ( price >= 0::money )
+);
+#+end_src
+
+The fields ~managed_by~ and ~price~ are those that will be attached to row-level and column-level security constraints respectively.
+
+*** The Users
+For the sake of keeping the example really small and simple, consider only three users:
+
+#+begin_src sql
+CREATE ROLE stock_app WITH LOGIN CONNECTION LIMIT 0;
+CREATE ROLE boss   WITH LOGIN CONNECTION LIMIT 1 PASSWORD 'XXXX' IN ROLE stock_app;
+CREATE ROLE user_a WITH LOGIN CONNECTION LIMIT 1 PASSWORD 'XXXX'   IN ROLE stock_app;
+CREATE ROLE user_b WITH LOGIN CONNECTION LIMIT 1 PASSWORD 'XXXX'   IN ROLE stock_app;
+#+end_src
+
+The ~stoc_app~ is simply a /group/, where all users will belong to. This allows for managing some simple login rules, such as putting in ~pg_hba.conf~ something like:
+
+#+begin_src shell
+host    all  +stocker_app  127.0.0.1/32 md5
+#+end_src
+
+that allows any user in the ~stocker_app~ group to connect to the database.
+
+*** Populating the Table
+In order to be able to test the security concepts, let's populate the table with some random data: in this step prices, quantities and assigned users will be randomly choosen.
+
+#+begin_src sql
+INSERT INTO products( id, description, managed_by, qty, price )
+SELECT
+ pnum
+, 'Article nr.' || pnum
+, CASE WHEN pnum % 2 = 0 THEN 'user_a'
+       ELSE 'user_b'
+  END
+, abs( random() * 1234 )::int
+, abs( random() * 100 )::decimal::money
+FROM generate_series( 1, 1000 ) AS pnum;
+#+end_src
+
+The above query will populate the ~products~ table with one thousand random items. Half of such items will be assigned to ~user_a~ and half to the ~user_b~.
+
+*** Applying Security Constraints
+It is now time to apply security constraints.
+The first step is about removing all privileges to everybody from the table ~products~, in order to /reset/ all permissions (this is a kind of best practice to keep the situation clear):
+
+#+begin_src sql
+REVOKE ALL ON products FROM PUBLIC;
+GRANT ALL ON products TO boss;
+#+end_src
+
+So far, only the user ~boss~ is able to do everything on the table. Better, the table creator and the ~boss~ user will be only one that can manage the table as whole.
+
+The second step is to apply /column-level/ security, so for instance consider that case where both ~user_a~ and ~user_b~ can see only the columns ~id~, ~description~ and ~qty~:
+
+#+begin_src sql
+GRANT SELECT( id, description, qty ) ON products TO user_a;
+GRANT SELECT( id, description, qty ) ON products TO user_b;
+#+end_src
+
+After that, the ~user_a~ and ~user_b~ will not be able to issue a ~SELECT~ statement that includes more columns that the ones defined above:
+
+#+begin_src sql
+> SELECT current_user;
+ current_user
+--------------
+ user_a
+
+> SELECT * FROM products;
+ERROR:  permission denied for relation products
+#+end_src
+
+Now it is time to enable /row-level/ security.
+In PostgreSQL row-level security is enabled via a /policy/ that defines the constraints on the table. Such constraints can be defined with ~WHERE~-like conditions and can be specified for both ~SELECT~ statements and ~INSERT, UPDATE~ ones.
+
+The policy in this case will be:
+
+#+begin_src sql
+CREATE POLICY products_policy
+ON products
+FOR ALL
+USING
+  ( managed_by = CURRENT_USER  )
+WITH CHECK
+  ( price IS NOT NULL AND managed_by = CURRENT_USER );
+#+end_src
+
+The ~products_policy~ attaches to ~ALL~ commands (~SELECT~, ~UPDATE~, ~DELETE~, ~INSERT~) and imposes that data retrivial is performed only for those tuples where the condition ~( managed_by = CURRENT_USER )~ is true. The special variable ~CURRENT_USER~, as shown before, is the username that is currently running the connection.
+The ~CHECK~ condition applies to data writes.
+Therefore, the ~products_policy~ means that the users will be able to see only rows there ~managed_by~ contains the respective username, and will not be able to write on rows where the price has not been defined and that /belongs/ to other users.
+
+So far the policy is still not active, to enable an ~ALTER TABLE~ has to be issued:
+
+#+begin_src sql
+ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+#+end_src
+
+*** Anti-lock!
+The ~products_policy~ does have a problem: it is too restrictive and does not allow the user ~boss~ to handle any data at all, since no rows satify the condition ~managed_by = 'boss'~. Since PostgreSQL allows for several policies to be attached to a table, it is possible to define a specific policy for the user ~boss~ as follows:
+
+#+begin_src sql
+CREATE POLICY products_boss_policy
+ON  products
+FOR ALL
+USING ( CURRENT_USER = 'boss' )
+WITH CHECK ( CURRENT_USER = 'boss' );
+#+end_src
+
+There is no need to re-enable the ~ROW LEVEL SECURITY~ since it has already been enabled and it dynamically applies all the defined policies.
+
+Now, in order to check what the two policies means, it is possible to count how many rows every users can get:
+
+#+begin_src sql
+-- as user 'boss'
+> SELECT CURRENT_USER, count(id) FROM products;
+ current_user | count
+--------------+-------
+ boss         |  1000
+
+-- as 'user_a'
+> SELECT CURRENT_USER, count(id) FROM products;
+ current_user | count
+--------------+-------
+ user_a       |   500
+
+-- as 'user_b'
+> SELECT CURRENT_USER, count(id) FROM products;
+ current_user | count
+--------------+-------
+ user_b       |   500
+#+end_src
+
+Thus, the ~boss~ user can see every row, while other users see a restricted data-set.
+
+*** How are policies applied?
+The ~EXPLAIN~ command can reveal how a query is executed against the table:
+
+#+begin_src sql
+> EXPLAIN (FORMAT TEXT) SELECT CURRENT_USER, count(id) FROM products;
+QUERY PLAN | Aggregate  (cost=34.76..34.77 rows=1 width=72)
+QUERY PLAN |   ->  Seq Scan on products  (cost=0.00..33.50 rows=503 width=3)
+QUERY PLAN |         Filter: ((managed_by = (CURRENT_USER)::text) OR (CURRENT_USER = 'boss'::name))
+#+end_src
+
+The explain output reveals that the row level security is applied at the very bottom, i.e., at the very beginning of the query, as a condition filter. It is interesting to note that the two policies have been tied by a logical ~OR~.
+
+However, as already stated, policies are not applied in the strict sense of ~WHERE~ filters, and in fact if an user tries to circumvent the filter, /even in the ~EXPLAIN~/, it gets an error:
+
+#+begin_src sql
+-- as 'user_a'
+> SELECT CURRENT_USER, count(id)
+  FROM products WHERE managed_by = 'user_b';
+ERROR:  permission denied for relation products
+#+end_src
+
+** Escaping the policies (in the good way)
+What if each user needs to get some sort of statistical or aggregate information even on the columns and rows she cannot access?
+The solution is to provide one (or more) /stored procedures/ with an higher execution privilege, something like the /suid/ for Unix executables.
+
+So, in the case there is the need to provide the totals to every user, it is possible to define a function as follows:
+
+#+begin_src sql
+CREATE TYPE p_stats AS (
+  tot_qty   int,
+  tot_count int,
+  tot_price money
+);
+
+CREATE FUNCTION f_products_stats()
+RETURNS p_stats
+AS
+$BODY$
+  DECLARE
+    tot p_stats%rowtype;
+  BEGIN
+    SELECT  sum( qty )      AS q
+            , count(id)     AS c
+            , sum( price )  AS s
+    INTO STRICT tot
+    FROM products;
+
+    RETURN tot;
+
+  END
+$BODY$
+LANGUAGE plpgsql
+SECURITY DEFINER;
+#+end_src
+
+The ~f_products_stats~ simply computes some aggregated information and returns it as a record of type ~p_stats~, something that is definetely a row and can be used in queries. The point is that such function needs, obviously, to access the whole ~products~ table without any regard to who is actually running the function, and that's the special ~SECURITY DEFINER~ privilege.
+In particular, ~SECURITY DEFINER~ means that the stored procedure will be executed with all priviliges of the user that has /defined/ the function itself (so in this sense it is similar to /suid/ on Unix executables), as opposed to the default behaviour of ~SECURITY INVOKER~ that will run the procedure with privileges of the running user.
+
+This allows any unprivileged user to get total information even if she cannot access every single piece of data:
+
+#+begin_src sql
+-- as 'user_a'
+> SELECT CURRENT_USER, * FROM f_products_stats();
+ current_user | tot_qty | tot_count | tot_price
+--------------+---------+-----------+------------
+ user_a       |  621687 |      1000 | $50,764.81
+
+-- as 'boss'
+> SELECT CURRENT_USER, * FROM f_products_stats();
+ current_user | tot_qty | tot_count | tot_price
+--------------+---------+-----------+------------
+ boss         |  621687 |      1000 | $50,764.81
+#+end_src
+
+The totals are the same, without any regard of the specific user that is running the function and, therefore, the query within it.
+
+** Conclusions
+PostgreSQL offers a complex and fine grained set of ~GRANT/REVOKE~, as well as /row level policies/ to control who can access and manage every single piece of data. Thanks to the privileges that can be granted to stored procedures, this will not prevent users to be able to query data that is prohibited by normal operations, therefore allowing developers to implement a quite complex and tuned interface for data management.
+
+* About Luca Ferrari
+Luca lives in Italy with his beautiful wife, his great son and two female cats.
+
+Computer science passionate since the Commodore 64 age, he holds a master degree and a PhD in Computer Science.
+He is a PostgreSQL enthusiast, a Perl lover, an Operating System passionate, a Unix fan and performs as much tasks as possible within Emacs.
+He consider the Open Source the only truly sane way of doing software and services.
+
+His web site is available at http://fluca1978.github.io
+
+* References
+- PostgreSQL web site: http://www.postgresql.org
+- Postgresql Documentation [[https://www.postgresql.org/docs/][https://www.postgresql.org/docs/]]
+- Example code of this article: https://github.com/fluca1978/fluca1978-pg-utils/blob/master/examples/simple_security_example.sql
