@@ -9884,6 +9884,34 @@ e la connessione:
 
 Si noti che ci si collega a *~testdb~* e anche il prompt di psql riporta ciò, ma in realtà il database corrente è ~devdb~!
 
+*** Pooling su tutti i databaase
+E' sufficiente usare il nome particolare ~*~ come database per effettuare il pooling su ogni database:
+#+begin_src shell
+* = host=localhost port=5432
+#+end_src
+
+*** Connessioni con pool specifico
+E' possibile specificare per ogni database parametri di pool che sovrascrivono quelli già presenti nel default:
+#+begin_src shell
+testdb = host=localhost port=5432 pool_size=100
+#+end_src
+
+*** Rimappare utenti in connessione
+E' possibile fare in modo che ogni utente che si collega al database sia /rimappato/ in un altro utente:
+
+#+begin_src shell
+testdb = host=localhost port=5432 user=postgres pool_size=100
+#+end_src
+
+e quindi
+#+begin_src sql
+% psql -h localhost -p 6432 -U luca testdb                                                                               ~
+# SELECT current_user;
+ current_user
+--------------
+ postgres
+#+end_src
+
 * Licenza
 This work is licensed under the *Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License*.
 To view a copy of this license,
