@@ -4899,6 +4899,22 @@ Questa volta le righe sono 6, quindi ci si sposta di ~1 / 6 = 0,167~ alla volta.
 
 In sostanza la prima riga nel /set/ assume il valore di default (0), la riga successiva o precedente assume il valore ~score~ dell'altra riga e via così. Ci si muove a /zig-zag/.
 
+*** Spezzare la finestra
+#+begin_src sql
+ > SELECT name, score, 
+     ntile(4) OVER (ORDER BY score DESC )  
+   FROM score;
+   name   | score | ntile 
+----------+-------+-------
+ Diego    |   200 |     1
+ Sara     |   200 |     1
+ Luca     |   100 |     2
+ Simone   |   100 |     2
+ Emanuela |    50 |     3
+ Paolo    |    25 |     4
+#+end_src
+
+~ntile()~ cerca di dividere la finestra in /bucket/ bilanciati, in questo caso 4, infilando un numero di valori pressoché uguali in ogni bucket.
 
 ** Common Table Expressions
 *** CTE
