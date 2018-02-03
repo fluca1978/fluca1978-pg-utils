@@ -9998,7 +9998,7 @@ Si noti che ci si collega a *~testdb~* e anche il prompt di psql riporta ciò, m
 *** Pooling su tutti i databaase
 E' sufficiente usare il nome particolare ~*~ come database per effettuare il pooling su ogni database:
 #+begin_src shell
-* = host=localhost port=5432
+ * = host=localhost port=5432
 #+end_src
 
 *** Connessioni con pool specifico
