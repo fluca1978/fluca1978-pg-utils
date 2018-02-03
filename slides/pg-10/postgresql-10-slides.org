@@ -4879,6 +4879,112 @@ Le CTE ricorsive sono composte di due parti:
 
 SELECT * FROM foo LIMIT 10;
 #+end_src
+*** CTE ricorive: alberi
+Il vantaggio delle CTE ricorsive si ha quando occorre generare dei /join/ in numero variabile.
+Si supponga di avere una tabella che auto-referenzia se stessa:
+#+begin_src sql
+> CREATE TABLE family_tree( 
+   pk int GENERATED ALWAYS AS IDENTITY,
+   name text,
+   parent_of int,
+   FOREIGN KEY (parent_of) REFERENCES family_tree(pk), 
+   PRIMARY KEY(pk), 
+   CHECK( pk <> parent_of )  );
+#+end_src
+
+La tabella memorizza delle persone e la loro /catena di discendenza/. Si supponga di averla popolata con i seguenti dati:
+
+#+begin_src sql
+> SELECT * FROM family_tree;
+ pk |   name   | parent_of 
+----+----------+-----------
+  2 | Diego    |          
+  1 | Luca     |         2
+  3 | Anselmo  |         1
+  4 | Emanuela |          
+  5 | Paolo    |         4
+#+end_src
+
+Ovvero la catena di discendenza è: /Anselmo -> Luca -> Diego/ e /Paolo -> Emanuela/.
+
+*** CTE ricorsive: attraversamento dell'albero
+#+begin_src sql
+WITH RECURSIVE dump_family AS (
+  -- parte non ricorsiva: figlio
+  SELECT *, 
+         'FIGLIO' AS description
+  FROM family_tree 
+  WHERE parent_of IS NULL
+UNION
+  -- parte ricorsiva: join dei genitori
+  SELECT f.*, 
+         'GENITORE di ' || df.name AS description
+  FROM dump_family df 
+       JOIN family_tree f ON f.parent_of = df.pk )
+
+-- query finale
+SELECT name, description FROM dump_family;
+#+end_src
+
+*** CTE ricorsive: attraversamento dell'albero (risultato)
+#+begin_src sql
+   name   |     description      
+----------+----------------------
+ Diego    | FIGLIO
+ Emanuela | FIGLIO
+ Luca     | GENITORE di Diego
+ Paolo    | GENITORE di Emanuela
+ Anselmo  | GENITORE di Luca
+#+end_src
+
+*** CTE ricorsive: esplosione dell'albero
+Basta modificare la colonna ~description~ in append per avere una /esplosione/ dell'albero:
+#+begin_src sql
+> WITH RECURSIVE dump_family AS (
+   SELECT *, name || ' (FIGLIO)' AS description 
+   FROM family_tree WHERE parent_of IS NULL
+UNION
+   SELECT f.*, f.name || ' -> ' || df.description AS description 
+   FROM dump_family df 
+        JOIN family_tree f ON f.parent_of = df.pk )
+
+SELECT name, description FROM dump_family;
+
+   name   |            description            
+----------+-----------------------------------
+ Diego    | Diego (FIGLIO)
+ Emanuela | Emanuela (FIGLIO)
+ Luca     | Luca -> Diego (FIGLIO)
+ Paolo    | Paolo -> Emanuela (FIGLIO)
+ Anselmo  | Anselmo -> Luca -> Diego (FIGLIO)
+#+end_src
+
+*** CTE ricorsive: profondità dell'albero
+Basta introdurre anche una colonna di conteggio e si ottiene la profondità dell'albero:
+#+begin_src sql
+> WITH RECURSIVE dump_family AS (
+   SELECT *, 
+     name || ' (FIGLIO)' AS description, 
+     1 AS deep 
+   FROM family_tree WHERE parent_of IS NULL
+UNION
+   SELECT f.*, 
+     f.name || ' -> ' || df.description AS description, 
+     df.deep + 1 AS deep 
+   FROM dump_family df 
+     JOIN family_tree f ON f.parent_of = df.pk )
+
+SELECT name, description, deep FROM dump_family;
+
+   name   |            description            | deep 
+----------+-----------------------------------+------
+ Diego    | Diego (FIGLIO)                    |    1
+ Emanuela | Emanuela (FIGLIO)                 |    1
+ Luca     | Luca -> Diego (FIGLIO)            |    2
+ Paolo    | Paolo -> Emanuela (FIGLIO)        |    2
+ Anselmo  | Anselmo -> Luca -> Diego (FIGLIO) |    3
+#+end_src
+
 * Partitioning
 ** Cos'è il partitioning?
 *** Partitioning
