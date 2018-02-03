@@ -4810,6 +4810,14 @@ La funzione ~rank()~ fornisce una classifica dei dati.
 - ~lead()~ opposto di ~lag()~ (calcola sulle righe in avanti);
 - ~first_value()~, ~last_value()~, ~nth_value()~ accettano una colonna e restituiscono il valore
   della tupla all'offset specificato rispettivamente come prima, ultima ed ennesima.
+*** Simulare un contatore di riga
+Per simulare un contatore di riga (es. ~ROW_NUMBER~) si può usare una query come la seguente:
+#+begin_src sql
+> SELECT 
+   row_number() OVER () AS ROW_ID , 
+   name  
+  FROM family_tree
+#+end_src
 ** Common Table Expressions
 *** CTE
 Una /Common Table Expression (CTE)/ è una forma speciale di statement SQL (~SELECT~, ~INSERT~, ~UPDATE~, ~DELETE~)
