@@ -9639,6 +9639,284 @@ Il processo di autovacuum, contrariamente a ~VACUUM~, ignora l'opzione ~zero_dam
 SetConfigOption("zero_damaged_pages", "false", PGC_SUSET, PGC_S_OVERRIDE);
 #+end_src
 
+* ~pgbouncer~
+** Installazione e concetti generali
+*** Installazione
+Ad esempio su una macchina FreeBSD:
+
+#+begin_src shell
+% sudo pkg install pgbouncer
+#+end_src
+
+La configurazione si trova in un file ~pgbouncer.ini~ (ad esempio ~/usr/localt/etc/pgbouncer.ini~).
+
+*** Configurazione: ~pgbouncer.ini~
+Il fine di configurazione principale è ~pgbouncer.ini~.
+
+La sezione ~pgbouncer~ contiene informazioni /globali/ per l'amministrazione stessa.
+
+La sezione ~databases~ contiene le configurazioni dei singoli database.
+
+*** Esecuzione di ~pgbouncer~
+Occorre ricordare che:
+1. è sempre obbligatorio passare il file di configurazione da usare con l'opzione ~-d~;
+2. non può essere eseguito come ~root~.
+
+/Occorre che l'utente che eseguirà ~pgbouncer~ abbia i diritti sulle directory di log e pid!/
+
+#+begin_src sql
+% sudo -u postgres pgbouncer -d /usr/local/etc/pgbouncer.ini
+#+end_src
+
+*** Riavvio di ~pgbouncer~
+Per riavviare il demone di ~pgbouncer~ occorre usare l'opzione ~-R~:
+
+#+begin_src sql
+% sudo -u postgres pgbouncer -d /usr/local/etc/pgbouncer.ini -R
+#+end_src
+
+*** Configurazione della sezione ~pgbouncer~
+#+begin_src shell
+[pgbouncer]
+logfile = /var/log/pgbouncer/pgbouncer.log
+pidfile = /var/run/pgbouncer/pgbouncer.pid
+
+listen_addr = 127.0.0.1
+listen_port = 6432
+
+auth_type = trust
+auth_file = /usr/local/etc/pgbouncer.userlist.txt
+
+pool_mode = session
+server_reset_query = DISCARD ALL
+max_client_conn = 20
+default_pool_size = 20
+#+end_src
+
+*** Autenticazione
+~pgbouncer~ usa un file di autenticazione esterno, identificato dalla variabile ~auth_file~ che contiene per ogni riga lo username e la password, entrambi racchiusi fra doppi apici. E' possibile non specificare la password se la modalità è ~trust~.
+
+Ad esempio (~/usr/local/etc/pgbouncer.userlist.txt~):
+#+begin_src shell
+"luca" ""
+"boss" ""
+#+end_src
+
+Il tipo di autenticazione ~auth_type~ può essere principalmente:
+- ~trust~ (accetta l'utente se è listato);
+- ~md5~ la password deve essere la stessa nel file di autenticazione;
+
+*** Pool Mode
+~pgbouncer~ supporta tre modalità di /pooling/, specificate come ~pool_mode~:
+- ~session~ indica che una connessione viene rilasciata quando il client si disconnette;
+- ~transaction~ al termine di ogni transazione viene rilasciata la connessione;
+- ~statement~ al termine di ogni singolo statement.
+
+Tipicamente si usa ~session~ o ~transaction~.
+Il numero di connessioni da tenere nel pool è indicato da ~default_pool_size~, ma fino a ~max_client_conn~ possono essere create.
+
+Ogni volta che una connessione viene restituita al pool viene eseguita la ~server_reset_query~ al fine di resettare variabili di sessioni, cursori, ecc.
+
+** Console amministrativa
+*** Lo pseudo database ~pgbouncer~
+E' possibile collegarsi ad un database fittizio denominato ~pgbouncer~. Questo consente di usare statement SQL per comandare il sistema di pooling.
+
+Per potersi connettere a tale database occorre listare gli utenti nella variabile ~admin_users~. Questi non devono essere utenti reali, basta che siano listati nel file di autenticazione di pgbouncer stesso:
+
+#+begin_src shell
+# pgbouncer.ini
+admin_users = luca, pgbouncer_admin
+#+end_src
+
+Nel database ~pgbouncer~ è possibile dare il comando ~SHOW HELP~ per ottenere informazioni su quali comandi sono messi a disposizione:
+#+begin_src sql
+% psql -h localhost -p 6432 -U pgbouncer_admin pgbouncer                                                                 ~
+# SHOW HELP;
+NOTICE:  Console usage
+DETAIL:
+        SHOW HELP|CONFIG|DATABASES|POOLS|CLIENTS|SERVERS|VERSION
+        SHOW STATS|FDS|SOCKETS|ACTIVE_SOCKETS|LISTS|MEM
+        SHOW DNS_HOSTS|DNS_ZONES
+        SET key = arg
+        RELOAD
+        PAUSE [<db>]
+        RESUME [<db>]
+        DISABLE <db>
+        ENABLE <db>
+        KILL <db>
+        SUSPEND
+        SHUTDOWN
+#+end_src
+
+*** ~SHOW CONFIG~
+Illustra tutta la configurazione così come è stata caricata dal file di configurazione.
+
+Utile per introspezione.
+
+*** ~SHOW DATABASES~
+Il comando ~SHOW DATABASES~ mostra i database configurati, lo stato del pool e a quale database puntano effettivamente:
+
+#+begin_src sql
+# SHOW DATABASES;
+name                | testdb
+host                | localhost
+port                | 5432
+database            | devdb
+force_user          |
+pool_size           | 20
+reserve_pool        | 0
+pool_mode           |
+max_connections     | 0
+current_connections | 1
+#+end_src
+
+*** ~SHOW CLIENTS~
+Mostra quali client sono attualmente connessi, a cosa e da dove:
+#+begin_src sql
+# SHOW CLIENTS;
+type         | C
+user         | luca
+database     | testdb
+state        | active
+addr         | 127.0.0.1
+port         | 39019
+local_addr   | 127.0.0.1
+local_port   | 6432
+connect_time | 2018-02-02 14:15:44
+request_time | 2018-02-02 14:17:55
+ptr          | 0x801d15490
+link         | 0x801cd1ed0
+remote_pid   | 0
+#+end_src
+
+*** ~SHOW STATS~
+Mostra statistiche sulle query servite
+#+begin_src sql
+# SHOW STATS;
+database         | testdb
+total_requests   | 1
+total_received   | 838
+total_sent       | 92737
+total_query_time | 3407336
+avg_req          | 0
+avg_recv         | 0
+avg_sent         | 0
+avg_query        | 0
+#+end_src
+
+*ATTENZIONE: il ~database~ è quello a cui ci è connessi mediante ~pgpool~, non quello effettivo!*
+
+*** ~SHOW POOLS~
+Mostra lo stato del pool per ogni database configurato:
+
+#+begin_src sql
+# SHOW POOLS;
+database   | testdb
+user       | luca
+cl_active  | 1
+cl_waiting | 0
+sv_active  | 1
+sv_idle    | 0
+sv_used    | 0
+sv_tested  | 0
+sv_login   | 0
+maxwait    | 0
+pool_mode  | session
+#+end_src
+
+*** ~PAUSE~ e ~RESUME~
+Il comando ~PAUSE~ blocca l'esecuzione verso un database: dal momento in cui scatta il comando (non ci devono essere connessioni fuori dal pool!) ogni nuova connessione viene accettata, ma l'esecuzione non viene eseguita. Si può riprendere con ~RESUME~.
+
+| pgbouncer      | testdb                                   |
+|----------------+------------------------------------------|
+| PAUSE testdb;  |                                          |
+|                | psql -h localhost -U luca -p 6432 testdb |
+|                | -- connesso!                             |
+|                | SELECT * FROM pg_class;                  |
+|                | -- bloccato!                             |
+| RESUME testdb; | -- sbloccato!                            |
+
+*** ~DISABLE~ e ~ENABLE~
+Simili a ~PAUSE~ e ~RESUME~ ma bloccano le connessioni direttamente fornendo il messaggio che il database non esiste:
+#+begin_src shell
+% psql -h localhost -p 6432 -U luca testdb                                                                               ~
+psql: ERROR:  database does not allow connections: testdb
+#+end_src
+
+*** ~KILL~
+Il modo drastico di terminare i backend: dopo un ~KILL~ i client ricevono il messaggio come se il server si fosse spento.
+#+begin_src shell
+> select * from pg_class;
+ERROR:  database removed
+server closed the connection unexpectedly
+        This probably means the server terminated abnormally
+        before or while processing the request.
+The connection to the server was lost. Attempting reset:
+#+end_src
+
+*** ~RELOAD~
+Ricarica la configurazione senza interrompere il servizio.
+
+*** ~SHUTDOWN~
+Interrompe il servizio di ~pgpool~.
+
+#+begin_src sql
+# SHUTDOWN;
+server closed the connection unexpectedly
+        This probably means the server terminated abnormally
+        before or while processing the request.
+The connection to the server was lost. Attempting reset: Failed.
+#+end_src
+
+** Esempi di possibili scenari
+*** Rimbalzo da un database ad un altro
+Si supponga di voler rimbalzare ogni connessione al database ~testdb~ a quello ~devdb~:
+
+#+begin_src shell
+# pgbouncer.ini
+[databases]
+testdb = host=localhost dbname=devdb
+#+end_src
+
+e la connessione:
+#+begin_src shell
+% psql -h localhost -p 6432 -U luca testdb
+[luca @ testdb on localhost] 1  > SELECT current_database();
+ current_database
+------------------
+ devdb
+#+end_src
+
+Si noti che ci si collega a *~testdb~* e anche il prompt di psql riporta ciò, ma in realtà il database corrente è ~devdb~!
+
+*** Pooling su tutti i databaase
+E' sufficiente usare il nome particolare ~*~ come database per effettuare il pooling su ogni database:
+#+begin_src shell
+* = host=localhost port=5432
+#+end_src
+
+*** Connessioni con pool specifico
+E' possibile specificare per ogni database parametri di pool che sovrascrivono quelli già presenti nel default:
+#+begin_src shell
+testdb = host=localhost port=5432 pool_size=100
+#+end_src
+
+*** Rimappare utenti in connessione
+E' possibile fare in modo che ogni utente che si collega al database sia /rimappato/ in un altro utente:
+
+#+begin_src shell
+testdb = host=localhost port=5432 user=postgres pool_size=100
+#+end_src
+
+e quindi
+#+begin_src sql
+% psql -h localhost -p 6432 -U luca testdb                                                                               ~
+# SELECT current_user;
+ current_user
+--------------
+ postgres
+#+end_src
+
 * Licenza
 This work is licensed under the *Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License*.
 To view a copy of this license,
