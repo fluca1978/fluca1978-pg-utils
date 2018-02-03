@@ -4881,6 +4881,22 @@ Inseriamo dei punteggi doppi e riconsideriamo:
 
 Questa volta le righe sono 6, quindi ci si sposta di ~1 / 6 = 0,167~ alla volta. Ma si noti che i punteggi doppi hanno la stessa distanza!
 
+*** ~lag()~ e  ~lead()~ in azione
+#+begin_src sql
+ > SELECT name, score, 
+    lag( score, 1, 0 ) OVER ( ORDER BY score DESC ), 
+    lead( score, 1, 0 ) OVER ( ORDER BY score DESC )  
+  FROM score;
+   name   | score | lag | lead 
+----------+-------+-----+------
+ Diego    |   200 |   0 |  200
+ Sara     |   200 | 200 |  100
+ Luca     |   100 | 200 |  100
+ Simone   |   100 | 100 |   50
+ Emanuela |    50 | 100 |   25
+ Paolo    |    25 |  50 |    0
+#+end_src
+
 ** Common Table Expressions
 *** CTE
 Una /Common Table Expression (CTE)/ è una forma speciale di statement SQL (~SELECT~, ~INSERT~, ~UPDATE~, ~DELETE~)
