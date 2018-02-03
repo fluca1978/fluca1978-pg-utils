@@ -4897,6 +4897,9 @@ Questa volta le righe sono 6, quindi ci si sposta di ~1 / 6 = 0,167~ alla volta.
  Paolo    |    25 |  50 |    0
 #+end_src
 
+In sostanza la prima riga nel /set/ assume il valore di default (0), la riga successiva o precedente assume il valore ~score~ dell'altra riga e via così. Ci si muove a /zig-zag/.
+
+
 ** Common Table Expressions
 *** CTE
 Una /Common Table Expression (CTE)/ è una forma speciale di statement SQL (~SELECT~, ~INSERT~, ~UPDATE~, ~DELETE~)
