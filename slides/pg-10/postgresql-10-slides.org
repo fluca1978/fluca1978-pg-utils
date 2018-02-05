@@ -3793,6 +3793,8 @@ FOR my_record IN EXECUTE query_string LOOP
 END LOOP;
 #+end_src
 
+*** RETURN QUERY
+Se si vuole ritornare il risultato di una query si può usare l'operatore ~RETURN QUERY~:
 #+begin_src sql
 CREATE OR REPLACE FUNCTION find_maggiorenni()
 RETURNS SETOF persona
@@ -4813,32 +4815,32 @@ La funzione ~rank()~ fornisce una classifica dei dati.
 *** Simulare un contatore di riga
 Per simulare un contatore di riga (es. ~ROW_NUMBER~) si può usare una query come la seguente:
 #+begin_src sql
-> SELECT 
-   row_number() OVER () AS ROW_ID , 
-   name  
+> SELECT
+   row_number() OVER () AS ROW_ID ,
+   name
   FROM family_tree
 #+end_src
 *** Tabella di esempio per capire le window functions
 #+begin_src sql
-> CREATE TABLE score( 
-    pk int GENERATED ALWAYS AS IDENTITY, 
+> CREATE TABLE score(
+    pk int GENERATED ALWAYS AS IDENTITY,
     name text,
     score int,
-    UNIQUE( name ), 
+    UNIQUE( name ),
     PRIMARY KEY( pk ) );
 
-> INSERT INTO score( name, score) VALUES  
-   ( 'Luca', 100 ), ( 'Diego', 200 ), 
+> INSERT INTO score( name, score) VALUES
+   ( 'Luca', 100 ), ( 'Diego', 200 ),
    ('Emanuela', 50), ('Paolo', 25 );
 #+end_src
 
 *** Numero di righe e classifica
 #+begin_src sql
-> SELECT name, score, 
-   row_number() OVER (), 
-   rank() OVER (ORDER BY score DESC) 
+> SELECT name, score,
+   row_number() OVER (),
+   rank() OVER (ORDER BY score DESC)
   FROM score;
-   name   | score | row_number | rank 
+   name   | score | row_number | rank
 ----------+-------+------------+------
  Diego    |   200 |          2 |    1
  Luca     |   100 |          1 |    2
@@ -4848,11 +4850,11 @@ Per simulare un contatore di riga (es. ~ROW_NUMBER~) si può usare una query com
 
 *** Distanza fra i classificati
 #+begin_src sql
-> SELECT name, score, 
+> SELECT name, score,
    rank() OVER (ORDER BY score DESC),
-   cume_dist() OVER ( ORDER BY score DESC ) 
+   cume_dist() OVER ( ORDER BY score DESC )
   FROM score;
-   name   | score | rank | cume_dist 
+   name   | score | rank | cume_dist
 ----------+-------+------+-----------
  Diego    |   200 |    1 |      0.25
  Luca     |   100 |    2 |       0.5
@@ -4865,11 +4867,11 @@ L'ultimo classificato si trova a distanza ~1~, siccome ci sono 4 righe ogni riga
 *** Complicare un po' le cose...
 Inseriamo dei punteggi doppi e riconsideriamo:
 #+begin_src sql
-> SELECT name, score, 
+> SELECT name, score,
     rank() OVER (ORDER BY score DESC),
-    cume_dist() OVER ( ORDER BY score DESC ) 
+    cume_dist() OVER ( ORDER BY score DESC )
   FROM score;
-   name   | score | rank |     cume_dist     
+   name   | score | rank |     cume_dist
 ----------+-------+------+-------------------
  Diego    |   200 |    1 | 0.333333333333333
  Sara     |   200 |    1 | 0.333333333333333
@@ -4883,11 +4885,11 @@ Questa volta le righe sono 6, quindi ci si sposta di ~1 / 6 = 0,167~ alla volta.
 
 *** ~lag()~ e  ~lead()~ in azione
 #+begin_src sql
- > SELECT name, score, 
-    lag( score, 1, 0 ) OVER ( ORDER BY score DESC ), 
-    lead( score, 1, 0 ) OVER ( ORDER BY score DESC )  
+ > SELECT name, score,
+    lag( score, 1, 0 ) OVER ( ORDER BY score DESC ),
+    lead( score, 1, 0 ) OVER ( ORDER BY score DESC )
   FROM score;
-   name   | score | lag | lead 
+   name   | score | lag | lead
 ----------+-------+-----+------
  Diego    |   200 |   0 |  200
  Sara     |   200 | 200 |  100
@@ -4901,10 +4903,10 @@ In sostanza la prima riga nel /set/ assume il valore di default (0), la riga suc
 
 *** Spezzare la finestra
 #+begin_src sql
- > SELECT name, score, 
-     ntile(4) OVER (ORDER BY score DESC )  
+ > SELECT name, score,
+     ntile(4) OVER (ORDER BY score DESC )
    FROM score;
-   name   | score | ntile 
+   name   | score | ntile
 ----------+-------+-------
  Diego    |   200 |     1
  Sara     |   200 |     1
@@ -4989,12 +4991,12 @@ SELECT * FROM foo LIMIT 10;
 Il vantaggio delle CTE ricorsive si ha quando occorre generare dei /join/ in numero variabile.
 Si supponga di avere una tabella che auto-referenzia se stessa:
 #+begin_src sql
-> CREATE TABLE family_tree( 
+> CREATE TABLE family_tree(
    pk int GENERATED ALWAYS AS IDENTITY,
    name text,
    parent_of int,
-   FOREIGN KEY (parent_of) REFERENCES family_tree(pk), 
-   PRIMARY KEY(pk), 
+   FOREIGN KEY (parent_of) REFERENCES family_tree(pk),
+   PRIMARY KEY(pk),
    CHECK( pk <> parent_of )  );
 #+end_src
 
@@ -5002,12 +5004,12 @@ La tabella memorizza delle persone e la loro /catena di discendenza/. Si suppong
 
 #+begin_src sql
 > SELECT * FROM family_tree;
- pk |   name   | parent_of 
+ pk |   name   | parent_of
 ----+----------+-----------
-  2 | Diego    |          
+  2 | Diego    |
   1 | Luca     |         2
   3 | Anselmo  |         1
-  4 | Emanuela |          
+  4 | Emanuela |
   5 | Paolo    |         4
 #+end_src
 
@@ -5017,15 +5019,15 @@ Ovvero la catena di discendenza è: /Anselmo -> Luca -> Diego/ e /Paolo -> Emanu
 #+begin_src sql
 WITH RECURSIVE dump_family AS (
   -- parte non ricorsiva: figlio
-  SELECT *, 
+  SELECT *,
          'FIGLIO' AS description
-  FROM family_tree 
+  FROM family_tree
   WHERE parent_of IS NULL
 UNION
   -- parte ricorsiva: join dei genitori
-  SELECT f.*, 
+  SELECT f.*,
          'GENITORE di ' || df.name AS description
-  FROM dump_family df 
+  FROM dump_family df
        JOIN family_tree f ON f.parent_of = df.pk )
 
 -- query finale
@@ -5034,7 +5036,7 @@ SELECT name, description FROM dump_family;
 
 *** CTE ricorsive: attraversamento dell'albero (risultato)
 #+begin_src sql
-   name   |     description      
+   name   |     description
 ----------+----------------------
  Diego    | FIGLIO
  Emanuela | FIGLIO
@@ -5047,16 +5049,16 @@ SELECT name, description FROM dump_family;
 Basta modificare la colonna ~description~ in append per avere una /esplosione/ dell'albero:
 #+begin_src sql
 > WITH RECURSIVE dump_family AS (
-   SELECT *, name || ' (FIGLIO)' AS description 
+   SELECT *, name || ' (FIGLIO)' AS description
    FROM family_tree WHERE parent_of IS NULL
 UNION
-   SELECT f.*, f.name || ' -> ' || df.description AS description 
-   FROM dump_family df 
+   SELECT f.*, f.name || ' -> ' || df.description AS description
+   FROM dump_family df
         JOIN family_tree f ON f.parent_of = df.pk )
 
 SELECT name, description FROM dump_family;
 
-   name   |            description            
+   name   |            description
 ----------+-----------------------------------
  Diego    | Diego (FIGLIO)
  Emanuela | Emanuela (FIGLIO)
@@ -5069,20 +5071,20 @@ SELECT name, description FROM dump_family;
 Basta introdurre anche una colonna di conteggio e si ottiene la profondità dell'albero:
 #+begin_src sql
 > WITH RECURSIVE dump_family AS (
-   SELECT *, 
-     name || ' (FIGLIO)' AS description, 
-     1 AS deep 
+   SELECT *,
+     name || ' (FIGLIO)' AS description,
+     1 AS deep
    FROM family_tree WHERE parent_of IS NULL
 UNION
-   SELECT f.*, 
-     f.name || ' -> ' || df.description AS description, 
-     df.deep + 1 AS deep 
-   FROM dump_family df 
+   SELECT f.*,
+     f.name || ' -> ' || df.description AS description,
+     df.deep + 1 AS deep
+   FROM dump_family df
      JOIN family_tree f ON f.parent_of = df.pk )
 
 SELECT name, description, deep FROM dump_family;
 
-   name   |            description            | deep 
+   name   |            description            | deep
 ----------+-----------------------------------+------
  Diego    | Diego (FIGLIO)                    |    1
  Emanuela | Emanuela (FIGLIO)                 |    1
