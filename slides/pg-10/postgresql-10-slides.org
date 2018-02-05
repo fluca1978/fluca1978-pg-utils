@@ -3980,6 +3980,25 @@ END;
 $BODY$ LANGUAGE plpgsql;
 #+end_src
 
+*** EXECUTE USING: esempio
+#+begin_src sql
+CREATE OR REPLACE FUNCTION f_tellers( tid int )
+RETURNS SETOF pgbench_tellers
+AS $BODY$
+DECLARE
+   r pgbench_tellers%rowtype;
+BEGIN
+   EXECUTE
+    'SELECT * FROM pgbench_tellers '
+    || 'WHERE tid = $1'
+    USING (tid)
+   INTO r;
+   RETURN NEXT r;
+END;
+$BODY$ LANGUAGE plpgsql;
+#+end_src
+
+
 ** Cursori
 *** Cos'è un cursore?
 Un cursore è un meccanismo che trasforma un record-set in una iterazione fra record: non si ottiene
