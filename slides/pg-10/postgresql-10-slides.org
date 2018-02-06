@@ -2735,7 +2735,14 @@ La potenza di ~ALTER TABLE USING~ ovviamente si ottiene quando si cambia il tipo
  Luca |  5000
 #+end_src
 
+** ~DISCARD~
+*** Reset della sessione
+Il comando ~DISCARD~ consente di resettare una sessione, eliminando tabelle temporanee, advisory locks, piani di esecuzione in cache, variabili, ecc.
 
+Supporta alcuni tipi di discard:
+- ~ALL~ resetta completamente la sessione;
+- ~TEMPORARY~ cancella ogni tabella temporanea;
+- ~PLANS~ cancella i piani di esecuzione degli statement preparati.
 * Backup e restore
 ** Backup
 *** Introduzione
