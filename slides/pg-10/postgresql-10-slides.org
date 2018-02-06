@@ -4085,13 +4085,46 @@ RETURNS int AS $BODY$
    my $tot = 0;
    my $result_set = spi_exec_query( 'SELECT codice_fiscale FROM persona' );
    elog( INFO, "Trovate $result_set->{ processed } tuple" );
-   for my $current_row ( @{ $result_set->{ rows } } )
+   for my $current_row ( @{ $result_set->{ rows } } ) {
        $tot++ if ( $current_row->{ codice_fiscale } =~ /$pattern/ );
-
+   }
    return $tot;
 $BODY$
 LANGUAGE plperl;
 #+end_src
+*** Funzioni che ritornano tuple: array reference
+#+begin_src sql
+-- invocazione SELECT * FROM perl_find( 'persona', 'codice_fiscale', 'b' );
+CREATE OR REPLACE function perl_find( tab text, col text, contains text )
+RETURNS SETOF text
+AS $BODY$
+   my ( $table, $column, $pattern ) = @_;
+   my $result_set = spi_exec_query( "SELECT $column FROM $table" );
+   my @found;
+   for my $current_row ( @{ $result_set->{ rows } } ) {
+       push @found, $current_row->{ $column } if ( $current_row->{ $column } =~ /$pattern/ );
+   }
+   return \@found;
+$BODY$
+LANGUAGE plperl;
+#+end_src
+
+*** Funzioni che ritornano tuple: ~return_next~
+#+begin_src sql
+-- invocazione SELECT * FROM perl_find( 'persona', 'codice_fiscale', 'b' );
+CREATE OR REPLACE function perl_find( tab text, col text, contains text )
+RETURNS SETOF text
+AS $BODY$
+   my ( $table, $column, $pattern ) = @_;
+   my $result_set = spi_exec_query( "SELECT $column FROM $table" );
+   for my $current_row ( @{ $result_set->{ rows } } ){
+      return_next( $current_row->{ $column } ) if ( $current_row->{ $column } =~ /$pattern/ );
+   }
+   return undef; # IMPORTANTE !!
+$BODY$
+LANGUAGE plperl;
+#+end_src
+
 ** Cursori
 *** Cos'è un cursore?
 Un cursore è un meccanismo che trasforma un record-set in una iterazione fra record: non si ottiene
