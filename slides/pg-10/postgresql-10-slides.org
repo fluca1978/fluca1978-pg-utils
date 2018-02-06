@@ -4429,17 +4429,19 @@ tupla (~NEW~, ~OLD~) per inserimento/modifica.
    |------------------------------+--------------+------------------------------------------------|
 
 *** Esecuzione dei trigger
-   I trigger sono eseguiti in ordine alfabetico (per tipologia di evento).
+I trigger sono eseguiti in ordine alfabetico (per tipologia di evento).
 
-   I trigger ~BEFORE~ vengono eseguiti *prima del controllo delle constraint*, analogamente
-   i trigger ~AFTER~ dopo l'esecuzione e quindi *dopo il controllo delle constraint*.
+I trigger ~BEFORE~ vengono eseguiti *prima del controllo delle constraint*, analogamente
+i trigger ~AFTER~ dopo l'esecuzione e quindi *dopo il controllo delle constraint*.
 
-   I trigger vedono sempre la tupla di uscita ~NEW~ (quella che verrà /memorizzata/) e se sono
-   per update anche quella di ingresso ~OLD~ (quella che si sta aggiornando).
+I trigger per operazioni che /consolidano/ una tupla (~INSERT~, ~UPDATE~) vedono sempre la tupla
+di uscita ~NEW~ (quella che verrà /memorizzata/) e se sono  per update anche quella
+di ingresso ~OLD~ (quella che si sta aggiornando). Se il trigger elimina una tupla (non c'è tupla di uscita)
+si vede solo la tupla di ingresso ~OLD~ (caso ~DELETE~).
 
-   Il tipo di  operazione che ha fatto scattare il trigger è disponibile tramite la stringa ~TR_OP~, il
-   numero di argomenti del trigger tramite ~TG_NARGS~ e i singoli argomenti nell'array di stringhe
-   ~TG_ARGV~.
+Il tipo di  operazione che ha fatto scattare il trigger è disponibile tramite la stringa ~TR_OP~, il
+numero di argomenti del trigger tramite ~TG_NARGS~ e i singoli argomenti nell'array di stringhe
+~TG_ARGV~.
 
 *** Esempio di trigger: descrizione
    Si vuole creare un semplice trigger che, al momento di inserimento o aggiornamento di una tupla
