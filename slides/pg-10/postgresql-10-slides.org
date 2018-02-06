@@ -4060,7 +4060,38 @@ END;
 $BODY$ LANGUAGE plpgsql;
 #+end_src
 
+** Il linguaggio plperl
+*** plperl (5)
+Consente l'esecuzione di Perl 5 come backend per le stored procedures e, di conseguenza, per i trigger.
 
+*Non ha accesso diretto al database!*
+Le query vengono eseguite tramite funzioni /SPI (Service Provider Interface)/, analogamente i ~RAISE~ sono sostituiti da altre funzioni.
+*** Installazione
+Occorre installare un pacchetto apposito, ad esempio su FreeBSD:
+#+begin_src shell
+% sudo pkg install postgresql10-plperl-10.1
+#+end_src
+
+e successivamente nel database abilitare l'estensione:
+
+#+begin_src sql
+> CREATE EXTENSION plperl;
+#+end_src
+*** Un semplice esempio
+#+begin_src sql
+CREATE OR REPLACE function perl_count( contains text )
+RETURNS int AS $BODY$
+   my ( $pattern ) = @_;
+   my $tot = 0;
+   my $result_set = spi_exec_query( 'SELECT codice_fiscale FROM persona' );
+   elog( INFO, "Trovate $result_set->{ processed } tuple" );
+   for my $current_row ( @{ $result_set->{ rows } } )
+       $tot++ if ( $current_row->{ codice_fiscale } =~ /$pattern/ );
+
+   return $tot;
+$BODY$
+LANGUAGE plperl;
+#+end_src
 ** Cursori
 *** Cos'è un cursore?
 Un cursore è un meccanismo che trasforma un record-set in una iterazione fra record: non si ottiene
