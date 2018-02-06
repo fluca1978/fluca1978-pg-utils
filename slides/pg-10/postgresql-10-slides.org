@@ -3566,6 +3566,28 @@ Le funzioni hanno tre livelli di /volatilità/:
 Una stored procedure può essere definita in due contesti di sicurezza:
 - *~SECURITY INVOKER~* la funzione esegue con i permessi dell'utente che la invoca (ovvero deve avere le ~GRANT~ sulle tabelle);
 - ~SECURITY DEFINER~ la funzione esegue con i permessi dell'utente che l'ha definita, e quindi non sono necessarie le grant all'utente invocante.
+*** Informazioni di sistema
+E' possibile incrociare le viste ~pg_proc~ e ~pg_language~ per ottenere le informazioni relative ad una stored procedure, e nel caso sia interpretata anche il codice sorgente:
+#+begin_src sql
+> SELECT p.proname, l.lanname, p.prosrc
+   FROM pg_proc p
+   JOIN pg_language l ON p.prolang = l.oid
+   WHERE proname = 'do_count';
+
+-[ RECORD 1 ]-------------------------------------------------------------
+proname | do_count
+lanname | plpgsql
+prosrc  |
+        | DECLARE
+        |         v_count int;
+        | BEGIN
+        |         EXECUTE 'SELECT count(*) FROM persona WHERE eta >= $1'
+        |         INTO STRICT v_count
+        |         USING eta_min;
+        |
+        |         RETURN v_count;
+        | END;
+#+end_src
 ** Il linguaggio plpgsql
 *** plpgsql
    E' il linguaggio /default/ per la gestione di blocchi di codice:
