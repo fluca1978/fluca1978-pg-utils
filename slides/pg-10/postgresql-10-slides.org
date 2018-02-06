@@ -2715,6 +2715,27 @@ La potenza di ~ALTER TABLE USING~ ovviamente si ottiene quando si cambia il tipo
     USING upper(nome) || ' ' || upper(cognome);
 #+end_src
 
+** ~FILTER~
+*** Uso di filter su funzioni di aggregazione
+#+begin_src sql
+> SELECT
+  COUNT(*) FILTER ( WHERE nome LIKE 'F%' ) AS begin_with_f
+ ,COUNT(*) FILTER ( WHERE nome LIKE 'L%' ) AS begin_with_l
+ FROM persona;
+#+end_src
+*** Uso di filter in group by
+#+begin_src sql
+> SELECT nome, count(*)
+  FROM persona
+  GROUP BY nome
+  HAVING COUNT(*) FILTER( WHERE nome LIKE 'L%' ) > 1;
+
+ nome | count
+------+-------
+ Luca |  5000
+#+end_src
+
+
 * Backup e restore
 ** Backup
 *** Introduzione
