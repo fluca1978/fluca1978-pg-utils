@@ -1602,6 +1602,46 @@ ERROR:  duplicate key value violates unique constraint "c_val_key"
 DETAIL:  Key (val)=(1) already exists.
 #+end_src
 
+** Vincoli ~EXCLUDE~
+*** Confronto fra tuple
+PostgreSQL supporta un vincolo di tipo ~EXCLUDE~ da definire in fase di creazione della tabella o successivamente.
+
+Il vincolo controlla *le tuple* sulle colonne specificate con l'operatore specificato: se si ha match l'inserimento non è
+consentito.
+
+*** Esempio di ~EXCLUDE~
+#+begin_src sql
+> CREATE TABLE v (
+    pk serial PRIMARY KEY,
+    name text, value int );
+
+> ALTER TABLE v
+   ADD CONSTRAINT abs_value_exclude
+   EXCLUDE ( abs( value ) WITH = );
+#+end_src
+
+ovvero si escludono *tuple che hanno un valore assoluto (~abs~) della colonna ~value~ identico (operatore ~=~)*:
+
+#+begin_src sql
+> INSERT INTO v( name, value ) VALUES ( 'v1', 100 );
+> INSERT INTO v( name, value ) VALUES ( 'v2', -100 );
+ERROR:  conflicting key value violates exclusion constraint "abs_value_exclude"
+DETAIL:  Key (abs(value))=(100) conflicts with existing key (abs(value))=(100)
+#+end_src
+
+*** ~EXCLUDE~: effetti collaterali
+Il vincolo ~EXCLUDE~ utilizza un indice (e quindi l'operatore deve essere applicatibile ad un indice) per effettuare il controllo:
+
+#+begin_src sql
+> \d v
+...
+Indexes:
+    "v_pkey" PRIMARY KEY, btree (pk)
+    "abs_value_exclude" EXCLUDE USING btree (abs(value) WITH =)
+#+end_src
+
+In un certo senso, ~EXCLUDE~ è la negazione di un vincolo ~UNIQUE~.
+
 ** Commenti
 *** Commenti
 L'istruzione speciale ~COMMENT~ permette di agganciare dei commenti agli oggetti definiti nel database.
