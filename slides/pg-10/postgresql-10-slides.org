@@ -4150,6 +4150,55 @@ $BODY$
 LANGUAGE plperl;
 #+end_src
 
+** DO
+*** ~DO~
+PostgreSQL supporta un costrutto ~DO~ che permette l'esecuzione di un blocco di codice.
+Sostanzialmente è una forma per eseguire immediatamente una funzione anonima definita nel comando stesso.
+
+Se non si specifica alcun linguaggio, il blocco è considerato ~plpgsql~.
+
+*** ~DO~: esempio in plpgsql
+#+begin_src sql
+> DO $CODE$
+ DECLARE
+ BEGIN
+   FOR i IN 1..10 LOOP
+    RAISE INFO 'Valore %', i;
+   END LOOP;
+ END
+ $CODE$;
+
+INFO:  Valore 1
+INFO:  Valore 2
+INFO:  Valore 3
+INFO:  Valore 4
+INFO:  Valore 5
+INFO:  Valore 6
+INFO:  Valore 7
+INFO:  Valore 8
+INFO:  Valore 9
+INFO:  Valore 10
+#+end_src
+
+*** ~DO~: esempio in plperl
+#+begin_src sql
+> DO LANGUAGE plperl $CODE$
+for ( 1..10 ){
+  elog( INFO, $_ );
+}
+$CODE$;
+
+INFO:  1
+INFO:  2
+INFO:  3
+INFO:  4
+INFO:  5
+INFO:  6
+INFO:  7
+INFO:  8
+INFO:  9
+INFO:  10
+#+end_src
 ** Cursori
 *** Cos'è un cursore?
 Un cursore è un meccanismo che trasforma un record-set in una iterazione fra record: non si ottiene
