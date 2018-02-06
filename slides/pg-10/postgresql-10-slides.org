@@ -2743,6 +2743,37 @@ Supporta alcuni tipi di discard:
 - ~ALL~ resetta completamente la sessione;
 - ~TEMPORARY~ cancella ogni tabella temporanea;
 - ~PLANS~ cancella i piani di esecuzione degli statement preparati.
+** Prepared Statements
+*** Concetti
+Un /prepared statement/ è uno statement SQL privo di valori, che saranno forniti in seguito.
+
+I prepared statement hanno diversi vantaggi:
+- permettono di eseguire le query piu' velocemente, a patto che siano ripetitive;
+- permettono di fare un buon escaping dei valori.
+
+L'idea è che lo statement viene preparato lato server, poi solo i valori/parametri sono inviati e l'executor può subito eseguire lo statement senza dover ripercorrere le fasi di parsing.
+
+*** Esempio: ~PREPARE~ e ~EXECUTE~
+#+begin_src sql
+> PREPARE find_persona_stmt( char ) AS
+   SELECT cognome, nome
+   FROM persona
+   WHERE substr( codice_fiscale, 1, 1 ) = $1;
+
+> EXECUTE find_persona_stmt( 'c' );
+#+end_src
+
+*** Cancellare un prepared statement
+Il comando ~DEALLOCATE~ annulla un prepared statement. Occorre specificare il nome dello statement, oppure opzinalmente tutti gli statement con ~ALL~:
+
+#+begin_src sql
+> DEALLOCATE find_persona_stmt;
+
+-- se per errore si tenta di usare lo statement...
+> EXECUTE find_persona_stmt( 'c' );
+ERROR:  prepared statement "find_persona_stmt" does not exist
+#+end_src
+
 * Backup e restore
 ** Backup
 *** Introduzione
