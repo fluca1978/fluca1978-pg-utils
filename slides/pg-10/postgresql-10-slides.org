@@ -193,16 +193,6 @@ paragraph and the following two paragraphs appear in all copies.
 | Maximum Columns per Table	 | 250 - 1600 depending on column types |
 | Maximum Indexes per Table	 | Unlimited                            |
 
-*** Chi lo usa?
-
-   Alcuni esempi:
-
-#+ATTR_LATEX: :width 0.2\textwidth
- [[./images/debian.png]]
- [[./images/redhat.png]]
-[[./images/cisco.png]]
-[[./images/skype.png]]
-
 *** Chi lo sviluppa?
    *Chiunque*, anche tu! Non esiste un /benevolent dictator/!
 
@@ -225,16 +215,16 @@ paragraph and the following two paragraphs appear in all copies.
 *** Come si sviluppa?
    Si utilizza ~git~ (migrato da CVS intorno al 2009).
 
-   #+begin_src sh
-% git clone git://git.postgresql.org/git/postgresql.git
+   #+BEGIN_SRC sh
+   % git clone git://git.postgresql.org/git/postgresql.git
 
-Cloning into 'postgresql'...
-...
-% du -hs postgresql
-356M    postgresql
-% git rev-list --all --count
-59672
-   #+end_src
+   Cloning into 'postgresql'...
+   ...
+   % du -hs postgresql
+   356M    postgresql
+   % git rev-list --all --count
+   59672
+   #+END_SRC
 
    - Linguaggio di programmazione principale: ~C~, stile BSD (~style(9)~).
    - Strumenti di sviluppo ben noti: ~gcc~, ~gmake~, ~autoconf~, ecc.
@@ -245,15 +235,15 @@ Cloning into 'postgresql'...
    Da molto tempo (oltre 30 anni), ma non si torna prima della versione 1.01 di *Postgres95*,
    ramo di sviluppo 6 del Postgres "attuale":
 
-   #+begin_src sh
-% git log `git rev-list --max-parents=0 HEAD`
+   #+BEGIN_SRC sh
+   % git log `git rev-list --max-parents=0 HEAD`
 
-commit d31084e9d1118b25fd16580d9d8c2924b5740dff
-Author: Marc G. Fournier <scrappy@hub.org>
-Date:   Tue Jul 9 06:22:35 1996 +0000
+   commit d31084e9d1118b25fd16580d9d8c2924b5740dff
+   Author: Marc G. Fournier <scrappy@hub.org>
+   Date:   Tue Jul 9 06:22:35 1996 +0000
 
-    Postgres95 1.01 Distribution - Virgin Sources
-   #+end_src
+       Postgres95 1.01 Distribution - Virgin Sources
+   #+END_SRC
 
 ** Concetti Generali
 *** Terminologia
@@ -347,7 +337,7 @@ Una connessione può essere *TCP/IP* oppure su *socket locale*.
 **** Macchina Virtuale                                         :B_definition:
    Tutte le prove qui mostrate sono state effettuate su una macchina virtuale con
    quattro dischi da 2GB utilizzati come spazio dati:
-   #+begin_src sh
+   #+BEGIN_SRC sh
    $ uname -a
    FreeBSD olivia 11.1-RELEASE FreeBSD 11.1-RELEASE
    $ mount
@@ -355,7 +345,7 @@ Una connessione può essere *TCP/IP* oppure su *socket locale*.
    /dev/ada2p1 on /mnt/data2 (ufs, local, soft-updates)
    /dev/ada3p1 on /mnt/data3 (ufs, local, soft-updates)
    /dev/ada4p1 on /mnt/data4 (ufs, local, soft-updates)
-   #+end_src
+   #+END_SRC
 **** End of block                                           :B_ignoreheading:
 :PROPERTIES:
 :BEAMER_env: ignoreheading
@@ -363,26 +353,26 @@ Una connessione può essere *TCP/IP* oppure su *socket locale*.
 
 *** Installazione
 Compilazione dai ports:
-#+begin_src sh
+#+BEGIN_SRC sh
 # cd /usr/ports/databases/postgresql10-server
 # make PREFIX=/opt/postgresql-10 BATCH=yes install clean
-#+end_src
+#+END_SRC
 
 oppure il pacchetto binario:
 
-#+begin_src sh
+#+BEGIN_SRC sh
 # pkg install postgresql10-server-10.1_1
-#+end_src
+#+END_SRC
 
 /Precedenti versioni vengono rimosse dall'installazione binaria!/
 /I moduli ~contrib~ vanno rimossi a mano!/
 
 In FreeBSD il database viene gestito dall'utente di sistema ~postgres~:
 
-#+begin_src sh
+#+BEGIN_SRC sh
 # id postgres
 uid=770(postgres) gid=770(postgres) groups=770(postgres)
-#+end_src
+#+END_SRC
 
 altri sistemi operativi creano utenti simili (~psql~, ~pgsql~, ecc.).
 
@@ -391,30 +381,30 @@ I parametri di configurazione dipendono ovviamente dal sistema operativo, ad
 esempio su FreeBSD le variabili di ~rc.conf~ sono visibili da
 ~/usr/local/etc/rc.d/postgresql~:
 
-#+begin_src sh
+#+BEGIN_SRC sh
 #  postgresql_enable="YES"
 #  postgresql_data="/var/db/postgres/data96"
 #  postgresql_flags="-w -s -m fast"
 #  postgresql_initdb_flags="--encoding=utf-8 --lc-collate=C"
 #  postgresql_class="default"
 #  postgresql_profiles=""
-#+end_src
+#+END_SRC
 
 *** Avvio tramite ~pg_ctl~
 Il comando ~pg_ctl~ consente di avviare una istanza in modo /controllato/ senza dover dipendere da script del sistema operativo.
 L'unico parametro obbligatorio è la ~$PGDATA~.
 
-#+begin_src shell
+#+BEGIN_SRC shell
 % sudo -u postgres  pg_ctl -D /mnt/data3/pgdata start -l /tmp/postgresql.log
-#+end_src
+#+END_SRC
 
 Analogamente, per fermare lo stesso cluster si usa:
 
-#+begin_src shell
+#+BEGIN_SRC shell
 % sudo -u postgres  pg_ctl -D /mnt/data3/pgdata stop                                                                     ~
 waiting for server to shut down.... done
 server stopped
-#+end_src
+#+END_SRC
 *** Arresto del server
 In generale /non si può rompere una istanza PostgreSQL/, anche in caso di un arresto forzato questa saprà come riavviarsi.
 
@@ -428,25 +418,25 @@ Solo il caso ~immediate~ produce un /crash/ del sistema, e quindi al riavvio il 
 *** Arresto e connesioni in ingresso
 Nei meccanismi di spegimento ~smart~  e ~fast~ il cluster non accetterà nessuna ulteriore connessione in ingresso attendento invece il termine di quelle già attive.
 
-#+begin_src shell
+#+BEGIN_SRC shell
 % sudo -u postgres  pg_ctl -D /mnt/data1/pgdata stop -m smart
 waiting for server to shut down...................
 pg_ctl: server does not shut down
 HINT: The "-m fast" option immediately disconnects sessions rather than
 waiting for session-initiated disconnection.
-#+end_src
+#+END_SRC
 
 e se si tenta di collegarsi:
 
-#+begin_src shell
+#+BEGIN_SRC shell
 % psql -h localhost -U luca testdb
 psql: FATAL:  the database system is shutting down
-#+end_src
+#+END_SRC
 
 *** Processi
 Una volta avviato il processo principale, denominato /postmaster/, il sistema avrà una serie di processi differenti in esecuzione:
 
-#+begin_src shell
+#+BEGIN_SRC shell
 % pstre
  \-+- 02057 postgres /usr/local/bin/postgres -D /mnt/data1/pgdata
    |--= 02058 postgres postgres: pg9.6.5-FreeBSD: logger process    (postgres)
@@ -455,7 +445,7 @@ Una volta avviato il processo principale, denominato /postmaster/, il sistema av
    |--= 02062 postgres postgres: pg9.6.5-FreeBSD: wal writer process    (postgres)
    |--= 02063 postgres postgres: pg9.6.5-FreeBSD: autovacuum launcher process    (postgres)
    |--= 02064 postgres postgres: pg9.6.5-FreeBSD: stats collector process    (postgres)
-#+end_src
+#+END_SRC
 
 I processi principali sono:
 - ~wal_writer~ che si occupa di rendere persistenti i record di WAL;
@@ -489,13 +479,13 @@ Creazione di una directory per la memorizzazione del database (alcuni
 sistemi operativi lo fanno automaticamente al momento dell'installazione
 binaria):
 
-#+begin_src sh
+#+BEGIN_SRC sh
 # mkdir /mnt/data1/pgdata
   && chown postgres:postgres /mnt/data1/pgdata
 $ initdb --data-checksum --encoding="UTF-8" \
          --pwprompt                         \
          -D /mnt/data1/pgdata/
-#+end_src
+#+END_SRC
 
 ~initdb~ deve essere eseguito da un utente non privilegiato, le opzioni indicano:
 - ~--data-checksum~: abilita il controllo sulle pagine dati del database;
@@ -507,25 +497,25 @@ $ initdb --data-checksum --encoding="UTF-8" \
 Se la directory specificata come ~PGDATA~ per il cluster non è vuota ~initdb~ si rifiuta
 di continuare (si noti bene che non esiste un'opzione /force/):
 
-#+begin_src shell
+#+BEGIN_SRC shell
 ...
 initdb: directory "/mnt/data1/pgdata" exists but is not empty
 If you want to create a new database system, either remove or empty
 the directory "/mnt/data1/pgdata" or run initdb
 with an argument other than "/mnt/data1/pgdata".
-#+end_src
+#+END_SRC
 
 *** initdb: risultato
 Se il comando ~initdb~ completa con successo, viene riportato un modo per avviare
 il cluster con la directory ~PGDATA~ appena specificata:
 
-#+begin_src shell
+#+BEGIN_SRC shell
 $ initdb
 ...
 Success. You can now start the database server using:
 
     pg_ctl -D /mnt/data1/pgdata/ -l logfile start
-#+end_src
+#+END_SRC
 
 *** Struttura di PGDATA
 La directory ~$PGDATA~ contiene diversi file e directory, in particolare:
@@ -553,7 +543,7 @@ Solitamente i file crescono in dimensione di ~8 kB~ alla volta (ossia della dime
 *** ~oid2name~
 L'utility ~oid2name~ (modulo /contrib/) consente di esplorare
 la struttura dati su disco.
-#+begin_src sh
+#+BEGIN_SRC sh
 % oid2name -H localhost -U postgres                                                                                      ~
 All databases:
     Oid  Database Name  Tablespace
@@ -561,37 +551,37 @@ All databases:
   12646       postgres  pg_default
   12645      template0  pg_default
       1      template1  pg_default
-#+end_src
+#+END_SRC
 
 Gli /oid/ visualizzati in questo caso corrispondono al nome *fisico su disco*
 dei database (che a sua volta corrisponde al nome della directory ove sono
 contenuti i dati):
 
-#+begin_src sh
+#+BEGIN_SRC sh
 % sudo ls -l /mnt/data1/pgdata/base
 drwx------  2 postgres  ... 1
 drwx------  2 postgres  ... 12645
 drwx------  2 postgres  ... 12646
-#+end_src
+#+END_SRC
 
 *** ~oid2name~ (2)
  Esploriamo il database ~template1~ su disco e cerchiamo di capire
  cosa contiene:
 
-#+begin_src sh
+#+BEGIN_SRC sh
 % sudo stat /mnt/data1/pgdata/base/1/1259
 104 65579 -rw------- 1 postgres postgres ...
-#+end_src
+#+END_SRC
 
 A cosa corrisponde l'oggetto file ~1259~?
 
-#+begin_src sh
+#+BEGIN_SRC sh
 % oid2name -H localhost -U postgres -d template1 -o 1259
 From database "template1":
   Filenode  Table Name
 ----------------------
       1259    pg_class
-#+end_src
+#+END_SRC
 
 *ATTENZIONE: si deve specificare a quale database si fa riferimento, poiché
 gli stessi oid possono essere riciclati in database differenti*
@@ -599,25 +589,25 @@ gli stessi oid possono essere riciclati in database differenti*
 *** ~oid2name~ (3)
 E se si vuole trovare una tabella dato il suo nome?
 
- #+begin_src sh
-% oid2name -H localhost -U postgres -d template1 -t pg_class
-From database "template1":
-  Filenode  Table Name
-----------------------
-      1259    pg_class
- #+end_src
+ #+BEGIN_SRC sh
+ % oid2name -H localhost -U postgres -d template1 -t pg_class
+ From database "template1":
+   Filenode  Table Name
+ ----------------------
+       1259    pg_class
+ #+END_SRC
 
 ~oid2name~ va ad interrogare il catalogo di sistema per trovare le informazioni
 necessarie.
 
 *** ~pg_relation_filepath()~
 La funzione di sistema ~pg_relation_filepath()~ permette di trovare un file partendo dal nome di una tabella considerando il nome della tabella:
-#+begin_src sql
+#+BEGIN_SRC sql
 # SELECT pg_relation_filepath( 'pg_class'::regclass );
  pg_relation_filepath
 ----------------------
  base/1/1259
-#+end_src
+#+END_SRC
 
 Il percorso è /relativo a ~$PGDATA~/.
 
@@ -628,11 +618,11 @@ quali utenti, quali host remoti e quali database sono accessibili per la conness
 Si può editare questo file prima di avviare il servizio (se si è impostata una password
 per ~postgres~ superuser) o anche in seguito.
 
-#+begin_src sh
+#+BEGIN_SRC sh
 # tipo  database   utente   da dove       metodo
 local   all        all                    trust
 host    all        all      127.0.0.1/32    md5
-#+end_src
+#+END_SRC
 
 **** pg_hba.conf vs sudoers
     Il file ~pg_hba.conf~ è simile al file ~sudoers~, e come tale
@@ -649,12 +639,12 @@ Il modulo /auth_delay/ permette di mitigare attacchi a forza bruta ritardando le
 *** Avvio del servizio
 Una volta che i primi pezzi sono al loro posto, è possibile avviare il servizio:
 
-#+begin_src sh
+#+BEGIN_SRC sh
 # service postgresql start
-#+end_src
+#+END_SRC
 
 e se tutto va a buon fine...
-#+begin_src sh
+#+BEGIN_SRC sh
 # psql -h localhost -U postgres -l
 Password for user postgres:
    Name    |  Owner   | Encoding |
@@ -663,7 +653,7 @@ Password for user postgres:
  template0 | postgres | UTF8     |
  template1 | postgres | UTF8     |
 (3 rows)
-#+end_src
+#+END_SRC
 
 *** Database template
 Quando viene inizializzata ~PGDATA~ il sistema crea due database chaimati /template/:
@@ -699,7 +689,7 @@ quali restore (può servire un database vuoto a cui collegarsi).
 Il pacchetto /client/ contiene un interprete da riga di comando, denominato ~psql~
 che consente di collegarsi al database e svolgere /tutti/ i compiti necessari.
 
-#+begin_src sh
+#+BEGIN_SRC sh
 % psql -h localhost -U postgres template1
 Password for user postgres:
 psql (10.1)
@@ -708,7 +698,7 @@ Type "help" for help.
 template1=#
 template1=# \q
 %
-#+end_src
+#+END_SRC
 
 I parametri di linea comando sono:
 - ~-h~: host a cui collegarsi (hostname, indirizzo ip);
@@ -719,21 +709,21 @@ I parametri di linea comando sono:
 Oltre a specificare ogni singolo parametro della conessione tramite opzioni di comando,
 ~psql~ consente di utilizzare un URI per la connessione, ad esempio:
 
-#+begin_src sh
+#+BEGIN_SRC sh
 % psql postgresql://postgres@localhost:5432/template1
 Password:
 psql (10.1)
 Type "help" for help.
 
 template1=#
-#+end_src
+#+END_SRC
 
 Parametri ulteriori possono essere specificati nell'URL (dopo ~?~),
 come ad esempio:
 
-#+begin_src sh
+#+BEGIN_SRC sh
 postgresql://postgres@localhost/template1?sslmode=require
-#+end_src
+#+END_SRC
 
 *** psql: prompt
 
@@ -747,11 +737,11 @@ Si esce da ~psql~ con ~\q~.
 ~psql~ mostra all'avvio la propria versione (client) ma con una query
 è possibile capire anche la versione del server:
 
-#+begin_src SQL
+#+BEGIN_SRC SQL
 template1=# SELECT version();
  PostgreSQL 10.1 on amd64-portbld-freebsd11.1, ...
 (1 row)
-#+end_src
+#+END_SRC
 
 
 La funzione speciale ~version()~ viene compilata al momento
@@ -764,32 +754,32 @@ utente dell'utente che esegue il comando stesso, con un ruolo che ha
 lo stesso nome.
 In altre parole:
 
-#+begin_src sh
+#+BEGIN_SRC sh
 % id -p
 uid     luca
 
 % psql
 psql: FATAL:  role "luca" does not exist
-#+end_src
+#+END_SRC
 
 corrisponde a:
 
-#+begin_src sh
+#+BEGIN_SRC sh
 % psql -h localhost -U luca luca
-#+end_src
+#+END_SRC
 
 *** psql: ruoli, database e variabili di ambiente
  In realtà quando non viene specificato un utente e/o un database
  ~psql~ cerca di collegarsi a quanto stabilito dalle variabili
  di ambiente ~PGUSER~ e ~PGDATABASE~ (e le relative ~PGHOST~ e ~PGPORT~):
 
-#+begin_src sh
+#+BEGIN_SRC sh
 % export PGUSER=foo PGDATABASE=myDB
 % psql
 psql: FATAL:  no pg_hba.conf entry for host "[local]",
               user "foo",
               database "myDB", SSL off
-#+end_src
+#+END_SRC
 
 *** psql: aiuto
 All'interno di ~psql~ ci sono due tipologie di aiuto:
@@ -811,13 +801,13 @@ Ogni riga nel file contiene:
 
 Il file non deve essere leggibile da altri utenti (es. permessi ~600~).
 
-#+begin_src sh
+#+BEGIN_SRC sh
 % cat ~/.pgpass
 127.0.0.1:5432:template1:postgres:xxxxxxxx
 
 % psql -U postgres template1
 template1=#
-#+end_src
+#+END_SRC
 
 **** Errori comuni
     *Il file deve avere permessi ~rw~ per il solo proprietario*. Inoltre si deve specificare
@@ -835,13 +825,13 @@ prima di fornire il prompt all'utente.
 
 Utile per impostare variabili, prompt, formati di output, ecc.
 *** psql: ~/.psqlrc di esempio
-#+begin_src sh
+#+BEGIN_SRC sh
 \set HISTFILE ~/.psql_history_ :DBNAME
 \set ON_ERROR_ROLLBACK on
 \set ON_ERROR_STOP     on
 \x
 \set PROMPT1 '[%n @ %/ on %m] %l %x %# '
-#+end_src
+#+END_SRC
 
 Il prompt corrisponde a: /username/ (~%n~), /database/ (~%/~),
 /hostname/ (~%m~), /linea/ (~%l~), /stato transazione/ (~%x~)
@@ -881,7 +871,7 @@ il listato di quali utenti, database e host possono ottenere una connessione.
 *** Vedere i ruoli
 Il catalogo ~pg_roles~ contiene le informazioni sui ruoli e le loro proprietà:
 
-#+begin_src sql
+#+BEGIN_SRC sql
 # SELECT rolname, rolsuper, rolcreatedb, rolcanlogin
 FROM pg_roles;
        rolname        | rolsuper | rolcreatedb | rolcanlogin
@@ -892,7 +882,7 @@ FROM pg_roles;
  pg_stat_scan_tables  | f        | f           | f
  pg_signal_backend    | f        | f           | f
  postgres             | t        | t           | t
-#+end_src
+#+END_SRC
 
 E' possibile creare utenti/gruppi/ruoli con privilegi di super utente, possibilità di creare nuovi
 database e di collegarsi o no al cluster.
@@ -902,27 +892,27 @@ database e di collegarsi o no al cluster.
    Ad esempio si supponga di voler gestire un database di una applicazione definendo due utenti: uno applicativo
    e uno amministrativo/interattivo:
 
-   #+begin_src sql
-# CREATE ROLE my_app
-  WITH NOLOGIN
-  CONNECTION LIMIT 1
-  PASSWORD 'xxx';
-CREATE ROLE
+   #+BEGIN_SRC sql
+   # CREATE ROLE my_app
+     WITH NOLOGIN
+     CONNECTION LIMIT 1
+     PASSWORD 'xxx';
+   CREATE ROLE
 
-# ALTER ROLE my_app WITH LOGIN;
+   # ALTER ROLE my_app WITH LOGIN;
 
-# CREATE ROLE luca
-  WITH CREATEDB LOGIN PASSWORD 'xxxxx'
-  IN ROLE my_app;
-CREATE ROLE
-   #+end_src
+   # CREATE ROLE luca
+     WITH CREATEDB LOGIN PASSWORD 'xxxxx'
+     IN ROLE my_app;
+   CREATE ROLE
+   #+END_SRC
 
 Ora il ruolo ~my_app~ funge sia da utente che da gruppo a cui ~luca~ appartiene.
 Si noti l'uso di ~ALTER ROLE~ per correggere un errore.
 
 *** Creare i ruoli (2)
    I ruoli appena creati risultano ora:
-#+begin_src sql
+#+BEGIN_SRC sql
 # SELECT rolname, rolsuper, rolcreatedb, rolcanlogin, rolconnlimit
   FROM pg_roles;
       rolname      | rolsuper | rolcreatedb | rolcanlogin | rolconnlimit
@@ -931,16 +921,16 @@ Si noti l'uso di ~ALTER ROLE~ per correggere un errore.
  my_app            | f        | f           | t           |            1
  luca              | f        | t           | t           |           -1
  ...
-#+end_src
+#+END_SRC
 
 *** Creare i ruoli (3)
    E' ora possibile configurare il file ~.pgpass~ per i nuovi ruoli:
-#+begin_src sh
+#+BEGIN_SRC sh
 % cat ~/.pgpass
 127.0.0.1:5432_template1:postgres:postgres
 localhost:5432:template1:luca:xxxxxx
 localhost:5432:template1:my_app:xxxxx
-#+end_src
+#+END_SRC
 
 **** Evitare di censire ogni singolo database
     Si ricordi che è possibile usare ~*~ per host, porta e database. Questo semplifica
@@ -952,41 +942,41 @@ localhost:5432:template1:my_app:xxxxx
 :END:
 *** Gruppi & login
 - ~INHERITS~ non aggiunge il ~LOGIN~!
-#+begin_src sql
+#+BEGIN_SRC sql
 # CREATE ROLE developers WITH LOGIN;
 -- ok to login
 # CREATE ROLE dev1 IN ROLE developers LOGIN;
 -- FATAL:  role "dev2" is not permitted to log in
 # CREATE ROLE dev2 IN ROLE developers;
-#+end_src
+#+END_SRC
 
 - il gruppo non include gli altri utenti quando usato in ~pg_hba.conf~:
 
-#+begin_src shell
+#+BEGIN_SRC shell
 # pg_hba.conf
 host    all   developers   127.0.0.1/32   trus
 
 % psql -h localhost -U dev1 testdb
 FATAL:  no pg_hba.conf entry for host "127.0.0.1", user "dev1", database "testdb", SSL off
-#+end_src
+#+END_SRC
 
 *** Gruppi & login (2)
 - *occorre usare i gruppi con un ~+~*:
-#+begin_src shell
+#+BEGIN_SRC shell
 # pg_hba.conf
 host    all   +developers   127.0.0.1/32   trus
-#+end_src
+#+END_SRC
 
 - per disabiltiare un gruppo e abilitare gli altri utenti al login:
-#+begin_src shell
+#+BEGIN_SRC shell
 host    all     +developers     127.0.0.1/32     reject
 host    all     all             127.0.0.1/32     trust
-#+end_src
+#+END_SRC
 *** La vista ~pg_shadow~
 In analogia con i sistemi Unix, è disponibuile una vista ~pg_shadow~ che riassume i dati degli account utente (ruoli) comprensivi di password.
 Se la password inizia con ~md5~ la password è stata cifrata con tale algoritmo.
 Ovviamente occorre essere superutente per poter interrogare la vista.
-#+begin_src sql
+#+BEGIN_SRC sql
 # SELECT usename, usecreatedb, usesuper,
          userepl, passwd
   FROM pg_shadow;
@@ -996,29 +986,29 @@ usecreatedb | t
 usesuper    | t
 userepl     | t
 passwd      | md53175bce1d3201d16594cebf9d7eb3f9d
-#+end_src
+#+END_SRC
 *** Creare un database
    Usando il comando SQL ~CREATE DATABASE~ è possibile aggiungere un nuovo database
    (e /opzionalmente/ aggiungere un commento per indicare lo scopo del database):
-#+begin_src sql
+#+BEGIN_SRC sql
 # CREATE DATABASE testdb
   WITH OWNER 'luca';
 
 # COMMENT ON DATABASE testdb IS 'A test database';
-#+end_src
+#+END_SRC
 
   Alternativamente si può usare il comando shell ~createdb~:
-#+begin_src sh
+#+BEGIN_SRC sh
 % createdb --owner='luca' -e -h localhost -U postgres testdb 'A test database'
 CREATE DATABASE testdb OWNER luca;
 COMMENT ON DATABASE testdb IS 'A test database';
-#+end_src
+#+END_SRC
 
 *** Vedere i database disponibili
  Il catalogo ~pg_database~ contiene le informazioni circa i database presenti nel
  sistema:
 
-#+begin_src sql
+#+BEGIN_SRC sql
 # SELECT datname FROM pg_database;
   datname
 -----------
@@ -1026,10 +1016,10 @@ COMMENT ON DATABASE testdb IS 'A test database';
  testdb
  template1
  template0
-#+end_src
+#+END_SRC
 
  Alternativamente si può usare l'opzione ~-l~ in ~psql~:
-#+begin_src sh
+#+BEGIN_SRC sh
 % psql -h localhost -U postgres -l
 ...
 Name              | testdb
@@ -1038,23 +1028,23 @@ Encoding          | UTF8
 Collate           | C
 Ctype             | C
 Access privileges |
-#+end_src
+#+END_SRC
 *** Eliminare un database
  Avendo i privilegi corretti, si può usare il comando SQL ~DROP DATABASE~
  o il comando shell ~dropdb~:
 
-#+begin_src sql
+#+BEGIN_SRC sql
 % psql -h localhost -U postgres template1
 # DROP DATABASE testdb;
 DROP DATABASE
-#+end_src
+#+END_SRC
 
-#+begin_src sh
+#+BEGIN_SRC sh
 % dropdb -h localhost -U postgres testdb
-#+end_src
+#+END_SRC
 *** Creare una tabella
    L'istruzione SQL è ~CREATE TABLE~.
-#+begin_src sql
+#+BEGIN_SRC sql
 % psql -h localhost testdb                                                                                               ~
 > CREATE TABLE persona(
  pk serial,
@@ -1064,20 +1054,20 @@ DROP DATABASE
  PRIMARY KEY(pk),
  UNIQUE(codice_fiscale)
  );
-#+end_src
+#+END_SRC
 
 *** Modificare una tabella
    Ci sono varie istruzioni, in particolare ~ALTER TABLE~ che consente di agire sulla tabella
    e sui relativi vincoli:
 
-#+begin_src sql
+#+BEGIN_SRC sql
 > ALTER TABLE persona ADD COLUMN eta integer;
 > ALTER TABLE persona ADD CHECK ( eta > 0 and eta < 120 );
-#+end_src
+#+END_SRC
 
 *** Come è fatta la tabella?
    Il comando speciale di ~psql~ ~\d~ consente di ispezionare una tabella e i suoi vincoli:
-#+begin_src sql
+#+BEGIN_SRC sql
 > \d persona
                                     Table "public.persona"
      Column     |         Type          |                      Modifiers
@@ -1092,7 +1082,7 @@ Indexes:
     "persona_codice_fiscale_key" UNIQUE CONSTRAINT, btree (codice_fiscale)
 Check constraints:
     "persona_eta_check" CHECK (eta > 0 AND eta < 120)
-#+end_src
+#+END_SRC
 
 * SQL PostgreSQL
 ** Accorgimenti iniziali
@@ -1100,7 +1090,7 @@ Check constraints:
    In PostgreSQL non esiste la "famosa" tabella ~dual~ e lo statement ~SELECT~
    fa esattamente quello che ci si aspetta:
 
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT 1 FROM dual;
 ERROR:  relation "dual" does not exist
 
@@ -1108,38 +1098,38 @@ ERROR:  relation "dual" does not exist
  ?column?
 ----------
         1
-#+end_src
+#+END_SRC
 *** Dollar quoting
    PostgreSQL permette l'uso del *dollar quoting* (simile all'operatore ~qq~ di Perl):
    - si può usare un tag con nome arbitrario purché racchiuso fra due simboli ~$~;
    - il tag va usato per l'apertura e la chiusura;
    - la stringa fra tag viene sottoposta ad escape automatico.
 
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT $qq$Perche' l'hai scritto?$qq$;
         ?column?
 ------------------------
  Perche' l'hai scritto?
-#+end_src
+#+END_SRC
 Si può usare anche uno statement SQL come tag (es. ~$SELECT$~).
 *** Camel Case
 Lo standard SQL non ammette il camel case, e chiede l'uso di *UPPERCASE*.
 PostgreSQL utilizza il *lowercase* per tutti gli identificatori (il risultato non cambia).
-#+begin_src sql
+#+BEGIN_SRC sql
 > CREATE TABLE Foo( Bar int, bAz int );
 -- diventa
 -- create table foo( bar int, baz int);
-#+end_src
+#+END_SRC
 
 Se si vuole usare il *cAmeLcAsE* si deve indicare ogni operatore /*sempre*/
 fra doppi apici (sconsigliato):
-#+begin_src sql
+#+BEGIN_SRC sql
 > CREATE TABLE "Foo"( "Bar" int, "bAz" int );
 > SELECT "Bar", "bAz" FROM "Foo";
-#+end_src
+#+END_SRC
 *** Camel Case: ~quote_ident~
 La funzione speciale ~quote_ident~ sa cosa deve fare con gli identificativi che non siano minuscoli, e quindi è bene usarla ogni volta che ad esempio si generano statement in automatico:
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT quote_ident( 'foo' ),
          quote_ident( 'FOO' ),
          quote_ident( 'Foo' );
@@ -1147,24 +1137,24 @@ La funzione speciale ~quote_ident~ sa cosa deve fare con gli identificativi che 
 quote_ident | foo
 quote_ident | "FOO"
 quote_ident | "Foo"
-#+end_src
+#+END_SRC
 *** ~SHOW~ e ~SET~
 Il comando speciale ~SHOW~ mostra il valore di alcuni parametri /run-time/, e analogamente il parametro ~SET~ consente di impostarne il valore.
 
-#+begin_src sql
+#+BEGIN_SRC sql
 # SHOW enable_seqscan;
  enable_seqscan
 ----------------
  off
 
 # SET enable_seqscan TO 'on';
-#+end_src
+#+END_SRC
 
 Il comando ~SET~ modifica solo il comportamento della sessione, a meno che non sia specificato ~LOCAL~ che allora persiste solo alla fine (positiva o meno) di una transazione (~SET~ normale svanisce se la transazione abortisce).
 *** ~current_setting~ e ~set_config~
 Le due funzioni speciali ~current_setting()~ e ~set_config()~ corrispondo al comando ~SHOW~ e ~SET~ e consentono di ottenere e impostare il valore di un parametro di configurazione:
 
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT current_setting( 'enable_seqscan' );
  current_setting
 -----------------
@@ -1175,7 +1165,7 @@ Le due funzioni speciali ~current_setting()~ e ~set_config()~ corrispondo al com
  set_config
 ------------
  off
-#+end_src
+#+END_SRC
 
 *** Interagire con gli altri processi
 Ci sono un serie di funzioni per inviare dei segnali specifici:
@@ -1188,13 +1178,13 @@ Ci sono un serie di funzioni per inviare dei segnali specifici:
 
 *** Addormentarsi: ~pg_sleep~
 La funzione ~pg_sleep~ permette di sospendere il backend corrente per /circa/ il numero di secondi specificato (accetta anche le frazioni di secondo):
-#+begin_src sql
+#+BEGIN_SRC sql
 > \timing
 Timing is on.
 > SELECT pg_sleep( 2.5 );
 
 Time: 2573.297 ms
-#+end_src
+#+END_SRC
 ** Tipi di dato
 *** Numerici
 Sono presenti i tipi interni ~integer~, ~smallint~, ~bigint~.
@@ -1225,7 +1215,7 @@ Ci sono alcune regole:
 3. non si sommano/sottraggono due ~timestamp~;
 4. la differenza fra due ~date~ è sempre un valore intero, ovvero il numero di giorni di differenza, e di conseguenza aggiungere un intero ad una data produce un'altra data;
 *** Esempi di manipolazione del tempo
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT '2017-11-15T22:00'::timestamp - interval '3 days';
       ?column?
 ---------------------
@@ -1241,7 +1231,7 @@ Ci sono alcune regole:
 ----------
        37
 
-#+end_src
+#+END_SRC
 *** Funzioni per manipolare il tempo
 - ~age()~ calcola la differenza fra due ~timestamp~, con un solo argomento la differenza dal momento corrente (~now()~);
 - ~extract()~ e l'equivalente ~date_part()~ estraggono una informazione da un ~date~ o ~timestamp~, quali ad esempio:
@@ -1251,7 +1241,7 @@ Ci sono alcune regole:
 - ~date_trunc()~ aggiusta la precisione del ~date~ o del ~timestamp~ alla parte specificata, mettendo a zero ogni campo piu' preciso;
 - ~justify_days~, ~justify_hours~ aggiusta il periodo temporale a frazioni intere di 30 giorni e 24 ore, ~adjust_interval~ applica entrambi.
 *** Esempio di funzioni di manipolazione del tempo
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT age( current_timestamp, '2017-12-25T23:59:59'::timestamp ) as to_xmas,
         extract( 'year' from current_date ),
         date_part( 'hours', current_time ),
@@ -1261,13 +1251,13 @@ to_xmas      | -1 mons -4 days -05:20:00.051659
 date_part    | 2017
 date_part    | 18
 justify_days | 1 mon 5 days
-#+end_src
+#+END_SRC
 *** ~extract~ vs ~date_part~
 Le due funzioni ~extract()~ e ~date_part()~ svolgono sostanzialmente la stessa funzione ma:
 - in ~estract~ la parte da estrarre può non essere quotata, mentre in ~date_part~ deve essere una stringa;
 - in ~extract~ si usa la parola chiave ~from~, in ~date_part~ gli argomenti sono separati da ~,~.
 
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT
   date_part( 'year', '2018-01-31'::date ) AS anno,
   extract( 'month' from '2018-01-31'::date ) AS mese, -- stringa
@@ -1277,10 +1267,10 @@ anno   | 2018
 mese   | 1
 giorno | 31
 
-#+end_src
+#+END_SRC
 *** Costruttori del tempo
 Oltre al cast esplicito di stringhe, sono disponibili i costruttori ~make_date()~, ~make_time()~ e ~make_timestamp()~. Esiste anche un ~make_interval()~ che ha una serie di valori di default che possono quindi essere specificati uno alla volta:
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT make_date( 2017, 12, 25 ) as xmas_date,
         make_time( 23, 59, 59 ) as santa_arrives,
         make_interval( days => 25 );
@@ -1288,13 +1278,13 @@ Oltre al cast esplicito di stringhe, sono disponibili i costruttori ~make_date()
 xmas_date     | 2017-12-25
 santa_arrives | 23:59:59
 make_interval | 25 days
-#+end_src
+#+END_SRC
 *** Convertire il tempo
 Le funzioni ~to_char()~ convertono un tempo (~timestamp~, ~date~, ~interval~) in una stringa, mentre ~to_date()~ e ~to_timestamp()~ convertono una stringa in un tempo.
 I parametri di formattazione del tempo solitamente usati sono:
 - ~HH~, ~HH24~, ~MI~, ~SS~, ~MS~, ~US~ per il tempo da ore fino a microsecondi;
 - ~Y~, ~mon~ (uppercase, lowercase, upperfirst), ~MM~, ~day~ (uppercase, lowercase, uppperfirst), ~DD~ per anno, mese, giorno del mese.
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT to_char( current_date, 'YYYY-Mon-DD' ),
          to_char( current_date, 'DD/MM/YYYY' ),
          to_date( '25/12/2017', 'DD/MM/YYYY' );
@@ -1302,7 +1292,7 @@ I parametri di formattazione del tempo solitamente usati sono:
 to_char | 2017-Nov-21
 to_char | 21/11/2017
 to_date | 2017-12-25
-#+end_src
+#+END_SRC
 *** Booleani
 Il tipo di dato ~boolean~ rappresenta un booleano che accetta come input:
 - ~TRUE~ oppure una delle stringhe ~'t'~, ~'true'~, ~'on'~, ~'yes'~;
@@ -1311,7 +1301,7 @@ Il tipo di dato ~boolean~ rappresenta un booleano che accetta come input:
 Sono supportati due tipi di stringhe bit: a lunghezza fissa ~bit(n)~ e variabile ~bit varying(n)~.
 
 Gli operatori logici sulle stringhe di bit sono definiti.
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT 35::bit(8);
    bit
 ----------
@@ -1321,7 +1311,7 @@ Gli operatori logici sulle stringhe di bit sono definiti.
  int4
 ------
    47
-#+end_src
+#+END_SRC
 
 *Le stringhe di bit devono avere la stessa lunghezza per essere utilizzate con gli operatori!*
 *** Indirizzi di rete
@@ -1331,7 +1321,7 @@ PostgreSQL fornisce tre tipi di dato:
 - ~macaddr~ memorizza un indirizzo hardware.
 
 *Effettuano la matematica degli indirizzi (con interi)!*
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT '192.168.222.100/24'::inet + 300;
       ?column?
 --------------------
@@ -1341,7 +1331,7 @@ PostgreSQL fornisce tre tipi di dato:
      ?column?
 -------------------
  192.168.223.44/24
-#+end_src
+#+END_SRC
 ** Tabelle fuori dall'ordinario
 *** Temporary Tables
 Le /Temporary Tables/ sono tabelle che persistono (in memoria) solo per la durata della sessione (o della transazione).
@@ -1359,10 +1349,10 @@ Il processo ~autovacuum~ non può analizzare una tabella temporanea, quindi i co
 
 *** Creare una tabella temporanea
 
-#+begin_src sql
+#+BEGIN_SRC sql
 > CREATE TEMPORARY TABLE persona( nome text );
 -- nasconde una 'public.persona' se esiste!
-#+end_src
+#+END_SRC
 
 *** Manipolare una tabella temporanea in transazione
 Una tabella temporanea può essere /agganciata/ ad una transazione con la clausola ~ON COMMIT~:
@@ -1371,7 +1361,7 @@ Una tabella temporanea può essere /agganciata/ ad una transazione con la clauso
 - ~DROP~ al commit della transazione la tabella viene distrutta senza attendere che la sessione finisca.
 
 *** Tabella temporanea e transazione: esempio
-#+begin_src sql
+#+BEGIN_SRC sql
 > BEGIN;
 > CREATE TEMPORARY TABLE foo( f text ) ON COMMIT DELETE ROWS;
 > INSERT INTO foo VALUES( 'hello' );
@@ -1387,7 +1377,7 @@ Una tabella temporanea può essere /agganciata/ ad una transazione con la clauso
  count
 -------
      0
-#+end_src
+#+END_SRC
 
 
 *** Unlogged Tables
@@ -1399,9 +1389,9 @@ Di fatto una tabella /unlogged/ non viene memorizzata nei WAL, e quindi non sopr
 Gli indici creati su una tabella /unlogged/ sono anch'essi automaticamente unlogged.
 
 *** Unlogged table: creazione
-#+begin_src sql
+#+BEGIN_SRC sql
 > CREATE UNLOGGED TABLE baz( b text );
-#+end_src
+#+END_SRC
 
 ** Colonne ~IDENTITY~
 *** Colonne ~IDENTITY~
@@ -1422,24 +1412,24 @@ A differenza del tipo ~serial~ le colonne ~identity~ consentono due tipologie di
 
 Da notare che ~ALWAYS~ può essere superato se l'~INSERT~ specifica ~OVERRIDING SYSTEM VALUE~.
 *** Esempio complessivo: creazione della tabella
-#+begin_src sql
+#+BEGIN_SRC sql
 > CREATE TABLE foo(
   i integer GENERATED ALWAYS AS IDENTITY,
   j integer GENERATED BY DEFAULT AS IDENTITY,
   k serial,
   t text );
-#+end_src
+#+END_SRC
 
 Vengono generate le sequenze:
 
-#+begin_src sql
- public | foo_i_seq             | sequence | luca
- public | foo_j_seq             | sequence | luca
- public | foo_k_seq             | sequence | luca
-#+end_src
+#+BEGIN_SRC sql
+public | foo_i_seq             | sequence | luca
+public | foo_j_seq             | sequence | luca
+public | foo_k_seq             | sequence | luca
+#+END_SRC
 
 *** Esempio complessivo: popolamento
-#+begin_src sql
+#+BEGIN_SRC sql
 > INSERT INTO foo( t ) VALUES( 'Tutti autogenerati' );
 
 > INSERT INTO foo( i, j, k, t ) VALUES( 1,2,3, 'i=1, j=2, k=3' );
@@ -1452,18 +1442,18 @@ DETAIL:  Column "i" is an identity column defined as GENERATED ALWAYS.
 
 > INSERT INTO foo( j, k, t )
   VALUES( 4,5, 'i=auto, j=4, k=5' );
-#+end_src
+#+END_SRC
 
 che produce il risultato
 
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT * FROM foo;
  i | j | k |         t
 ---+---+---+--------------------
  1 | 1 | 1 | Tutti autogenerati
  1 | 2 | 3 | i=1, j=2, k=3
  2 | 4 | 5 | i=auto, j=4, k=5
-#+end_src
+#+END_SRC
 
 ** Tablesample
 *** Estrarre un sottoinsieme dei dati
@@ -1475,12 +1465,12 @@ Gli algoritmi al momento disponibili sono:
 In entrambi i casi la percentuale di tuple ritornate è una approssimazione del valore specificato.
 
 *** Esempio di tablesample
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT count(*)
   FROM evento
   TABLESAMPLE SYSTEM ( 0.2 )
   WHERE mod( pk, 2 ) = 0;
-#+end_src
+#+END_SRC
 
 Si seleziona il 20% delle pagine dati della relazione, e poi si filtra per valore di ~pk~ pari.
 *Il sampling è applicato prima delle clausole di filtro!*
@@ -1490,18 +1480,18 @@ In unq ~SELECT~ l'uso di ~LATERAL~ consente di aggregare una sottoquery in modo 
 
 *** Esempio di utilizzo: senza ~LATERAL~
 Ad esempio, in questa query:
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT * FROM evento
   JOIN (
       SELECT pk
       FROM evento
       WHERE mod( pk, 2 ) <> 0 ) evs
   ON evs.pk = evento.pk;
-#+end_src
+#+END_SRC
 
 viene prima valutata la query innestata (subquery) e poi la query principale. Questo viene confermato dai nodi di esecuzione della query:
 
-#+begin_src sql
+#+BEGIN_SRC sql
   QUERY PLAN
 --------------------------------------------------------------------------------------------------------
  Merge Join  (cost=0.86..178533.01 rows=2099132 width=22)
@@ -1509,20 +1499,20 @@ viene prima valutata la query innestata (subquery) e poi la query principale. Qu
    ->  Index Scan using evento_pkey on evento  (cost=0.43..68235.63 rows=2109680 width=18)
    ->  Index Only Scan using evento_pkey on evento evento_1  (cost=0.43..78784.03 rows=2099132 width=4)
          Filter: (mod(pk, 2) <> 0)
-#+end_src
+#+END_SRC
 
 *** Esempio di utilizzo: con ~LATERAL~
 La stessa query riscritta con ~LATERAL~ (attenzione ci vuole una condizione di join, in questo caso fittizia):
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT * FROM evento
   JOIN LATERAL (
            SELECT pk FROM evento
            WHERE mod( pk, 2 ) <> 0 ) evs
   ON TRUE;
-#+end_src
+#+END_SRC
 
 In questo caso per ogni tupla della tabella esterna si valuta la query annidata:
-#+begin_src sql
+#+BEGIN_SRC sql
  QUERY PLAN
 -------------------------------------------------------------------------------------
  Nested Loop  (cost=0.00..72655670831.83 rows=4428496797760 width=22)
@@ -1530,7 +1520,7 @@ In questo caso per ogni tupla della tabella esterna si valuta la query annidata:
    ->  Materialize  (cost=0.00..63775.86 rows=2099132 width=4)
          ->  Seq Scan on evento evento_1  (cost=0.00..45080.20 rows=2099132 width=4)
                Filter: (mod(pk, 2) <> 0)
-#+end_src
+#+END_SRC
 
 ** Foreign Keys
 *** Foreign Keys
@@ -1547,7 +1537,7 @@ e anche una strategia di modifica alla tabella referenziata ~ON DELETE~ e ~ON UP
 - ~SET DEFAULT~ imposta al valore di default le colonne referenzianti (ma deve esistere una tupla referenziata con tali valori).
 
 *** Foreign Keys: esempio
-#+begin_src sql
+#+BEGIN_SRC sql
 > CREATE TABLE a(
    pk SERIAL PRIMARY KEY,
    a1 int,
@@ -1561,11 +1551,11 @@ e anche una strategia di modifica alla tabella referenziata ~ON DELETE~ e ~ON UP
     FOREIGN KEY (b1) REFERENCES a(a1) ON DELETE CASCADE ON UPDATE SET NULL,
     FOREIGN KEY (b2) REFERENCES a(a2) ON DELETE CASCADE ON UPDATE SET NULL
     );
-#+end_src
+#+END_SRC
 
 *** Foreign key: effetti
 Si inseriscono un po' di tuple e le si cancellano:
-#+begin_src sql
+#+BEGIN_SRC sql
 > INSERT INTO a( a1, a2 ) VALUES (1,1), (2,2);
 > INSERT INTO b( b1, b2 ) VALUES (1,1), (2,2);
 
@@ -1584,12 +1574,12 @@ Si inseriscono un po' di tuple e le si cancellano:
  pk | b1 | b2
 ----+----+----
   1 |    |  1
-#+end_src
+#+END_SRC
 
 *** Vincoli posticipabili
 Tutti i vincoli, con l'essclusione di ~NOT NULL~ e ~CHECK~ sono posticipabili: un vincolo posticipabile viene controllato non ad ogni statement ma alla fine della transazione.
 
-#+begin_src sql
+#+BEGIN_SRC sql
 > CREATE TABLE c( val int NOT NULL,
                   UNIQUE(val) DEFERRABLE );
 
@@ -1600,7 +1590,7 @@ Tutti i vincoli, con l'essclusione di ~NOT NULL~ e ~CHECK~ sono posticipabili: u
 > COMMIT;
 ERROR:  duplicate key value violates unique constraint "c_val_key"
 DETAIL:  Key (val)=(1) already exists.
-#+end_src
+#+END_SRC
 
 ** Vincoli ~EXCLUDE~
 *** Confronto fra tuple
@@ -1610,7 +1600,7 @@ Il vincolo controlla *le tuple* sulle colonne specificate con l'operatore specif
 consentito.
 
 *** Esempio di ~EXCLUDE~
-#+begin_src sql
+#+BEGIN_SRC sql
 > CREATE TABLE v (
     pk serial PRIMARY KEY,
     name text, value int );
@@ -1618,27 +1608,27 @@ consentito.
 > ALTER TABLE v
    ADD CONSTRAINT abs_value_exclude
    EXCLUDE ( abs( value ) WITH = );
-#+end_src
+#+END_SRC
 
 ovvero si escludono *tuple che hanno un valore assoluto (~abs~) della colonna ~value~ identico (operatore ~=~)*:
 
-#+begin_src sql
+#+BEGIN_SRC sql
 > INSERT INTO v( name, value ) VALUES ( 'v1', 100 );
 > INSERT INTO v( name, value ) VALUES ( 'v2', -100 );
 ERROR:  conflicting key value violates exclusion constraint "abs_value_exclude"
 DETAIL:  Key (abs(value))=(100) conflicts with existing key (abs(value))=(100)
-#+end_src
+#+END_SRC
 
 *** ~EXCLUDE~: effetti collaterali
 Il vincolo ~EXCLUDE~ utilizza un indice (e quindi l'operatore deve essere applicatibile ad un indice) per effettuare il controllo:
 
-#+begin_src sql
+#+BEGIN_SRC sql
 > \d v
 ...
 Indexes:
     "v_pkey" PRIMARY KEY, btree (pk)
     "abs_value_exclude" EXCLUDE USING btree (abs(value) WITH =)
-#+end_src
+#+END_SRC
 
 In un certo senso, ~EXCLUDE~ è la negazione di un vincolo ~UNIQUE~.
 
@@ -1647,15 +1637,15 @@ In un certo senso, ~EXCLUDE~ è la negazione di un vincolo ~UNIQUE~.
 L'istruzione speciale ~COMMENT~ permette di agganciare dei commenti agli oggetti definiti nel database.
 La sintassi è ~COMMENT ON <type> IS 'BLAH'~.
 
-#+begin_src sql
+#+BEGIN_SRC sql
 > COMMENT ON TABLE persona IS 'Tabella anagrafica';
 > COMMENT ON COLUMN persona.pk IS 'Chiave primari surrogata';
-#+end_src
+#+END_SRC
 
 *** Vedere i commenti
 Non esiste un modo "comodo" per vedere i commenti, i tool di amminitrazione li mostrano, ma in generale occorre andare sulla tabella ~pg_description~:
 
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT description
      FROM pg_description
      WHERE objoid = 'public.persona'::regclass;
@@ -1663,7 +1653,7 @@ Non esiste un modo "comodo" per vedere i commenti, i tool di amminitrazione li m
 --------------------------
  Tabella anagrafica
  Chiave primari surrogata
-#+end_src
+#+END_SRC
 
 In ~psql~ usare:
 - ~\d+~ sul nome della tabella per vedere anche la descrizione delle colonne;
@@ -1678,23 +1668,23 @@ In default una istruzione di ~INSERT~ restituisce due valori:
 E' possibile specificare una clausola ~RETURNING~ che restituisca dei valori
 basati su una /select-like/ di ogni tupla inserita (caso banale: la chiave automatica).
 *** INSERT RETURNING: un primo esempio
-#+begin_src sql
+#+BEGIN_SRC sql
 > INSERT INTO persona( cognome, nome, codice_fiscale )
   VALUES( 'Luca', 'Ferrari', 'FRRLCU78L19F257T' )
   RETURNING pk;
  pk
 ----
  13
-#+end_src
+#+END_SRC
 *** INSERT RETURNING: un esempio piu' complesso
-#+begin_src sql
+#+BEGIN_SRC sql
 > INSERT INTO persona( cognome, nome, codice_fiscale )
   VALUES( 'Luca', 'Ferrari', 'FRRLCU78L19F257Z' )
   RETURNING upper(codice_fiscale), pk;
       upper       | pk
 ------------------+----
  FRRLCU78L19F257Z | 14
-#+end_src
+#+END_SRC
 ** UPSERT
 *** INSERT or UPDATE?
 Una /UPSERT/ è una ~INSERT~ che, in caso di conflitto (vincolo di univocità violato)
@@ -1714,7 +1704,7 @@ un constraint di univocità).
 La tupla in conflitto viene nominata ~EXCLUDED~.
 
 *** Senza UPSERT...
-#+begin_src sql
+#+BEGIN_SRC sql
 > INSERT INTO persona( codice_fiscale, nome, cognome )
   VALUES( 'FRRLCU78L19F257B', 'Ferrari', 'Luca' );
 
@@ -1723,30 +1713,30 @@ La tupla in conflitto viene nominata ~EXCLUDED~.
   VALUES( 'FRRLCU78L19F257B', 'Luca', 'Ferrari' );
 ERROR:  duplicate key value violates
   unique constraint "persona_codice_fiscale_key"
-#+end_src
+#+END_SRC
 *** UPSERT in azione
-#+begin_src sql
+#+BEGIN_SRC sql
 -- upsert!
 > INSERT INTO persona( codice_fiscale, nome, cognome )
   VALUES( 'FRRLCU78L19F257B', 'Luca', 'Ferrari' )
   ON CONFLICT(codice_fiscale)
   DO UPDATE SET nome = EXCLUDED.nome,
              cognome = EXCLUDED.cognome;
-#+end_src
+#+END_SRC
 *** UPSERT in aborto (controllato)
 Se si specifica la risoluzione del conflitto come ~DO NOTHING~ allora la query non effettua
 l'inserimento della tupla e fallisce silenziosamente (cioè con successo).
-#+begin_src sql
+#+BEGIN_SRC sql
 > INSERT INTO persona( codice_fiscale, nome, cognome )
   VALUES( 'FRRLCU78L19F257B', 'Luca', 'Ferrari' )
   ON CONFLICT(codice_fiscale)
   DO NOTHING;
 
 INSERT 0 0
-#+end_src
+#+END_SRC
 *** UPSERT RETURNING
 E' possibile usare la clausola ~RETURNING~ anche nel caso di un /UPSERT/:
-#+begin_src sql
+#+BEGIN_SRC sql
 > INSERT INTO persona( codice_fiscale, nome, cognome )
   VALUES( 'FRRLCU78L19F257B', 'Luca', 'Ferrari' )
   ON CONFLICT(codice_fiscale)
@@ -1758,14 +1748,14 @@ RETURNING nome, cognome;
 ------+---------
  Luca | Ferrari
 
-#+end_src
+#+END_SRC
 ** Search Path
 *** Cos'è il search path?
 Ogni utente definisce un /percorso/ (simile al ~PATH~ di una shell) che rappresenta dove trovare gli oggetti del database (tabelle, funzioni, ecc.).
 
 In default il ~search_path~ contiene uno schema che si chiama come l'utente, identificato dalla stringa speciale ~"$user"~ e ~public~. Se l'utente modifica il ~search_path~ ogni oggetto non qualificato non sarà piu' visibile a meno che non si trovi in un path specificato.
 
-#+begin_src sql
+#+BEGIN_SRC sql
 >  SHOW search_path;
    search_path
 -----------------
@@ -1776,7 +1766,7 @@ In default il ~search_path~ contiene uno schema che si chiama come l'utente, ide
 > SELECT count(*) FROM public.persona;
   -- ditto
 
-#+end_src
+#+END_SRC
 
 *** A cosa server ~"$user"~?
 L'idea è quella di permettere ad ogni utente di avere oggetti omonimi ma con valori differenti.
@@ -1786,7 +1776,7 @@ Ad esempio tabelle e funzioni di configurazione, che piazzati opportunamente nel
 *** Modificare il search path
 Il comando ~SET~ permette di impostare il valore del ~search_path~:
 
-#+begin_src sql
+#+BEGIN_SRC sql
 > SET search_path="$user", private;
 > SHOW search_path;
    search_path
@@ -1800,7 +1790,7 @@ LINE 1: SELECT count(*) FROM persona;
                              ^
 > SELECT count(*) FROM public.persona;
   -- ok !
-#+end_src
+#+END_SRC
 
 ** Cast
 *** Modalità di cast
@@ -1809,11 +1799,11 @@ In PostgreSQL il cast può essere effettuato in quattro modi:
 - specificando il tipo dopo il valore con l'operatore ~::~ (es. ~'10'::int~);
 - usando l'operatore ~CAST~;
 - usando il tipo come fosse una funzione (es. ~text( 10 )~ ).
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT '10'::int + 3;
 > SELECT int '10' + 3;
 > SELECT CAST( '10' AS integer ) + 3;
-#+end_src
+#+END_SRC
 
 *** Considerazioni sul cast
 I modi consigliati sono *~CAST()~ (conforme SQL standard)* o ~::~, gli altri hanno delle limitazioni
@@ -1822,13 +1812,13 @@ prima del valore funziona solo per i letterali).
 
 Qualora il cast non sia ambiguo, è possibile ometterlo, ovvero:
 
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT '10' + 3;
-#+end_src
+#+END_SRC
 *** ~pg_typeof~
 La funzione ~pg_typeof~ può essere usata per vedere come il sistema cerca di interpretare i tipi di dato:
 
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT pg_typeof( 1234 ) AS first,
          pg_typeof( 1234.56 ) AS second,
          pg_typeof( 'Hello' || 'World' ) AS third;
@@ -1836,12 +1826,12 @@ La funzione ~pg_typeof~ può essere usata per vedere come il sistema cerca di in
   first  | second  | third
 ---------+---------+-------
  integer | numeric | text
-#+end_src
+#+END_SRC
 
 ** Alcuni statement particolari
 *** CASE
 Rappresento lo /switch/ del linguaggio C, o il /given/ di Perl:
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT nome,
   CASE
      WHEN eta >= 18 THEN 'maggiorenne'
@@ -1852,11 +1842,11 @@ Rappresento lo /switch/ del linguaggio C, o il /given/ di Perl:
 -------+-------------
  Luca  | maggiorenne
  Diego | minorenne
-#+end_src
+#+END_SRC
 
 *** CASE con equals
 Si può usare la versione che effettua una comparazione secca sul valore da analizzare:
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT nome,
   CASE eta
    WHEN 39 THEN 'maggiorenne'
@@ -1864,24 +1854,24 @@ Si può usare la versione che effettua una comparazione secca sul valore da anal
    ELSE 'non saprei'
   END
   FROM persona;
-#+end_src
+#+END_SRC
 
 *** COALESCE
 Ritorna il primo valore non nullo degli argomenti specificati:
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT COALESCE( NULL, 'MIRIAM',
                    'LUCA', NULL );
  coalesce
 ----------
  MIRIAM
-#+end_src
+#+END_SRC
 
 E' utile per estrarre informazioni che possono trovarsi in campi multipli.
 
 *** NULLIF
 Ritorna un valore ~NULL~ se gli operatori sono uguali, altrimenti
 ritorna il primo valore:
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT NULLIF('luca', 'LUCA');
  nullif
 --------
@@ -1890,12 +1880,12 @@ ritorna il primo valore:
  nullif
 --------
 
-#+end_src
+#+END_SRC
 /E' una sorta di ~xor~ del poveraccio!/
 *** Row
 L'operatore ~ROW~ permette di costruire una /tupla/ al volo. Accetta l'uso di costanti
 e di espressioni da valutare al volo:
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT ROW( 1, 2, 'Foo', 'Fighters' );
         row
 --------------------
@@ -1905,49 +1895,49 @@ e di espressioni da valutare al volo:
           row
 -----------------------
  (FRRLCU71L19F257B,16)
-#+end_src
+#+END_SRC
 ** Array
 *** Costruttore di un array
 Gli array sono dichiarati con il tipo seguito da parentesi quadre (es. ~integer[]~).
 Il costruttore dell'array è l'operatore ~ARRAY~, che cerca di comprendere il tipo
 dagli elementi dell'array stesso (se non effettuato un cast).
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT ARRAY[1, 2, 3, 4]::integer[];
    array
 -----------
  {1,2,3,4}
-#+end_src
+#+END_SRC
 *** Array multidimensionali
 Sono costruiti combinando assieme piu' array.
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT ARRAY[ ARRAY[ 2, 4 ], ARRAY[ 1, 3 ] ];
      array
 ---------------
  {{2,4},{1,3}}
-#+end_src
+#+END_SRC
 
 *** Array in tabella
 Le tabelle possono includere degli array.
-#+begin_src sql
+#+BEGIN_SRC sql
 > CREATE TABLE software( name text, versions text[] );
 > INSERT INTO software
   VALUES( 'Java', '{1.5, 1.6, 1.7, 1.8 }' );
 > INSERT INTO software
   VALUES( 'Perl', '{5.10, 5.20, 6.c}' );
-#+end_src
+#+END_SRC
 *** Array in tabella: indici
 Gli indici degli array funzionano come nel linguaggio C, *ma gli indici partono da 1!*:
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT name, versions[1] FROM software;
  name | versions
 ------+----------
  Perl | 5.10
  Java | 1.5
-#+end_src
+#+END_SRC
 *** Array in tabella: estremi
 Le funzioni ~array_lower()~ e ~array_upper()~ forniscono il minimo e massimo indice
 usabile in una determinata dimensione dell'array:
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT name,
   versions[ array_lower( versions, 1) ] AS required,
   versions[ array_upper( versions, 1 ) ] AS optimal
@@ -1956,16 +1946,16 @@ usabile in una determinata dimensione dell'array:
 ------+----------+---------
  Perl | 5.10     | 6.c
  Java | 1.5      | 1.8
-#+end_src
+#+END_SRC
 *** Array in tabella: slicing
 L'operatore ~[:]~ permette di ottenere lo slicing:
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT name, versions[1:2] FROM software;
  name |  versions
 ------+-------------
  Perl | {5.10,5.20}
  Java | {1.5,1.6}
-#+end_src
+#+END_SRC
 
 *** Array in tabella: aggiunta di elementi
 Si possono seguire diverse strade:
@@ -1975,7 +1965,7 @@ Si possono seguire diverse strade:
   e/o ~array_cat()~ per concatenare due array.
 
 *** Array in tabella: aggiunta di elementi (esempio 1)
-#+begin_src sql
+#+BEGIN_SRC sql
 > UPDATE software
   SET versions = versions || ARRAY['2017.09']
   WHERE name = 'Perl';
@@ -1983,10 +1973,10 @@ Si possono seguire diverse strade:
 > UPDATE software
   SET versions = versions || '{1.8_168}'
   WHERE name = 'Java';
-#+end_src
+#+END_SRC
 
 *** Array in tabella: aggiunta di elementi (esempio 2)
-#+begin_src sql
+#+BEGIN_SRC sql
 > UPDATE software
   SET versions = array_append( versions, '1.8_169' )
   WHERE name = 'Java';
@@ -1994,14 +1984,14 @@ Si possono seguire diverse strade:
 > UPDATE software
   SET versions = array_prepend( '1.4', versions )
   WHERE name = 'Java';
-#+end_src
+#+END_SRC
 
 *** Array in tabella: concatenazione
-#+begin_src sql
+#+BEGIN_SRC sql
 > UPDATE software
   SET versions = array_cat( ARRAY[ '5.6', '5.8' ], versions )
   WHERE name = 'Perl';
-#+end_src
+#+END_SRC
 
 *** Array in tabella: ricerca
 Ci sono due operatori principali:
@@ -2013,7 +2003,7 @@ Altri operatori utili nel confronto di due array:
 - ~@>~ /contains/;
 - ~<@~ /is contained by/.
 *** Array in tabella: ricerca (esempio 1)
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT name FROM software WHERE '6.c' = ANY( versions );
  name
 ------
@@ -2023,18 +2013,18 @@ Altri operatori utili nel confronto di due array:
  name
 ------
 (0 rows)
-#+end_src
+#+END_SRC
 
 *** Array in tabella: ricerca (esempio 2)
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT name FROM software WHERE ARRAY[ '5.10', '5.20' ] && versions;
  name
 ------
  Perl
-#+end_src
+#+END_SRC
 
 *** Array in tabella: ricerca (esempio 3)
-#+begin_src sql
+#+BEGIN_SRC sql
 -- contains
 > SELECT name FROM software
   WHERE ARRAY[ '5.10', '5.20' ] @> versions;
@@ -2047,30 +2037,30 @@ Altri operatori utili nel confronto di due array:
  name
 ------
  Perl
-#+end_src
+#+END_SRC
 *** Array in tabella: eliminare un elemento
 La funzione ~array_remove()~ toglie un valore da un array, mentre ~array_replace()~
 sostituisce un elemento con un altro. *Restituiscono l'array modificato!*
-#+begin_src sql
+#+BEGIN_SRC sql
 > UPDATE software
   SET versions = array_remove( versions, '5.6' );
 
 > UPDATE software
   SET versions = array_replace( versions, '5.8', '5.8.2' );
-#+end_src
+#+END_SRC
 *** Array in tabella: trovare un elemento
 Le funzioni ~array_position()~ e ~array_positions()~ ritornano la posizione di uno
 elemento (eventualmente ripetuto) nell'array:
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT name, array_positions( versions, '5.20' )
   FROM software;
  name | array_positions
 ------+-----------------
  Perl | {3}
  Java | {}
-#+end_src
+#+END_SRC
 *** Array in tabella: trasformare un array in tabella
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT name, unnest( versions ) FROM software;
  name | unnest
 ------+---------
@@ -2079,7 +2069,7 @@ elemento (eventualmente ripetuto) nell'array:
  Perl | 5.20
  Perl | 6.c
 ...
-#+end_src
+#+END_SRC
 ** Range
 *** Range di dato
 I tipi di dato /range/ sono valori /non esattamente definiti/.
@@ -2098,13 +2088,13 @@ PostgreSQL supporta i seguenti tipi range:
 - ~daterange~ range di ~date~.
 
 *** Esempio di utilizzo di range
-#+begin_src sql
+#+BEGIN_SRC sql
 > CREATE TABLE ticket(
     pk SERIAL PRIMARY KEY,
     tipo text,
     periodo daterange,
     altezza int4range );
-#+end_src
+#+END_SRC
 
 *** Costruzione di un range: sintassi stringa
 Un tipo range viene sempre specificato come stringa (fra apici)
@@ -2123,7 +2113,7 @@ un costruttore con lo stesso nome del tipo di range e che accetta due o tre para
   dalla combinazione delle parentesi.
 
 *** Inserimento di valori di range
-#+begin_src sql
+#+BEGIN_SRC sql
 > INSERT INTO ticket( tipo, periodo, altezza )
   VALUES( 'GRATUITO-BIMBO',
   '[2017-06-01, 2017-09-30)',
@@ -2133,7 +2123,7 @@ un costruttore con lo stesso nome del tipo di range e che accetta due o tre para
   VALUES( 'GRATUITO-ANZIANO',
   '[2017-06-01, 2017-10-31]',
   'empty' );
-#+end_src
+#+END_SRC
 
 *** Operatori di range
 Per ricercare fra un range si usano operatori simili a quelli
@@ -2144,19 +2134,19 @@ di un array:
 - ~&&~ sovrapposizione fra due range.
 
 *** Query sui range
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT tipo FROM ticket
   WHERE periodo
      && daterange( '2017-07-01',
                    '2017-07-31',
                    '[]' );
-#+end_src
+#+END_SRC
 
 *** Query sui range (2)
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT tipo FROM ticket
   WHERE periodo @> '2017-10-31'::date;
-#+end_src
+#+END_SRC
 
 ** Tipi di dato personalizzato
 *** Tipi personalizzati
@@ -2169,35 +2159,35 @@ PostgreSQL consente di creare dei /tipi/ personalizzati:
 
 *** Creare un tipo enumerazione
 Si vogliono /standardizzare/ gli stati di un software:
-#+begin_src sql
+#+BEGIN_SRC sql
 > CREATE TYPE sw_version
   AS ENUM ( 'stable',
             'unstable',
             'EOL',
             'development' );
-#+end_src
+#+END_SRC
 
 *** Creare un tipo composito
 SI supponga di voler creare un semplice tipo strutturato per un repository
 software:
-#+begin_src sql
+#+BEGIN_SRC sql
 > CREATE TYPE sw_repository
   AS ( url text,
        author text );
-#+end_src
+#+END_SRC
 *Il tipo composito si usa con parentesi tonde!*
 
 *** Usare i tipi in una tabella
-#+begin_src sql
+#+BEGIN_SRC sql
 > CREATE TABLE software(
       pk SERIAL PRIMARY KEY,
       name text,
       version sw_version,
       repository sw_repository );
-#+end_src
+#+END_SRC
 
 *** Inserire i tipi compositi
-#+begin_src sql
+#+BEGIN_SRC sql
 > INSERT INTO software( name, version, repository )
   VALUES( 'PostgreSQL-9.6',
       'stable',
@@ -2207,19 +2197,19 @@ software:
   VALUES( 'Perl-6',
      'stable',
      ( 'https://www.perl6.org', 'Perl Developers' ) );
-#+end_src
+#+END_SRC
 
 *** Estrarre i tipi composti
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT name, (repository).url FROM software;
       name      |            url
 ----------------+----------------------------
  PostgreSQL-9.6 | https://www.postgresql.org
  Perl-6         | https://www.perl6.org
-#+end_src
+#+END_SRC
 
 *** Creare un tipo personalizzato range
-#+begin_src sql
+#+BEGIN_SRC sql
 > CREATE OR REPLACE FUNCTION f_versions_diff( older float, newer float )
 RETURNS float AS $BODY$
 DECLARE
@@ -2228,22 +2218,22 @@ BEGIN
 END;
 $BODY$
 LANGUAGE plpgsql IMMUTABLE;
-#+end_Src
+#+END_SRC
 
 *** Creare un tipo personalizzato range (2)
-#+begin_src sql
+#+BEGIN_SRC sql
 > CREATE TYPE sw_major_version AS RANGE (
 subtype = float,
 subtype_diff = f_versions_diff );
-#+end_src
+#+END_SRC
 
 *** Creare un tipo personallizato range (3)
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT '[9.6, 10.0)'::sw_major_version;
  sw_major_version
 ------------------
  [9.6,10)
-#+end_src
+#+END_SRC
 
 ** JSON & JSONB
 *** Tipi di dato JSON
@@ -2259,23 +2249,23 @@ un solo valore per ogni chiave (l'ultimo nel caso di chiavi duplicate).
 *** Sintassi JSON
 La sintassi per creare un tipo JSON prevede:
 - /scalari/ (di tipo intero o stringa);
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT '"hello"'::json;
 > SELECT '10'::json;
-#+end_src
+#+END_SRC
 - /array/ (anche di tipi differenti), stabiliti da parentesi quadre;
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT '[ "Luca", "Ferrari", 39 ]'::json;
-#+end_src
+#+END_SRC
 - /oggetti/ identificati da parentesi graffe;
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT '{ "name" : "Luca", "surname" : "Ferrari", "age" : 39 }'::json;
-#+end_src
+#+END_SRC
 *** Un esempio pratico di differenza fra JSON e JSONB
 Si ricordi che ~json~ mantiene intalterati i dati di input, mentre
 ~jsonb~ li riorganizza e li "ottimizza" tenendo solo l'ultima chiave
 nel caso di duplicazione:
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT '{ "name" : "Luca",
   "surname" : "Ferrari",
   "age" : 29,
@@ -2286,9 +2276,9 @@ nel caso di duplicazione:
  "surname" : "Ferrari",+
  "age" : 29,           +
  "age" : 39 }
-#+end_src
+#+END_SRC
 
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT '{ "name" : "Luca",
     "surname" : "Ferrari",
     "age" : 29,
@@ -2296,7 +2286,7 @@ nel caso di duplicazione:
                        jsonb
 ---------------------------------------------------
  {"age": 39, "name": "Luca", "surname": "Ferrari"}
-#+end_src
+#+END_SRC
 *** Operatori JSON
 Gli operatori hanno tutti due varianti:
 1. se usati con indice numerico forniscono accesso ad un array;
@@ -2314,34 +2304,34 @@ ritorna il valore come testo ~text~.
 | #>        | text[]   | dereferenziazione                                  |
 | #>>       | text[]   | dereferenziazione (restituisce un ~text~)          |
 *** Operatori JSON: esempi
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT '[ "foo", 0, "bar", 1 ]'::json->1; -- 0
 
 > SELECT '{ "foo" : 0, "bar" : 1 }'::json->'foo'; -- 0
 
 > SELECT '{ "foo" : { "bar" : 1 } }'::json#>'{foo, bar}'; --1
-#+end_src
+#+END_SRC
 *** Operatori JSONB: esempi
 Il tipo ~jsonb~ dispone di altri operatori comodi:
 - ~?~ ricerca una chiave nell'oggetto;
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT '{ "foo" : { "bar" : 1 } }'::jsonb ? 'bar'; -- true
-#+end_src
+#+END_SRC
 - ~@>~ e ~<@~ contenimento da einistra a destra e viceversa (solo al livello principale);
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT '{ "foo" : { "bar" : 1 } }'::jsonb
      @> '{"bar" : 1}'::jsonb;  -- false
 
 > SELECT '{ "foo" : { "bar" : 1 } }'::jsonb
     @> '{"foo" : {"bar" : 1}}'::jsonb;  -- true
-#+end_src
+#+END_SRC
 - ~||~ concatenazione di due oggetti.
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT '{ "name" : "Luca" }'::jsonb
    || '{ "surname" : "Ferrari" }'::jsonb;
-#+end_src
+#+END_SRC
 *** Esempio di uso di JSONB in tabella
-#+begin_src sql
+#+BEGIN_SRC sql
 > CREATE TABLE persona (
     pk SERIAL PRIMARY KEY,
     name text,
@@ -2355,10 +2345,10 @@ Il tipo ~jsonb~ dispone di altri operatori comodi:
 > INSERT INTO persona( name, surname, stuff )
   VALUES ( 'Emanuela', 'Santunione',
     '{ "email" : "luca@mail.me" }' );
-#+end_src
+#+END_SRC
 *** Esempio di JSONB in tabella (2)
 Quali persone hanno un sito web?
-#+begin_src sql
+#+BEGIN_SRC sql
 SELECT name, surname, stuff->'web'
 FROM persona
 WHERE stuff ? 'web';
@@ -2366,13 +2356,13 @@ WHERE stuff ? 'web';
  name | surname |      ?column?
 ------+---------+--------------------
  Luca | Ferrari | "http://fluca1978"
-#+end_src
+#+END_SRC
 *** Funzioni di utilitaì JSON
 Ci sono molte funzioni di utilità per convertire dati da e per JSON:
 - ~row_to_json~ converte una tupla in un oggetto JSON (esportabile);
 - ~jsopn_build_object~ costruisce un oggetto JSON da una lista di valori;
 - ~array_to_json~ converte un array PostgreSQL in uno JSON.
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT row_to_json( row( name, surname, stuff->'email' ) )
   FROM persona
   WHERE stuff ? 'email';
@@ -2390,7 +2380,7 @@ Ci sono molte funzioni di utilità per convertire dati da e per JSON:
  array_to_json
 ---------------
  [1,2,3,4]
-#+end_src
+#+END_SRC
 ** Tablespaces
 *** Introduzione
 I /tablespaces/ sono un meccanismo per "agganciare" al server altri percorsi fisici di memorizzazione.
@@ -2399,22 +2389,22 @@ Gli oggetti del database possono poi essere creati/spostati su uno specifico tab
 I tablespaces possono sovrascrivere i parametri di costo dell'ottimizzatore (ad esempio perché su dispositivi piu' veloci).
 *** Creazione di un tablespace
 Anzitutto occorre creare la directory fisica (mount-point o altro) e concedere i privilegi all'utente che esegue il cluster.
-#+begin_src shell
+#+BEGIN_SRC shell
 % sudo mkdir /mnt/data2/my_tablespace
 % sudo chown postgres:postgres /mnt/data2/my_tablespace
 % sudo chmod 700 /mnt/data2/my_tablespace
-#+end_src
+#+END_SRC
 
 A questo punto sul server è possibile creare il table space (occorre essere superutenti):
-#+begin_src sql
+#+BEGIN_SRC sql
 # CREATE TABLESPACE my_tablespace
      OWNER luca  -- opzionale
      LOCATION '/mnt/data2/my_tablespace'
      WITH ( seq_page_cost = 2 ); --opzionale
-#+end_src
+#+END_SRC
 *** Usare un tablespace
 E' possibile ora creare gli oggetti sul nuovo tablespace:
-#+begin_src sql
+#+BEGIN_SRC sql
 > CREATE TABLE baz( value int )
   TABLESPACE my_tablespace;
 
@@ -2424,28 +2414,28 @@ E' possibile ora creare gli oggetti sul nuovo tablespace:
 --------+---------+-----------
  value  | integer |
 Tablespace: "my_tablespace"
-#+end_src
+#+END_SRC
 
 *** Spostare oggetti verso un tablespace
 E' possibile spostare gli oggetti da un tablespace ad un altro:
 
-#+begin_src sql
+#+BEGIN_SRC sql
 > ALTER TABLE persona
   SET TABLESPACE my_tablespace;
-#+end_src
+#+END_SRC
 
 Una volta che gli oggetti sono raggruppati in un tablespace diventa facile spostarli in blocco:
 
-#+begin_src sql
+#+BEGIN_SRC sql
 > ALTER TABLE ALL IN TABLESPACE my_tablespace
   SET TABLESPACE other_tablespace;
-#+end_src
+#+END_SRC
 
 Le stesse query valgono per ~ALTER INDEX~.
 
 *** Informazioni sui tablespace
 La vista speciale ~pg_tablespace~ fornisce informazioni sui tablespace attivi:
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT * FROM pg_tablespace;
 -[ RECORD 1 ]-----------------
 spcname    | pg_default
@@ -2462,29 +2452,29 @@ spcname    | my_tablespace
 spcowner   | 16387
 spcacl     |
 spcoptions | {seq_page_cost=2}
-#+end_src
+#+END_SRC
 
 *** Tablespace: cosa avviene fisicamente
 *I tablespaces sono un meccanismo per /scappare/ dalla directory ~$PGDATA~* e vengono infatti linkati all'interno di essa tramite ~pg_tblspc~:
 
-#+begin_src shell
+#+BEGIN_SRC shell
 % sudo ls -l /mnt/data1/pgdata/pg_tblspc
 lrwx------  1 postgres  postgres  24 Nov 13 17:43 19749 -> /mnt/data2/my_tablespace
 lrwx------  1 postgres  postgres  26 Nov 13 17:50 19756 -> /mnt/data2/my_tablespace_2
-#+end_src
+#+END_SRC
 
 Occorre tenere presente questo aspetto quando si decide di spostare in blocco ~$PGDATA~ o qualora un mount point sia malfunzionante.
 ** Copy
 *** Importare dati con ~COPY~
 Il comando ~COPY~ permette di importare dati da un file in una tabella.
-#+begin_src sql
+#+BEGIN_SRC sql
 # COPY persona( nome, cognome, codice_fiscale )
    FROM '/home/luca/anagrafica.csv'
    WITH
    ( DELIMITER ';',
      FORMAT 'csv',
      HEADER 'on') ;
-#+end_src
+#+END_SRC
 
 *Se si copia da un file occorre essere superutenti*, per copiare da standard input non serve.
 
@@ -2492,34 +2482,34 @@ Il comando ~COPY~ permette di importare dati da un file in una tabella.
 
 *** Esportare dati con ~COPY~
 Il comando ~COPY~ consente anche di esportare i dati verso un file:
-#+begin_src sql
+#+BEGIN_SRC sql
 # COPY evento TO '/tmp/evento.csv'
    WITH ( FORMAT 'csv',
           HEADER true,
           QUOTE '"',
           DELIMITER ';' );
-#+end_src
+#+END_SRC
 
 *** ~COPY~ da e verso un programma
 Il comando ~COPY~ permette di specificare anche un programma come sorgente dati o output:
-#+begin_src sql
+#+BEGIN_SRC sql
 # COPY persona( nome, cognome, codice_fiscale )
    FROM PROGRAM '/bin/cat /home/luca/anagrafica.csv'
   WITH
    ( DELIMITER ';',
      FORMAT 'csv',
      HEADER 'on') ;
-#+end_src
+#+END_SRC
 
 *** Il comando ~\copy~
 Il comando  ~\copy~ del client ~psql~ effettua un ~COPY~ ma dal client verso il server, quindi trasferendo i dati tramite la connessione al server. La sintassi è identica a quella del comando ~COPY~, per esempio:
-#+begin_src sql
+#+BEGIN_SRC sql
 > \copy persona(nome, cognome, codice_fiscale)
    from 'anagrafica.csv'
    with ( header true,
           format 'csv',
           delimiter ';' )
-#+end_src
+#+END_SRC
 ** WhoAmI? (ottenere informazioni dal sistema)
 *** Informazioni sulla transazione corrente
 In generale tutti i valori ~current_*~ forniscono informazioni sullo stato attuale, a questo si possono aggiungere alcune funzioni di utilità quali:
@@ -2527,7 +2517,7 @@ In generale tutti i valori ~current_*~ forniscono informazioni sullo stato attua
 - ~pg_backend_pid()~ fornisce il process ID (del sistema operativo) della connessione corrente (o meglio del processo backend che sta servendo la connessione corrente);
 - ~current_role~ e ~current_user~ cono equivalenti!
 
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT current_user, current_date,
          current_timestamp,
          txid_current(),
@@ -2538,13 +2528,13 @@ date           | 2017-11-20
 now            | 2017-11-20 13:29:56.139872+01
 txid_current   | 3063
 pg_backend_pid | 775
-#+end_src
+#+END_SRC
 *** Informazioni di connessione
 Ci sono dei valori speciali:
 - ~current_schema()~ e ~current_database()~ indicano lo schema corrente e il database corrente;
 - ~inte_client_addr()~, ~inet_client_port()~ e le duali ~inet_server_addr()~ e ~inet_server_port()~ forniscono indicazioni TCP/IP.
 
-#+begin_src sql
+#+BEGIN_SRC sql
 # SELECT current_user
     || '@' || inet_server_addr()
     || ':' || inet_server_port() AS myself,
@@ -2557,17 +2547,17 @@ myself           | postgres@127.0.0.1/32:5432
 connected_from   | 127.0.0.1/32:12951
 current_database | testdb
 current_schema   | public
-#+end_src
+#+END_SRC
 
 *** Uptime del servizio
 La funzione ~pg_postmaster_start_time()~ indica quando è stato avviato il cluster, e quindi può essere usata per ottenere una sorta di /uptime/ del servizio:
 
-#+begin_src sql
+#+BEGIN_SRC sql
 # SELECT date_trunc( 'second',
    now() - pg_postmaster_start_time() );
 
 date_trunc | 01:43:48
-#+end_src
+#+END_SRC
 
 *** Informazioni di dimensione di una tabella
 Le dimensioni di un oggetto sono ottenute tramite una serie di funzioni ~pg_*_size()~:
@@ -2579,7 +2569,7 @@ Le dimensioni di un oggetto sono ottenute tramite una serie di funzioni ~pg_*_si
 Le funzioni ~pg_size_bytes()~ e ~pg_size_pretty()~ forniscono una versione "umanamente leggibile" delle dimensioni, e spesso sono usate come wrapper per funzioni di dimensione.
 
 *** Informazioni di dimensione di una tabella: esempio
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT pg_relation_size( 'evento', 'main' ) AS main,
         pg_relation_size( 'evento', 'fsm' ) AS free_space_map,
         pg_relation_size( 'evento', 'vm' ) AS visibility_map,
@@ -2593,26 +2583,26 @@ visibility_map         | 0
 pg_table_size          | 110067712
 pg_total_relation_size | 224051200
 pg_size_pretty         | 214 MB
-#+end_src
+#+END_SRC
 
 *** Informazioni di dimensione di una tabella: esempio 2
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT pg_column_size( 'evento.description' ) AS description_size;
 -[ RECORD 1 ]----+---
 description_size | 19
-#+end_src
+#+END_SRC
 
 *** Informazioni sulla dimensione del tablespace e del database
 Se è presente un tablespace, la funzione (sovraccaricata) ~pg_tablespace_size()~ fornisce la sua dimensione su disco.
 La funzione ~pg_database_size()~ indica invece la dimensione di un database.
 
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT pg_size_pretty( pg_tablespace_size( 'my_tablespace' ) ),
          pg_size_pretty( pg_database_size( 'testdb' ) );
 
 pg_size_pretty | 512 bytes
 pg_size_pretty | 371 MB
-#+end_src
+#+END_SRC
 ** Interagire con il filesystem
 *** Directory e file
 PostgreSQL mette a disposizione dell'utente amministratore una serie di funzioni per ottenere informazioni (in formato tabellare) su file e directory:
@@ -2621,17 +2611,17 @@ PostgreSQL mette a disposizione dell'utente amministratore una serie di funzioni
 - ~pg_read_file()~ e ~pg_read_binary_file()~ ritornano rispettivamente il contenuto testuale (~text~) o binario (~bytea~) del file.
 
 *** Esempio di listato di directory
-#+begin_src sql
+#+BEGIN_SRC sql
 # WITH files AS ( SELECT pg_ls_dir( 'pg_log' ) )
   SELECT * FROM files
   WHERE pg_ls_dir like '%2018-01-__%.log';
             pg_ls_dir
 ----------------------------------
  postgresql-2018-01-11_104609.log
-#+end_src
+#+END_SRC
 
 *** Esempio di lettura di un file
-#+begin_src sql
+#+BEGIN_SRC sql
 # SELECT regexp_split_to_table(
             pg_read_file( 'pg_log/postgresql-2018-01-11_104609.log' ),
                           E'\\n' );
@@ -2642,7 +2632,7 @@ ERROR:  could not stat file "pg_log/postgresql-2017-11-13_093647.log": No such f
 STATEMENT:  FETCH FORWARD 20 FROM _psql_cursor
 ERROR:  current transaction is aborted, commands ignored until end of transaction block
 STATEMENT:  CLOSE _psql_cursor
-#+end_src
+#+END_SRC
 
 ** Modificare una tabella esistente
 *** Il comando ~ALTER TABLE~
@@ -2654,26 +2644,26 @@ Il comando ~ALTER TABLE~ è uno dei piu' potenti e complessi comandi per la gest
 
 Molti dei sottocomandi (azioni) di ~ALTER TABLE~ supportano ~IF NOT EXISTS~ e ~IF EXISTS~.
 *** Aggiungere una colonna
-#+begin_src sql
+#+BEGIN_SRC sql
 > BEGIN;
 > ALTER TABLE persona
     ADD COLUMN data_nascita date
         DEFAULT '1950-01-01'::date;
 > COMMIT;
-#+end_src
+#+END_SRC
 
 *ATTENZIONE: un comando come quello sopra richiede una riscrittura dell'intera tabella!*
 *** Rimuovere una colonna, rinominare una colonna
-#+begin_src sql
+#+BEGIN_SRC sql
 > ALTER TABLE persona DROP COLUMN data_nascita;
 
 > ALTER TABLE persona RENAME eta TO eta_years;
-#+end_src
+#+END_SRC
 
 *** ~ALTER TABLE~ con azioni multiple
 Il comando supporta azioni multiple, se correlate (vedere la documentazione):
 
-#+begin_src sql
+#+BEGIN_SRC sql
 > ALTER TABLE persona
    ADD COLUMN IF NOT EXISTS
           description text NOT NULL DEFAULT 'N/A',
@@ -2686,11 +2676,11 @@ Il comando supporta azioni multiple, se correlate (vedere la documentazione):
     DROP COLUMN IF EXISTS data_nascita,
     DROP COLUMN IF EXISTS description,
     ADD COLUMN  IF NOT EXISTS titolo varchar(6);
-#+end_src
+#+END_SRC
 *** ~ALTER TABLE USING~
 Il comando ~ALTER TABLE~ ammette una clausola ~USING~ che consente di specificare come applicare le modifiche, ad esempio il valore di una colonna. Questo comando funziona solo se si cambia un tipo di dato, al limite anche lasciandolo uguale al precedente:
 
-#+begin_src sql
+#+BEGIN_SRC sql
 > BEGIN;
 > ALTER TABLE persona
    ADD COLUMN data_nascita date
@@ -2702,29 +2692,29 @@ Il comando ~ALTER TABLE~ ammette una clausola ~USING~ che consente di specificar
    USING date_trunc( 'year', current_date )::date - ( eta_years * 365 );
 
 > COMMIT;
-#+end_src
+#+END_SRC
 
 In questo caso prima si aggiunge la colonna con un valore di default, poi si istruisce la colonna a ricalcolarsi con un valore approssimato della data di nascita. Lo stesso risultato si sarebbe potuto ottenere con un ~UPDATE~ del valore della colonna.
 
 *** ~ALTER TABLE USING~ (2)
 La potenza di ~ALTER TABLE USING~ ovviamente si ottiene quando si cambia il tipo di dato:
-#+begin_src sql
+#+BEGIN_SRC sql
 -- supponendo di avere description come char
 > ALTER TABLE persona ALTER COLUMN description
     SET DATA TYPE text
     USING upper(nome) || ' ' || upper(cognome);
-#+end_src
+#+END_SRC
 
 ** ~FILTER~
 *** Uso di filter su funzioni di aggregazione
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT
   COUNT(*) FILTER ( WHERE nome LIKE 'F%' ) AS begin_with_f
  ,COUNT(*) FILTER ( WHERE nome LIKE 'L%' ) AS begin_with_l
  FROM persona;
-#+end_src
+#+END_SRC
 *** Uso di filter in group by
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT nome, count(*)
   FROM persona
   GROUP BY nome
@@ -2733,7 +2723,7 @@ La potenza di ~ALTER TABLE USING~ ovviamente si ottiene quando si cambia il tipo
  nome | count
 ------+-------
  Luca |  5000
-#+end_src
+#+END_SRC
 
 ** ~DISCARD~
 *** Reset della sessione
@@ -2754,25 +2744,25 @@ I prepared statement hanno diversi vantaggi:
 L'idea è che lo statement viene preparato lato server, poi solo i valori/parametri sono inviati e l'executor può subito eseguire lo statement senza dover ripercorrere le fasi di parsing.
 
 *** Esempio: ~PREPARE~ e ~EXECUTE~
-#+begin_src sql
+#+BEGIN_SRC sql
 > PREPARE find_persona_stmt( char ) AS
    SELECT cognome, nome
    FROM persona
    WHERE substr( codice_fiscale, 1, 1 ) = $1;
 
 > EXECUTE find_persona_stmt( 'c' );
-#+end_src
+#+END_SRC
 
 *** Cancellare un prepared statement
 Il comando ~DEALLOCATE~ annulla un prepared statement. Occorre specificare il nome dello statement, oppure opzinalmente tutti gli statement con ~ALL~:
 
-#+begin_src sql
+#+BEGIN_SRC sql
 > DEALLOCATE find_persona_stmt;
 
 -- se per errore si tenta di usare lo statement...
 > EXECUTE find_persona_stmt( 'c' );
 ERROR:  prepared statement "find_persona_stmt" does not exist
-#+end_src
+#+END_SRC
 
 * Backup e restore
 ** Backup
@@ -2797,23 +2787,23 @@ Il backup viene fornito come script SQL o archivio compresso.
 Supporta il dump /parallelo/.
 
 *** ~pg_dump~: dump SQL
-#+begin_src shell
+#+BEGIN_SRC shell
 % pg_dump -h localhost -U postgres \
   -C \
   -f testdb.sql \
   testdb
-#+end_src
+#+END_SRC
 
 Verrà creato un file ~testdb.sql~ che contiene i comandi SQL per la creazione (~-C~) del database e il relativo popolamento.
 
-#+begin_src sql
+#+BEGIN_SRC sql
 % less testdb.sql
 
 CREATE DATABASE testdb WITH TEMPLATE = template0 ENCODING = 'UTF8' LC_COLLATE = 'C' LC_CTYPE = 'C';
 ALTER DATABASE testdb OWNER TO luca;
 \connect testdb
 ...
-#+end_src
+#+END_SRC
 
 *** ~pg_dump~: opzioni comuni e utili
 - *~-C~ indica di inserire i comandi di creazione del database*;
@@ -2835,28 +2825,28 @@ Le opzioni sono simili a quelle di ~pg_dump~.
 *** Restore via ~psql~
 Se il dump fornito è SQL si deve procedere con ~psql~ per il restore:
 
-#+begin_src sql
+#+BEGIN_SRC sql
 % psql -h localhost -U luca template1 < testdb.sql
-#+end_src
+#+END_SRC
 
 o in modalità interattiva:
 
-#+begin_src sql
+#+BEGIN_SRC sql
 % psql -h localhost -U luca template1
 >\i testdb.sql
-#+end_src
+#+END_SRC
 
 *** Restore via ~pg_restore~
 Il comando ~pg_restore~ consente di ripristinare un archivio non SQL creato con ~pg_dump~ e formato /custom/ (~-Fc~).
 In default il comando produce uno script SQL corrispondente all'archivio fornito come backup.
 Se si vuole operare un restore /in place/ occorre specificare a quale database collegarsi per avviare una sessione, e lasciare che ~pg_restore~ ricarichi tutto dentro al database specificato nell'archivio:
 
-#+begin_src shell
+#+BEGIN_SRC shell
 % pg_restore -h localhost -U postgres \
     -C \
     -d template1 \
     testdb.dump
-#+end_src
+#+END_SRC
 * Large Objects
 ** Large Objects vs TOAST
 PostgreSQL supporta due meccanismi di memorizzazione di oggetti binari "grossi":
@@ -2893,32 +2883,32 @@ Le principali funzioni server-side sono:
 *** Tabella di esempio
 Si deve creare una tabella con un dato di tipo ~oid~ per poterla collegare al ~pg_largeobject~:
 
-#+begin_Src sql
+#+BEGIN_SRC sql
 > CREATE TABLE picture(
    pk SERIAL PRIMARY KEY,
    data oid NOT NULL,
    description text );
-#+end_Src
+#+END_SRC
 *** Importare un large object in un colpo solo
-#+begin_src sql
+#+BEGIN_SRC sql
 > INSERT INTO picture( description, data )
   VALUES ( 'Bud Spencer & Terence Hill',
            lo_import( '/home/luca/Downloads/bud.jpg' ) );
-#+end_src
+#+END_SRC
 
 *** Dove è finita l'immagine?
 All'immagine è stato assegnato ~oid~ ~16691~:
 
-#+begin_Src sql
+#+BEGIN_SRC sql
 > SELECT * FROM picture;
  pk | data  |        description
 ----+-------+----------------------------
   1 | 16691 | Bud Spencer & Terence Hill
-#+end_Src
+#+END_SRC
 
 delle informazioni fisiche sono state iserite nella tabella ~pg_largeobject~, in particolare l'immagine è stata /divisa/ nei chunk:
 
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT loid, count( pageno )
    FROM pg_largeobject
    WHERE loid = 16691
@@ -2926,61 +2916,61 @@ delle informazioni fisiche sono state iserite nella tabella ~pg_largeobject~, in
  loid  | count
 -------+-------
  16691 |   104
-#+end_src
+#+END_SRC
 
 ossia ci sono ~184~ chunk, la cui somma di lunghezza:
 
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT SUM( length( data ) )
   FROM pg_largeobject
   WHERE loid = 16691;
  sum
 --------
  212164
-#+end_src
+#+END_SRC
 
 ossia circa ~207.2 kB~, coerente con l'informazione riportata nel file system:
 
-#+begin_Src shell
+#+BEGIN_SRC shell
 % ls ~/Downloads/bud.jpg -lh
 -rw-rw-r-- 1 luca luca 208K set 22 20:50 /home/luca/Downloads/bud.jpg
-#+end_Src
+#+END_SRC
 
 *** Esportare il file
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT lo_export( 16691, '/tmp/export.jpg' );
-#+end_src
+#+END_SRC
 
 *ATTENZIONE: si devono avere i permessi di scrittura sull'oggetto!*
 
 e da un controllo sul file system i due oggetti sono gli stessi:
-#+begin_src shell
+#+BEGIN_SRC shell
 % md5sum ~/Downloads/bud.jpg /tmp/export.jpg
 e39cbea9c8f95be157dd6c5abc82c50d  /home/luca/Downloads/bud.jpg
 e39cbea9c8f95be157dd6c5abc82c50d  /tmp/export.jpg
-#+end_Src
+#+END_SRC
 
 *** Sovrascrivere un large object
 
 Si può importare un large object sopra ad uno esistente usando lo stesso ~oid~:
 
-#+begin_Src sql
+#+BEGIN_SRC sql
 > SELECT lo_unlink( 16691 );
 > SELECT lo_import( '/home/luca/Downloads/sofia.png',
                     16691 );
-#+end_src
+#+END_SRC
 
 *Si noti che non è stata manipolata la tabella ~picture~!*
 
 *** Leggere dati da un large object
 Dal lato server-side è meglio usare le funzioni ~lo_get~ e ~lo_put~:
 
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT lo_get( 16691, 0, 10 );
          lo_get
 ------------------------
  \x89504e470d0a1a0a0000
-#+end_src
+#+END_SRC
 
 che legge i primi 10 byte e restituisce un ~bytea~ come risultato.
 
@@ -3038,30 +3028,30 @@ Se ~cmin~ e/o ~cmax~ sono zero allora il comando non faceva parte di una transaz
 *** Informazioni di visibilità: estrarle
 Nominando le colonne "nascoste" si possono vedere le informazioni di visibilità:
 
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT xmin, xmax, cmin, cmax, pk
   FROM persona LIMIT 2;
  xmin | xmax | cmin | cmax | pk
 ------+------+------+------+----
  1202 |    0 |    0 |    0 | 10
  1202 |    0 |    0 |    0 | 11
-#+end_src
+#+END_SRC
 
 *** Quando è visibile una tupla?
 In generale la tupla è visibile se:
 a) la tupla è stata creata da questa transazione e non è stata invalidata se non dalla transazione stessa
-#+begin_src c
-   xmin == current_xid && cmin >= current_command_id
-      &&
-   xmax == 0 || ( xmax == current_xid && cmax >= current_command_id )
-#+end_src
+#+BEGIN_SRC c
+xmin == current_xid && cmin >= current_command_id
+   &&
+xmax == 0 || ( xmax == current_xid && cmax >= current_command_id )
+#+END_SRC
 
 b) la tupla è stata creata prima di questa transazione (o comunque committata) e non è stata invalidata se non dalla transazione corrente o da una transazione che non ha ancora fatto il commit
-#+begin_src c
-  xmin committed
-  &&
-  ( xmax == 0 || xmax == current_xid || xmax ! commited )
-#+end_src
+#+BEGIN_SRC c
+xmin committed
+&&
+( xmax == 0 || xmax == current_xid || xmax ! commited )
+#+END_SRC
 
 /Il test è complesso!/
 In generale la regola è
@@ -3082,7 +3072,7 @@ appunto per simulare questo comportamento ed evitare di abortire tutta una trans
 :END:
 
 *** Un esempio di utilizzo dei campi
-#+begin_src sql
+#+BEGIN_SRC sql
 > CREATE TABLE foo( i int );
 > BEGIN;
 > BEGIN;
@@ -3100,9 +3090,9 @@ appunto per simulare questo comportamento ed evitare di abortire tutta una trans
 --------------
          2488
 
-#+end_src
+#+END_SRC
 *** Un esempio di utilizzo dei campi (2)
-#+begin_src sql
+#+BEGIN_SRC sql
 -- nella stessa transazione
 > DECLARE my_cursor CURSOR FOR
   SELECT xmin, cmin, xmax, cmax, i FROM foo;
@@ -3114,22 +3104,22 @@ appunto per simulare questo comportamento ed evitare di abortire tutta una trans
 ------+------+------+------+---
  2488 |    0 | 2488 |    0 | 1
  2488 |    1 | 2488 |    1 | 2
-#+end_src
+#+END_SRC
 *** Un esempio di utilizzo dei campi: cosa è successo?
 Il cursorse è stato definito ad un certo punto, e quindi deve poter vedere uno /snapshot/ dei dati. I dati cancellati dalla seguente ~DELETE~ vengono rimossi (~xmax~ viene valorizzato) ma sono ancora visibili al cursore che è stato definito prima!
 *** Snapshot
 Come fa il sistema a sapere quali transazioni sono ancora attive? La funzione ~txid_current_snapshot()~ fornisce gli ~xmin~ e ~xmax~ delle transazioni ancora attive quanto quella corrente è partita.
 In una sessione:
-#+begin_src sql
+#+BEGIN_SRC sql
 > BEGIN;
 > SELECT txid_current();
  txid_current
 --------------
          2491
-#+end_src
+#+END_SRC
 
 e contemporaneamente in un'altra sessione:
-#+begin_src sql
+#+BEGIN_SRC sql
 > BEGIN;
 > INSERT INTO foo(i) VALUES( 1 );
 > SELECT xmin, xmax, cmin, cmax, i FROM foo;
@@ -3141,7 +3131,7 @@ e contemporaneamente in un'altra sessione:
  txid_current_snapshot
 -----------------------
  2491:2491:
-#+end_src
+#+END_SRC
 
 quindi la transazione ~2492~ sa che la ~2491~ è ancora attiva e non ancora conclusa, ma tutte quelle prima della ~2491~ sono terminate.
 *** HOT
@@ -3166,13 +3156,13 @@ Questo permette di identificare una transazione nel futuro o nel passato compara
 Tuttavia prima o poi lo /xid/ subirà il /wraparound/, e precisamente dopo 2^31 transazioni le nuove transazioni otterranno un numero identificativo minore (riavviato) e improvvisamente appariranno nel passato.
 *** Quando ci si avvicina allo xid wraparound
 Per sicurezza PostgreSQL interrompe le proprie attività quando ci si avvicina al rischio di wraparound. Nelle versioni molto vecchie questo imponeva un ~VACUUM~ manuale, nelle versioni attuali l'autovacuum previene il problema:
-#+begin_src shell
+#+BEGIN_SRC shell
 WARNING:  database "mydb" must be vacuumed within 177009986 transactions
 HINT:  To avoid a database shutdown, execute a database-wide VACUUM in "mydb".
 ...
 RROR:  database is not accepting commands to avoid wraparound data loss in database "mydb"
 HINT:  Stop the postmaster and vacuum that database in single-user mode.
-#+end_src
+#+END_SRC
 *** xid wraparound: soluzioni
 In passato (< 9.4) PostgreSQL numerava le transazioni partendo da ~3~ e usava il valore ~2~ come ~FrozenTransactionId~. Era quindi sufficiente modificare lo ~xmin~ di ogni tupla con ~FrozenTransactionId~ per fare in modo che questa /comparisse *sempre* nel passato/.
 (il valore ~1~ era usato come ~BootstrapTransactionId~ per indicare che l'oggetto è stato creato durante l'inizializzazione del database)
@@ -3183,7 +3173,7 @@ Il comando ~VACUUM~ accetta un'opzione particolare, ~FREEZE~ che va a controllar
 
 Per ottimizzare l'I/O, ~VACUUM~ controlla la /visibility map/ di ogni pagina e salta le pagine dati che non hanno tuple "espirate", quindi non applicando il ~FREEZE~ a tutte le tuple. Per effettuare l'analisi anche di queste pagine dati occorre dare l'opzione ~DISABLE_PAGE_SKIPPING~.
 *** Vacuum in azione
-#+begin_src sql
+#+BEGIN_SRC sql
 # VACUUM FREEZE VERBOSE software;
 INFO:  vacuuming "public.software"
 INFO:  index "software_pkey" now contains 8 row versions in 2 pages
@@ -3212,21 +3202,21 @@ Skipped 0 pages due to buffer pins.
 0 pages are entirely empty.
 CPU 0.00s/0.00u sec elapsed 0.00 sec.
 VACUUM
-#+end_src
+#+END_SRC
 
 ** Impatti di Vacuum e autovacuum
 *** Tabella di eventi
    Si immagini di popolare una tabella di eventi:
 
-#+begin_src sql
+#+BEGIN_SRC sql
 > CREATE TABLE evento( pk serial NOT NULL,
                       description text,
                       ts timestamp default current_timestamp,
                        PRIMARY KEY(pk) );
-#+end_src
+#+END_SRC
 
 e di popolarla con alcuni dati...
-#+begin_src sql
+#+BEGIN_SRC sql
 > INSERT INTO evento( description )
  SELECT 'Evento ' ||
     CASE WHEN ( random() * 10 )::integer % 2 = 0
@@ -3237,21 +3227,21 @@ e di popolarla con alcuni dati...
 
 INSERT 0 1000000
 Time: 8635.289 ms
-#+end_src
+#+END_SRC
 
 *** Tabella di eventi: quanto occupa?
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT relname, relpages, reltuples
 FROM pg_class
 WHERE relkind = 'r' AND relname = 'evento';
  relname | relpages | reltuples
 ---------+----------+-----------
  evento  |     6879 |     1e+06
-#+end_src
+#+END_SRC
 
 indicativamente ~6879 * 8kB = 53,74 MB~ di spazio disco.
 Verifichiamo...
-#+begin_src sh
+#+BEGIN_SRC sh
 % oid2name -H localhost -U luca -d testdb -t evento                                                                      ~
 From database "testdb":
   Filenode  Table Name
@@ -3263,11 +3253,11 @@ From database "testdb":
 
 % sudo ls -lh /mnt/data1/pgdata/base/16393/16465                                                                         ~
 -rw-------  1 postgres  postgres    54M Oct 18 10:40 /mnt/data1/pgdata/base/16393/16465
-#+end_src
+#+END_SRC
 
 *** Tabella di eventi: quanto occupa? (2)
 Metodo meno "scomodo" di cercare il file fisico su disco...
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT pg_size_pretty(
              pg_relation_size( 'evento'::regclass )
          );
@@ -3275,10 +3265,10 @@ Metodo meno "scomodo" di cercare il file fisico su disco...
 ----------------
  54 MB
 (1 row)
-#+end_src
+#+END_SRC
 *** Tabella di eventi: statistiche
 Le statistiche di sistema sembrano funzionare correttamente:
-#+begin_src sql
+#+BEGIN_SRC sql
 > SELECT pg_relation_size( 'evento'::regclass ) AS dimensione_fisica, relpages, reltuples
   FROM pg_class  WHERE relkind = 'r' AND relname = 'evento';
  dimensione_fisica | relpages | reltuples
@@ -3292,12 +3282,12 @@ Le statistiche di sistema sembrano funzionare correttamente:
  dimensione_fisica | relpages | reltuples
 -------------------+----------+-----------
                  0 |        0 |         0
-#+end_src
+#+END_SRC
 
 *** Tabella di eventi: statistiche (2)
 Ma cosa succede se *fermiamo autovacuum*?
 
-#+begin_src sql
+#+BEGIN_SRC sql
  > INSERT INTO evento( description ) -- 1000000 tuple
 ...
 INSERT 0 1000000
@@ -3307,13 +3297,13 @@ INSERT 0 1000000
  dimensione_fisica | relpages | reltuples
 -------------------+----------+-----------
           56344576 |        0 |         0
-#+end_src
+#+END_SRC
 
 *Il numero di tuple e pagine non è stato aggiornato*.
 Che impatto ha questo? Il planner non sarà in grado di capire che "mole di dati" ha davanti!
 *** Tabella di eventi: statistiche (3)
 Niente panico! E' possibile lanciare *vacuum* manualmente.
-#+begin_src sql
+#+BEGIN_SRC sql
 > VACUUM FULL VERBOSE evento;
 INFO:  vacuuming "public.evento"
 INFO:  "evento": found 0 removable, 1000000 nonremovable row versions in 6878 pages
@@ -3325,7 +3315,7 @@ CPU 0.14s/0.30u sec elapsed 0.82 sec.
  dimensione_fisica | relpages | reltuples
 -------------------+----------+-----------
           56344576 |     6878 |     1e+06
-#+end_src
+#+END_SRC
 
 ** Mappe
 *** Free Space Map
