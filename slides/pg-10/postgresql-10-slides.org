@@ -6949,6 +6949,33 @@ corrispondente al seguente valore nel file di configurazione:
 shared_buffers = 128MB
 #+end_src
 
+*** Trovare gli errori di configurazione (nei file di configurazione)
+La vista speciale ~pg_file_settings~ consente di individuare eventuali errori nei file di configurazione:
+- se ~applied~ è false allora il parametro è stato ignorato;
+- se ~error~ è true allora il parametro contiene errori (es. valori non ammessi).
+
+Ad esempio, se si fosse definito due volte la variabile ~log_directory~:
+#+begin_src sql
+# SELECT *
+  FROM pg_file_settings
+  WHERE name = 'log_directory';
+-[ RECORD 1 ]---------------------------------
+sourcefile | /mnt/data1/pgdata/postgresql.conf
+sourceline | 361
+seqno      | 11
+name       | log_directory
+setting    | pg_logging
+applied    | f
+error      |
+-[ RECORD 2 ]---------------------------------
+sourcefile | /mnt/data1/pgdata/postgresql.conf
+sourceline | 362
+seqno      | 12
+name       | log_directory
+setting    | pg_log
+applied    | t
+error      |
+#+end_src
 ** Configurazione: parametri principali
 *** Come impostare un parametro di configurazione
 Ci sono tre modi principali per impostare un parametro di configurazione:
