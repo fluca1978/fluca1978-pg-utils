@@ -6885,6 +6885,9 @@ category   | Resource Usage / Memory
 sourcefile | /mnt/data1/pgdata/postgresql.conf
 sourceline | 123
 #+end_src
+
+I valori /scartati/ possono essere individuati con ~pg_file_settings~.
+
 *** Vedere la configurazione a run-time: ~SHOW~
 Il comando speciale ~SHOW~ consente di vedere un parametro a run-time:
 #+begin_src sql
