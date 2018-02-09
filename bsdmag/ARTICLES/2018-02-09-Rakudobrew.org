@@ -1,0 +1,133 @@
+
+#+TITLE: Managing Multiple Perl 6 Installations with Raludobrew
+
+* Abstract
+Perl 6 is a language in the /Perl family/, it is very feature rich and oriented to several programming paradigm, including the Object Oriented one.
+~rakudobrew~ is a tool to help installing and managin different installations of a runnable Perl 6 environment, and is a very easy way to get a Perl 6 instance on a machine.
+
+** What you need to know
+- Basic Perl knowledge and terminology
+- Basic FreeBSD shell knowledge
+
+** What you will learn
+- How to install rakudobrew, initialize and run it
+- How to install different Perl 6 interpreters on the same machine, and how to use a specific one depending on your needs
+- How to manage Perl 6 interpreters
+
+
+* TODO Introduction
+
+Perl 6 is a quite young language in the /Perl family/, and therefore is often not installed in default on many systems as it happens for its younger cousin Perl 5.
+
+Rakudobrew is a Perl program that allows users to download, build and run Perl 6 instances in their own space, without having to affect the system wide installation (if any) of Perl 6 or to have administrative privileges. The philosophy is similar to other /brew/ suites.
+
+Perl 6 is a complex beast when compared to Perl 5, in particular because it requires a /virtual machine/ to run on, has a separated package manager, and requires specific compilation. Rakudobrew eases the steps required to get all the pieces up and running downloading, compiling and installing every part is required.
+
+In the Perl 6 terminology it is important to distinguish among:
+- /rakudo/ a Perl 6 compiler;
+- /rakudo-star/ a Perl 6 compiler with several modules included;
+- /backend/ a virtual machine able to run any piece of Perl 6 code compiled by a compiler;
+- /nqp/ (Not Quite Perl) a Perl-like language used to drive low-level virtual machine operations;
+- /perl6/ the effective (and interactive) implementation of a Perl 6 executable.
+
+From the above, in order to allow a Perl 6 source code to run it is required that the source code is compiled on the fly by a compiler and is executed by a virtual machine.
+
+
+* Installing ~rakudobrew~
+
+The ~rakudobrew~ is not available neither in ports nor in packages, so the only one way to install it is from the sources. Since the repository is kept under a /GitHub/ repository, it is required ~git~ and an internet connection in order to download it.
+
+As a normal user, simply provide the following command to download and install ~rakudobrew~:
+
+#+begin_src shell
+% git clone https://github.com/tadzik/rakudobrew ~/.rakudobrew
+#+end_src
+
+The repository will be cloned into the home hidden folder ~.rakudobrew~, it is of course possible to move it away to another location. In the following of this article, the default installation path ~$HOME/.rakudobrew~ will be assumed.
+
+Once ~rakudobrew~ has been downloaded, it has to be /initialized/ to work properly. First of all, it is required to check that the executable is working:
+
+#+begin_src shell
+% ~/.rakudobrew/bin/rakudobrew                                                                                         Usage:
+rakudobrew current
+rakudobrew list-available
+rakudobrew build
+rakudobrew build zef
+...
+#+end_src
+
+It is worth noting that the executable of ~rakudobrew~ is a Perl 5 script, so in order to use it the system must have a recent version of Perl 5. In the case a Perl 5 specific version is required, please refer to the previous article /Managing Multiple Perl 6 Installations with Perlrew/ in the magazine issue /2018-01/.
+
+Once the rakudobrew executable is running, it is possible to configure it for a permanent usage with the ~init~ command. The ~init~ command will produce a shell function and sets a few environment variables to allow the user to use ~rakudobrew~ executable; such shell configuration has to be included into the shell configuration files (profile or rc files).
+
+#+begin_src shell
+% ~/.rakudobrew/bin/rakudobrew init - >> ~/.zprofile
+#+end_src
+
+After the shell has been configured to use ~rakudobrew~, it is possible to open a new shell or logout/login (depending on the type of shell and its configuration) to see the changes. If everything worked fine, the ~rakudobrew~ executable could be launched without the path specification.
+
+The ~rakudobrew~ executable works on a /command oriented/ interface: each action is specified by a particular command that can optionally take arguments. Therefore, in order to make ~rakudobrew~ to do something, a command must be specified.
+
+* Installing Perl 6
+
+Once ~rakudobrew~ is working, it is possible to install a new Perl 6 executable.
+First of all, it is possible to ensure nothing is in use:
+
+#+begin_src shell
+% rakudobrew current
+Not running anything at the moment. Use 'rakudobrew switch' to set a version
+
+% rakudobrew switch
+Switch to what?
+Available builds
+#+end_src
+
+As readers can see, rakudobrew complains about the fact that no Perl 6 executable is currently enabled, and that it is not possible to switch to any version, since the ~Available builds~ is empty.
+
+In order to install a new Perl 6 environment it is required to ~build~ it. The ~build~ command asks for a Perl 6 version, as well as backend engine.
+
+Perl 6 versions are numbered monthly, so for instance ~2017.12~ is the /december 2017/ release. The backend engine is the virtual machine that will execute Perl 6: so far the /Java Virtual Machine/ and the /MoarVM/ are supported, with the last being the /official/ Perl 6 virtual machine.
+
+Having stated the above, it is possible to search for an instance to build with the ~list-available~ command, and then use the ~build~ one to compile the instance.
+
+#+begin_srch shell
+% rakudobrew list-available
+Available Rakudo versions:
+  ...
+  2017.11
+  2017.12
+  2018.01
+  v6.b
+  v6.c
+
+Available backends:
+  jvm
+  moar
+  moar-blead
+
+
+% rakudobrew build moar 2018.01
+...
+#+end_src
+
+The ~build~ command can take a while depending on the available resources of the computer.
+
+
+* Conclusions
+~rakudobrew~ is a powerful tools in the /brew/ family that allows for quick and easy installation of a Perl 6 environment without requiring administrative priviliges nor tainting system wide installation (if any).
+
+Moreover, with ~rakudobrew~ it is possible to manage and run different instances and versions allowing users to experiment with features and portability across different Perl 6 instances.
+
+* About Luca Ferrari
+Luca lives in Italy with his beautiful wife, his great son and two female cats.
+Computer science passionate since the Commodore 64 age, he holds a Master Degree and a PhD in Computer Science.
+He is a PostgreSQL enthusiast, a Perl lover, an Operating System passionate, a Unix fan
+and performs as much tasks as possible within Emacs.
+He considers the Open Source the only sane way of doing software and services.
+
+His web site is available at http://fluca1978.github.io
+
+* References
+- Perl 6 official web site: https://perl6.org/
+- Rakudobrew GitHub repository: https://github.com/tadzik/rakudobrew
+- MoarVM official web site: https://www.moarvm.org/
