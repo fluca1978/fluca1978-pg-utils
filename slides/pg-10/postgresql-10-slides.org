@@ -3646,7 +3646,7 @@ BEGIN
 END;
 #+end_src
 
-*Si noti che ~BEGIN~/~END~ non definiscono i confini di una transazione!*
+*Si noti che ~BEGIN/END~ non definiscono i confini di una transazione!*
 
 *** Esempio di semplice funzione: somma
 #+begin_src sql
