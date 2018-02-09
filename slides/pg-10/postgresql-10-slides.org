@@ -987,6 +987,19 @@ usesuper    | t
 userepl     | t
 passwd      | md53175bce1d3201d16594cebf9d7eb3f9d
 #+END_SRC
+*** La vista ~pg_hba_file_rules~
+La vista ~pg_hba_file_rules~ consente di effettuare il /debugging/ delle impostazione di autenticazione e di capire chi può collegarsi al database:
+
+#+begin_src sql
+# SELECT line_number, type, database, user_name, auth_method
+testdb-# FROM pg_hba_file_rules;
+line_number| type  | database |   user_name    | auth_method
+-----------+-------+----------+----------------+-------------
+        84 | local | {all}    | {all}          | trust
+        86 | host  | {all}    | {+developers}  | reject
+        87 | host  | {all}    | {+stocker_app} | trust
+#+end_src
+
 *** Creare un database
    Usando il comando SQL ~CREATE DATABASE~ è possibile aggiungere un nuovo database
    (e /opzionalmente/ aggiungere un commento per indicare lo scopo del database):
