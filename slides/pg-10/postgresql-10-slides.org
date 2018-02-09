@@ -18,7 +18,7 @@
 #+latex_header: \AtBeginSection[]{\begin{frame}<beamer>\frametitle{Outline}\tableofcontents[currentsection]\end{frame}}
 
 #+BEAMER_HEADER: \subtitle{il database Open Source piu' avanzato del pianeta}
-#+BEAMER_HEADER: \institute[ITPUG]{Italian PostgreSQL Users' Group (ITPUG)\\\url{http://www.itpug.org}}
+
 #+BEAMER_HEADER: \institute[fluca1978]{fluca1978\\\url{https://fluca1978.github.io}}
 #+BEAMER_HEADER: \titlegraphic{\includegraphics[height=3cm]{./images/logo.png}}
 
