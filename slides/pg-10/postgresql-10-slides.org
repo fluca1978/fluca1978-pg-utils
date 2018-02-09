@@ -8902,24 +8902,24 @@ recovery_target_time = '2018-01-17 14:09:00'
 *** Avviare il sistema in PITR
 #+begin_src sh
 % sudo -u postgres pg_ctl -D /mnt/data3/pgdata -o "-p 5433" start
-waiting for server to start....2018-01-17 14:11:55.713 CET [1526] LOG:  listening on IPv6 address "::1", port 5433
-2018-01-17 14:11:55.713 CET [1526] LOG:  listening on IPv4 address "127.0.0.1", port 5433
-2018-01-17 14:11:55.715 CET [1526] LOG:  listening on Unix socket "/tmp/.s.PGSQL.5433"
-2018-01-17 14:11:55.866 CET [1527] LOG:  database system was shut down in recovery at 2018-01-17 14:10:41 CET
-2018-01-17 14:11:55.867 CET [1527] LOG:  starting point-in-time recovery to 2018-01-17 14:09:00+01
-2018-01-17 14:11:56.123 CET [1527] LOG:  restored log file "000000010000000000000039" from archive
-2018-01-17 14:11:56.287 CET [1527] LOG:  redo starts at 0/39000060
-2018-01-17 14:11:56.615 CET [1527] LOG:  restored log file "00000001000000000000003A" from archive
-2018-01-17 14:11:56.973 CET [1527] LOG:  restored log file "00000001000000000000003B" from archive
-2018-01-17 14:11:58.442 CET [1527] LOG:  restored log file "00000001000000000000003C" from archive
+waiting for server to start....
+LOG:  listening on IPv6 address "::1", port 5433
+LOG:  listening on IPv4 address "127.0.0.1", port 5433
+LOG:  listening on Unix socket "/tmp/.s.PGSQL.5433"
+LOG:  database system was shut down in recovery at 2018-01-17 14:10:41 CET
+LOG:  starting point-in-time recovery to 2018-01-17 14:09:00+01
+LOG:  restored log file "000000010000000000000039" from archive
+LOG:  redo starts at 0/39000060
+LOG:  restored log file "00000001000000000000003A" from archive
+LOG:  restored log file "00000001000000000000003B" from archive
+LOG:  restored log file "00000001000000000000003C" from archive
 ...
-2018-01-17 14:12:23.808 CET [1527] LOG:  consistent recovery state reached at 0/4E000000
-2018-01-17 14:12:23.810 CET [1526] LOG:  database system is ready to accept read only connections
- done
+LOG:  consistent recovery state reached at 0/4E000000
+LOG:  database system is ready to accept read only connections
 ...
-2018-01-17 14:12:57.263 CET [1527] LOG:  recovery stopping before commit of transaction 975, time 2018-01-17 14:09:38.073761+01
-2018-01-17 14:12:57.263 CET [1527] LOG:  recovery has paused
-2018-01-17 14:12:57.263 CET [1527] HINT:  Execute pg_wal_replay_resume() to continue.
+LOG:  recovery stopping before commit of transaction 975, time 2018-01-17 14:09:38.073761+01
+LOG:  recovery has paused
+HINT:  Execute pg_wal_replay_resume() to continue.
 server started
 #+end_src
 *** Abilitare il sistema in PITR
