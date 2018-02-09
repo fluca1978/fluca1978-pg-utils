@@ -127,16 +127,11 @@ paragraph and the following two paragraphs appear in all copies.
    - */minor release/* (rilasciata circa ogni quattro mesi o in presenza di gravi
      problemi di sicurezza o consistenza)
 
-**** Major version vs Minor Version                               :B_theorem:
     - *9.5*.1 # major version 9.5, minor version 1
       - 9.5.1 compatibile con 9.5.2, 9.5.3, ...
     - *9.6*.2 # major version 9.6, minor version 2
       - incompatibile con 9.5.x!
 
-**** End of block                                           :B_ignoreheading:
-:PROPERTIES:
-:BEAMER_env: ignoreheading
-:END:
    Le prime due cifre rappresentavano una *major version* e quindi erano segnale di
    possibile incompatibilità.
 
