@@ -23,6 +23,7 @@
 #+BEAMER_HEADER: \titlegraphic{\includegraphics[height=3cm]{./images/logo.png}}
 
 
+#+BEAMER_THEME: magpie
 #+LATEX_HEADER: \RequirePackage{fancyvrb}
 #+LATEX_HEADER: \DefineVerbatimEnvironment{verbatim}{Verbatim}{fontsize=\scriptsize}
 
