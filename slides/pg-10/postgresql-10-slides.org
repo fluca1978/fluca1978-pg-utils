@@ -28,15 +28,10 @@
 * Introduzione
 ** Il progetto PostgreSQL
 *** Cos'è?
-   PostgreSQL è un *Object Relational Database Management System* (ORDBMS).
+PostgreSQL è un *Object Relational Database Management System* (ORDBMS).
 
-**** O-RDBMS                                                   :B_definition:
    *Object* non è da intendersi relativamente al paradigma /OOP/ quanto al fatto
    che un utente /puo' estendere il database con i propri "oggetti"/.
-**** End of block                                           :B_ignoreheading:
-:PROPERTIES:
-:BEAMER_env: ignoreheading
-:END:
 
 Ad esempio, PostgreSQL non supporta i /query-hints/ tanto famosi in altri sistemi
 commerciali: per gli sviluppatori questa funzionalità non ha senso e non è mai stata
@@ -78,16 +73,13 @@ Thanks to Professor Michael Stonebraker for making this possible.
    una feature sarà implementata in PostgreSQL solo se ha senso dal punto di
    vista /tecnico/ e /scientifico/.
 
-**** Approccio culturale                                       :B_definition:
+
     PostgreSQL is a *non-commercial, all volunteer, free software project*,
     and as such *there is no formal list of feature requirements*
     required for development.
     We really do follow the mantra of
     letting developers scratch their own itches.
-**** End of block                                           :B_ignoreheading:
-:PROPERTIES:
-:BEAMER_env: ignoreheading
-:END:
+
 Ad esempio, PostgreSQL non supporta i /query-hints/ tanto famosi in altri sistemi
 commerciali: per gli sviluppatori questa funzionalità non ha senso e non è mai stata
 (e mai verrà) implementata.
@@ -334,7 +326,7 @@ Una connessione può essere *TCP/IP* oppure su *socket locale*.
    - mediante pacchetti binari della propria installazione
    - compilando l'albero dei sorgenti
 
-**** Macchina Virtuale                                         :B_definition:
+
    Tutte le prove qui mostrate sono state effettuate su una macchina virtuale con
    quattro dischi da 2GB utilizzati come spazio dati:
    #+BEGIN_SRC sh
@@ -346,10 +338,7 @@ Una connessione può essere *TCP/IP* oppure su *socket locale*.
    /dev/ada3p1 on /mnt/data3 (ufs, local, soft-updates)
    /dev/ada4p1 on /mnt/data4 (ufs, local, soft-updates)
    #+END_SRC
-**** End of block                                           :B_ignoreheading:
-:PROPERTIES:
-:BEAMER_env: ignoreheading
-:END:
+
 
 *** Installazione
 Compilazione dai ports:
@@ -465,14 +454,11 @@ tutti gli oggetti PostgreSQL. Tale directory deve essere inizializzata opportuna
 (creazione struttura directory, impostazione dei permessi, ecc.)
 tramite il programma ~initdb~.
 
-**** Importanza di PGDATA                                      :B_definition:
+
    Un cluster può servire *una sola PGDATA* alla volta.
    La directory PGDATA deve essere protetta opportunamente da accessi involontari
    di altri utenti del sistema.
-**** End of block                                           :B_ignoreheading:
-:PROPERTIES:
-:BEAMER_env: ignoreheading
-:END:
+
 
 *** initdb
 Creazione di una directory per la memorizzazione del database (alcuni
@@ -837,13 +823,9 @@ Il prompt corrisponde a: /username/ (~%n~), /database/ (~%/~),
 /hostname/ (~%m~), /linea/ (~%l~), /stato transazione/ (~%x~)
 e /prompt superutente o utente normale/ (~%#~).
 
-**** ON_ERROR_ROLLBACK                                         :B_definition:
+
 A differenza di ~ON_ERROR_STOP~ che fa quello che il nome suggerisce, il parametro ~ON_ERROR_ROLLBACK~ fa il suo opposto:
 /When set to on, if a statement in a transaction block generates an error, the error is ignored and the transaction continues./
-**** End of block                                           :B_ignoreheading:
-:PROPERTIES:
-:BEAMER_env: ignoreheading
-:END:
 
 
 ** Interazione: ruoli, database, tabelle
@@ -3076,13 +3058,9 @@ I ~SAVEPOINT~ sono delle sotto-transazioni che consentono di rendere persistente
 Questo ha delle implicazioni sull'uso dei campi ~xmin~ e ~xmax~ poiché all'interno di uno stesso blocco ~BEGIN...END~
 possono esserci piu' transazioni in esecuzione.
 
-**** ON_ERROR_ROLLBACK                                         :B_definition:
 Il parametro di configurazione ~ON_ERROR_ROLLBACK~ di ~psql~ utilizza dei savepoint
 appunto per simulare questo comportamento ed evitare di abortire tutta una transazione.
-**** End of block                                           :B_ignoreheading:
-:PROPERTIES:
-:BEAMER_env: ignoreheading
-:END:
+
 
 *** Un esempio di utilizzo dei campi
 #+BEGIN_SRC sql
@@ -4014,12 +3992,8 @@ END;
 $BODY$ LANGUAGE plpgsql;
 #+end_src
 
-**** PERFORM vs SELECT 					       :B_definition:
+
     *PERFORM* sostituisce *SELECT* in una query!
-**** End of block 					    :B_ignoreheading:
-:PROPERTIES:
-:BEAMER_env: ignoreheading
-:END:
 
 *** SELECT INTO
 E' possibile assegnare a una (o piu') variabili il risultato di una ~SELECT~
@@ -7727,13 +7701,9 @@ La vista speciale ~pg_user_stat_indexes~ fornisce indicazioni sull'utilizzo degl
 
 PostgreSQL usa un ottimizzatore basato sul */costo/*: la query viene spezzata in un albero di */nodi/* da eseguire, *ogni nodo avrà un costo* e la somma dei costi fornisce il costo della query stessa. *Esistono piu' /percorsi/ per estrarre i dati da una query* (es. con o senza indice) e il piano di esecuzione che risulta avere il costo inferiore è quello che PostgreSQL sceglie per l'esecuzione.
 
-**** Costo                                                     :B_definition:
 Il costo di un nodo/piano è espresso in una misura aleatoria relativa e fine a se stessa.
 Talve valore dipende fortemente dal tempo di esecuzione ma anche dall'impiego delle risorse.
-**** End of block                                           :B_ignoreheading:
-:PROPERTIES:
-:BEAMER_env: ignoreheading
-:END:
+
 
 *** ~EXPLAIN~ fornisce un solo piano di uscita
 Il comando ~EXPLAIN~ visualizza il piano migliore scelto fra quelli possibili, e di conseguenza *NON* indica perché un indice non viene usato, *NON* suggerisce la riscrittura di query per ottimizzare il lavoro, *NON* indica come ottenere risultati migliori.
@@ -8495,12 +8465,8 @@ Per evitare tali problemi si definiscono degli *istanti periodici detti /checkpo
 ove PostgreSQL si preoccupa di consolidare i dati fisici su disco, scartando quindi i
 WAL precedenti quel checkpoint.
 
-**** Crash recovery                                            :B_definition:
 Di fatto un crash recovery *ripercorre i segmenti di WAL dall'ultimo checkpoint conosciuto*!
-**** End of block                                           :B_ignoreheading:
-:PROPERTIES:
-:BEAMER_env: ignoreheading
-:END:
+
 ** LSN
 *** Introduzione
 Come si fa a sapere quali pagine dati sono /sicure/ per essere scaricate su memoria
@@ -8725,14 +8691,10 @@ un database; visualizzare i dati come erano prima di una lunga elaborazione, deb
 che possono aver sporcato i dati, ecc.
 #+end_quote
 
-**** Istanti temporali 					       :B_definition:
      Se viene specificato un istante nel /futuro/ (ovvero che non è presente nei WAL,
      PostgreSQL effettuerà un normale avvio in recovery.
      *Non si può rompere PostgreSQL per un errore del DBA!*
-**** End of block                                           :B_ignoreheading:
-:PROPERTIES:
-:BEAMER_env: ignoreheading
-:END:
+
 
 *** Preparasi al PITR
 Le fasi da seguire sono sostanzialmente:
@@ -9107,13 +9069,9 @@ si ha una timeline history
 1       0/87000000      before transaction 981
 #+end_src
 
-**** PITR & Timeline :B_definition:
 Il ~recovery.conf~ lavora implicitamente sulla stessa timeline del server di origine.
 E' tuttavia possibile specificare una timeline differente.
-**** End of block                                           :B_ignoreheading:
-:PROPERTIES:
-:BEAMER_env: ignoreheading
-:END:
+
 
 
 
@@ -9132,13 +9090,9 @@ Esistono fondamentalmente tre tipi di /replication/:
    - *asincrona* il master si "fida" che lo slave porterà a termine la transazione.
 3. *logical*: supportata solo dalla versione 10, consente di inviare un flusso di /statement/ per la modifica e quindi abilita lo scenario bidirezionale.
 
-**** Cascading Replication                                     :B_definition:
 Ogni slave può a sua volta diventare un punto di "avvio" di replicazione per un
 successivo slave.
-**** End of block                                           :B_ignoreheading:
-:PROPERTIES:
-:BEAMER_env: ignoreheading
-:END:
+
 ** Log Shipping Replication
 *** Fase 1: configurazione del master
 Occore che il master consenta l'archiviazione dei WAL segment e supporti la connessione per replica (solo se si usa ~pg_basebackup~).
