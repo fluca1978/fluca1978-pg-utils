@@ -3069,7 +3069,6 @@ appunto per simulare questo comportamento ed evitare di abortire tutta una trans
 #+BEGIN_SRC sql
 > CREATE TABLE foo( i int );
 > BEGIN;
-> BEGIN;
 > INSERT INTO foo(i) VALUES( 1 );
 > INSERT INTO foo(i) VALUES( 2 );
 > SELECT xmin, cmin, xmax, cmax, i FROM foo;
