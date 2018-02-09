@@ -120,6 +120,7 @@ Moreover, with ~rakudobrew~ it is possible to manage and run different instances
 
 * About Luca Ferrari
 Luca lives in Italy with his beautiful wife, his great son and two female cats.
+
 Computer science passionate since the Commodore 64 age, he holds a Master Degree and a PhD in Computer Science.
 He is a PostgreSQL enthusiast, a Perl lover, an Operating System passionate, a Unix fan
 and performs as much tasks as possible within Emacs.
