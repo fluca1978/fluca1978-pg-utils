@@ -1326,6 +1326,34 @@ PostgreSQL fornisce tre tipi di dato:
 -------------------
  192.168.223.44/24
 #+END_SRC
+*** Punti nel piano
+Il tipo speciale ~point~ consente di specificare delle coordinate di un punto nel piano. Esistono degli operatori particolari che consentono di stabilire la distanza fra due punti:
+
+#+begin_src sql
+-- ATTENZIONE: uso di apici!
+> SELECT '(10, 20)'::point <-> '(30, 40)'::point AS distance;
+     distance
+------------------
+ 28.2842712474619
+#+end_src
+*** Box, Circle, Path & friends...
+Esistono tipi costruiti /sopra/ al concetto di ~point~: ~box~ (rettangolo), ~circle~ (circonferenza), ~path~ (unione di punti). Altri costruttori consentono di costruire poligoni, segmenti, linee, ecc.
+
+#+begin_src sql
+> SELECT
+  box( '(10,20)'::point, '(20, 30)'::point ) AS rettangolo,
+  circle( '(50,50)'::point, 10 ) AS circoferenza_r10,
+  line( '(1,1)'::point, '(-1,-1)'::point ) AS linea,
+  lseg( '(1,1)'::point, '(-1,-1)'::point ) AS segmento,
+  polygon( path '( (1,1), (2,2), (3,3) )' ) AS triangolo;
+-[ RECORD 1 ]----+--------------------
+rettangolo       | (20,30),(10,20)
+circoferenza_r10 | <(50,50),10>
+linea            | {1,-1,0}
+segmento         | [(1,1),(-1,-1)]
+triangolo        | ((1,1),(2,2),(3,3))
+#+end_src
+
 ** Tabelle fuori dall'ordinario
 *** Temporary Tables
 Le /Temporary Tables/ sono tabelle che persistono (in memoria) solo per la durata della sessione (o della transazione).
