@@ -6391,6 +6391,62 @@ e se ci sono parecchi valori da forzare l'uso dell'indice:
    ->  Bitmap Index Scan on fts_email_idx  (cost=0.00..2355.13 rows=261218 width=0)
          Index Cond: (to_tsvector('italian'::regconfig, ((subject || ' '::text) || message)) @@ '''cors'''::tsquery)
 #+end_src
+** Trigram
+*** Introduzione
+Se le query che si vogliono ottimizzare sono basate su ~LIKE~ non occorre una piena FTS, ma è sufficiente usare i /trigram/, gruppi di tre caratteri sui quali viene misurata la similarità (o la relativa distanza).
+
+*I trigrammi non includono caratteri NON-ALFANUMERICI!*
+*** Installazione
+L'estensione ~pg_trgm~ fornisce tutto l'occorrente per abilitare l'uso dei trigrammi:
+
+#+begin_src sql
+# CREATE EXTENSION pg_trgm;
+#+end_src
+
+*** Tabella di esempio
+Si consideri una tabella piena di testo:
+#+begin_src sql
+> CREATE TABLE trgm_test( t text );
+> INSERT INTO trgm_test(t)
+  SELECT md5( v::text )
+  FROM generate_series(1,100000) v;
+
+> CREATE INDEX no_trgm_idx ON trgm_test(t);
+#+end_src
+
+*** Esempio senza ~pg_trgm~
+L'indice funziona solo per comparazioni con /inizio stringa/:
+
+#+begin_src sql
+> EXPLAIN ANALYZE SELECT t FROM trgm_test WHERE t LIKE 'a%';
+
+ Bitmap Heap Scan on trgm_test
+ ...
+   ->  Bitmap Index Scan on no_trgm_idx
+       ...
+         Index Cond: ((t >= 'a'::text) AND (t < 'b'::text))
+#+end_src
+
+ma non funziona per comparazioni /in mezzo alla stringa/:
+
+#+begin_src sql
+> EXPLAIN ANALYZE SELECT t FROM trgm_test WHERE t LIKE '%a%';
+ Seq Scan on trgm_test
+   Filter: (t ~~ '%a%'::text)
+#+end_src
+
+*** Esempio con ~pg_trgm~
+
+#+begin_src sql
+> CREATE INDEX trgm_idx ON trgm_test USING GIST (t gist_trgm_ops);
+
+> EXPLAIN ANALYZE SELECT t FROM trgm_test WHERE t LIKE '%a%';
+ Bitmap Heap Scan on trgm_test
+ ...
+   ->  Bitmap Index Scan on trgm_idx
+#+end_src
+
+
 * Foreign Data Wrapper
 ** SQLMED & FDW
 *** Introduzione
