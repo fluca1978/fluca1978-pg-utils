@@ -15,7 +15,7 @@ Perl 6 is a language in the /Perl family/, it is very feature rich and oriented 
 - How to manage Perl 6 interpreters
 
 
-* TODO Introduction
+* Introduction
 
 Perl 6 is a quite young language in the /Perl family/, and therefore is often not installed in default on many systems as it happens for its younger cousin Perl 5.
 
@@ -90,7 +90,7 @@ Perl 6 versions are numbered monthly, so for instance ~2017.12~ is the /december
 
 Having stated the above, it is possible to search for an instance to build with the ~list-available~ command, and then use the ~build~ one to compile the instance.
 
-#+begin_srch shell
+#+begin_src shell
 % rakudobrew list-available
 Available Rakudo versions:
   ...
@@ -112,6 +112,57 @@ Available backends:
 
 The ~build~ command can take a while depending on the available resources of the computer.
 
+After the build has completed, the new version of Perl 6 is listed thru the ~list~ command, so for instance after having built a few instances the situation could be:
+
+#+begin_src shell
+ % rakudobrew list
+   jvm-2017.09
+   moar-2016.12
+   moar-2017.09
+   moar-2017.11
+   moar-2017.12
+ * moar-2018.01
+   moar-blead-2017.11
+#+end_src
+
+The entry with the leading asterisk is the /current/ running instance, also reported by the ~current~ command:
+
+#+begin_src shell
+% rakudobrew current
+Currently running moar-2018.01
+#+end_src
+
+In order to select the Perl 6 environment to use, the ~switch~ command is used: it is required to specify to which instance to switch to and rakudobrew will update the environment consequently:
+
+#+begin_src shell
+% rakudobrew switch moar-2017.12
+Switching to moar-2017.12
+
+% rakudobrew current
+Currently running moar-2017.12
+#+end_src
+
+* Installing modules
+
+Perl 6 uses the /Zef/ module installer in order to install modules. To some extent, /Zef/ is the counterpart of the ~cpan~ and ~cpanm~ commands for Perl 5.
+
+The Zef module installer has to built by means of rakudobrew, and the ~build zef~ particular command does exactly that:
+
+#+begin_src shell
+% rakudobrew build zef
+#+end_src
+
+For every instance of Perl 6 /Zef/ has to be built, or it will not be usable on the /current/ running environment.
+Once ~zef~ is installed, it is possible to run it with the ~install~ command and a module name, so for instance:
+
+#+begin_src shell
+% zef install Archive::SimpleZip
+===> Searching for: Archive::SimpleZip
+...
+===> Installing: Archive::SimpleZip:ver<0.1.2>
+#+end_src
+
+In order to see every ~zef~ command and options just run the command without any argument.
 
 * Conclusions
 ~rakudobrew~ is a powerful tools in the /brew/ family that allows for quick and easy installation of a Perl 6 environment without requiring administrative priviliges nor tainting system wide installation (if any).
@@ -132,3 +183,4 @@ His web site is available at http://fluca1978.github.io
 - Perl 6 official web site: https://perl6.org/
 - Rakudobrew GitHub repository: https://github.com/tadzik/rakudobrew
 - MoarVM official web site: https://www.moarvm.org/
+- Perl 6 modules directory: https://modules.perl6.org/
