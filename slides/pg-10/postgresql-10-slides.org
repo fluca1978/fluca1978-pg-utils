@@ -1354,6 +1354,8 @@ segmento         | [(1,1),(-1,-1)]
 triangolo        | ((1,1),(2,2),(3,3))
 #+end_src
 
+/I cast a ~point~ non sono obbligatori per molte funzioni!/
+
 ** Tabelle fuori dall'ordinario
 *** Temporary Tables
 Le /Temporary Tables/ sono tabelle che persistono (in memoria) solo per la durata della sessione (o della transazione).
