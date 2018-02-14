@@ -24,13 +24,15 @@ Rakudobrew is a Perl program that allows users to download, build and run Perl 6
 Perl 6 is a complex beast when compared to Perl 5, in particular because it requires a /virtual machine/ to run on, has a separated package manager, and requires specific compilation. Rakudobrew eases the steps required to get all the pieces up and running downloading, compiling and installing every part is required.
 
 In the Perl 6 terminology it is important to distinguish among:
-- /rakudo/ a Perl 6 compiler;
-- /rakudo-star/ a Perl 6 compiler with several modules included;
+- /Rakudo/ a Perl 6 compiler;
+- /Rakudo-star/ a Perl 6 compiler with several modules included;
 - /backend/ a virtual machine able to run any piece of Perl 6 code compiled by a compiler;
 - /nqp/ (Not Quite Perl) a Perl-like language used to drive low-level virtual machine operations;
 - /perl6/ the effective (and interactive) implementation of a Perl 6 executable.
 
 From the above, in order to allow a Perl 6 source code to run it is required that the source code is compiled on the fly by a compiler and is executed by a virtual machine.
+
+The ~rakudobrew~ was born primarly to allow Perl 6 developers and tester to install and run different Perl 6 environments in a easy way, and had in the past been adopted as a way to install Perl 6 for regular users too. It is worth noting that, by design, ~rakudobrew~ downloads a compile a /tagged/ version of the Perl 6 source code, that could be not the optimal or more stable one available at the moment. Therefore, before going on using ~rakudobrew~ by yourself, keep in mind that it is a powerful but not recommended tool to adopt. Therefore, the aim of this paper is just to present it as a short and sweet way to get a /recent/ version of Perl 6 up and running, but for production enviroments official Perl 6 releases should be preferred. Official /Rakudo/ and /Rakudo-star/ releases can be downloaded for several platforms from the official web site.
 
 
 * Installing ~rakudobrew~
@@ -181,6 +183,7 @@ His web site is available at http://fluca1978.github.io
 
 * References
 - Perl 6 official web site: https://perl6.org/
+- Rakudo (and Rakudo-start) official web site: http://rakudo.org
 - Rakudobrew GitHub repository: https://github.com/tadzik/rakudobrew
 - MoarVM official web site: https://www.moarvm.org/
 - Perl 6 modules directory: https://modules.perl6.org/
