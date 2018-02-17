@@ -3590,7 +3590,17 @@ ERROR:  SET TRANSACTION ISOLATION LEVEL must not be called in a subtransaction
    L'idea è che la transazione accetta di "attendere" prima della sua esecuzione, e in cambio
    l'overhead di monitoring per la serializzazione è ridotto. Ciò produce dei vantaggi
    per le transazioni di reportistica.
+*** Il tempo nelle transazioni
+Il tempo nelle transazioni è *discreto*: ~now()~ e ~CURRENT_TIMESTAMP~ restituiscono sempre lo stesso valore (sono definite come /stable/). Esiste la funzione speciale ~clock_timestamp()~ che restituisce il valore basato sul clock di sistema, quindi differente ogni volta:
 
+#+begin_src sql
+> BEGIN;
+> SELECT now(), clock_timestamp();
+-[ RECORD 1 ]---+------------------------------
+now             | 2018-02-17 12:05:05.483757+01
+clock_timestamp | 2018-02-17 12:05:14.071801+01
+--                                ^^^^
+#+end_src
 * Stored Procedures & Cursori
 ** FUNCTION
 *** Funzioni
