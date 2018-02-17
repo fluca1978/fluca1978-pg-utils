@@ -1185,9 +1185,23 @@ Sono presenti i tipi interni ~integer~, ~smallint~, ~bigint~.
 
 I tipi *esatti* con virgola sono ~decimal~ e ~numeric~, da definirsci con una /precisione/ (cifre significative) e una /scala/ (cifre dopo la virgola). Ad esempio ~123.456789~ ha precisione 9 e scala 6.
 
-I tipi *inesatti* ~real~ e ~double~ sono a virgola mobile con arrotondamenti.
+I tipi *inesatti* ~real~ e ~real~ sono a virgola mobile con arrotondamenti.
 
 I tipi ~serial~, ~bigserial~, ~smallserial~ sono collegati ai relativi tipi interi e alle sequenze.
+*** Numerici precisi e imprecisi
+I tipi di dato ~real~ e ~real~ sono *imprecisi*, i tipi ~numeric~ e ~decimal~ sono precisi (dipendentemente dalla scala):
+#+begin_src sql
+> SELECT 1 - 0.0000000000000001::float AS float_result,
+1 - 0.0000000000000001::numeric AS numeric_result,
+1 - 0.0000000000000001::decimal AS decimal_result,
+testdb-> 1 - 0.0000000000000001::decimal( 10, 8 ) AS decimal_fix_result;
+-[ RECORD 1 ]------+-------------------
+float_result       | 1
+numeric_result     | 0.9999999999999999
+decimal_result     | 0.9999999999999999
+decimal_fix_result | 1.00000000
+
+#+end_src
 *** Valute
 Il tipo ~money~ rappresenta una valuta con cifre dopo la virgole. Può essere convertito in ~numeric~ senza perdita di precisione, ma convertirlo in altri formati (intero, reale) produce perdita di precisione.
 *** Stringhe
