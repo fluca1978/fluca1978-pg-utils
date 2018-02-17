@@ -2410,7 +2410,7 @@ nel caso di duplicazione:
 ---------------------------------------------------
  {"age": 39, "name": "Luca", "surname": "Ferrari"}
 #+END_SRC
-*** Operatori JSON
+ *** Operatori JSON
 Gli operatori hanno tutti due varianti:
 1. se usati con indice numerico forniscono accesso ad un array;
 2. se usati con indice testuale accedono ad un campo di oggetto.
@@ -2504,6 +2504,14 @@ Ci sono molte funzioni di utilità per convertire dati da e per JSON:
 ---------------
  [1,2,3,4]
 #+END_SRC
+*** Esempio di JSONB in linea
+#+begin_src sql
+> SELECT '{ "nome": "Luca", "cognome" :
+      "Ferrari", "cognome" : "FERRARI",
+"db": [ "postgres", "sqlite3" ] }'::jsonb->'db'->>1;
+-[ RECORD 1 ]---------------------
+?column? | postgres
+#+end_src
 ** Tablespaces
 *** Introduzione
 I /tablespaces/ sono un meccanismo per "agganciare" al server altri percorsi fisici di memorizzazione.
