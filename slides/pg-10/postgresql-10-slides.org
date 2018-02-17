@@ -2181,6 +2181,26 @@ Testare se un range è vuoto:
 
 isempty | t
 #+end_src
+*** Query sui range (4)
+I range permettono anche di riscivere in modo /migliore/ alcune query di tipo /compreso fra/:
+
+#+begin_src sql
+> SELECT * 
+  FROM persona
+  WHERE ts >= '2018-02-17 12:22:39.858051' 
+    AND ts <= '2018-02-17 12:22:39.858053';
+#+end_src
+
+diventa
+
+#+begin_src sql
+> SELECT * 
+  FROM persona
+  WHERE tsrange( '2018-02-17 12:22:39.858051', 
+                 '2018-02-17 12:22:39.858053', 
+                 '[]' ) @> ts;
+#+end_src
+
 *** Attenzione a come si presentano i range
 #+begin_src sql
 > SELECT 
