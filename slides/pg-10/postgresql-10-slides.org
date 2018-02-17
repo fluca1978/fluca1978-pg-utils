@@ -1282,6 +1282,16 @@ mese   | 1
 giorno | 31
 
 #+END_SRC
+*** ~date_part~ non solo per le date ma anche per il tempo!
+#+begin_src sql
+> SELECT extract( hour from current_time ), 
+         date_part( 'hour', current_time ), 
+         date_trunc( 'hour', current_timestamp );
+
+date_part  | 18
+date_part  | 18
+date_trunc | 2018-02-17 18:00:00+01
+#+end_src
 *** Costruttori del tempo
 Oltre al cast esplicito di stringhe, sono disponibili i costruttori ~make_date()~, ~make_time()~ e ~make_timestamp()~. Esiste anche un ~make_interval()~ che ha una serie di valori di default che possono quindi essere specificati uno alla volta:
 #+BEGIN_SRC sql
@@ -1328,6 +1338,19 @@ Gli operatori logici sulle stringhe di bit sono definiti.
 #+END_SRC
 
 *Le stringhe di bit devono avere la stessa lunghezza per essere utilizzate con gli operatori!*
+*** Bit vs Boolean
+Le stringhe di bit possono essere usate per memorizzare piu' valori booleani in un solo campo.
+Le funzioni speciali ~set_bit~ e ~get_bit~ consentono di agire sui singoli bit specificandone l'offset (e l'eventuale valore):
+
+#+begin_src sql
+> SELECT 10::bit(4) AS bit_array,
+   get_bit( 10::bit(4), 2 ) AS second_bit,
+   set_bit( 10::bit(4), 2, 0 ) AS result_second_bit;
+
+bit_array         | 1010
+second_bit        | 1
+result_second_bit | 1000
+#+end_src
 *** Indirizzi di rete
 PostgreSQL fornisce tre tipi di dato:
 - ~inet~ memorizza un indirizzo IPv4 o IPv6 con relativa rete (ammetta valori sballati di rete!);
