@@ -4303,6 +4303,22 @@ INFO:  8
 INFO:  9
 INFO:  10
 #+end_src
+*** ~DO~: prototipizzazione rapida
+Lo stamente ~DO~ può essere usato per testare rapidamente un blocco di codice complesso a piacere da inserire in una funzione:
+#+begin_src sql
+> do $block$
+declare cur cursor( ts1 timestamp, 
+                    ts2 timestamp ) 
+       for select * 
+           from persona where tsrange( ts1, ts2, '[]' ) @> ts;
+r persona%rowtype;
+begin open cur( '2018-02-17 12:22:39.858051', '2018-02-17 12:22:39.858053' );
+fetch next from cur into r;
+while FOUND loop
+  raise info 'Record %', r.pk; fetch next from cur into r;
+end loop;
+end $block$;
+#+end_src
 ** Cursori
 *** Cos'è un cursore?
 Un cursore è un meccanismo che trasforma un record-set in una iterazione fra record: non si ottiene
