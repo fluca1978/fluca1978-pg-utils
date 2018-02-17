@@ -1445,7 +1445,23 @@ Una tabella temporanea può essere /agganciata/ ad una transazione con la clauso
 -------
      0
 #+END_SRC
+*** Tabella temporanea e transazioni: esempio (2)
+#+begin_src sql
+> BEGIN;
+> CREATE TEMPORARY TABLE foo( 
+              pk serial PRIMARY KEY, 
+              t text ) 
+    ON COMMIT DROP;
+> INSERT INTO foo(t) SELECT 'foo' || generate_series(1, 1000) ;
+> SELECT COUNT(*) FROM foo;
 
+count | 1000
+
+> COMMIT;
+> SELECT COUNT(*) FROM foo;
+ERROR:  relation "foo" does not exist
+LINE 2: SELECT COUNT(*) FROM foo;
+#+end_src
 
 *** Unlogged Tables
 Una tabella può essere marcata come /unlogged/: essa sarà persistente ma i suoi dati no.
