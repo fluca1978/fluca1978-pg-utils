@@ -1204,6 +1204,12 @@ decimal_fix_result | 1.00000000
 #+end_src
 *** Valute
 Il tipo ~money~ rappresenta una valuta con cifre dopo la virgole. Può essere convertito in ~numeric~ senza perdita di precisione, ma convertirlo in altri formati (intero, reale) produce perdita di precisione.
+
+#+begin_src sql
+> SELECT 10.25::money::numeric(5, 2);
+
+numeric | 10.25
+#+end_src
 *** Stringhe
 Ci sono i tipi standard ~varchar(n)~ (~character varying(n)~ e ~char(n)~, entrambi che contengono fino a un massimo di ~n~ caratteri (con padding a blank nel caso di ~char~.
 
