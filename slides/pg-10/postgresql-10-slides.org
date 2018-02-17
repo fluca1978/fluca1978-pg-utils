@@ -2172,6 +2172,26 @@ di un array:
   WHERE periodo @> '2017-10-31'::date;
 #+END_SRC
 
+*** Query sui range (3)
+Testare se un range è vuoto:
+#+begin_src sql
+> SELECT 
+   isempty( 
+    daterange( CURRENT_DATE, CURRENT_DATE, '()' ) );
+
+isempty | t
+#+end_src
+*** Attenzione a come si presentano i range
+#+begin_src sql
+> SELECT 
+   daterange( current_date, current_date, '[]' ) as SAME_INCLUSIVE,
+   daterange( CURRENT_DATE, CURRENT_DATE , '()' ) as SAME_EXCLUSIVE,
+   daterange( CURRENT_DATE, CURRENT_DATE + 1, '(]' ) as TOMORROW_INCLUSIVE;
+
+same_inclusive     | [2018-02-17,2018-02-18) -- oggi fino a domani escluso = oggi!
+same_exclusive     | empty                   -- non oggi = nulla!
+tomorrow_inclusive | [2018-02-18,2018-02-19) -- non oggi fino a domani incluso = domani!
+#+end_src
 ** Tipi di dato personalizzato
 *** Tipi personalizzati
 PostgreSQL consente di creare dei /tipi/ personalizzati:
