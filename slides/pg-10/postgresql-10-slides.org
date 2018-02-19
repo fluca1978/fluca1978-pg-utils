@@ -1303,6 +1303,25 @@ xmas_date     | 2017-12-25
 santa_arrives | 23:59:59
 make_interval | 25 days
 #+END_SRC
+*** Costruttori speciali del tempo
+Esistono delle /stringhe particolari/ per specificare date e tempo che possono essere usate come input per un campo ~date~ e ~timestamp~:
+#+begin_src sql
+ > SELECT 'epoch'::timestamp AS epoch,
+          'now'::timestamp AS now,
+          'yesterday'::timestamp AS yesterday,
+          'today'::timestamp AS today,
+          'tomorrow'::timestamp AS tomorrow,
+          'allballs'::time AS allballs;  -- solo time!
+
+epoch     | 1970-01-01 00:00:00
+now       | 2018-02-19 18:44:55.015914
+yesterday | 2018-02-18 00:00:00
+today     | 2018-02-19 00:00:00
+tomorrow  | 2018-02-20 00:00:00
+allballs  | 00:00:00
+#+end_src
+
+*Si noti che a parte ~now~ tutti gli altri campi sono /troncati/ alla data!*
 *** Convertire il tempo
 Le funzioni ~to_char()~ convertono un tempo (~timestamp~, ~date~, ~interval~) in una stringa, mentre ~to_date()~ e ~to_timestamp()~ convertono una stringa in un tempo.
 I parametri di formattazione del tempo solitamente usati sono:
@@ -1329,6 +1348,7 @@ pg_interval  | 2018-03-22 22:59:42.618705+01
 sql_interval | 2018-03-22 22:59:42.618705+01
 iso_interval | 2018-03-22 22:59:42.618705+01
 #+end_src
+
 *** Booleani
 Il tipo di dato ~boolean~ rappresenta un booleano che accetta come input:
 - ~TRUE~ oppure una delle stringhe ~'t'~, ~'true'~, ~'on'~, ~'yes'~;
