@@ -7275,6 +7275,24 @@ setting    | pg_log
 applied    | t
 error      |
 #+end_src
+*** Non tutti i parametri si trovano in ~pg_settings~, ma in ~pg_file_settings~!
+Non tutti i parametri del file di configurazione si trovano in ~pg_settings~ ma sicuramente, se sono stati processati, si trovano in ~pg_file_settings~:
+
+#+begin_src sql
+# SELECT * FROM pg_settings WHERE name = 'datestyle';
+(0 rows)
+
+# SELECT * FROM pg_file_settings WHERE name = 'datestyle';
+
+sourcefile | /mnt/data1/pgdata/postgresql.conf
+sourceline | 574
+seqno      | 20
+name       | datestyle
+setting    | iso, mdy
+applied    | t
+error      |
+
+#+end_src
 ** Configurazione: parametri principali
 *** Come impostare un parametro di configurazione
 Ci sono tre modi principali per impostare un parametro di configurazione:
