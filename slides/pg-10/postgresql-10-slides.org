@@ -6315,6 +6315,43 @@ Quali sono i link da cui scaricare le versioni di PostgreSQL?
 ...
 #+end_src
 
+** Auto-Explain
+*** Introduzione
+Il modulo ~auto_explain~ permette di specificare una soglia (ad esempio di tempo) oltre la quale una query viene automaticamente sottoposta ad ~EXPLAIN~ esplicito, e il risultato viene riportato nei log del cluster. Questo consente di ripercorrere i log a caccia di query /lente/ avendo già il relativo piano di accesso.
+
+*ATTENZIONE: la configurazione di default /non effettua alcun ~EXPLAIN~*: occorre configurare le soglie per ottenere qualche risultato!
+
+*** Soglie per ~auto_explain~
+Le principali soglie configurabili sono:
+- ~auto_explain.log_min_duration~ indica il tempo di durata di una query (secondi, millisecondi, minuti, ecc.) affinché il piano di esecuzione sia salvato nei log testuali;
+- ~auto_explain.log_verbose~ salva nei log testuali l'output come fosse dato un ~EXPLAIN VERBOSE~;
+- ~auto_explain.log_analyze~ se abilitato salva nei log l'output come fosse stato dato un ~EXPLAIN ANALYZE~ sulle query (rischioso in termini di performance);
+- ~auto_explain.log_timing~ se abilitato salva nei log testuali anche il tempo di esecuzione, va in coppia con ~.log_analyze~;
+*** Utilizzo di ~auto_explain~
+Come utente amministratore:
+#+begin_src sql
+# LOAD 'auto_explain';
+# SET auto_explain.log_min_duration = '10ms';
+
+# INSERT INTO trgm_test SELECT * FROM trgm_test;
+#+end_src
+
+e nei log testuali di PostgreSQL:
+
+#+begin_src shell
+LOG:  duration: 941.351 ms  plan:
+  Query Text: INSERT INTO trgm_test SELECT * FROM trgm_test;
+  Insert on trgm_test  (cost=0.00..6291.00 rows=300000 width=33)
+    ->  Seq Scan on trgm_test trgm_test_1  (cost=0.00..6291.00 rows=300000 width=33)
+#+end_src
+*** Utilizzo senza ~LOAD~
+E' possibile indicare ~auto_explain~ nelle librerie da caricare all'avvio del cluster, così come i relativi parametri di configurazione:
+
+#+begin_src shell
+session_preload_libraries = 'auto_explain'
+
+auto_explain.log_min_duration = '10ms'
+#+end_src
 * Full Text Search
 ** FTS: concetti
 *** Introduzione a FTS
