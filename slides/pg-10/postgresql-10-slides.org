@@ -7541,6 +7541,9 @@ tup_inserted  | 3121466
 tup_updated   | 242
 tup_deleted   | 119
 #+end_src
+
+In particolare se il rapporto fra ~xact_committed~ e  ~xact_rollback~ si avvicina all'uguaglianza (o ~xact_rollback~ supera il numero di ~xact_committed~ è probabile che ci sia un errore applicativo o una query entrata in loop.
+
 *** Informazioni sulle tabelle: ~pg_stat_user_tables~
 Le viste speciali ~pg_stat_user_tables~, ~pg_stat_sys_tables~ e l'unione ~pg_stat_all_tables~ forniscono dati sull'utilizzo delle tabelle utente, di sistema (catalogo) o complessive:
 #+begin_src sql
