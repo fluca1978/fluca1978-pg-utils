@@ -1185,11 +1185,31 @@ Sono presenti i tipi interni ~integer~, ~smallint~, ~bigint~.
 
 I tipi *esatti* con virgola sono ~decimal~ e ~numeric~, da definirsci con una /precisione/ (cifre significative) e una /scala/ (cifre dopo la virgola). Ad esempio ~123.456789~ ha precisione 9 e scala 6.
 
-I tipi *inesatti* ~real~ e ~double~ sono a virgola mobile con arrotondamenti.
+I tipi *inesatti* ~real~ e ~real~ sono a virgola mobile con arrotondamenti.
 
 I tipi ~serial~, ~bigserial~, ~smallserial~ sono collegati ai relativi tipi interi e alle sequenze.
+*** Numerici precisi e imprecisi
+I tipi di dato ~real~ e ~real~ sono *imprecisi*, i tipi ~numeric~ e ~decimal~ sono precisi (dipendentemente dalla scala):
+#+begin_src sql
+> SELECT 1 - 0.0000000000000001::float AS float_result,
+1 - 0.0000000000000001::numeric AS numeric_result,
+1 - 0.0000000000000001::decimal AS decimal_result,
+testdb-> 1 - 0.0000000000000001::decimal( 10, 8 ) AS decimal_fix_result;
+-[ RECORD 1 ]------+-------------------
+float_result       | 1
+numeric_result     | 0.9999999999999999
+decimal_result     | 0.9999999999999999
+decimal_fix_result | 1.00000000
+
+#+end_src
 *** Valute
 Il tipo ~money~ rappresenta una valuta con cifre dopo la virgole. Può essere convertito in ~numeric~ senza perdita di precisione, ma convertirlo in altri formati (intero, reale) produce perdita di precisione.
+
+#+begin_src sql
+> SELECT 10.25::money::numeric(5, 2);
+
+numeric | 10.25
+#+end_src
 *** Stringhe
 Ci sono i tipi standard ~varchar(n)~ (~character varying(n)~ e ~char(n)~, entrambi che contengono fino a un massimo di ~n~ caratteri (con padding a blank nel caso di ~char~.
 
@@ -1262,6 +1282,16 @@ mese   | 1
 giorno | 31
 
 #+END_SRC
+*** ~date_part~ non solo per le date ma anche per il tempo!
+#+begin_src sql
+> SELECT extract( hour from current_time ), 
+         date_part( 'hour', current_time ), 
+         date_trunc( 'hour', current_timestamp );
+
+date_part  | 18
+date_part  | 18
+date_trunc | 2018-02-17 18:00:00+01
+#+end_src
 *** Costruttori del tempo
 Oltre al cast esplicito di stringhe, sono disponibili i costruttori ~make_date()~, ~make_time()~ e ~make_timestamp()~. Esiste anche un ~make_interval()~ che ha una serie di valori di default che possono quindi essere specificati uno alla volta:
 #+BEGIN_SRC sql
@@ -1308,6 +1338,19 @@ Gli operatori logici sulle stringhe di bit sono definiti.
 #+END_SRC
 
 *Le stringhe di bit devono avere la stessa lunghezza per essere utilizzate con gli operatori!*
+*** Bit vs Boolean
+Le stringhe di bit possono essere usate per memorizzare piu' valori booleani in un solo campo.
+Le funzioni speciali ~set_bit~ e ~get_bit~ consentono di agire sui singoli bit specificandone l'offset (e l'eventuale valore):
+
+#+begin_src sql
+> SELECT 10::bit(4) AS bit_array,
+   get_bit( 10::bit(4), 2 ) AS second_bit,
+   set_bit( 10::bit(4), 2, 0 ) AS result_second_bit;
+
+bit_array         | 1010
+second_bit        | 1
+result_second_bit | 1000
+#+end_src
 *** Indirizzi di rete
 PostgreSQL fornisce tre tipi di dato:
 - ~inet~ memorizza un indirizzo IPv4 o IPv6 con relativa rete (ammetta valori sballati di rete!);
@@ -1402,7 +1445,23 @@ Una tabella temporanea può essere /agganciata/ ad una transazione con la clauso
 -------
      0
 #+END_SRC
+*** Tabella temporanea e transazioni: esempio (2)
+#+begin_src sql
+> BEGIN;
+> CREATE TEMPORARY TABLE foo( 
+              pk serial PRIMARY KEY, 
+              t text ) 
+    ON COMMIT DROP;
+> INSERT INTO foo(t) SELECT 'foo' || generate_series(1, 1000) ;
+> SELECT COUNT(*) FROM foo;
 
+count | 1000
+
+> COMMIT;
+> SELECT COUNT(*) FROM foo;
+ERROR:  relation "foo" does not exist
+LINE 2: SELECT COUNT(*) FROM foo;
+#+end_src
 
 *** Unlogged Tables
 Una tabella può essere marcata come /unlogged/: essa sarà persistente ma i suoi dati no.
@@ -2172,6 +2231,46 @@ di un array:
   WHERE periodo @> '2017-10-31'::date;
 #+END_SRC
 
+*** Query sui range (3)
+Testare se un range è vuoto:
+#+begin_src sql
+> SELECT 
+   isempty( 
+    daterange( CURRENT_DATE, CURRENT_DATE, '()' ) );
+
+isempty | t
+#+end_src
+*** Query sui range (4)
+I range permettono anche di riscivere in modo /migliore/ alcune query di tipo /compreso fra/:
+
+#+begin_src sql
+> SELECT * 
+  FROM persona
+  WHERE ts >= '2018-02-17 12:22:39.858051' 
+    AND ts <= '2018-02-17 12:22:39.858053';
+#+end_src
+
+diventa
+
+#+begin_src sql
+> SELECT * 
+  FROM persona
+  WHERE tsrange( '2018-02-17 12:22:39.858051', 
+                 '2018-02-17 12:22:39.858053', 
+                 '[]' ) @> ts;
+#+end_src
+
+*** Attenzione a come si presentano i range
+#+begin_src sql
+> SELECT 
+   daterange( current_date, current_date, '[]' ) as SAME_INCLUSIVE,
+   daterange( CURRENT_DATE, CURRENT_DATE , '()' ) as SAME_EXCLUSIVE,
+   daterange( CURRENT_DATE, CURRENT_DATE + 1, '(]' ) as TOMORROW_INCLUSIVE;
+
+same_inclusive     | [2018-02-17,2018-02-18) -- oggi fino a domani escluso = oggi!
+same_exclusive     | empty                   -- non oggi = nulla!
+tomorrow_inclusive | [2018-02-18,2018-02-19) -- non oggi fino a domani incluso = domani!
+#+end_src
 ** Tipi di dato personalizzato
 *** Tipi personalizzati
 PostgreSQL consente di creare dei /tipi/ personalizzati:
@@ -2311,7 +2410,7 @@ nel caso di duplicazione:
 ---------------------------------------------------
  {"age": 39, "name": "Luca", "surname": "Ferrari"}
 #+END_SRC
-*** Operatori JSON
+ *** Operatori JSON
 Gli operatori hanno tutti due varianti:
 1. se usati con indice numerico forniscono accesso ad un array;
 2. se usati con indice testuale accedono ad un campo di oggetto.
@@ -2405,6 +2504,14 @@ Ci sono molte funzioni di utilità per convertire dati da e per JSON:
 ---------------
  [1,2,3,4]
 #+END_SRC
+*** Esempio di JSONB in linea
+#+begin_src sql
+> SELECT '{ "nome": "Luca", "cognome" :
+      "Ferrari", "cognome" : "FERRARI",
+"db": [ "postgres", "sqlite3" ] }'::jsonb->'db'->>1;
+-[ RECORD 1 ]---------------------
+?column? | postgres
+#+end_src
 ** Tablespaces
 *** Introduzione
 I /tablespaces/ sono un meccanismo per "agganciare" al server altri percorsi fisici di memorizzazione.
@@ -3590,7 +3697,17 @@ ERROR:  SET TRANSACTION ISOLATION LEVEL must not be called in a subtransaction
    L'idea è che la transazione accetta di "attendere" prima della sua esecuzione, e in cambio
    l'overhead di monitoring per la serializzazione è ridotto. Ciò produce dei vantaggi
    per le transazioni di reportistica.
+*** Il tempo nelle transazioni
+Il tempo nelle transazioni è *discreto*: ~now()~ e ~CURRENT_TIMESTAMP~ restituiscono sempre lo stesso valore (sono definite come /stable/). Esiste la funzione speciale ~clock_timestamp()~ che restituisce il valore basato sul clock di sistema, quindi differente ogni volta:
 
+#+begin_src sql
+> BEGIN;
+> SELECT now(), clock_timestamp();
+-[ RECORD 1 ]---+------------------------------
+now             | 2018-02-17 12:05:05.483757+01
+clock_timestamp | 2018-02-17 12:05:14.071801+01
+--                                ^^^^
+#+end_src
 * Stored Procedures & Cursori
 ** FUNCTION
 *** Funzioni
@@ -4252,6 +4369,22 @@ INFO:  7
 INFO:  8
 INFO:  9
 INFO:  10
+#+end_src
+*** ~DO~: prototipizzazione rapida
+Lo stamente ~DO~ può essere usato per testare rapidamente un blocco di codice complesso a piacere da inserire in una funzione:
+#+begin_src sql
+> do $block$
+declare cur cursor( ts1 timestamp, 
+                    ts2 timestamp ) 
+       for select * 
+           from persona where tsrange( ts1, ts2, '[]' ) @> ts;
+r persona%rowtype;
+begin open cur( '2018-02-17 12:22:39.858051', '2018-02-17 12:22:39.858053' );
+fetch next from cur into r;
+while FOUND loop
+  raise info 'Record %', r.pk; fetch next from cur into r;
+end loop;
+end $block$;
 #+end_src
 ** Cursori
 *** Cos'è un cursore?
