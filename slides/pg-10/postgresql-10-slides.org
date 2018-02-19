@@ -7399,6 +7399,7 @@ I parametri sono:
 - ~constraint_exclusion~ permette di sfruttare le /constraint/ di tabella per ottimizzare le query.
 
 
+* Benchmarking & Testing
 ** Benchmarking
 *** pgbench
 Il sistema include un comando denominato ~pgbench~ che aiuta ad eseguire una serie di transazioni (anche
