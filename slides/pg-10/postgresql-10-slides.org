@@ -4,7 +4,7 @@
 #+DATE:      <2017-08-25 ven>
 #+LANGUAGE:  it
 
-#+OPTIONS:   H:3 num:t toc:t \n:nil @:t ::t |:t ^:t -:t f:t *:t <:t
+#+OPTIONS:   H:3 num:t toc:nil \n:nil @:t ::t |:t ^:t -:t f:t *:t <:t
 #+OPTIONS:   TeX:t LaTeX:t skip:nil d:nil todo:t pri:nil tags:not-in-toc
 #+INFOJS_OPT: view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
 #+EXPORT_SELECT_TAGS: export
@@ -20,7 +20,7 @@
 #+BEAMER_HEADER: \subtitle{il database Open Source piu' avanzato del pianeta}
 
 #+BEAMER_HEADER: \institute[fluca1978]{fluca1978\\\url{https://fluca1978.github.io}}
-#+BEAMER_HEADER: \titlegraphic{\includegraphics[height=3cm]{./images/logo.png}}
+
 
 
 #+BEAMER_THEME: magpie
@@ -4948,6 +4948,28 @@ della vista, e non lo si può usare per il primo popolamento della vista.
   VIEW CONCURRENTLY vw_m_persona
   WITH DATA;
 #+end_src
+
+*** Confondere l'ottimizzatore
+Le viste possono /confondere/ l'ottimizzatore se usate in modo improprio:
+#+begin_src sql
+> CREATE VIEW vw_persona
+  AS
+  SELECT * FROM persona
+  ORDER BY cognome DESC; -- ATTENZIONE!
+
+> EXPLAIN SELECT * FROM vw_persona
+          ORDER BY cognome ASC; -- ATTENZIONE !
+                                 QUERY PLAN
+----------------------------------------------------------------------------
+ Sort  (cost=25947.64..26197.64 rows=100000 width=44)
+   Sort Key: persona.cognome
+   ->  Sort  (cost=13316.32..13566.32 rows=100000 width=44)
+         Sort Key: persona.cognome DESC
+         ->  Seq Scan on persona  (cost=0.00..1935.00 rows=100000 width=44)
+#+end_src
+
+Viene eseguito un doppio /sorting/ dei dati.
+*E' bene non includere il sort nelle viste per evitare simili problemi!*
 
 ** Rules
 *** Introduzione alle rules
