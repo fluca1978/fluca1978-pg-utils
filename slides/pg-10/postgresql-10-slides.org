@@ -6315,7 +6315,7 @@ Quali sono i link da cui scaricare le versioni di PostgreSQL?
 ...
 #+end_src
 
-** Auto-Explain
+** Auto Explain
 *** Introduzione
 Il modulo ~auto_explain~ permette di specificare una soglia (ad esempio di tempo) oltre la quale una query viene automaticamente sottoposta ad ~EXPLAIN~ esplicito, e il risultato viene riportato nei log del cluster. Questo consente di ripercorrere i log a caccia di query /lente/ avendo già il relativo piano di accesso.
 
