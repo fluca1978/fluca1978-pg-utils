@@ -6566,7 +6566,7 @@ Si consideri una tabella piena di testo:
 > CREATE TABLE trgm_test( t text );
 > INSERT INTO trgm_test(t)
   SELECT md5( v::text )
-  FROM generate_series(1,100000) v;
+  FROM generate_series(1,400000) v;
 
 > CREATE INDEX no_trgm_idx ON trgm_test(t);
 #+end_src
@@ -6575,21 +6575,25 @@ Si consideri una tabella piena di testo:
 L'indice funziona solo per comparazioni con /inizio stringa/:
 
 #+begin_src sql
-> EXPLAIN ANALYZE SELECT t FROM trgm_test WHERE t LIKE 'a%';
+> EXPLAIN ANALYZE SELECT * FROM trgm_test WHERE t like 'cac%';
 
  Bitmap Heap Scan on trgm_test
- ...
+   Filter: (t ~~ 'cac%'::text)
+   Heap Blocks: exact=25
    ->  Bitmap Index Scan on no_trgm_idx
-       ...
-         Index Cond: ((t >= 'a'::text) AND (t < 'b'::text))
+         Index Cond: ((t >= 'cac'::text) AND (t < 'cad'::text))
 #+end_src
 
 ma non funziona per comparazioni /in mezzo alla stringa/:
 
 #+begin_src sql
-> EXPLAIN ANALYZE SELECT t FROM trgm_test WHERE t LIKE '%a%';
+> EXPLAIN ANALYZE SELECT * FROM trgm_test WHERE t like '%cac%';
+
  Seq Scan on trgm_test
-   Filter: (t ~~ '%a%'::text)
+   Filter: (t ~~ '%cac%'::text)
+
+ Planning time: 0.293 ms
+ Execution time: 115.258 ms
 #+end_src
 
 *** Esempio con ~pg_trgm~
@@ -6597,10 +6601,17 @@ ma non funziona per comparazioni /in mezzo alla stringa/:
 #+begin_src sql
 > CREATE INDEX trgm_idx ON trgm_test USING GIST (t gist_trgm_ops);
 
-> EXPLAIN ANALYZE SELECT t FROM trgm_test WHERE t LIKE '%a%';
+> EXPLAIN ANALYZE SELECT * FROM trgm_test WHERE t like '%cac%';
+
  Bitmap Heap Scan on trgm_test
- ...
+   Recheck Cond: (t ~~ '%cac%'::text)
+   Heap Blocks: exact=511
    ->  Bitmap Index Scan on trgm_idx
+         Index Cond: (t ~~ '%cac%'::text)
+
+
+ Planning time: 28.877 ms
+ Execution time: 99.718 ms
 #+end_src
 
 
