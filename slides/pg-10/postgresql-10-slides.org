@@ -1317,6 +1317,18 @@ to_char | 2017-Nov-21
 to_char | 21/11/2017
 to_date | 2017-12-25
 #+END_SRC
+*** Intervalli: sintassi ammesse
+Il tipo ~interval~ ammette almeno tre sintassi differenti:
+#+begin_src sql
+> SELECT
+   current_timestamp + '1 month 3 days 4 hours 25 minutes 12 seconds' AS pg_interval,
+   current_timestamp + '0-1 3 4:25:12' AS sql_interval,
+   current_timestamp + 'P0Y1M3DT4H25M12S' AS iso_interval;
+
+pg_interval  | 2018-03-22 22:59:42.618705+01
+sql_interval | 2018-03-22 22:59:42.618705+01
+iso_interval | 2018-03-22 22:59:42.618705+01
+#+end_src
 *** Booleani
 Il tipo di dato ~boolean~ rappresenta un booleano che accetta come input:
 - ~TRUE~ oppure una delle stringhe ~'t'~, ~'true'~, ~'on'~, ~'yes'~;
