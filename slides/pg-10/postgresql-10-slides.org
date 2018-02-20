@@ -2973,7 +2973,7 @@ ALTER DATABASE testdb OWNER TO luca;
 *** ~pg_dump~: opzioni comuni e utili
 - *~-C~ indica di inserire i comandi di creazione del database*;
 - *~-f~ indica il file di output (o la directory di output)*;
-  - ~-F~ può valere ~p~ (plain SQL), ~t~ (tar), ~d~ (directory);
+  - ~-F~ può valere ~p~ (plain SQL), ~t~ (tar), ~d~ (directory), ~c~ (custom) per ~pg_restore~;
 - *~-s~ solo definizione dei dati (DDL), non i dati stessi*;
 - *~-a~ effettua il dump dei soli dati, senza i comandi DDL*;
 - ~--inserts~ effettua il popolamento con una serie di ~INSERT~ invece che con il comando ~COPY~ (aumenta la dimensione del file ma lo rende piu' portabile);
@@ -3003,7 +3003,7 @@ o in modalità interattiva:
 
 *** Restore via ~pg_restore~
 Il comando ~pg_restore~ consente di ripristinare un archivio non SQL creato con ~pg_dump~ e formato /custom/ (~-Fc~).
-In default il comando produce uno script SQL corrispondente all'archivio fornito come backup.
+
 Se si vuole operare un restore /in place/ occorre specificare a quale database collegarsi per avviare una sessione, e lasciare che ~pg_restore~ ricarichi tutto dentro al database specificato nell'archivio:
 
 #+BEGIN_SRC shell
@@ -3017,6 +3017,43 @@ Anche il comando ~pg_restore~ supporta la modalità parallela.
 
 *Si tenga presente che la modalità parallela dipende anche dal numero di oggetti (es. tabelle) da esportare/importare*:
 ad esempio una tabella sola non verrà mai esportata/importata in parallelo.
+** Backup/Restore custom
+*** Esempio di backup con /custom format/
+Si supponga di aver creato un backup /custom/ (~-Fc~):
+#+begin_src shell
+% pg_dump -Fc -h localhost 
+          -U postgres 
+          -f testdb.dump testdb
+#+end_src
+
+*** Vedere il contenuto del backup
+Il comando ~pg_restore~ consente di visionare il contenuto del backup (binario):
+
+#+begin_src shell
+% pg_restore --list testdb.dump
+
+;
+; Archive created at 2018-02-20 19:32:13 CET
+;     dbname: testdb
+;     TOC Entries: 118
+...
+254; 1255 16405 FUNCTION public somma_sottrazione(integer, integer) luca
+250; 1255 16406 FUNCTION public tr_check_eta() luca
+1831; 1417 16688 SERVER - another_pg postgres
+2735; 0 0 USER MAPPING - USER MAPPING postgres SERVER another_pg postgres
+...
+#+end_src
+
+*** Riordinare il restore
+Loutput di ~--list~ può a sua volta essere usato, manipolato, come input di ~-L~ per:
+- escludere determinati oggetti dal ripristino (elimando le righe o commentadole con un ~;~);
+- riordinare l'esecuzione di ripristino.
+
+#+begin_src shell
+% pg_restore --list testdb.dump > testdb.restore.list
+% emacs testdb.restore.list
+% pg_restore -L testdb.restore.list testdb.dump
+#+end_src
 * Large Objects
 ** Large Objects vs TOAST
 PostgreSQL supporta due meccanismi di memorizzazione di oggetti binari "grossi":
