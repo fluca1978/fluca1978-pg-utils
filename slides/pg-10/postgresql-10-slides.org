@@ -2945,9 +2945,9 @@ Un ottimo punto di partenza è lo script ~502.pgsql~ usato con ~periodic(8)~ di 
 *** ~pg_dump~
 Il comando shell ~pg_dump~ consente di effettuare un /backup logico/ di un determinato database.
 
-Il backup viene fornito come script SQL o archivio compresso.
+Il backup è *consistente* (transazione in modalità /read-committed/).
 
-Supporta il dump /parallelo/.
+Supporta output in /plain-text/ (istruzioni SQL), archivio compresso, nonché dump parallelo.
 
 *** ~pg_dump~: dump SQL
 #+BEGIN_SRC shell
@@ -2962,7 +2962,9 @@ Verrà creato un file ~testdb.sql~ che contiene i comandi SQL per la creazione (
 #+BEGIN_SRC sql
 % less testdb.sql
 
-CREATE DATABASE testdb WITH TEMPLATE = template0 ENCODING = 'UTF8' LC_COLLATE = 'C' LC_CTYPE = 'C';
+CREATE DATABASE testdb 
+       WITH TEMPLATE = template0 
+       ENCODING = 'UTF8' LC_COLLATE = 'C' LC_CTYPE = 'C';
 ALTER DATABASE testdb OWNER TO luca;
 \connect testdb
 ...
@@ -3010,6 +3012,11 @@ Se si vuole operare un restore /in place/ occorre specificare a quale database c
     -d template1 \
     testdb.dump
 #+END_SRC
+*** ~pg_restore~ parallelo
+Anche il comando ~pg_restore~ supporta la modalità parallela.
+
+*Si tenga presente che la modalità parallela dipende anche dal numero di oggetti (es. tabelle) da esportare/importare*:
+ad esempio una tabella sola non verrà mai esportata/importata in parallelo.
 * Large Objects
 ** Large Objects vs TOAST
 PostgreSQL supporta due meccanismi di memorizzazione di oggetti binari "grossi":
