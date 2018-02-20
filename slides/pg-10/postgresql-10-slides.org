@@ -3004,6 +3004,12 @@ o in modalità interattiva:
 *** Restore via ~pg_restore~
 Il comando ~pg_restore~ consente di ripristinare un archivio non SQL creato con ~pg_dump~ e formato /custom/ (~-Fc~).
 
+In default il comando *esporta i comandi SQL necessari al ripristino del database*.
+
+#+begin_src shell
+% pg_restore testdb.dump > testdb.sql
+#+end_src
+
 Se si vuole operare un restore /in place/ occorre specificare a quale database collegarsi per avviare una sessione, e lasciare che ~pg_restore~ ricarichi tutto dentro al database specificato nell'archivio:
 
 #+BEGIN_SRC shell
