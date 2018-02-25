@@ -1707,6 +1707,25 @@ ERROR:  duplicate key value violates unique constraint "c_val_key"
 DETAIL:  Key (val)=(1) already exists.
 #+END_SRC
 
+** Rename di tabelle
+*** ~RENAME~
+Il comando ~ALTER TABLE RENAME~ consente di rinominare una tabella.
+
+Il comando mantiene gli eventuali vincoli di integrità referenziale:
+
+#+begin_src sql
+> CREATE TABLE a( pk serial PRIMARY KEY);
+> CREATE TABLE b( pk serial PRIMARY KEY,
+                  a  int REFERENCES a(pk) );
+
+> ALTER TABLE a RENAME TO z;
+> \d b
+                            Table "public.b"
+...
+Foreign-key constraints:
+    "b_a_fkey" FOREIGN KEY (a) REFERENCES z(pk)
+
+#+end_src
 ** Vincoli ~EXCLUDE~
 *** Confronto fra tuple
 PostgreSQL supporta un vincolo di tipo ~EXCLUDE~ da definire in fase di creazione della tabella o successivamente.
@@ -8338,7 +8357,7 @@ La selettività complessiva della clausola in ~AND~ logico è data dalla moltipl
 
 che è appunto il risultato fornito dal comando ~EXPLAIN~.
 
-\_*** Altro esempio analogo
+*** Altro esempio analogo
 Si supponga di variare la query come segue:
 
 #+begin_src sql
