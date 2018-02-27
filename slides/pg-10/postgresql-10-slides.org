@@ -1431,6 +1431,42 @@ triangolo        | ((1,1),(2,2),(3,3))
 
 /I cast a ~point~ non sono obbligatori per molte funzioni!/
 
+*** Sequenze
+Le sequenze vengono create con uno statement di ~CREATE SEQUENCE~, possono essere agganciate ai tipi di dato interi (~smallint~, ~int~, ~bigint~) ma ~bigint~ è il default.
+
+Alla sequenza si possono assegnare valori /minimi/ e /massimi/, se non specificati si prendono quelli di default del tipo di dato della sequenza.
+
+La sequenza può essere /agganciata/ ad una colonna di tabella con ~OWNED BY~, nel qual caso il drop della tabella/colonna implica anche il drop della sequenza.
+
+Le sequenze possono ciclare i valori (in caso di overflow) con ~CYCLE~.
+*** Sequenze: esempio
+#+begin_src sql
+> CREATE SEQUENCE my_seq
+   AS int
+   INCREMENT BY -1   -- si muove all'indietro
+   MINVALUE 0        -- fino a zero
+   MAXVALUE 100      -- da 100
+   START WITH 100    -- partendo da 100
+   CYCLE;            -- e ricomincia da 100 quando arriva a 0
+#+end_src
+*** Sequenze: funzioni
+- ~nextval( 'my_seq' )~ fornisce il prossimo valore della sequenza *senza rispettare eventuali ROLLBACK*;
+- ~currval( 'my_seq' )~ fornisce il valore corrente senza alterare la sequenza;
+- ~setval( 'my_seq', 55 )~ imposta a 55 il valore corrente della sequenza.
+
+#+begin_src sql
+> SELECT setval( 'my_seq', 1 ); --imposta a 1 il valore della sequenza
+
+> SELECT currval( 'my_seq' ), currval( 'my_seq' );
+ currval | currval
+---------+---------
+       1 |       1
+
+> SELECT nextval( 'my_seq' ), nextval( 'my_seq' );
+ nextval | nextval
+---------+---------
+       0 |     100  -- la sequenza ha ciclato!
+#+end_src
 ** Tabelle fuori dall'ordinario
 *** Temporary Tables
 Le /Temporary Tables/ sono tabelle che persistono (in memoria) solo per la durata della sessione (o della transazione).
