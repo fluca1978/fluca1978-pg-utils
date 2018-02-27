@@ -1468,6 +1468,10 @@ Le sequenze possono ciclare i valori (in caso di overflow) con ~CYCLE~.
 ---------+---------
        0 |     100  -- la sequenza ha ciclato!
 #+end_src
+*** Restart di una sequenza
+#+begin_src sql
+> ALTER SEQUENCE my_seq RESTART;
+#+end_src
 *** ~serial~
 Il tipo di dato speciale ~serial~ (e ~bigserial~, ~smallserial~) corrisponde ad una generazione automatica di sequenza:
 #+begin_src sql
@@ -1538,6 +1542,10 @@ che produce il risultato
  2 | 4 | 5 | i=auto, j=4, k=5
 #+END_SRC
 
+*** Restart di una colonna ~IDENTITY~
+#+begin_src sql
+> ALTER TABLE foo ALTER COLUMN i RESTART;
+#+end_src
 ** Tabelle fuori dall'ordinario
 *** Temporary Tables
 Le /Temporary Tables/ sono tabelle che persistono (in memoria) solo per la durata della sessione (o della transazione).
