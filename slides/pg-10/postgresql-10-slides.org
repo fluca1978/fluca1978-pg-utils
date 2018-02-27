@@ -2682,6 +2682,27 @@ mono_array | {name,Luca,surname,Ferrari}
 
 multi_array | {{name,Luca},{surname,Ferrari}}
 #+end_src
+*** Manipolazione di ~hstore~
+#+begin_src sql
+> SELECT hstore( rec )
+  FROM software rec;
+
+ "name"=>"Perl", "versions"=>"{5.8.2,5.10,5.20,6.c,2017.09}"
+ "name"=>"Java", "versions"=>"{5.8.2,1.4,1.5,1.6,1.7,1.8,1.8_168,1.8_169}"
+ "name"=>"Perl", "versions"=>"{5.8.2,5.10,5.20,6.c,2017.09}"
+
+> SELECT hstore_to_jsonb(
+        'name => Luca, surname => Ferrari'::hstore );
+
+ {"name": "Luca", "surname": "Ferrari"}
+
+> SELECT each(
+          'name => Luca, surname => Ferrari'::hstore );
+
+ (name,Luca)
+ (surname,Ferrari)
+
+#+end_src
 ** Tablespaces
 *** Introduzione
 I /tablespaces/ sono un meccanismo per "agganciare" al server altri percorsi fisici di memorizzazione.
