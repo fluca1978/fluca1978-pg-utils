@@ -2703,7 +2703,6 @@ multi_array | {{name,Luca},{surname,Ferrari}}
 
  (name,Luca)
  (surname,Ferrari)
-
 #+end_src
 ** Tablespaces
 *** Introduzione
