@@ -1623,7 +1623,6 @@ Gli indici creati su una tabella /unlogged/ sono anch'essi automaticamente unlog
 > CREATE UNLOGGED TABLE baz( b text );
 #+END_SRC
 
-
 ** Tablesample
 *** Estrarre un sottoinsieme dei dati
 Una ~SELECT~ permette di specificare un meccanismo di /sampling/ mediante la clausola ~TABLESAMPLE~ al quale si specifica l'algoritmo e la percentuale di tabella da campionare. Il risultato è l'applicazione dei vincoli della query sul campionamento della tabella.
@@ -2616,6 +2615,72 @@ Ci sono molte funzioni di utilità per convertire dati da e per JSON:
 "db": [ "postgres", "sqlite3" ] }'::jsonb->'db'->>1;
 -[ RECORD 1 ]---------------------
 ?column? | postgres
+#+end_src
+** Hash Store
+*** ~hstore~
+L'estensione ~hstore~ consente di memorizzare dati nella forma /chiave, valore/ ove il valore può essere anche ~NULL~.
+
+La chiave e il valore sono salvati come /testo/ in un'unica colonna, e diversi operatori esistono per dereferenziare ogni singola parte.
+
+Piu' valori possono essere memorizzati assieme, separati da una virgola.
+
+#+begin_src sql
+# CREATE EXTENSION hstore;
+#+end_src
+
+*** ~hstore~: operatori
+- ~->~ dereferenzia una chiave o un array di chiavi;
+- ~?~ indica se una determinata chiave esiste;
+- ~?&~ indica se un array di chiavi esistono;
+- ~||~ concatenazione di due ~hstore~;
+- ~@>~ e ~<@~ contenimento sinistra verso destra e viceversa;
+- ~-~ rimuove una chiave o un insieme di chiavi
+- ~%%~ e ~%#~ converte in un array monodimensionale o multidimensionale.
+*** ~hstore~: esempi
+#+begin_src sql
+> SELECT
+   'name => Luca'::hstore,
+   'name => Luca, surname => Ferrari'::hstore;
+
+hstore | "name"=>"Luca"
+hstore | "name"=>"Luca", "surname"=>"Ferrari"
+
+> SELECT 'name => Luca, surname => Ferrari'::hstore
+ ? 'surname';
+
+surname_exists | t
+
+> SELECT
+   'name => Luca, surname => Ferrari'::hstore
+         ->'surname' AS surname;
+
+surname | Ferrari
+#+end_src
+*** ~hstore~: esempi (2)
+#+begin_src sql
+> SELECT 'name => Luca, surname => Ferrari'::hstore
+       ->ARRAY[ 'name', 'surname' ] AS name_surname;
+
+name_surname | {Luca,Ferrari}
+
+> SELECT 'name => Luca, surname => Ferrari'::hstore
+  - ARRAY[ 'name', 'age' ] AS reduced;
+-[ RECORD 1 ]-----------------
+reduced | "surname"=>"Ferrari"
+#+end_src
+*** ~hstore~: esempi (3)
+#+begin_src sql
+> SELECT
+     %% 'name => Luca, surname => Ferrari'::hstore
+     AS mono_array;
+
+mono_array | {name,Luca,surname,Ferrari}
+
+> SELECT
+   %# 'name => Luca, surname => Ferrari'::hstore
+   AS multi_array;
+
+multi_array | {{name,Luca},{surname,Ferrari}}
 #+end_src
 ** Tablespaces
 *** Introduzione
