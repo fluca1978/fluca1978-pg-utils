@@ -2624,6 +2624,8 @@ La chiave e il valore sono salvati come /testo/ in un'unica colonna, e diversi o
 
 Piu' valori possono essere memorizzati assieme, separati da una virgola.
 
+Supporta indici btree (uguaglianza), gin e gist (sottoinsiemi ed inclusione).
+
 #+begin_src sql
 # CREATE EXTENSION hstore;
 #+end_src
