@@ -1202,6 +1202,19 @@ decimal_result     | 0.9999999999999999
 decimal_fix_result | 1.00000000
 
 #+end_src
+*** Numeric: scala e precisione
+I tipi numerici sono definibili con due vincoli: /scala/ e /precisione/. Il primo valore (*precisione*) indica /quante cifre totali comporranno il numero/, il secondo (*scala*) quante cifre saranno presenti dopo la virgola.
+
+Ne consegue che scala e precisione vincolano il massimo valore del dato stesso:
+
+#+begin_src sql
+#     numeric(p, s) --> 10^(p-s)
+> SELECT 39::numeric(2,1);
+ERROR:  numeric field overflow
+DETAIL:  A field with precision 2, 
+         scale 1 must round to an 
+         absolute value less than 10^1.
+#+end_src
 *** Valute
 Il tipo ~money~ rappresenta una valuta con cifre dopo la virgole. Può essere convertito in ~numeric~ senza perdita di precisione, ma convertirlo in altri formati (intero, reale) produce perdita di precisione.
 
