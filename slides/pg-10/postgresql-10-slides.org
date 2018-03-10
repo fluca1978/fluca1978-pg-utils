@@ -1106,6 +1106,19 @@ ERROR:  relation "dual" does not exist
  Perche' l'hai scritto?
 #+END_SRC
 Si può usare anche uno statement SQL come tag (es. ~$SELECT$~).
+*** Non dollar quoting
+Sono supportate altre sintassi per il quoting:
+- doppio apice per figurarne uno solo (no, ~\'~ non fa quello che ci si aspetterebbe);
+- ~quote_literal~ per inserire il corretto quoting di una stringa.
+
+#+begin_src sql
+> SELECT 'E'' arrivata la primavera!',
+quote_literal( 'E'' arrivata la primavera!' ); --non interpolato!
+
+?column?      | E' arrivata la primavera!
+quote_literal | 'E'' arrivata la primavera!'
+#+end_src
+
 *** Camel Case
 Lo standard SQL non ammette il camel case, e chiede l'uso di *UPPERCASE*.
 PostgreSQL utilizza il *lowercase* per tutti gli identificatori (il risultato non cambia).
@@ -1132,6 +1145,8 @@ quote_ident | foo
 quote_ident | "FOO"
 quote_ident | "Foo"
 #+END_SRC
+*** Camel Case vs Text
+*ATTENZIONE: ogni apice doppio ~"~ viene considerato come delimitatore di nome camel-case di colonna, non di testo!*
 *** ~SHOW~ e ~SET~
 Il comando speciale ~SHOW~ mostra il valore di alcuni parametri /run-time/, e analogamente il parametro ~SET~ consente di impostarne il valore.
 
