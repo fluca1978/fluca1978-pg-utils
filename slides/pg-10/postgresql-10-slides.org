@@ -3779,31 +3779,21 @@ Si può quindi procedere alla sua eliminazione tramite il relativo pid:
 ** Livello di isolamento
 *** Livelli di isolamento
    Le problematiche sono:
-   - *dirty reads*: è possibile vedere (leggere) tuple non ancora committate da altre
-     transazioni;
-   - *unrepeatable reads*: una tupla riletta piu' volte durante una transazione presenta valori
-     modificati da un'altra transazione;
-   - *phantom reads*: la stessa query eseguita piu' volta fornisce un resultset modificato (nella
-     quantità) da un'altra transazione
+   - *dirty reads*: è possibile vedere (leggere) tuple non ancora committate da altre  transazioni;
+   - *unrepeatable reads*: una tupla riletta piu' volte durante una transazione presenta valori modificati da un'altra transazione;
+   - *phantom reads*: la stessa query eseguita piu' volta fornisce un resultset modificato (nella quantità) da un'altra transazione
 
 *** Livelli di isolamento in PostgreSQL
-   PostgreSQL supporta 3 livelli di isolamento sui 4 standard (/read uncommited/, /read committed/,
-   /repeatable read/, /serializable/). Questo non rappresenta un problema poiché è sufficiente
-   garantire il /livello di isolamento superiore/.
+   PostgreSQL supporta 3 livelli di isolamento sui 4 standard (/read uncommited/, /read committed/, /repeatable read/, /serializable/). Questo non rappresenta un problema poiché è sufficiente garantire il /livello di isolamento superiore/.
 
    Una transazione può essere di tipo:
-   - *read committed*: /(default)/ uno statement vede solo le tuple consolidate
-     prima dell'inizio dello statement stesso;
-   - *repeatable read*: ogni statement della transazione può vedere solo le tuple
-     consolidate prima dell'esecuzione del primo statement (ovvero, all'inizio della transazione);
-   - *serializable*: come *repeatable read* ma impone che le transazioni siano /idempotenti/ rispetto
-     al loro effettivo ordine di esecuzione (monitoring di consistenza seriale).
+   - *read committed*: /(default)/ uno statement vede solo le tuple consolidate prima dell'inizio dello statement stesso;
+   - *repeatable read*: ogni statement della transazione può vedere solo le tuple consolidate prima dell'esecuzione del primo statement (ovvero, all'inizio della transazione);
+   - *serializable*: come *repeatable read* ma impone che le transazioni siano /idempotenti/ rispetto al loro effettivo ordine di esecuzione (monitoring di consistenza seriale).
 *** Impostare i livelli di isolamento in PostgreSQL
    All'interno di una transazione è possibile impostare il livello
-   di isolamento, che però non può essere piu' cambiato dopo l'esecuzione
-   di uno statement di modifica (incluso ~SELECT~).
-   Quando si avvia una transazione è possibile specificare l'isolation level
-   direttamente nel blocco ~BEGIN~, mentre per gli altri casi c'è ~SET TRANSACTION~:
+   di isolamento, che però non può essere piu' cambiato dopo l'esecuzione di uno statement di modifica (incluso ~SELECT~).
+   Quando si avvia una transazione è possibile specificare l'isolation level direttamente nel blocco ~BEGIN~, mentre per gli altri casi c'è ~SET TRANSACTION~:
 
 #+begin_src sql
 > BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ;
