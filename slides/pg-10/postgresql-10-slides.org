@@ -1282,6 +1282,30 @@ Ci sono i tipi standard ~varchar(n)~ (~character varying(n)~ e ~char(n)~, entram
 Il tipo ~text~ non pone limite sulla lunghezza della stringa.
 
 C'è anche un tipo ~name~ corrispondente a una stringa di 64 byte ma usato internamente solo da PostgreSQL per il catalogo di sistema.
+*** Funzioni basilari per la manipolazione di stringhe
+#+begin_src sql
+> SELECT length( 'Perl' ); 
+   -- 4, le stringhe iniziano da 1!!!!
+
+> SELECT upper( 'luca' ), -- LUCA
+         lower( 'LUCA' ); -- luca
+
+> SELECT 'Perl' || ' v5.27' AS concat,
+   replace( 'Perl 5', '5', '6') AS replace,
+   substr( 'Perl v5.27', 1, 4 ) AS substr,
+   regexp_match( 'Perl v5.27', 
+                 '\d+\.\d+' ) AS version_array,
+   regexp_replace( 'Perl v5.27', 
+                   '\d+\.\d+', 
+                   '6' );
+
+concat         | Perl v5.27
+replace        | Perl 6
+substr         | Perl
+version_array  | {5.27}
+regexp_replace | Perl v6
+
+#+end_src
 *** Bytea
 ~bytea~ è una stringa binaria illimitata con un header variabile da 1 a 4 byte. Usa generalmente il formato esadecimale per input e output.
 *** Tempo
