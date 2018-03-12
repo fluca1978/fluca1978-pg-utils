@@ -1102,6 +1102,17 @@ Tutte le seguenti ritornano ~NULL~:
          '' || NULL AS cat_null, 
          '' = NULL as empty_string;
 #+end_src
+
+quello che spesso si vuole è *~IS NULL~*:
+
+#+begin_src sql
+> SELECT NULL IS NULL as eq_null,
+      ( '' || NULL ) IS NULL AS str_null;
+
+eq_null  | t
+str_null | t
+#+end_src
+
 *** Dollar quoting
    PostgreSQL permette l'uso del *dollar quoting* (simile all'operatore ~qq~ di Perl):
    - si può usare un tag con nome arbitrario purché racchiuso fra due simboli ~$~;
