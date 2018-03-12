@@ -1154,6 +1154,24 @@ quote_ident | foo
 quote_ident | "FOO"
 quote_ident | "Foo"
 #+END_SRC
+*** ~NULL~ quoting
+Esiste una funzione ~quote_nullable~ che si comporta come ~quote_literal~ ma restituisce la stringa speciale ~NULL~ qualora il suo argomento sia ~NULL~.
+*ATTENZIONE: restituisce la /stringa/ ~NULL~, non il valore ~NULL~!*
+
+#+begin_src sql
+> SELECT quote_literal( '' || NULL ), 
+         quote_ident( '' || NULL ), 
+         quote_nullable( '' || NULL );
+
+quote_literal  | 
+quote_ident    | 
+quote_nullable | NULL
+
+> SELECT quote_nullable( '' || NULL ) = 'NULL';
+ ?column? 
+----------
+ t
+#+end_src
 *** Camel Case vs Text
 *ATTENZIONE: ogni apice doppio ~"~ viene considerato come delimitatore di nome camel-case di colonna, non di testo!*
 *** ~SHOW~ e ~SET~
