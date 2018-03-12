@@ -1093,6 +1093,15 @@ ERROR:  relation "dual" does not exist
 ----------
         1
 #+END_SRC
+*** NULL (breve ripasso)
+Tutte le seguenti ritornano ~NULL~:
+#+begin_src sql
+> SELECT 1 + NULL AS sum_null, 
+         NULL = NULL AS eq_null, 
+         NULL <> NULL AS ne_null, 
+         '' || NULL AS cat_null, 
+         '' = NULL as empty_string;
+#+end_src
 *** Dollar quoting
    PostgreSQL permette l'uso del *dollar quoting* (simile all'operatore ~qq~ di Perl):
    - si può usare un tag con nome arbitrario purché racchiuso fra due simboli ~$~;
