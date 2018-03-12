@@ -2294,6 +2294,19 @@ elemento (eventualmente ripetuto) nell'array:
  Perl | 6.c
 ...
 #+END_SRC
+*** ~string_to_array~
+La funzione ~string_to_array~ spezza una stringa sulla base di un separatore e restituisce le sottostringhe come array:
+
+#+begin_src sql
+> SELECT 
+   string_to_array( 'Luca ferrari', ' ' ) AS array, 
+   v[1] AS nome 
+  FROM 
+   string_to_array( 'Luca Ferrari', ' ' ) v;
+
+array | {Luca,ferrari}
+nome  | Luca
+#+end_src
 ** Range
 *** Range di dato
 I tipi di dato /range/ sono valori /non esattamente definiti/.
