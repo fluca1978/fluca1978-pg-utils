@@ -1,0 +1,2217 @@
+#+TITLE:     PostgreSQL 10
+#+AUTHOR:    Luca Ferrari
+#+EMAIL:     fluca1978@gmail.com
+#+DATE:      <2017-08-25 ven>
+#+LANGUAGE:  it
+
+#+OPTIONS:   H:3 num:t toc:nil \n:nil @:t ::t |:t ^:t -:t f:t *:t <:t
+#+OPTIONS:   TeX:t LaTeX:t skip:nil d:nil todo:t pri:nil tags:not-in-toc
+#+INFOJS_OPT: view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+EXPORT_SELECT_TAGS: export
+#+EXPORT_EXCLUDE_TAGS: noexport
+#+LINK_UP:
+#+LINK_HOME:
+
+#+startup: beamer
+#+LaTeX_CLASS: beamer
+#+BEAMER_HEADER: \subtitle{il database Open Source piu' avanzato del pianeta}
+
+#+BEAMER_HEADER: \institute[fluca1978]{fluca1978\\\url{https://fluca1978.github.io}}
+
+
+#+BEAMER_THEME: default
+#+LATEX_HEADER: \RequirePackage{fancyvrb}
+#+LATEX_HEADER: \DefineVerbatimEnvironment{verbatim}{Verbatim}{fontsize=\scriptsize}
+
+
+
+
+
+* initdb
+#+BEGIN_SRC sh
+# mkdir /mnt/data1/pgdata
+  && chown postgres:postgres /mnt/data1/pgdata
+
+$ initdb --data-checksum --encoding="UTF-8" \
+         --pwprompt                         \
+         -D /mnt/data1/pgdata/
+#+END_SRC
+
+* Struttura di PGDATA
+La directory ~$PGDATA~ contiene diversi file e directory, in particolare:
+- ~PG_VERSION~: file di testo con la versione che serve il cluster;
+- *~postgresql.conf~*: configurazione principale del cluster;
+- *~pg_hba.conf~*: file di accesso al database;
+- *~base~*: directory sotto la quale si troveranno tutti i database;
+- *~global~*: directory che contiene dati inter-database (es. cataloghi di sistema);
+- ~pg_stat~ e ~pg_stat_tmp~: informazioni per le statistiche di sistema;
+- *~pg_tblscp~*: link ai vari tablespace (oggetti fuori da ~base~);
+- *~pg_wal~* e ~pg_xact~: rispettivamente WAL e commit log.
+
+
+* ~pg_relation_filepath()~
+
+#+BEGIN_SRC sql
+# SELECT pg_relation_filepath( 'pg_class'::regclass );
+ pg_relation_filepath
+----------------------
+ base/1/1259
+#+END_SRC
+
+
+* Database template
+Quando viene inizializzata ~PGDATA~ il sistema crea due database chaimati /template/:
+- ~template0~: la copia principale del template;
+- *~template1~*: la copia usata in default.
+
+Ogni votla che viene creato un nuovo database *le impostazioni di base sono copiate da ~template1~*
+(che funge da /skel/ directory).
+
+E' facoltà del DBA impostare ~template1~ opportunamente per far si che la creazione di nuovi database
+abbia una base comune riconosciuta (es. schemi, linguaggi, ecc.).
+
+~template0~ è la copia di sicurezza del template, qualora si "sporchi" troppo ~template1~.
+
+* psql: connection URI
+#+BEGIN_SRC sh
+% psql postgresql://postgres@localhost:5432/template1
+% psql postgresql://postgres@localhost/template1?sslmode=require
+
+% export PGUSER=foo PGDATABASE=myDB
+% psql
+
+
+% cat ~/.pgpass
+127.0.0.1:5432:template1:postgres:xxxxxxxx
+#+END_SRC
+
+
+* Vedere i ruoli
+#+BEGIN_SRC sql
+# SELECT rolname, rolsuper, rolcreatedb, rolcanlogin
+FROM pg_roles;
+       rolname        | rolsuper | rolcreatedb | rolcanlogin
+----------------------+----------+-------------+-------------
+ pg_monitor           | f        | f           | f
+ pg_read_all_settings | f        | f           | f
+ pg_read_all_stats    | f        | f           | f
+ pg_stat_scan_tables  | f        | f           | f
+ pg_signal_backend    | f        | f           | f
+ postgres             | t        | t           | t
+#+END_SRC
+
+* Creare i ruoli
+#+BEGIN_SRC sql
+# CREATE ROLE my_app
+  WITH NOLOGIN
+  CONNECTION LIMIT 1
+  PASSWORD 'xxx';
+
+# ALTER ROLE my_app WITH LOGIN;
+
+# CREATE ROLE luca
+  WITH CREATEDB LOGIN PASSWORD 'xxxxx'
+  IN ROLE my_app;
+#+END_SRC
+
+* La vista ~pg_shadow~
+#+BEGIN_SRC sql
+# SELECT usename, usecreatedb, usesuper,
+         userepl, passwd
+  FROM pg_shadow;
+-[ RECORD 1 ]------------------------------------
+usename     | postgres
+usecreatedb | t
+usesuper    | t
+userepl     | t
+passwd      | md53175bce1d3201d16594cebf9d7eb3f9d
+#+END_SRC
+* La vista ~pg_hba_file_rules~
+#+begin_src sql
+# SELECT line_number, type, database, user_name, auth_method
+testdb-# FROM pg_hba_file_rules;
+line_number| type  | database |   user_name    | auth_method
+-----------+-------+----------+----------------+-------------
+        84 | local | {all}    | {all}          | trust
+        86 | host  | {all}    | {+developers}  | reject
+        87 | host  | {all}    | {+stocker_app} | trust
+#+end_src
+
+* Vedere i database disponibili
+#+BEGIN_SRC sql
+# SELECT datname FROM pg_database;
+
+% psql -h localhost -U postgres -l
+#+END_SRC
+
+
+* Camel Case
+#+BEGIN_SRC sql
+> CREATE TABLE Foo( Bar int, bAz int );
+-- diventa
+-- create table foo( bar int, baz int);
+
+> CREATE TABLE "Foo"( "Bar" int, "bAz" int );
+> SELECT "Bar", "bAz" FROM "Foo";
+#+END_SRC
+* Camel Case: ~quote_ident~
+
+#+BEGIN_SRC sql
+> SELECT quote_ident( 'foo' ),
+         quote_ident( 'FOO' ),
+         quote_ident( 'Foo' );
+-[ RECORD 1 ]------
+quote_ident | foo
+quote_ident | "FOO"
+quote_ident | "Foo"
+#+END_SRC
+
+* ~current_setting~ e ~set_config~
+#+BEGIN_SRC sql
+> SELECT current_setting( 'enable_seqscan' );
+ current_setting
+-----------------
+ on
+
+> SELECT set_config( 'enable_seqscan', 'off', false );
+-- terzo parametro true se valido solo per la transazione corrente!
+ set_config
+------------
+ off
+#+END_SRC
+
+* Interagire con gli altri processi
+Ci sono un serie di funzioni per inviare dei segnali specifici:
+- ~pg_cancel_backend()~ e ~pg_terminate_backend()~ inviano rispettivamente un ~SIGTERM~ e ~SIGKILL~ ad un altro processo backend;
+- ~pg_rotate_logfile()~ invia un ~SIGHUP~ al processo logger collector per indicare di creare un nuovo file di log;
+- ~pg_reload_conf()~ invia un ~SIGHUP~ al postmaster per rileggere il file di configurazione;
+- ~pg_xlog_switch()~ forza la creazione di un nuovo segmento di WAL;
+- ~pg_current_xlog_flush_location()~ fornisce il /LSN/ attuale;
+- ~pg_is_in_recovery()~ e ~pg_is_in_backup()~ indicano se il cluster è in recovery o backup mode.
+
+* Addormentarsi: ~pg_sleep~
+#+BEGIN_SRC sql
+> \timing
+Timing is on.
+> SELECT pg_sleep( 2.5 );
+
+Time: 2573.297 ms
+#+END_SRC
+
+
+* Numerici precisi e imprecisi
+#+begin_src sql
+> SELECT 1 - 0.0000000000000001::float AS float_result,
+1 - 0.0000000000000001::numeric AS numeric_result,
+1 - 0.0000000000000001::decimal AS decimal_result,
+testdb-> 1 - 0.0000000000000001::decimal( 10, 8 ) AS decimal_fix_result;
+-[ RECORD 1 ]------+-------------------
+float_result       | 1
+numeric_result     | 0.9999999999999999
+decimal_result     | 0.9999999999999999
+decimal_fix_result | 1.00000000
+#+end_src
+
+* Esempi di manipolazione del tempo
+#+BEGIN_SRC sql
+> SELECT '2017-11-15T22:00'::timestamp - interval '3 days';
+      ?column?
+---------------------
+ 2017-11-12 22:00:00
+
+> SELECT interval '1 month' - interval '3 days';
+   ?column?
+---------------
+ 1 mon -3 days
+
+> SELECT '2017-11-15'::date + 3 - '2017-10-12'::date;
+ ?column?
+----------
+       37
+#+END_SRC
+* Esempio di funzioni di manipolazione del tempo
+#+BEGIN_SRC sql
+> SELECT age( current_timestamp, '2017-12-25T23:59:59'::timestamp ) as to_xmas,
+        extract( 'year' from current_date ),
+        date_part( 'hours', current_time ),
+        justify_days( '35 days'::interval );
+-[ RECORD 1 ]+---------------------------------
+to_xmas      | -1 mons -4 days -05:20:00.051659
+date_part    | 2017
+date_part    | 18
+justify_days | 1 mon 5 days
+#+END_SRC
+* ~extract~ vs ~date_part~
+#+BEGIN_SRC sql
+> SELECT
+  date_part( 'year', '2018-01-31'::date ) AS anno,
+  extract( 'month' from '2018-01-31'::date ) AS mese, -- stringa
+  extract( day from '2018-01-31'::date ) AS giorno;   -- non stringa
+-[ RECORD 1 ]
+anno   | 2018
+mese   | 1
+giorno | 31
+#+END_SRC
+* ~date_part~ non solo per le date ma anche per il tempo!
+#+begin_src sql
+> SELECT extract( hour from current_time ), 
+         date_part( 'hour', current_time ), 
+         date_trunc( 'hour', current_timestamp );
+
+date_part  | 18
+date_part  | 18
+date_trunc | 2018-02-17 18:00:00+01
+#+end_src
+* Costruttori del tempo
+#+BEGIN_SRC sql
+> SELECT make_date( 2017, 12, 25 ) as xmas_date,
+        make_time( 23, 59, 59 ) as santa_arrives,
+        make_interval( days => 25 );
+-[ RECORD 1 ]-+-----------
+xmas_date     | 2017-12-25
+santa_arrives | 23:59:59
+make_interval | 25 days
+#+END_SRC
+* Costruttori speciali del tempo
+#+begin_src sql
+ > SELECT 'epoch'::timestamp AS epoch,
+          'now'::timestamp AS now,
+          'yesterday'::timestamp AS yesterday,
+          'today'::timestamp AS today,
+          'tomorrow'::timestamp AS tomorrow,
+          'allballs'::time AS allballs;  -- solo time!
+
+epoch     | 1970-01-01 00:00:00
+now       | 2018-02-19 18:44:55.015914
+yesterday | 2018-02-18 00:00:00
+today     | 2018-02-19 00:00:00
+tomorrow  | 2018-02-20 00:00:00
+allballs  | 00:00:00
+#+end_src
+* Convertire il tempo
+#+BEGIN_SRC sql
+> SELECT to_char( current_date, 'YYYY-Mon-DD' ),
+         to_char( current_date, 'DD/MM/YYYY' ),
+         to_date( '25/12/2017', 'DD/MM/YYYY' );
+-[ RECORD 1 ]--------
+to_char | 2017-Nov-21
+to_char | 21/11/2017
+to_date | 2017-12-25
+#+END_SRC
+* Intervalli: sintassi ammesse
+#+begin_src sql
+> SELECT
+   current_timestamp + '1 month 3 days 4 hours 25 minutes 12 seconds' AS pg_interval,
+   current_timestamp + '0-1 3 4:25:12' AS sql_interval,
+   current_timestamp + 'P0Y1M3DT4H25M12S' AS iso_interval;
+
+pg_interval  | 2018-03-22 22:59:42.618705+01
+sql_interval | 2018-03-22 22:59:42.618705+01
+iso_interval | 2018-03-22 22:59:42.618705+01
+#+end_src
+
+
+* Bit vs Boolean
+#+begin_src sql
+> SELECT 10::bit(4) AS bit_array,
+   get_bit( 10::bit(4), 2 ) AS second_bit,
+   set_bit( 10::bit(4), 2, 0 ) AS result_second_bit;
+
+bit_array         | 1010
+second_bit        | 1
+result_second_bit | 1000
+#+end_src
+
+* Tabella temporanea e unlogged
+#+BEGIN_SRC sql
+> BEGIN;
+> CREATE TEMPORARY TABLE foo( f text ) ON COMMIT DELETE ROWS;
+#+END_SRC
+
+#+BEGIN_SRC sql
+> CREATE UNLOGGED TABLE baz( b text );
+#+END_SRC
+
+* Esempio complessivo: creazione della tabella
+#+BEGIN_SRC sql
+> CREATE TABLE foo(
+  i integer GENERATED ALWAYS AS IDENTITY,
+  j integer GENERATED BY DEFAULT AS IDENTITY,
+  k serial,
+  t text );
+#+END_SRC
+
+* Esempio di tablesample
+#+BEGIN_SRC sql
+> SELECT count(*)
+  FROM evento
+  TABLESAMPLE SYSTEM ( 0.2 )
+  WHERE mod( pk, 2 ) = 0;
+#+END_SRC
+
+
+* Vincoli posticipabili
+#+BEGIN_SRC sql
+> CREATE TABLE c( val int NOT NULL,
+                  UNIQUE(val) DEFERRABLE );
+
+> BEGIN;
+> SET CONSTRAINTS ALL DEFERRED;
+#+END_SRC
+
+* ~RENAME~
+#+begin_src sql
+> ALTER TABLE a RENAME TO z;
+#+end_src
+* Esempio di ~EXCLUDE~
+#+BEGIN_SRC sql
+> CREATE TABLE v (
+    pk serial PRIMARY KEY,
+    name text, value int );
+
+> ALTER TABLE v
+   ADD CONSTRAINT abs_value_exclude
+   EXCLUDE ( abs( value ) WITH = );
+#+END_SRC
+
+
+* Commenti
+#+BEGIN_SRC sql
+> COMMENT ON TABLE persona IS 'Tabella anagrafica';
+> COMMENT ON COLUMN persona.pk IS 'Chiave primari surrogata';
+
+> SELECT description
+     FROM pg_description
+     WHERE objoid = 'public.persona'::regclass;
+#+END_SRC
+
+
+* INSERT RETURNING: un esempio piu' complesso
+#+BEGIN_SRC sql
+> INSERT INTO persona( cognome, nome, codice_fiscale )
+  VALUES( 'Luca', 'Ferrari', 'FRRLCU78L19F257Z' )
+  RETURNING upper(codice_fiscale), pk;
+      upper       | pk
+------------------+----
+ FRRLCU78L19F257Z | 14
+#+END_SRC
+* UPSERT in azione
+#+BEGIN_SRC sql
+-- upsert!
+> INSERT INTO persona( codice_fiscale, nome, cognome )
+  VALUES( 'FRRLCU78L19F257B', 'Luca', 'Ferrari' )
+  ON CONFLICT(codice_fiscale)
+  DO UPDATE SET nome = EXCLUDED.nome,
+             cognome = EXCLUDED.cognome;
+#+END_SRC
+* UPSERT in aborto (controllato)
+#+BEGIN_SRC sql
+> INSERT INTO persona( codice_fiscale, nome, cognome )
+  VALUES( 'FRRLCU78L19F257B', 'Luca', 'Ferrari' )
+  ON CONFLICT(codice_fiscale)
+  DO NOTHING;
+
+INSERT 0 0
+#+END_SRC
+* UPSERT RETURNING
+#+BEGIN_SRC sql
+> INSERT INTO persona( codice_fiscale, nome, cognome )
+  VALUES( 'FRRLCU78L19F257B', 'Luca', 'Ferrari' )
+  ON CONFLICT(codice_fiscale)
+  DO UPDATE SET nome = EXCLUDED.nome,
+             cognome = EXCLUDED.cognome
+RETURNING nome, cognome;
+
+ nome | cognome
+------+---------
+ Luca | Ferrari
+
+#+END_SRC
+
+
+* Modificare il search path
+
+#+BEGIN_SRC sql
+> SET search_path="$user", private;
+> SHOW search_path;
+   search_path
+------------------
+ "$user", private
+
+#+END_SRC
+
+
+* Modalità di cast
+#+BEGIN_SRC sql
+> SELECT '10'::int + 3;
+> SELECT int '10' + 3;
+> SELECT CAST( '10' AS integer ) + 3;
+#+END_SRC
+
+* ~pg_typeof~
+
+#+BEGIN_SRC sql
+> SELECT pg_typeof( 1234 ) AS first,
+         pg_typeof( 1234.56 ) AS second,
+         pg_typeof( 'Hello' || 'World' ) AS third;
+
+  first  | second  | third
+---------+---------+-------
+ integer | numeric | text
+#+END_SRC
+
+
+* CASE
+
+#+BEGIN_SRC sql
+> SELECT nome,
+  CASE
+     WHEN eta >= 18 THEN 'maggiorenne'
+     ELSE 'minorenne'
+  END
+  FROM persona;
+ nome  |    case
+-------+-------------
+ Luca  | maggiorenne
+ Diego | minorenne
+#+END_SRC
+
+* CASE con equals
+
+#+BEGIN_SRC sql
+> SELECT nome,
+  CASE eta
+   WHEN 39 THEN 'maggiorenne'
+   WHEN 10 THEN 'minorenne'
+   ELSE 'non saprei'
+  END
+  FROM persona;
+#+END_SRC
+
+* COALESCE
+#+BEGIN_SRC sql
+> SELECT COALESCE( NULL, 'MIRIAM',
+                   'LUCA', NULL );
+ coalesce
+----------
+ MIRIAM
+#+END_SRC
+
+
+* NULLIF
+#+BEGIN_SRC sql
+> SELECT NULLIF('luca', 'LUCA');
+ nullif
+--------
+ luca
+> SELECT NULLIF( 10, 10 );
+ nullif
+--------
+
+#+END_SRC
+/E' una sorta di ~xor~ del poveraccio!/
+* Row
+#+BEGIN_SRC sql
+> SELECT ROW( 1, 2, 'Foo', 'Fighters' );
+        row
+--------------------
+ (1,2,Foo,Fighters)
+
+> SELECT ROW( p.codice_fiscale, length( p.codice_fiscale ) ) FROM persona p;
+          row
+-----------------------
+ (FRRLCU71L19F257B,16)
+#+END_SRC
+
+* Array
+#+BEGIN_SRC sql
+> SELECT ARRAY[1, 2, 3, 4]::integer[];
+   array
+-----------
+ {1,2,3,4}
+
+> SELECT ARRAY[ ARRAY[ 2, 4 ], ARRAY[ 1, 3 ] ];
+     array
+---------------
+ {{2,4},{1,3}}
+#+END_SRC
+
+* Array in tabella: indici
+
+#+BEGIN_SRC sql
+> SELECT name, versions[1] FROM software;
+ name | versions
+------+----------
+ Perl | 5.10
+ Java | 1.5
+#+END_SRC
+* Array in tabella: estremi
+#+BEGIN_SRC sql
+> SELECT name,
+  versions[ array_lower( versions, 1) ] AS required,
+  versions[ array_upper( versions, 1 ) ] AS optimal
+  FROM software;
+ name | required | optimal
+------+----------+---------
+ Perl | 5.10     | 6.c
+ Java | 1.5      | 1.8
+#+END_SRC
+* Array in tabella: slicing
+
+#+BEGIN_SRC sql
+> SELECT name, versions[1:2] FROM software;
+ name |  versions
+------+-------------
+ Perl | {5.10,5.20}
+ Java | {1.5,1.6}
+#+END_SRC
+
+* Array aggiunta di elementi
+#+BEGIN_SRC sql
+> UPDATE software
+  SET versions = versions || ARRAY['2017.09']
+-- SET versions = versions || '{1.8_168}'
+--   SET versions = array_append( versions, '1.8_169' )
+--   SET versions = array_prepend( '1.4', versions )
+--   SET versions = array_cat( ARRAY[ '5.6', '5.8' ], versions )
+  WHERE name = 'Perl';
+#+END_SRC
+
+
+
+* Array in tabella: ricerca
+#+BEGIN_SRC sql
+> SELECT name
+  FROM software
+  WHERE '6.c' = ANY( versions );
+-- WHERE '6.c' = ALL( versions );
+-- WHERE ARRAY[ '5.10', '5.20' ] && versions;
+-- WHERE ARRAY[ '5.10', '5.20' ] @> versions;
+--   WHERE ARRAY[ '5.10', '5.20' ] <@ versions;
+#+END_SRC
+
+* Array in tabella: eliminare un elemento
+#+BEGIN_SRC sql
+> UPDATE software
+  SET versions = array_remove( versions, '5.6' );
+--  SET versions = array_replace( versions, '5.8', '5.8.2' );
+#+END_SRC
+* Array in tabella: trovare un elemento
+
+#+BEGIN_SRC sql
+> SELECT name, array_positions( versions, '5.20' )
+  FROM software;
+#+END_SRC
+* Array in tabella: trasformare un array in tabella
+#+BEGIN_SRC sql
+> SELECT name, unnest( versions ) FROM software;
+ name | unnest
+------+---------
+ Perl | 5.8.2
+ Perl | 5.10
+ Perl | 5.20
+ Perl | 6.c
+...
+#+END_SRC
+* Range predefiniti
+- ~int4range~ range di ~integer~;
+- ~int8range~ range di ~biginteger~;
+- ~numrange~ range di ~numeric~;
+- ~tsrange~ rande di timestamp;
+- ~daterange~ range di ~date~.
+
+* Inserimento di valori di range
+#+BEGIN_SRC sql
+> INSERT INTO ticket( tipo, periodo, altezza )
+  VALUES( 'GRATUITO-BIMBO',
+  '[2017-06-01, 2017-09-30)',
+  '(60, 100)' );
+
+> INSERT INTO ticket( tipo, periodo, altezza )
+  VALUES( 'GRATUITO-ANZIANO',
+  '[2017-06-01, 2017-10-31]',
+  'empty' );
+#+END_SRC
+
+* Operatori di range
+
+- ~@>~ il range (a sinistra) contiene il valore scalare a destra;
+- ~isempty~ indica se il range è vuoto;
+- ~upper~ e ~lower~ estraggono gli estremi del range;
+- ~&&~ sovrapposizione fra due range.
+
+* Query sui range
+#+BEGIN_SRC sql
+> SELECT tipo FROM ticket
+  WHERE periodo
+     && daterange( '2017-07-01',
+                   '2017-07-31',
+                   '[]' );
+
+> SELECT tipo FROM ticket
+  WHERE periodo @> '2017-10-31'::date;
+
+> SELECT
+   isempty(
+    daterange( CURRENT_DATE,
+               CURRENT_DATE,
+               '()' ) );
+
+#+END_SRC
+
+* Query sui range (4)
+#+begin_src sql
+> SELECT * 
+  FROM persona
+  WHERE ts >= '2018-02-17 12:22:39.858051' 
+    AND ts <= '2018-02-17 12:22:39.858053';
+#+end_src
+
+diventa
+
+#+begin_src sql
+> SELECT * 
+  FROM persona
+  WHERE tsrange( '2018-02-17 12:22:39.858051', 
+                 '2018-02-17 12:22:39.858053', 
+                 '[]' ) @> ts;
+#+end_src
+
+* Attenzione a come si presentano i range
+#+begin_src sql
+> SELECT 
+   daterange( current_date, current_date, '[]' ) as SAME_INCLUSIVE,
+   daterange( CURRENT_DATE, CURRENT_DATE , '()' ) as SAME_EXCLUSIVE,
+   daterange( CURRENT_DATE, CURRENT_DATE + 1, '(]' ) as TOMORROW_INCLUSIVE;
+
+same_inclusive     | [2018-02-17,2018-02-18) -- oggi fino a domani escluso = oggi!
+same_exclusive     | empty                   -- non oggi = nulla!
+tomorrow_inclusive | [2018-02-18,2018-02-19) -- non oggi fino a domani incluso = domani!
+#+end_src
+
+* Creare un tipo enumerazione
+#+BEGIN_SRC sql
+> CREATE TYPE sw_version
+  AS ENUM ( 'stable',
+            'unstable',
+            'EOL',
+            'development' );
+#+END_SRC
+
+* Creare un tipo composito
+#+BEGIN_SRC sql
+> CREATE TYPE sw_repository
+  AS ( url text,
+       author text );
+#+END_SRC
+
+
+* Inserire i tipi compositi
+#+BEGIN_SRC sql
+> INSERT INTO software( name, version, repository )
+  VALUES( 'PostgreSQL-9.6',
+      'stable',
+      ( 'https://www.postgresql.org', 'PGDG' ) );
+
+> INSERT INTO software( name, version, repository )
+  VALUES( 'Perl-6',
+     'stable',
+     ( 'https://www.perl6.org', 'Perl Developers' ) );
+#+END_SRC
+
+* Estrarre i tipi composti
+#+BEGIN_SRC sql
+> SELECT name, (repository).url FROM software;
+      name      |            url
+----------------+----------------------------
+ PostgreSQL-9.6 | https://www.postgresql.org
+ Perl-6         | https://www.perl6.org
+#+END_SRC
+
+* Creare un tipo personalizzato range
+#+BEGIN_SRC sql
+> CREATE OR REPLACE
+  FUNCTION f_versions_diff( older float,
+                            newer float )
+RETURNS float AS $BODY$
+DECLARE
+BEGIN
+    RETURN (newer - older)::integer;
+END;
+$BODY$
+LANGUAGE plpgsql IMMUTABLE;
+#+END_SRC
+
+* Creare un tipo personalizzato range (2)
+#+BEGIN_SRC sql
+> CREATE TYPE sw_major_version AS RANGE (
+subtype = float,
+subtype_diff = f_versions_diff );
+#+END_SRC
+
+* Creare un tipo personallizato range (3)
+#+BEGIN_SRC sql
+> SELECT '[9.6, 10.0)'::sw_major_version;
+ sw_major_version
+------------------
+ [9.6,10)
+#+END_SRC
+
+
+* Esempio di JSONB in linea
+#+begin_src sql
+> SELECT '{ "nome": "Luca", "cognome" :
+      "Ferrari", "cognome" : "FERRARI",
+"db": [ "postgres", "sqlite3" ] }'::jsonb->'db'->>1;
+-[ RECORD 1 ]---------------------
+?column? | postgres
+#+end_src
+
+* Operatori JSON: esempi
+#+BEGIN_SRC sql
+> SELECT '[ "foo", 0, "bar", 1 ]'::json->1; -- 0
+
+> SELECT '{ "foo" : 0, "bar" : 1 }'::json->'foo'; -- 0
+
+> SELECT '{ "foo" : { "bar" : 1 } }'::json#>'{foo, bar}'; --1
+#+END_SRC
+* Operatori JSONB: esempi
+- ~?~ ricerca una chiave nell'oggetto;
+#+BEGIN_SRC sql
+> SELECT '{ "foo" : { "bar" : 1 } }'::jsonb ? 'bar'; -- true
+#+END_SRC
+- ~@>~ e ~<@~ contenimento da einistra a destra e viceversa (solo al livello principale);
+#+BEGIN_SRC sql
+> SELECT '{ "foo" : { "bar" : 1 } }'::jsonb
+     @> '{"bar" : 1}'::jsonb;  -- false
+
+> SELECT '{ "foo" : { "bar" : 1 } }'::jsonb
+    @> '{"foo" : {"bar" : 1}}'::jsonb;  -- true
+#+END_SRC
+- ~||~ concatenazione di due oggetti.
+#+BEGIN_SRC sql
+> SELECT '{ "name" : "Luca" }'::jsonb
+   || '{ "surname" : "Ferrari" }'::jsonb;
+#+END_SRC
+* Funzioni di utilitaì JSON
+#+BEGIN_SRC sql
+> SELECT row_to_json( row( name, surname, stuff->'email' ) )
+  FROM persona
+  WHERE stuff ? 'email';
+                       row_to_json
+---------------------------------------------------------
+ {"f1":"Luca","f2":"Ferrari","f3":"luca@mail.me"}
+ {"f1":"Emanuela","f2":"Santunione","f3":"luca@mail.me"}
+
+> SELECT json_build_object( 'name', 'Luca', 'surname', 'Ferrari' );
+            json_build_object
+------------------------------------------
+ {"name" : "Luca", "surname" : "Ferrari"}
+
+> SELECT array_to_json( ARRAY[ 1, 2, 3, 4 ] );
+ array_to_json
+---------------
+ [1,2,3,4]
+#+END_SRC
+
+* Creazione di un tablespace
+#+BEGIN_SRC shell
+% sudo mkdir /mnt/data2/my_tablespace
+% sudo chown postgres:postgres /mnt/data2/my_tablespace
+% sudo chmod 700 /mnt/data2/my_tablespace
+#+END_SRC
+
+#+BEGIN_SRC sql
+# CREATE TABLESPACE my_tablespace
+     OWNER luca  -- opzionale
+     LOCATION '/mnt/data2/my_tablespace'
+     WITH ( seq_page_cost = 2 ); --opzionale
+#+END_SRC
+* Spostare oggetti verso un tablespace
+#+BEGIN_SRC sql
+> ALTER TABLE persona
+  SET TABLESPACE my_tablespace;
+#+END_SRC
+
+#+BEGIN_SRC sql
+> ALTER TABLE ALL IN TABLESPACE my_tablespace
+  SET TABLESPACE other_tablespace;
+#+END_SRC
+
+
+
+
+
+
+
+
+
+
+
+
+
+* Importare dati con ~COPY~
+#+BEGIN_SRC sql
+# COPY persona( nome, cognome, codice_fiscale )
+   FROM '/home/luca/anagrafica.csv'
+   WITH
+   ( DELIMITER ';',
+     FORMAT 'csv',
+     HEADER 'on') ;
+#+END_SRC
+
+* Esportare dati con ~COPY~
+#+BEGIN_SRC sql
+# COPY evento TO '/tmp/evento.csv'
+   WITH ( FORMAT 'csv',
+          HEADER true,
+          QUOTE '"',
+          DELIMITER ';' );
+#+END_SRC
+
+* ~COPY~ da e verso un programma
+#+BEGIN_SRC sql
+# COPY persona( nome, cognome, codice_fiscale )
+   FROM PROGRAM '/bin/cat /home/luca/anagrafica.csv'
+  WITH
+   ( DELIMITER ';',
+     FORMAT 'csv',
+     HEADER 'on') ;
+#+END_SRC
+
+* Il comando ~\copy~
+#+BEGIN_SRC sql
+> \copy persona(nome, cognome, codice_fiscale)
+   from 'anagrafica.csv'
+   with ( header true,
+          format 'csv',
+          delimiter ';' )
+#+END_SRC
+
+* Informazioni sulla transazione corrente
+#+BEGIN_SRC sql
+> SELECT current_user, current_date,
+         current_timestamp,
+         txid_current(),
+         pg_backend_pid();
+-[ RECORD 1 ]--+------------------------------
+current_user   | luca
+date           | 2017-11-20
+now            | 2017-11-20 13:29:56.139872+01
+txid_current   | 3063
+pg_backend_pid | 775
+#+END_SRC
+* Informazioni di connessione
+#+BEGIN_SRC sql
+# SELECT current_user
+    || '@' || inet_server_addr()
+    || ':' || inet_server_port() AS myself,
+    inet_client_addr() || ':'
+    || inet_client_port() AS connected_from,
+    current_database(),
+    current_schema();
+
+myself           | postgres@127.0.0.1/32:5432
+connected_from   | 127.0.0.1/32:12951
+current_database | testdb
+current_schema   | public
+#+END_SRC
+
+* Uptime del servizio
+#+BEGIN_SRC sql
+# SELECT date_trunc( 'second',
+   now() - pg_postmaster_start_time() );
+
+date_trunc | 01:43:48
+#+END_SRC
+
+* Informazioni di dimensione di una tabella: esempio
+#+BEGIN_SRC sql
+> SELECT pg_relation_size( 'evento', 'main' ) AS main,
+        pg_relation_size( 'evento', 'fsm' ) AS free_space_map,
+        pg_relation_size( 'evento', 'vm' ) AS visibility_map,
+        pg_table_size( 'evento' ),
+        pg_total_relation_size( 'evento' ),
+        pg_size_pretty( pg_total_relation_size( 'evento' ) );
+
+main                   | 110059520
+free_space_map         | 0
+visibility_map         | 0
+pg_table_size          | 110067712
+pg_total_relation_size | 224051200
+pg_size_pretty         | 214 MB
+#+END_SRC
+
+
+
+* Informazioni sulla dimensione del tablespace e del database
+#+BEGIN_SRC sql
+> SELECT pg_size_pretty( pg_tablespace_size( 'my_tablespace' ) ),
+         pg_size_pretty( pg_database_size( 'testdb' ) );
+
+pg_size_pretty | 512 bytes
+pg_size_pretty | 371 MB
+#+END_SRC
+* Esempio di listato di directory
+#+BEGIN_SRC sql
+# WITH files AS ( SELECT pg_ls_dir( 'pg_log' ) )
+  SELECT * FROM files
+  WHERE pg_ls_dir like '%2018-01-__%.log';
+            pg_ls_dir
+----------------------------------
+ postgresql-2018-01-11_104609.log
+#+END_SRC
+
+* Esempio di lettura di un file
+#+BEGIN_SRC sql
+# SELECT regexp_split_to_table(
+            pg_read_file( 'pg_log/postgresql-2018-01-11_104609.log' ),
+                          E'\\n' );
+
+#+END_SRC
+
+* Uso di filter su funzioni di aggregazione
+#+BEGIN_SRC sql
+> SELECT
+  COUNT(*) FILTER ( WHERE nome LIKE 'F%' ) AS begin_with_f
+ ,COUNT(*) FILTER ( WHERE nome LIKE 'L%' ) AS begin_with_l
+ FROM persona;
+#+END_SRC
+* Uso di filter in group by
+#+BEGIN_SRC sql
+> SELECT nome, count(*)
+  FROM persona
+  GROUP BY nome
+  HAVING COUNT(*) FILTER( WHERE nome LIKE 'L%' ) > 1;
+
+ nome | count
+------+-------
+ Luca |  5000
+#+END_SRC
+
+* ~DISCARD~
+- ~ALL~ resetta completamente la sessione;
+- ~TEMPORARY~ cancella ogni tabella temporanea;
+- ~PLANS~ cancella i piani di esecuzione degli statement preparati.
+* Prepared Statements
+
+#+BEGIN_SRC sql
+> PREPARE find_persona_stmt( char ) AS
+   SELECT cognome, nome
+   FROM persona
+   WHERE substr( codice_fiscale, 1, 1 ) = $1;
+
+> EXECUTE find_persona_stmt( 'c' );
+
+-- cancellazione
+> DEALLOCATE find_persona_stmt;
+#+END_SRC
+
+* ~pg_dump~: opzioni comuni e utili
+- *~-C~ indica di inserire i comandi di creazione del database*;
+- *~-f~ indica il file di output (o la directory di output)*;
+  - ~-F~ può valere ~p~ (plain SQL), ~t~ (tar), ~d~ (directory), ~c~ (custom) per ~pg_restore~;
+- *~-s~ solo definizione dei dati (DDL), non i dati stessi*;
+- *~-a~ effettua il dump dei soli dati, senza i comandi DDL*;
+- ~--inserts~ effettua il popolamento con una serie di ~INSERT~ invece che con il comando ~COPY~ (aumenta la dimensione del file ma lo rende piu' portabile);
+- ~--column-inserts~ effettua il popolamento con una serie di ~INSERT~ con anche i nomi delle colonne, massima portabilità SQL;
+- ~-j~ numero di thread paralleli per il dump;
+- ~-Z~ indica il livello di compressio (0..9).
+
+* Restore via ~pg_restore~
+#+begin_src shell
+% pg_restore testdb.dump > testdb.sql
+
+% pg_restore -h localhost -U postgres \
+    -C \
+    -d template1 \
+    testdb.dump
+#+END_SRC
+
+* Esempio di backup con custom format
+
+#+begin_src shell
+% pg_dump -Fc -h localhost 
+          -U postgres 
+          -f testdb.dump testdb
+#+end_src
+
+#+begin_src shell
+% pg_restore --list testdb.dump > testdb.restore.list
+% emacs testdb.restore.list
+% pg_restore -L testdb.restore.list testdb.dump
+#+end_src
+
+
+* Large Object
+
+#+BEGIN_SRC sql
+> CREATE TABLE picture(
+   pk SERIAL PRIMARY KEY,
+   data oid NOT NULL,
+   description text );
+
+> INSERT INTO picture( description, data )
+  VALUES ( 'Bud Spencer & Terence Hill',
+           lo_import( '/home/luca/Downloads/bud.jpg' ) );
+#+END_SRC
+
+* Dove è finita l'immagine?
+#+BEGIN_SRC sql
+> SELECT * FROM picture;
+ pk | data  |        description
+----+-------+----------------------------
+  1 | 16691 | Bud Spencer & Terence Hill
+#+END_SRC
+#+BEGIN_SRC sql
+> SELECT loid, count( pageno )
+   FROM pg_largeobject
+   WHERE loid = 16691
+   GROUP BY loid;
+ loid  | count
+-------+-------
+ 16691 |   104
+
+> SELECT SUM( length( data ) )
+  FROM pg_largeobject
+  WHERE loid = 16691;
+ sum
+--------
+ 212164
+#+END_SRC
+
+* Esportare il file
+#+BEGIN_SRC sql
+> SELECT lo_export( 16691, '/tmp/export.jpg' );
+#+END_SRC
+
+* Sovrascrivere un large object
+#+BEGIN_SRC sql
+> SELECT lo_unlink( 16691 );
+> SELECT lo_import( '/home/luca/Downloads/sofia.png',
+                    16691 );
+#+END_SRC
+* Leggere dati da un large object
+#+BEGIN_SRC sql
+> SELECT lo_get( 16691, 0, 10 );
+         lo_get
+------------------------
+ \x89504e470d0a1a0a0000
+#+END_SRC
+* Tipi di memorizzazione TOAST
+- ~PLAIN~ il dato non può essere toastato, ossia non viene compresso e non viene messo offline nella tabella toast;
+- ~MAIN~ il dato viene compresso ma non può essere spostato offline nella tabella di appoggio TOAST;
+- *~EXTENDED~ è il default, il dato viene compresso e spostato offline nella tabella TOAST*;
+- ~EXTERNAL~ il dato viene messo offline ma non può essere compresso.
+
+* MVCC, Vacuum e Autovacuum
+- ~xmin~ indica il /transaction id/ della transazione che ha *generato* la tupla;
+- ~xmax~ indica il /transaction id/ della transazione che ha *invalidato* la tupla;
+- ~cmin~ indica il /command id/ che ha *generato* la tupla all'interno di una transazione;
+- ~cmax~ indica il /command id/ che ha *invalidato* la tupla all'interno di una transazione.
+
+#+BEGIN_SRC sql
+> BEGIN;
+> SELECT txid_current();
+ txid_current
+--------------
+         2491
+
+> SELECT * FROM txid_current_snapshot();
+ txid_current_snapshot
+-----------------------
+ 2491:2491:
+#+END_SRC
+* Tipi di lock: tabella
+*Tutti i lock sono a livello di tabella*
+- ~ACCESS_SHARE~ fornisce sola lettura, es. ~SELECT~;
+- ~ROW_SHARE~ fornisce lock in scrittura, es. ~SELECT FOR UPDATE~;
+- ~ROW_EXCLUSIVE~ lock per modifica ai dati, es ~UPDATE~, ~DELETE~, ~INSERT~;
+- ~SHARE_UPDATE_EXCLUSIVE~ modifica di dati da pate di comandi di utilità, ad es. ~VACUUM~, ~CREATE INDEX CONCURRENTLY~, ~ALTER TABLE~, ...;
+- ~SHARE~ per la creazione di indici non concorrenti, ~CREATE INDEX~;
+- ~SHARE_ROW_EXCLUSIVE~ per la creazione di trigger e alcune versioni di ~ALTER TABLE~;
+- ~EXCLUSIVE~ usato per ~REFRESH MATERIALIZED VIEW CONCURRENTLY~;
+- ~ACCESS_EXCLUSIVE~ usato per comandi aggressivi, es. ~DROP~, ~TRUNCATE~, ~VACUUM FULL~, ...
+
+*Si noti che una ~SELECT~ viene bloccata solo da un ~ACCESS_EXCLUSIVE~.*
+
+* Tipi di lock: tupla
+I lock a livello di tupla sono usati /automaticamente/ e non bloccano mai l'accesso ai dati in lettura, ma solo in scrittura o per un lock esplicito di tabella.
+
+- ~FOR UPDATE~ spesso usato con ~SELECT FOR UPDATE~ blocca le tuple selezionate da modifiche in altre transazioni;
+  + ~FOR NO KEY UPDATE~ come il precedente, ma lock piu' leggero e consente altre transazioni di bloccare le tuple con ~FOR KEY SHARE~;
+- ~FOR SHARE~ lock leggero, permette alle altre transazioni di acquisire un lock dello stesso tipo sulle stesse tuple;
+  - ~FOR KEY SHARE~ lock leggero, impedisce alle altre transazioni di acquire lock che modifichino le chiavi ma consente modifiche agli altri dati;
+
+
+
+
+* 1: Scoprire se qualcuno blocca
+#+begin_src sql
+# SELECT query, backend_start, xact_start, query_start,
+         state_change, state,
+         now()::time - state_change::time AS locked_since,
+         pid, wait_event_type, wait_event
+  FROM pg_stat_activity
+  WHERE wait_event_type IS NOT NULL
+ORDER BY locked_since DESC;
+
+#+end_src
+
+* 2: vedere se effettivamente non ha ottenuto il lock
+#+begin_src sql
+# SELECT a.usename, a.application_name, a.datname, a.query,
+         l.granted, l.mode, transactionid
+    FROM pg_locks l
+    JOIN pg_stat_activity a ON a.pid = l.pid
+    WHERE granted = false AND a.pid = 786;
+#+end_src
+
+
+* 3: Vedere chi blocca l'acquisizione del lock
+#+begin_src sql
+# SELECT a.usename, a.application_name, a.datname, a.query,
+        l.granted, l.mode, transactionid,
+        now()::time - a.state_change::time AS acquired_since,
+        a.pid
+   FROM pg_locks l
+   JOIN pg_stat_activity a ON a.pid = l.pid
+   WHERE granted = true AND transactionid = 3031;
+#+end_src
+
+
+* Transazioni
+#+begin_src sql
+> BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+
+#+end_src
+* Il tempo nelle transazioni
+#+begin_src sql
+> BEGIN;
+> SELECT now(), clock_timestamp();
+-[ RECORD 1 ]---+------------------------------
+now             | 2018-02-17 12:05:05.483757+01
+clock_timestamp | 2018-02-17 12:05:14.071801+01
+
+#+end_src
+
+* Stored Procedures & Cursori
+#+begin_src sql
+CREATE OR REPLACE
+FUNCTION function_name( a int DEFAULT 0,
+                        b int DEFAULT 0 )
+RETURNS SETOF persona
+AS $body$
+DECLARE
+  c CONSTANT integer := 10;
+  my_row     persona%rowtype;
+  my_record  record;
+BEGIN
+  FOR my_record IN select * from persona
+  LOOP
+     RETURN next my_record;
+  END LOOP;
+
+  return query SELECT * FROM persona;
+EXCEPTION
+    WHEN division_by_zero THEN return my_record;
+END
+$body$
+VOLATILE | IMMUTABLE | STABLE
+SECURITY DEFINER | INVOKER
+LANGUAGE language plpgperl;
+#+end_src
+* Vedere le funzioni
+#+begin_src sql
+> SELECT p.proname, l.lanname, p.prosrc
+   FROM pg_proc p
+   JOIN pg_language l ON p.prolang = l.oid
+   WHERE proname = 'do_count';
+
+#+end_src
+* PERFORM: la soluzione
+#+begin_src sql
+CREATE OR REPLACE FUNCTION do_select()
+RETURNS VOID
+AS $BODY$ DECLARE
+BEGIN
+        PERFORM  * FROM persona;
+END;
+$BODY$ LANGUAGE plpgsql;
+#+end_src
+
+* SELECT INTO: esempio con STRICT
+#+begin_src sql
+CREATE OR REPLACE FUNCTION do_select()
+RETURNS VOID AS $BODY$
+DECLARE
+        v_nome text;
+        v_cognome text;
+BEGIN
+        SELECT nome, cognome
+        INTO STRICT v_nome, v_cognome
+        FROM persona
+        WHERE codice_fiscale = 'FRRLCU78L19F257B';
+
+        RAISE INFO 'Trovati % %',
+                   v_nome,
+                   v_cognome;
+END;
+$BODY$ LANGUAGE plpgsql;
+#+end_src
+
+*** EXECUTE: esempio
+#+begin_src sql
+-- SELECT do_count( 2, 'persona' );
+CREATE OR REPLACE FUNCTION do_count( pk int, tabella text)
+RETURNS integer
+AS $BODY$ DECLARE
+        v_count int;
+BEGIN
+        EXECUTE 'SELECT count(*) FROM '
+                 || tabella
+                 || ' WHERE pk >= $1'
+        INTO STRICT v_count
+        USING pk;
+
+        RETURN v_count;
+END;
+$BODY$ LANGUAGE plpgsql;
+#+end_src
+
+*** EXECUTE USING: esempio
+#+begin_src sql
+CREATE OR REPLACE FUNCTION f_tellers( tid int )
+RETURNS SETOF pgbench_tellers
+AS $BODY$
+DECLARE
+   r pgbench_tellers%rowtype;
+BEGIN
+   EXECUTE
+    'SELECT * FROM pgbench_tellers '
+    || 'WHERE tid = $1'
+    USING (tid)
+   INTO r;
+   RETURN NEXT r;
+END;
+$BODY$ LANGUAGE plpgsql;
+#+end_src
+
+* ~DO~: esempio in plpgsql
+#+begin_src sql
+> DO $CODE$
+ DECLARE
+ BEGIN
+   FOR i IN 1..10 LOOP
+    RAISE INFO 'Valore %', i;
+   END LOOP;
+ END
+ $CODE$;
+
+#+end_src
+
+
+* Esempio di cursore unbound
+#+begin_src sql
+CREATE OR REPLACE FUNCTION do_cursor()
+RETURNS int AS $BODY$
+DECLARE
+        counter int := 0;
+        my_curs refcursor;
+        my_record persona%rowtype;
+BEGIN
+        OPEN my_curs FOR
+            SELECT * FROM persona
+            WHERE eta >= 18;
+        FETCH my_curs INTO my_record;
+        WHILE FOUND
+        LOOP
+          counter := counter + 1;
+          FETCH my_curs INTO my_record;
+        END LOOP;
+
+     CLOSE my_curs;
+     RETURN counter;
+END;
+$BODY$ LANGUAGE plpgsql;
+#+end_src
+* Esempio di ciclo "automatico" su cursore
+#+begin_src sql
+CREATE OR REPLACE FUNCTION do_cursor()
+RETURNS int AS $BODY$
+DECLARE
+       ...
+BEGIN
+   FOR my_record IN my_curs
+   LOOP
+     counter := counter + 1;
+   END LOOP;
+  RETURN counter;
+END; $BODY$ LANGUAGE plpgsql;
+#+end_src
+
+* UPDATE/DELETE FOR CURRENT
+#+begin_src sql
+ OPEN my_curs;
+  FETCH LAST FROM my_curs INTO my_record;
+  WHILE FOUND
+  LOOP
+     IF my_record.eta >= 18 THEN
+       counter := counter + 1;
+     ELSE
+       UPDATE persona set valid = false
+            WHERE CURRENT OF my_curs;
+     END IF;
+     FETCH RELATIVE -2 FROM my_curs INTO my_record;
+  END LOOP;
+  CLOSE my_curs;
+#+end_src
+* Multicursori: esempio di funzione
+#+begin_src sql
+> CREATE OR REPLACE FUNCTION f_query_more_than_one()
+  RETURNS SETOF refcursor
+  AS $BODY$
+      DECLARE
+          persona_curs refcursor;
+          evento_curs  refcursor;
+      BEGIN
+         OPEN persona_curs FOR SELECT * FROM persona;
+         RETURN NEXT persona_curs;
+
+         OPEN evento_curs FOR SELECT * FROM evento;
+         RETURN NEXT evento_curs;
+
+      RETURN;
+  END;
+  $BODY$
+  LANGUAGE plpgsql;
+#+end_src
+
+* Multicursori: esempio di utilizzo
+
+#+begin_src sql
+> BEGIN;
+> SELECT f_query_more_than_one();
+ f_query_more_than_one
+-----------------------
+ <unnamed portal 5>
+ <unnamed portal 6>
+
+> FETCH NEXT FROM "<unnamed portal 5>";
+  pk   | nome | cognome |  codice_fiscale  | sesso | eta
+-------+------+---------+------------------+-------+-----
+ 12007 | Luca | Ferrari | FRRLCU78L19F257B | M     |   1
+
+> FETCH NEXT FROM "<unnamed portal 6>";
+   pk    |  description
+---------+---------------
+ 1017695 |  Evento 15695
+#+end_src
+** Listen/Notify
+#+begin_src sql
+-- due
+> NOTIFY my_channel, 'First event';
+> NOTIFY my_channel, 'Second event';
+#+end_src
+
+#+begin_src sql
+-- uno
+> LISTEN my_channel;
+...
+-- tre
+> SELECT 1 + 1;
+#+end_src
+
+* Esempio di ~NOTIFY~ tramite rule
+#+begin_src sql
+> CREATE OR REPLACE RULE d_evento
+AS ON DELETE TO evento
+DO ALSO
+SELECT pg_notify( 'delete_channel',
+                  'Eliminato evento ' || OLD.pk );
+#+end_src
+
+* Esempio di trigger: funzione
+#+begin_src sql
+CREATE OR REPLACE FUNCTION tr_check_eta()
+RETURNS TRIGGER
+AS $BODY$
+DECLARE
+        current_eta integer;
+        current_year integer;
+BEGIN
+  IF NEW.codice_fiscale IS NOT NULL THEN
+       current_eta  = to_number(
+                       substring( NEW.codice_fiscale FROM 7 FOR 2 ),
+                      '99' );
+       current_year = to_number( to_char( current_date, 'YY' ),
+                      '99' );
+       IF current_year < current_eta THEN
+          current_eta = current_year + 100 - current_eta;
+       END IF;
+  END IF;
+#+end_src
+
+
+* Esempio di trigger: aggancio alla tabella
+#+begin_src sql
+> CREATE TRIGGER tr_persona_eta
+  BEFORE INSERT OR UPDATE
+  ON persona
+  FOR EACH ROW
+  EXECUTE PROCEDURE tr_check_eta();
+#+end_src
+
+* Trigger di colonna
+#+begin_src sql
+>  DROP TRIGGER tr_persona_eta ON persona;
+> CREATE TRIGGER tr_persona_eta
+  BEFORE INSERT OR UPDATE OF eta, codice_fiscale
+  ON persona
+  FOR EACH ROW
+  EXECUTE PROCEDURE tr_check_eta();
+#+end_src
+
+* Esempio di trigger parametrico: funzione con parametro
+#+begin_src sql
+CREATE OR REPLACE FUNCTION tr_check_eta()
+RETURNS TRIGGER
+AS $BODY$
+DECLARE
+        current_eta integer;
+        current_year integer;
+BEGIN
+        IF TG_NARGS > 0 THEN
+           current_eta := to_number( TG_ARGV[ 0 ], '99' );
+        ELSE
+           current_eta := -1;
+        END IF;
+...
+#+end_src
+
+* Esempio di trigger parametrico: aggancio
+#+begin_src sql
+> CREATE TRIGGER tr_persona_eta
+  BEFORE INSERT OR UPDATE OF eta, codice_fiscale
+  ON persona
+  FOR EACH ROW EXECUTE PROCEDURE tr_check_eta( 10 );
+
+> UPDATE persona SET eta = 10, codice_fiscale = NULL
+  WHERE codice_fiscale = 'FRRLCU78L19F257B';
+INFO:  Aggiusto eta' UPDATE da 39 a 10
+#+end_src
+
+
+* Esempio di event trigger
+#+begin_src sql
+CREATE OR REPLACE FUNCTION ddl_start_end()
+RETURNS EVENT_TRIGGER AS
+$BODY$
+DECLARE
+        command record;
+BEGIN
+   RAISE INFO 'event trigger fired!';
+   FOR command IN SELECT * FROM pg_event_trigger_ddl_commands()
+   LOOP
+           RAISE INFO 'Comando % su %',
+                 command.command_tag,
+                 command.object_identity;
+   END LOOP;
+END; $BODY$
+LANGUAGE plpgsql;
+#+end_src
+* Esempio di esecuzione con event trigger
+#+begin_src sql
+# CREATE EVENT TRIGGER tr_start_end
+  ON ddl_command_start
+  EXECUTE PROCEDURE ddl_start_end();
+
+# ALTER TABLE testddl ADD COLUMN foo int;
+INFO:  event trigger fired!
+INFO:  Comando ALTER TABLE su public.testddl
+ALTER TABLE
+#+end_src
+
+
+* Grant sui ruoli
+#+begin_src sql
+# GRANT luca TO dev1;
+-- dev1 ora appartiene al gruppo luca
+#+end_src
+* Esempio di permessi di colonna
+#+begin_src sql
+# REVOKE ALL ON software FROM PUBLIC;
+# GRANT SELECT(name) ON software TO luca;
+#+end_src
+
+* OWNED
+#+begin_src sql
+> REASSIGN OWNED BY CURRENT_USER TO dba;
+-- drop altri oggetti
+> DROP OWNED BY dismissed;
+#+end_src
+
+
+* Row Level Security: esempio
+#+begin_src sql
+> CREATE POLICY view_maggiorenni
+  ON persona
+  FOR SELECT  -- quale statement?
+  TO PUBLIC   -- quale ruolo ?
+  USING  (eta >= 18); -- condizione di SELECT
+
+> ALTER TABLE persona ENABLE ROW LEVEL SECURITY;
+#+end_src
+
+
+* Viste dinamiche
+#+begin_src sql
+> CREATE VIEW vw_persona
+  AS
+  SELECT upper( cognome ), nome, eta
+  FROM persona
+  ORDER BY cognome, nome;
+
+> SELECT * FROM vw_persona;
+#+end_src
+* Viste materializzate
+
+#+begin_src sql
+> CREATE MATERIALIZED VIEW vw_m_persona
+  AS SELECT upper( cognome ), nome
+  FROM persona
+  ORDER BY cognome, eta
+  WITH NO DATA;
+
+> REFRESH MATERIALIZED VIEW vw_m_persona;
+
+> SELECT * FROM vw_m_persona;
+ERROR:  materialized view "vw_m_persona"
+        has not been populated
+#+end_src
+* Esempio di una rule: DELETE
+#+begin_src sql
+> CREATE OR REPLACE RULE r_delete_persona
+  AS ON DELETE TO persona
+  DO INSTEAD
+    UPDATE persona
+    SET valid = false
+    WHERE OLD.pk = pk;
+#+end_src
+
+* Esempio di rule: "_RETURN"
+#+begin_src sql
+-- CREATE TABLE maggiorenni() INHERITS( persona );
+> CREATE TABLE maggiorenni( LIKE persona );
+> CREATE OR REPLACE RULE "_RETURN"
+  AS ON SELECT TO maggiorenni
+  DO INSTEAD
+    SELECT * FROM persona
+    WHERE eta >= 18;
+#+end_src
+
+* Esempio di rule: UPDATE
+E' possibile /bloccare/ una tabella con una rule ~DO NOTHING~.
+#+begin_src sql
+> CREATE OR REPLACE RULE r_update_persona
+  AS ON update
+  TO persona
+  DO INSTEAD NOTHING;
+#+end_src
+
+
+* OVER & PARTITION
+~OVER~
+- ~PARTITION BY~ per indicare quali colonne usare per correlare le tuple (concettualmente
+  simile a /group by/);
+- ~ORDER BY~ per specificare l'ordinamento per processare le tuple nella funzione di
+  correlazione.
+
+* Esempio di Window Function: rank
+#+begin_src sql
+> SELECT name, version,
+         rank() OVER ()
+  FROM software
+  ORDER BY name, version;
+#+end_src
+* Simulare un contatore di riga
+#+begin_src sql
+> SELECT
+   row_number() OVER () AS ROW_ID ,
+   name
+  FROM family_tree
+#+end_src
+
+* ~lag()~ e  ~lead()~ in azione
+#+begin_src sql
+ > SELECT name, score,
+    lag( score, 1, 0 ) OVER ( ORDER BY score DESC ),
+    lead( score, 1, 0 ) OVER ( ORDER BY score DESC )
+  FROM score;
+   name   | score | lag | lead
+----------+-------+-----+------
+ Diego    |   200 |   0 |  200
+ Sara     |   200 | 200 |  100
+ Luca     |   100 | 200 |  100
+ Simone   |   100 | 100 |   50
+ Emanuela |    50 | 100 |   25
+ Paolo    |    25 |  50 |    0
+#+end_src
+
+
+* Spezzare la finestra
+#+begin_src sql
+ > SELECT name, score,
+     ntile(4) OVER (ORDER BY score DESC )
+   FROM score;
+   name   | score | ntile
+----------+-------+-------
+ Diego    |   200 |     1
+ Sara     |   200 |     1
+ Luca     |   100 |     2
+ Simone   |   100 |     2
+ Emanuela |    50 |     3
+ Paolo    |    25 |     4
+#+end_src
+
+* CTE UPDATE
+#+begin_src sql
+> WITH delete_obsolete AS (
+    UPDATE software SET valid = false
+    WHERE version IN (
+        SELECT MIN( version )
+        FROM software GROUP BY name )
+   RETURNING * )
+  SELECT * FROM delete_obsolete;
+ pk | name | version | valid
+----+------+---------+-------
+  1 | Perl |     5.1 | f
+  5 | Java |     1.4 | f
+#+end_src
+* CTE ricorive: alberi
+#+begin_src sql
+WITH RECURSIVE dump_family AS (
+  -- parte non ricorsiva: figlio
+  SELECT *,
+         'FIGLIO' AS description
+  FROM family_tree
+  WHERE parent_of IS NULL
+UNION
+  -- parte ricorsiva: join dei genitori
+  SELECT f.*,
+         'GENITORE di ' || df.name AS description
+  FROM dump_family df
+       JOIN family_tree f ON f.parent_of = df.pk )
+
+-- query finale
+SELECT name, description FROM dump_family;
+#+end_src
+
+
+* CTE ricorsive: esplosione dell'albero
+#+begin_src sql
+> WITH RECURSIVE dump_family AS (
+   SELECT *, name || ' (FIGLIO)' AS description
+   FROM family_tree WHERE parent_of IS NULL
+UNION
+   SELECT f.*, f.name || ' -> ' || df.description AS description
+   FROM dump_family df
+        JOIN family_tree f ON f.parent_of = df.pk )
+
+SELECT name, description FROM dump_family;
+
+   name   |            description
+----------+-----------------------------------
+ Diego    | Diego (FIGLIO)
+ Emanuela | Emanuela (FIGLIO)
+ Luca     | Luca -> Diego (FIGLIO)
+ Paolo    | Paolo -> Emanuela (FIGLIO)
+ Anselmo  | Anselmo -> Luca -> Diego (FIGLIO)
+#+end_src
+
+
+
+* Esepio by list: preparazione
+#+begin_src sql
+> CREATE TABLE persona (
+    pk SERIAL NOT NULL,
+    nome text,
+    cognome text,
+    codice_fiscale text NOT NULL,
+    sesso char(1) DEFAULT 'M',
+    CHECK ( sesso IN ( 'M', 'F' ) ) )
+    PARTITION BY LIST(sesso);
+#+end_src
+
+* Esempio by list: creazione delle partizioni
+#+begin_src sql
+> CREATE TABLE persona_maschio
+  PARTITION OF persona
+  FOR VALUES IN ('M');
+
+> CREATE TABLE persona_femmina
+  PARTITION OF persona
+  FOR VALUES IN ('F');
+#+end_src
+
+* Esempio by range: data di nascita
+#+begin_src sql
+> CREATE TABLE persona (
+    pk SERIAL NOT NULL,
+    nome text,
+    cognome text,
+    data_nascita date NOT NULL,
+    codice_fiscale text NOT NULL,
+    sesso char(1) DEFAULT 'M',
+    CHECK ( sesso IN ( 'M', 'F' ) ) )
+    PARTITION BY RANGE(data_nascita);
+#+end_src
+* Esempio by range: creazione delle partizioni
+#+begin_src sql
+> CREATE TABLE persona_last_century
+  PARTITION OF persona
+  FOR VALUES FROM ('1900-01-01')
+             TO ('1999-12-31');
+
+> CREATE TABLE persona_millenial
+  PARTITION OF persona
+  FOR VALUES FROM ('2000-01-01')
+             TO ('2100-12-31');
+#+end_src
+
+
+
+* Partitioning by rule
+#+begin_src sql
+> CREATE OR REPLACE RULE r_partition_insert_persona_maschio AS
+   ON INSERT
+   TO persona
+   WHERE sesso = 'M'
+   DO INSTEAD
+ INSERT INTO persona_maschio SELECT NEW.*;
+#+end_src
+
+* Partitioning by trigger
+#+begin_src sql
+> CREATE OR REPLACE FUNCTION f_tr_persona_insert()
+  RETURNS TRIGGER
+  AS $BODY$
+ DECLARE
+   BEGIN
+   IF NEW.sesso = 'M' THEN
+     INSERT INTO persona_maschio SELECT NEW.*;
+   ELSIF NEW.sesso = 'F' THEN
+     INSERT INTO persona_femmina SELECT NEW.*;
+   END IF;
+ RETURN NULL;
+ END;
+ $BODY$
+ LANGUAGE plpgsql;
+#+end_src
+
+* Instradamento automatico con constraint_exclusion
+#+begin_src sql
+> EXPLAIN SELECT * FROM persona WHERE sesso = 'M' AND codice_fiscale like 'FRR%';
+                                  QUERY PLAN
+------------------------------------------------------------------------------
+ Append  (cost=0.00..122.00 rows=2 width=42)
+   ->  Seq Scan on persona  (cost=0.00..0.00 rows=1 width=42)
+         Filter: ((codice_fiscale ~~ 'FRR%'::text) AND (sesso = 'M'::bpchar))
+   ->  Seq Scan on persona_maschio  (cost=0.00..122.00 rows=1 width=42)
+         Filter: ((codice_fiscale ~~ 'FRR%'::text) AND (sesso = 'M'::bpchar))
+#+end_src
+
+* Extensions
+** Concetti generali
+*** Introduzione alle estensioni
+PostgreSQL indica con il termine */extension/* un /pacchetto/ di oggetti correlati fra di loro e che devono essere gestiti coerentemente in blocco.
+
+Ad esempio una estensione può includere la definizione di procedure, trigger, tipi di dato personalizzato, ecc., che vengono /racchiusi/ in un pacchetto (l'estensione stessa) che viene gestita in blocco.
+
+Gestire una estensione in blocco significa essere in grado di installare, spostare, aggiornare ed eliminare l'intero insieme di oggetti con comandi singoli. Inoltre PostgreSQL riconoscerà ogni singolo oggetto come appartenente all'estensione e ne impedirà la movimentazione/cancellazione scorrelata dagli altri oggetti.
+
+*** Componenti di una estensione
+Una /extension/ è formata almeno da:
+- /un file script/ che contiene gli statement SQL necessari per definire e caricare l'estensione stessa (es. ~CREATE FUNCTION~, ~CREATE TYPE~, ...);
+- /un file di controllo/ che identifica degli attributi dell'estensione (versione, ecc.);
+- /eventuali librerie (shared objects)/ da caricare nel server assieme all'estensione (qualora questa dipenda da codice compilato).
+
+*Entrambi i file hanno un nome che deve iniziare con il nome dell'estensione stessa*.
+
+*Ogni estensione ha un numero di versione*: PostgreSQL utilizza i numeri di versione (che devono comparire nel nome del file di script e, opzionalmente, in quello di controllo) per effettuare gli aggiornamenti.
+
+*** Il control file
+Il /control file/ è un file con dei metadati relativi all'estensione. La sintassi è nel formato ~chiave = valore~ e il nome del file deve quello dell'estensione stessa con il suffisso ~.control~.
+
+E' anche possibile specificare un file di controllo dipendente dalla versione specifica di una estensione, nel qual caso il nome del file deve essere con il suffisso ~--<version>.control~.
+
+*** Il file di script
+Lo /script file/ è un file con nome pari a quello dell'estensione, seguito da due trattini e il numero di versione, infine il suffisso ~.sql~, ovvero:
+   ~<extension>--1.2.sql~
+
+*** Movimentazione di una estensione
+Una estensione si dice /relocatable/ (spostabile) se può essere migrata da uno schema ad un altro.
+
+Le estensioni hanno tre livelli di movimentazione:
+- /fully relocatable/ l'estensione non dipende dallo schema in cui gira;
+- /partially relocatable/ l'estensione può essere installata in qualunque schema ma poi non può essere spostata;
+- /non-relocatable/ l'estensione deve essere installata in uno schema specifico e da lì non può essere mossa.
+
+Il control file governa la /relocation/ di una estensione:
+| parametro     | valore          | relocatable |
+|---------------+-----------------+-------------|
+| ~relocatable~ | ~true~          | /fully/     |
+| ~schema~      |                 |             |
+|---------------+-----------------+-------------|
+| ~relocatable~ | ~false~         | /partial/   |
+| ~schema~      |                 |             |
+|---------------+-----------------+-------------|
+| ~relocatable~ | ~false~         | /none/      |
+| ~schema~      | ~<schema_name>~ |             |
+|---------------+-----------------+-------------|
+
+*** Dump dei dati di una estensione
+Una estensione può creare tabelle (o sequenze) da usare come spazio di configurazione.
+*Tali dati non saranno sottoposti a /dump/ del database*: l'estensione tornerà a creare tali dati!
+Tuttavia potrebbe capitare che l'utente modifichi tali dati di configurzione, nel qual caso è importante farne il dump.
+
+L'estensione deve informare il catalogo di sistema che gli oggetti devono essere sottoposti a dump: la funzione ~pg_catalog.pg_extension_config_dump()~ accetta il nome dell'oggetto da inserire nel dump.
+
+*** Upgrade di una estensione
+Per effettuare un upgrade di una estensione si può usare il comando ~ALTER EXTENSION~.
+
+Lo script file deve includere nel nome del file la versione di partenza e quella di arrivo, ad esempio:
+    ~<extension_name>--1.0--1.1-sql~
+
+Nel caso di upgrade ad una versione, sono eseguiti tutti i file script in ordine per garantire il salto di versione finale.
+
+***
+* Estensione: definizione del file di controllo
+Il file ~software.control~:
+#+begin_Src shell
+comment = 'Una semplice estensione'
+default_version = '1.0'
+relocatable = true
+#+end_src
+
+* Estensione: (opzionale) Makefile
+#+begin_src shell
+EXTENSION = software
+DATA = software--1.0.sql
+
+PG_CONFIG = pg_config
+PGXS := $(shell $(PG_CONFIG) --pgxs)
+include $(PGXS)
+#+end_src
+
+* Spostare l'estensione
+#+begin_src sql
+# ALTER EXTENSION software SET SCHEMA sw_ext;
+# DROP EXTENSION software;
+#+end_src
+
+
+* Esempio di workflow con ~pgxn~: ricerca di un pacchetto
+#+begin_src shell
+% pgxn search --ext partitioning
+
+% pgxn info pg_part
+
+% sudo pgxn install pg_part
+#+end_src
+
+
+* Esempio di operatori di FTS
+#+begin_src sql
+> SELECT to_tsquery( 'italian', 'database & open <-> source' )
+     && to_tsquery( 'italian', '! avanzato' );
+
+ > SELECT to_tsquery( 'italian', 'database & open <-> source' )
+      <@
+    to_tsquery( 'italian',
+                'database & free <-> libre <-> open <-> source' );
+
+----------
+ t
+
+-------------------------------------------
+ 'databas' & 'open' <-> 'sourc' & !'avanz'
+#+end_src
+
+* Ricerca FTS
+#+begin_src sql
+> SELECT subject FROM email
+   WHERE to_tsvector( 'italian', subject )
+   @@ to_tsquery( 'italian', 'corso & postgres:*' );
+
+       subject
+---------------------
+ Corso su PostgreSQL
+ Corso postgres
+#+end_src
+
+* Ulteriore esempio FTS
+#+begin_src sql
+> SELECT subject FROM email
+   WHERE to_tsvector( 'italian', subject || ' ' || message )
+    @@ to_tsquery( 'italian',
+                   'slide & (corso | postgres:*)' );
+
+       subject
+---------------------
+ Corso su PostgreSQL
+ Corso postgres
+ link slides
+
+#+end_src
+
+* Ranking FTS
+#+begin_src sql
+> SELECT subject,
+    ts_rank( to_tsvector( 'italian', subject || ' ' || message ),
+             to_tsquery( 'italian',
+                         'slide & (corso | postgres:*)' ) )
+  FROM email ORDER BY 2 DESC;
+
+       subject       |  ts_rank
+---------------------+-----------
+ Corso su PostgreSQL |  0.369819
+ Corso postgres      |  0.334374
+ link slides         | 0.0852973
+ PR-175              |     1e-20
+#+end_src
+
+* Pesi di un ~tsvector~
+#+begin_src sql
+> SELECT subject, ts_rank(
+       setweight( to_tsvector( 'italian', subject ), 'A' )
+       ||
+       setweight( to_tsvector( 'italian', message ), 'C' ),
+       to_tsquery( 'italian', 'corso | slide' ) )
+  FROM email
+  ORDER BY 2 DESC;
+#+end_src
+** Indici FTS
+#+begin_src sql
+> SELECT querytree( to_tsquery( 'italian', 'corso | slide' ) );
+    querytree
+-----------------
+ 'cors' | 'slid'
+#+end_src
+
+#+begin_src sql
+> CREATE INDEX fts_email_idx
+   ON email
+   USING GIN ( to_tsvector( 'italian', subject || ' ' || message ) );
+#+end_src
+
+
+
+* Foreign Data Wrapper
+#+begin_src sql
+# CREATE SERVER another_pg
+  FOREIGN DATA WRAPPER postgres_fdw
+  OPTIONS ( host 'localhost',
+            port '5433',
+            dbname 'anagraficadb' );
+#+end_src
+
+#+begin_src sql
+# CREATE USER MAPPING FOR CURRENT_USER
+  SERVER another_pg
+  OPTIONS( user 'luca',
+          password 'xxxx' );
+#+end_src
+#+begin_src sql
+# CREATE FOREIGN TABLE remote_persona (
+   pk SERIAL,
+   nome text,
+   cognome text,
+   codice_fiscale text NOT NULL )
+   SERVER another_pg
+   OPTIONS ( schema_name 'public',
+             table_name 'persona' );
+#+end_src
+
+* Sequenze remote FDW
+#+begin_src sql
+> CREATE VIEW persona_seq_wrapper
+  AS SELECT nextval( 'persona_pk_seq'::regclass ) AS val;
+
+# CREATE FOREIGN TABLE remote_persona_seq ( val integer )
+  SERVER another_pg
+  OPTIONS ( schema_name 'public',
+           table_name 'persona_seq_wrapper' );
+#+end_src
+
+
+* CONFIGURAZIONE Processi
+#+begin_src shell
+cluster_name = 'pg9.6.5-FreeBSD'
+update_process_title = on
+#+end_src
+
+* CONFIGURAZIONE Logging: dove
+- ~log_destination~ indica dove inviare i log del server:
+  + ~syslog~ invia al sistema di logging tramite ~syslog_facility~, ma richiede solitamente modifiche al demone /syslogd/ per accettare i log;
+  + ~csv~ memorizza i log in modo /Comma Separated Values/ (utile per analizzare i log in modo automatico;
+  + ~stderr~ invia i log direttamente allo standard error;
+- ~log_collector~ abilita la cattura dei log tramite un processo /collector/ che li invia ai file di log (usato con ~stderr~ e ~csv~);
+  + ~log_directory~ e ~log_filename~ indica la directory (relativa a ~$PGDATA~ o assoluta) e il nome di file da usare per i log (come stringa sottoposta a escape come ~strftime(2)~);
+  + ~log_rotation_age~ e ~log_rotation_size~ indicano dopo quanto tempo o dimensione il file di log deve essere ruotato;
+- ~syslog_ident~ e ~syslog_facility~ indicano la stringa di identity (~postgres~) e il livello di logging verso /syslogd/.
+* CONFIGURAZIONE Logging: quando
+- ~log_min_messages~ e ~client_min_messages~ indica la soglia di logging dei messaggi di log del server e delle connessioni utente;
+- ~log_min_duration_statement~ indica di inserire nei log tutte le query di durata superiore (in millisecondi) superiore a quella stabilita;
+- ~log_duration~ inserisce la durata di ogni statement eseguito (ma non la query eseguita!);
+- ~log_autovacuum_min_duration~ inserisce nei log le azioni di autovacuum che sono durate piu' dei millisecondi specificati.
+* CONFIGURAZIONE Logging: cosa
+- ~log_checkpoints~ inserisce una riga di log ad ogni checkpoint;
+- ~log_connections~ e ~log_disconnections~ inserisce una riga di log per ogni connessione e disconnessione;
+- ~log_line_prefix~ permette di specificare la linea di log con delle sequenze di escape;
+- ~log_statement~ indica se loggare gli statement di /DDL/ o di /DML/ o tutti (~off, ddl, mod, all~).
+
+
+
+* Parametri relativi a VACUUM e ANALYZE
+- ~vacuum_cost_limit~ indica il /punteggio/ di soglia per un ~VACUUM~ affinché si sospenda il processo per un certo periodo;
+- ~vacuum_cost_delay~ (multipli di 10 ms) indica per quanto tempo il processo di ~VACUUM~ (manuale) sarà interrotto al raggiungimento della soglia di costo;
+- ~vacuum_cost_page_hit~, ~vacuum_cost_page_miss~, ~vacuum_cost_page_dirty~ indicano rispettivamente il punteggio di costo di una pagina trovata nello shared buffers, non trovata e modificata (mentre prima era pulita);
+- ~vacuum_freeze_table_age~ indica a quale età il ~VACUUM~ deve percorrere anche le pagine dati con tuple non congelate;
+- ~vacuum_freeze_min_age~ numero di transazioni prima di forzare ~VACUUM~ a percorrere anche le pagine dati con tuple non congelate.
+
+* Autovacuum
+- ~autovacuum~ indica se il demone di autovacuum deve essere abilitato (anche se impostato ad ~off~ un autovacuum sarà lanciato per evitare lo xid wraparound);
+- ~autovacuum_max_workers~ indica il numero di processi di autovacuum che possono essere al massimo attivi contemporaneamente (oltre all'autovacuum launcher);
+- ~autovacuum_work_mem~ indica la memoria da usare per ogni /worker/ di autovacuum. Se vale ~-1~ indica di usare ~maintanance_work_mem~;
+- ~autovacuum_naptime~ indica il tempo di pausa fra un ciclo di autovacuum e l'altro;
+- ~autovacuum_vacuum_threshold~ e ~autovacuum_analyze_threshold~ indicano il numero di tuple aggiunte/modificate prima di lanciare un processo di ~VACUUM~ o ~ANALYZE~ su quella determinata tabella;
+- ~autovacuum_vacuum_scale_factor~ e ~autovacuum_analyze_scale_factor~ indicano una percentuale di dimensione della tabella da aggiungere a ai relativi parametri di threshold per stabilire se è necessario un'azione;
+- ~autovacuum_freeze_max_age~ stabilisce quante transazioni prima di effettuare un azione (per prevenire il wraparound o rimuovere file in ~pg_clog~);
+- ~autovacuum_vacuum_cost_delay~ simile a ~vacuum_cost_delay~ indica per quanto tempo fermarsi se si supera la soglia di costo;
+- ~autovacuum_vacuum_cost_limit~ simile a ~vacuum_cost_limit~ indica il punteggio soglia di costo (fra tutti i worker) per sospendere l'atuovacuum.
+* Background Worker
+- ~bgwriter_delay~ indica, in multipli di 10 ms, di quanto sospendere il Background Writer fra un ciclo e un altro.
+- ~bgwriter_lru_maxpgaes~ indica quante pagine modificate il background worker deve scaricare ad ogni ciclo;
+- ~bgwriter_lru_multiplier~ indica di quanto moltiplicare il numero di pagine stimate come /nuove/ per il prossimo ciclo;
+- ~bgwriter_flush_after~ indica di forzare un /flush/ del sistema operativo dopo che sono stati scritti dal Background Writer questi bytes di dati;
+- ~effective_io_concurrency~ indica quanti processi di I/O paralleli possono essere generati al massimo. Ad esempio su un RAID-0 si può aumentare questo valore al numero di dischi che compongono l'array.
+* WAL Levels
+- ~minimal~ scrive il numero di dati minimo, necessari solo per riprendersi da un crash;
+- ~replica~ scrive informazioni sufficienti per il ripristino dei dati da parte di un /base backup/;
+- ~logical~ aggiunge informazioni per il logical decoding.
+* Fsync etc.
+Il parametro ~fsync~ stabilisce come rendere persistenti le modifiche. Disabilitarlo è altamente rischioso e andrebbe fatto solo quando si può ripristinare completamente il database senza perdita di dati (es. caricamento iniziale).
+
+Il parametro ~wal_sync_method~ è comandato solo da ~fsync = on~ e indica quale metodo si deve usare per forzare il flush dei dati dei WAL. Il parametro di *default è ~fsync~* e comunque i valori dipendono dal sistema operativo e dalla system calls messe a disposizione.
+Il metodo ~fdatasync~ è disponibile su Linux per evitare aggiornamenti dei metadati.
+
+Il parametro ~syncrhonous_commit~ indica come viene gestito il commit di una transazione. Questo parametro può essere impostato per ogni singola transazione e non produce perdita di consistenza. I valori possibili sono:
+- ~on~ (default) si attende che il sistema operativo dia conferma della scrittura (non significa che i dati siano persistenti!);
+- ~off~ non si attende nessuna conferma, e si possono perdere transazioni per un certo periodo (3 volte il delay del WAL writer);
+- ~remote_apply~ e ~remote_write~ sono usati con la replica sincrona e indicano rispettivamente se la replica ha ricevuto e applicato il commit e se lo ha anche reso persistente su disco;
+- ~local~ attende che il sistema operativo abbia conferma il flush.
+
+* Parametri dei WAL
+- ~full_page_writes~ indica se ad ogni checkpoint una pagina modifica va scritta interamente nei WAL, aumenta la sicurezza di crash recovery al costo di maggior spazio di archiviazione;
+- ~wal_compression~ abilita la compressione delle /full pages/ ad ogni checkpoint;
+- ~commit_delay~ indica il tempo di delay (microsecondi) per un commit, in modo da raggruppare transazioni tutte assieme;
+- ~wal_buffers~ indica la quantita di memoria dello /shared buffers/ (default 1/32) usabili per le pagine WAL ancora da scaricare su disco, utile per transazioni che committano contemporaneamente;
+- ~wal_writer_delay~ indica quanti millisecondi attendere fra un flush verso il sistema operativo dei WAL e il successivo;
+- ~wal_writer_flush_after~ indica dopo quanti dati forzare un flush verso il sistema operativo.
+
+* Checkpoints
+- ~checkpoint_timeout~ numero di secondi prima di forzare un checkpoint automatico;
+- ~max_wal_size~ dimensione dei dati prima di forzare un checkpoint automatico;
+- ~checkpoint_completion_target~ indica il target di completamento del checkpoint per il throttling;
+- ~min_wal_size~ impedisce a ~pg_wal~ di scendere al di sotto di tale dimensione, così da garantire una occupazione minima costante.
+
+
+* Vedere cosa fanno gli utenti: ~pg_stat_activity~
+#+begin_src sql
+ > SELECT usename, client_addr, application_name,
+          backend_start, query_start,
+          state, backend_xid, query
+   FROM pg_stat_activity;
+
+#+end_src
+* Vedere come stanno i database: ~pg_stat_database~
+#+begin_src sql
+> SELECT datname, xact_commit, xact_rollback, blks_read,
+         tup_fetched, tup_inserted, tup_updated, tup_deleted
+FROM pg_stat_database;
+#+end_src
+
+* Informazioni sulle tabelle: ~pg_stat_user_tables~
+#+begin_src sql
+> SELECT relname, seq_scan, idx_scan,
+         n_tup_ins, n_tup_del, n_tup_upd, n_tup_hot_upd,
+         n_live_tup, n_dead_tup,
+         last_vacuum, last_autovacuum,
+         last_analyze, last_autoanalyze
+         FROM pg_stat_user_tables;
+
+#+end_src
+* Informazioni sugli indici: ~pg_stat_user_indexes~
+#+begin_src sql
+> SELECT relname, indexrelname,
+         idx_scan, idx_tup_read, idx_tup_fetch
+         FROM pg_stat_user_indexes;
+
+#+end_src
+
+
+* Informazioni sulle funzioni: ~pg_stat_user_functions~
+#+begin_src sql
+> SELECT funcname, calls, total_time, self_time
+   FROM pg_stat_user_functions;
+ funcname | calls | total_time | self_time
+----------+-------+------------+-----------
+ somma    |     2 |       0.43 |      0.43
+#+end_src
+
+* Informazioni di I/O: ~pg_statio_xxx~
+#+begin_src sql
+> SELECT relname, heap_blks_read, heap_blks_hit,
+         idx_blks_read, idx_blks_hit
+   FROM pg_statio_user_tables;
+#+end_src
+* Informazioni sui WAL: ~pg_stat_archiver~
+#+begin_src sql
+> SELECT * FROM pg_stat_archiver;
+-[ RECORD 1 ]------+------------------------------
+archived_count     | 27
+last_archived_wal  | 0000000100000003000000FA
+last_archived_time | 2017-11-02 10:38:25.898059+01
+failed_count       | 0
+last_failed_wal    |
+last_failed_time   |
+stats_reset        | 2017-10-31 13:53:29.891094+01
+#+end_src
+* Informazioni sul demone di scrittura: ~pg_stat_bgwriter~
+#+begin_src sql
+SELECT * FROM pg_stat_bgwriter;
+-[ RECORD 1 ]---------+------------------------------
+checkpoints_timed     | 273
+checkpoints_req       | 16
+checkpoint_write_time | 995400
+checkpoint_sync_time  | 3340
+buffers_checkpoint    | 22220
+buffers_clean         | 0
+maxwritten_clean      | 0
+buffers_backend       | 506196
+buffers_backend_fsync | 0
+buffers_alloc         | 58248
+stats_reset           | 2017-10-31 13:53:29.891094+01
+#+end_src
+
+* Licenza
+This work is licensed under the *Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License*.
+To view a copy of this license,
+visit http://creativecommons.org/licenses/by-nc-sa/4.0/
+or send a letter to
+Creative Commons,
+PO Box 1866,
+Mountain View,
+CA 94042,
+USA.
