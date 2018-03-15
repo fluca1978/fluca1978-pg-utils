@@ -5860,6 +5860,46 @@ SELECT name, description, deep FROM dump_family;
  Anselmo  | Anselmo -> Luca -> Diego (FIGLIO) |    3
 #+end_src
 
+
+*** CTE ricorsive: esplorazione di un file system
+Si supponga di avere la seguente tabella:
+#+begin_src sql
+> select * from fs;
+ pk |  name   | child_of | dir 
+----+---------+----------+-----
+  1 | /       |          | t
+  2 | bin     |        1 | t
+  3 | tmp     |        1 | t
+  4 | home    |        1 | t
+  5 | luca    |        4 | t
+  6 | Desktop |        5 | t
+  7 | emacs   |        2 | f
+  8 | cat.png |        6 | f
+#+end_src
+*** CTE ricorsive: estrarre il path di un file e quanti directory
+#+begin_src sql
+> WITH RECURSIVE percorso AS (
+   -- termine non ricorsivo, ROOT!
+   SELECT name, pk, dir, child_of, 
+          0 AS cd 
+    FROM fs 
+    WHERE child_of IS NULL
+  UNION
+   -- termine ricorsivo
+   SELECT r.name || 
+          CASE WHEN r.child_of IS NOT NULL THEN '/' 
+          ELSE '' END || f.name, 
+          f.pk, f.dir, f.child_of, 
+          CASE WHEN f.dir = false THEN r.cd 
+          ELSE r.cd + 1 END
+   FROM fs f JOIN percorso r ON f.child_of = r.pk )
+
+  SELECT name, cd FROM percorso WHERE dir = false;
+            name            | cd 
+----------------------------+----
+ /bin/emacs                 |  1
+ /home/luca/Desktop/cat.png |  3
+#+end_src
 * Partitioning
 ** Cos'è il partitioning?
 *** Partitioning
