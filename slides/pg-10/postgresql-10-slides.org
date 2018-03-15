@@ -5340,7 +5340,7 @@ Nel caso di statement ~SELECT~ la condizione è data da ~USING~, nel caso di
   FOR ALL                  -- SELECT, UPDATE, DELETE, INSERT
   TO PUBLIC                -- quale ruolo ?
   USING  (eta >= 18)       -- condizione di SELECT
-  WITH CHECK (eta >= 18);  -- condizione DDL
+  WITH CHECK (eta >= 18);  -- condizione DML
 #+end_src
 ** Row Level Security: un altro esempio
 Tipicamente questo meccanismo viene usato per nascondere le tuple
@@ -5352,7 +5352,7 @@ di altri utenti:
   FOR ALL                              -- SELECT, UPDATE, DELETE, INSERT
   TO PUBLIC                            -- quale ruolo ?
   USING  (usernam = CURRENT_USER)      -- condizione di SELECT
-  WITH CHECK (usernam = CURRENT_USER); -- condizione DDL
+  WITH CHECK (usernam = CURRENT_USER); -- condizione DML
 #+end_src
 
 * Viste & Rules
