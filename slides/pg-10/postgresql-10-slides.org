@@ -4597,7 +4597,7 @@ Le query vengono eseguite tramite funzioni /SPI (Service Provider Interface)/, a
 
 Ci sono due versioni del linguaggio:
 - ~plperl~ *trusted* definibile da ogni utente, esegue il codice in un interprete separato per ogni utente e non ammette l'uso di funzioni che alterino il sistema ospite (es. apertura di file, socket, ecc.);
-- ~plperlu~ /untrusted/ definibile solo da utenti amministratori, ammette l'uso di tutte le funzionalità di Perl.
+- ~plperlu~ /untrusted/ definibile solo da utenti amministratori, ammette l'uso di tutte le funzionalità di Perl (inclusa ~use~).
 *** Installazione
 Occorre installare un pacchetto apposito, ad esempio su FreeBSD:
 #+begin_src shell
