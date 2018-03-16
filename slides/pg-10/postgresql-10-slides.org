@@ -5358,6 +5358,50 @@ di altri utenti:
   WITH CHECK (usernam = CURRENT_USER); -- condizione DML
 #+end_src
 
+** Vedere i permessi: ~\dp~
+*** Il comando ~dp~
+Il comando speciale ~\dp~ di ~psql~ fornisce la visualizzazione dei permessi come stringa nel formato:
+
+#+begin_src shell
+      granted_to = rwx / grantee
+#+end_src
+
+ovvero:
+- *utente a cui i privilegi si riferiscono*;
+- *stringa dei permessi* (simile a quella dei file Unix);
+- *utente che ha concesso il permesso*.
+*** Vedere i permessi (~\dp~): la stringa di permesso
+#+begin_src shell
+r -- SELECT ("read")        t -- TRIGGER
+w -- UPDATE ("write")       X -- EXECUTE
+a -- INSERT ("append")      U -- USAGE  
+d -- DELETE                 C -- CREATE 
+D -- TRUNCATE               c -- CONNECT
+x -- REFERENCES             T -- TEMPORARY
+          arwdDxt -- ALL PRIVILEGES
+#+end_src
+
+#+begin_src sql
+    -- enrico ha ricevuto tutti i 
+    -- permessi da conoscerelinux
+    enrico=arwdDxt/conoscerelinux
+#+end_src
+*** Vedere tutti i permessi (~\dp~): esempio 
+#+begin_src sql
+> \dp soci
+
+Access privileges | conoscerelinux=arwdDxt/conoscerelinux
+Column privileges | nome:                                      +
+                  |   enrico=r/conoscerelinux                  +
+                  | data_associazione:                         +
+                  |   enrico=w/conoscerelinux
+Policies          | mypol:                                     +
+                  |   (u): (data_associazione IS NOT NULL)     +
+                  |   (c): (lower(nome) = (CURRENT_USER)::text)+
+                  |   to: enrico
+
+#+end_src
+
 * Viste & Rules
 ** Viste
 *** Tipologie di viste
