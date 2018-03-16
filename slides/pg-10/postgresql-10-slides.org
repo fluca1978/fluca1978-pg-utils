@@ -869,30 +869,30 @@ E' possibile creare utenti/gruppi/ruoli con privilegi di super utente, possibili
 database e di collegarsi o no al cluster.
 
 *** Creare i ruoli
-   Il comand SQL ~CREATE ROLE~ (o da terminale ~createuser~) consente di creare un nuovo utente/gruppo.
-   Ad esempio si supponga di voler gestire un database di una applicazione definendo due utenti: uno applicativo
-   e uno amministrativo/interattivo:
+Il comand SQL ~CREATE ROLE~ (o da terminale ~createuser~) consente di creare un nuovo utente/gruppo.
+Ad esempio si supponga di voler gestire un database di una applicazione definendo due utenti: uno applicativo
+e uno amministrativo/interattivo:
 
-   #+BEGIN_SRC sql
-   # CREATE ROLE my_app
-     WITH NOLOGIN
-     CONNECTION LIMIT 1
-     PASSWORD 'xxx';
-   CREATE ROLE
+#+BEGIN_SRC sql
+# CREATE ROLE my_app
+  WITH NOLOGIN
+  CONNECTION LIMIT 1
+  PASSWORD 'xxx';
+CREATE ROLE
 
-   # ALTER ROLE my_app WITH LOGIN;
+# ALTER ROLE my_app WITH LOGIN;
 
-   # CREATE ROLE luca
-     WITH CREATEDB LOGIN PASSWORD 'xxxxx'
-     IN ROLE my_app;
-   CREATE ROLE
-   #+END_SRC
+# CREATE ROLE luca
+  WITH CREATEDB LOGIN PASSWORD 'xxxxx'
+  IN ROLE my_app;
+CREATE ROLE
+#+END_SRC
 
 Ora il ruolo ~my_app~ funge sia da utente che da gruppo a cui ~luca~ appartiene.
 Si noti l'uso di ~ALTER ROLE~ per correggere un errore.
 
 *** Creare i ruoli (2)
-   I ruoli appena creati risultano ora:
+I ruoli appena creati risultano ora:
 #+BEGIN_SRC sql
 # SELECT rolname, rolsuper, rolcreatedb, rolcanlogin, rolconnlimit
   FROM pg_roles;
@@ -905,7 +905,7 @@ Si noti l'uso di ~ALTER ROLE~ per correggere un errore.
 #+END_SRC
 
 *** Creare i ruoli (3)
-   E' ora possibile configurare il file ~.pgpass~ per i nuovi ruoli:
+E' ora possibile configurare il file ~.pgpass~ per i nuovi ruoli:
 #+BEGIN_SRC sh
 % cat ~/.pgpass
 127.0.0.1:5432_template1:postgres:postgres
@@ -913,14 +913,17 @@ localhost:5432:template1:luca:xxxxxx
 localhost:5432:template1:my_app:xxxxx
 #+END_SRC
 
-**** Evitare di censire ogni singolo database
-    Si ricordi che è possibile usare ~*~ per host, porta e database. Questo semplifica
-    il deployment di nuovi database, ma dall'altro lato rende piu' complesso censire
-    e controllare i database a cui si accede.
-**** End of block                                           :B_ignoreheading:
-:PROPERTIES:
-:BEAMER_env: ignoreheading
-:END:
+
+Si ricordi che è possibile usare ~*~ per host, porta e database. Questo semplifica
+il deployment di nuovi database, ma dall'altro lato rende piu' complesso censire
+e controllare i database a cui si accede.
+
+*** ~IN ROLE~, ~INHERITS~, ~ADMIN~
+I ruoli possono essere annidati con la clausola ~IN ROLE~.
+
+La clausola ~INHERITS~ eredita (dinamicamente) i permessi del ruolo da cui si eredita, ma è necessario usare ~SET ROLE~ per /swittchare/ al ruolo voluto.
+
+La clausola ~ADMIN~ identifica il ruolo come /amministratore del gruppo/ e gli consente di aggiungere altri ruoli a questo gruppo.
 *** Gruppi & login
 - ~INHERITS~ non aggiunge il ~LOGIN~!
 #+BEGIN_SRC sql
