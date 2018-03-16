@@ -5903,6 +5903,26 @@ Si supponga di avere la seguente tabella:
  /bin/emacs                 |  1
  /home/luca/Desktop/cat.png |  3
 #+end_src
+*** CTE ricorsive: viste
+E' possibile creare una vista ricorsiva:
+#+begin_src sql
+> CREATE RECURSIVE VIEW 
+  percorso( name, pk, dir, child_of, cd )
+  AS (
+   SELECT name, pk, dir, child_of, 
+          0 AS cd 
+    FROM fs 
+    WHERE child_of IS NULL
+  UNION
+   -- termine ricorsivo
+   SELECT r.name || 
+          CASE WHEN r.child_of IS NOT NULL THEN '/' 
+          ELSE '' END || f.name, 
+          f.pk, f.dir, f.child_of, 
+          CASE WHEN f.dir = false THEN r.cd 
+          ELSE r.cd + 1 END
+   FROM fs f JOIN percorso r ON f.child_of = r.pk );
+#+end_src
 * Partitioning
 ** Cos'è il partitioning?
 *** Partitioning
