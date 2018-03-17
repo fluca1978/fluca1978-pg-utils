@@ -5401,6 +5401,56 @@ Policies          | mypol:                                     +
                   |   to: enrico
 
 #+end_src
+*** Decodificare a mano i permessi (con CTE e string manipulation)
+#+begin_src sql
+> WITH acl AS (
+   -- 1) si estraggono le ACL come tuple di stringhe
+   SELECT unnest( relacl::text[] ) AS acl 
+   FROM pg_class 
+   WHERE relname = 'soci'
+   AND relkind = 'r'
+)
+#+end_src
+*** Decodificare a mano i permessi (con CTE e string manipulation) (2)
+#+begin_src sql
+ ,split_acl AS (
+   -- 2) si estraggono i singoli pezzi della ACL
+   -- separando dove vi sono i simboli '=' e '/'
+    SELECT acl, 
+     position( '=' in acl ) AS equal_at,
+     substring( acl from 1 
+              for position( '=' in acl ) - 1 ) 
+              AS granted_to,
+     substring( acl from 
+              position( '=' in acl ) + 1 
+              for position( '/' in acl ) 
+                  - position( '=' in acl ) - 1 ) 
+              AS granted_what,
+     substring( acl from 
+                 position( '/' in acl ) + 1 ) 
+              AS grantee
+    FROM acl 
+ )
+#+end_src
+*** Decodificare a mano i permessi (con CTE e string manipulation) (3)
+#+begin_src sql
+ , decode_acl AS (
+   SELECT CASE 
+          WHEN position( 'r' in granted_what ) > 0 
+          THEN 'SELECT' END
+         ,CASE 
+          WHEN position( 'd' in granted_what ) > 0 
+          THEN 'DELETE' END
+         ,CASE 
+          WHEN position( 'D' in granted_what ) > 0 
+          THEN 'TRUNCATE' END
+          -- e così via
+   , * FROM split_acl
+)
+
+-- query finale
+SELECT * FROM decode_acl;
+#+end_src
 
 * Viste & Rules
 ** Viste
