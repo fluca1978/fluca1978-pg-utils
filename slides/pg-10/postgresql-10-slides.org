@@ -5358,19 +5358,20 @@ di altri utenti:
   WITH CHECK (usernam = CURRENT_USER); -- condizione DML
 #+end_src
 
-** Vedere i permessi: ~\dp~
-*** Il comando ~dp~
-Il comando speciale ~\dp~ di ~psql~ fornisce la visualizzazione dei permessi come stringa nel formato:
+** *ACL*
+*** Access Control List
+PostgreSQL memorizza i permessi dati con ~GRANT~ sono memorizzati come /Access Contol List (ACL)/.
 
-#+begin_src shell
-      granted_to = rwx / grantee
-#+end_src
-
-ovvero:
+Ogni ACL (~aclitem~)  è formata da tre parti:
 - *utente a cui i privilegi si riferiscono*;
 - *stringa dei permessi* (simile a quella dei file Unix);
 - *utente che ha concesso il permesso*.
-*** Vedere i permessi (~\dp~): la stringa di permesso
+
+Le ACL sono memorizzate come array ~aclitem[]~ in ~pg_class~.
+
+*** Il comando ~dp~
+Il comando speciale ~\dp~ di ~psql~ fornisce la visualizzazione dei permessi come stringa /ACL/.
+Ogni lettera nella stringa ACL si riferisce ad un permesso specifico:
 #+begin_src shell
 r -- SELECT ("read")        t -- TRIGGER
 w -- UPDATE ("write")       X -- EXECUTE
@@ -5381,11 +5382,6 @@ x -- REFERENCES             T -- TEMPORARY
           arwdDxt -- ALL PRIVILEGES
 #+end_src
 
-#+begin_src sql
-    -- enrico ha ricevuto tutti i 
-    -- permessi da conoscerelinux
-    enrico=arwdDxt/conoscerelinux
-#+end_src
 *** Vedere tutti i permessi (~\dp~): esempio 
 #+begin_src sql
 > \dp soci
