@@ -5603,21 +5603,14 @@ E' possibile /bloccare/ una tabella con una rule ~DO NOTHING~.
 * Window Functions & CTE
 ** Window Functions
 *** Cosa è una window function?
-Le /Window Functions/ sono funzioni che *effettuano un calcolo su tuple correlate a quella corrente*,
-qualcosa idealmente simile ad una funzione di aggregazione ma senza la necessità di aggregre
-le tuple. Inoltre una window function può essere eseguita su una partizione delle tuple, non su
-tutte le tuple di una query.
+Le /Window Functions/ sono funzioni che *effettuano un calcolo su tuple correlate a quella corrente*, qualcosa idealmente simile ad una funzione di aggregazione ma senza la necessità di aggregare le tuple. Inoltre una window function può essere eseguita su una partizione delle tuple, non su tutte le tuple di una query.
 *** OVER & PARTITION
-Una window function è solitamente seguita da una clausola ~OVER~ che identifica
-su quale sottoinsieme di dati effettuare il calcolo. All'interno della clausola
-~OVER~ si può specificare:
-- ~PARTITION BY~ per indicare quali colonne usare per correlare le tuple (concettualmente
-  simile a /group by/);
-- ~ORDER BY~ per specificare l'ordinamento per processare le tuple nella funzione di
-  correlazione.
+Una window function è solitamente seguita da una clausola ~OVER~ che identifica su quale sottoinsieme di dati effettuare il calcolo. All'interno della clausola ~OVER~ si può specificare:
+- ~PARTITION BY~ per indicare quali colonne usare per correlare le tuple (concettualmente simile a /group by/);
+- ~ORDER BY~ per specificare l'ordinamento per processare le tuple nella funzione di correlazione.
 *** Esempio di base per le Window Functions
 #+begin_src sql
->CREATE TABLE software( pk SERIAL PRIMARY KEY,
+> CREATE TABLE software( pk SERIAL PRIMARY KEY,
    name text,
    version numeric,
    UNIQUE( name, version ),
@@ -5627,8 +5620,7 @@ su quale sottoinsieme di dati effettuare il calcolo. All'interno della clausola
 #+end_src
 *** Esempio di Window Function: rank
 La funzione ~rank()~ fornisce una classifica dei dati.
-*Se non si specifica un ~PARTITION BY~ la funzione non sa come correlare la tupla corrente*, quindi
-è come correlarla a sé stessa:
+*Se non si specifica un ~PARTITION BY~ la funzione non sa come correlare la tupla corrente*, quindi è come correlarla a sé stessa:
 #+begin_src sql
 > SELECT name, version,
          rank() OVER ()
@@ -5665,13 +5657,10 @@ La funzione ~rank()~ fornisce una classifica dei dati.
 *** Alcune Window Functions comuni
 - ~row_number()~ il numero di riga nella /window/ (partizione);
 - ~cume_dist()~ numero di righe precedenti divise per il numero totali di righe della partizione;
-- ~ntile()~ accetta un intero e cerca di dividere la /window/ in un numero di /bucket/ bilanciati, specificando
-  ogni riga a quele bucket appartiene;
-- ~lag()~ accetta una colonna, un offset e un valore di default. Calcola la colonna /offset/ righe prima o
-  se non esistono, al valore specificato come default;
+- ~ntile()~ accetta un intero e cerca di dividere la /window/ in un numero di /bucket/ bilanciati, specificando   ogni riga a quele bucket appartiene;
+- ~lag()~ accetta una colonna, un offset e un valore di default. Calcola la colonna /offset/ righe prima o se non esistono, al valore specificato come default;
 - ~lead()~ opposto di ~lag()~ (calcola sulle righe in avanti);
-- ~first_value()~, ~last_value()~, ~nth_value()~ accettano una colonna e restituiscono il valore
-  della tupla all'offset specificato rispettivamente come prima, ultima ed ennesima.
+- ~first_value()~, ~last_value()~, ~nth_value()~ accettano una colonna e restituiscono il valore della tupla all'offset specificato rispettivamente come prima, ultima ed ennesima.
 *** Simulare un contatore di riga
 Per simulare un contatore di riga (es. ~ROW_NUMBER~) si può usare una query come la seguente:
 #+begin_src sql
