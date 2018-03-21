@@ -5467,6 +5467,53 @@ Si definisce la vista attraverso una query (che può includere join, order-by, e
 
 > SELECT * FROM vw_persona;
 #+end_src
+*** Viste dinamiche aggiornabili
+Una vista viene creata come automaticamente aggiornabile se:
+- effettua una ~SELECT~ da *una sola tabella*;
+- non include clausole ~DISTINCT~, funzioni di aggregazione o window function, ~LIMIT~ e altre clausole che rendano il result set "non lineare".
+
+#+begin_src sql
+> CREATE VIEW vw_hello AS SELECT 'Hello';
+> INSERT INTO vw_hello VALUES( 'World!' );
+ERROR:  cannot insert into view "vw_hello"
+DETAIL:  Views that do not select from a single 
+         table or view are not automatically updatable.
+HINT:  To enable inserting into the view, 
+       provide an INSTEAD OF INSERT trigger 
+       or an unconditional ON INSERT DO INSTEAD rule.
+#+end_src
+*** Viste aggiornabili: ~WITH CHECK OPTION~
+Le viste aggiornabili possono specificare la clausola ~WITH CHECK OPTION~ che limita l'aggiornamento alle sole tuple presenti nel result set della vista stessa, e non della tabella sottostante.
+In particolare ~WITH CHECK OPTION~ può essere:
+- ~LOCAL~ si considera la definizione solo della vista;
+- ~CASCADED~ si considera la definizione di eventuali sottoviste.
+*** Viste aggiornabili: esempio ~WITH CHECK OPTION~
+#+begin_src sql
+> CREATE TABLE numbers( value int DEFAULT O );
+
+> CREATE VIEW vw_positives AS 
+   SELECT value FROM numbers 
+   WHERE value > 0;
+
+> CREATE VIEW vw_positives AS 
+   SELECT value FROM vw_real 
+   WITH CASCADED CHECK OPTION;
+#+end_src
+*** Viste aggiornabili: esempio ~WITH CHECK OPTION~ (2)
+#+begin_src sql
+-- KO: local check option
+> INSERT INTO vw_real( value ) VALUES( -1 );
+ERROR:  new row violates check option for view "vw_real"
+DETAIL:  Failing row contains (-1).
+
+-- KO: cascaded check option 
+> INSERT INTO vw_positives( value ) VALUES( -1 );
+ERROR:  new row violates check option for view "vw_real"
+DETAIL:  Failing row contains (-1).
+
+-- OK: cascaded check option
+> INSERT INTO vw_positives( value ) VALUES( 0 );
+#+end_src
 *** Viste materializzate
 Si utilizza il comando ~CREATE MATERIALIZED VIEW~ specificando se prelevare subito i dati (~WITH DATA~)
 o no (~WITH NO DATA~). In quest'ultimo caso la vista deve prima essere sottoposta a ~REFRESH~ per essere utilizzata.
