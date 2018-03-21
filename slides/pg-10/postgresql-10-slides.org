@@ -9133,8 +9133,7 @@ Ci sono diversi parametri di configurazione da inserire in ~postgresql.conf~, in
 - ~pg_stat_statements.max~ il massimo numero di query da tenere nelle statistiche;
 - ~pg_stat_statements.save~ indica se le statistiche vanno salvate fra un riavvio del cluster e l'altro (in default si).
 *** ~pgstattuple~
-Il module ~pgstattuple~ fornisce informazioni su una tabella o indice in termine di dimensioni, tuple visibili, espirate, ecc.
-
+Il modulo ~pgstattuple~ fornisce informazioni su una tabella o indice in termine di dimensioni, tuple visibili, espirate, ecc.
 Viene installata come estensione in un database, poi permettere di accedere (come superutente) ai dati di ogni relazione qualificata:
 #+begin_src sql
 # CREATE EXTENSION pgstattuple;
