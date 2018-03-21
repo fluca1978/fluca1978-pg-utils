@@ -458,7 +458,6 @@ tramite il programma ~initdb~.
    La directory PGDATA deve essere protetta opportunamente da accessi involontari
    di altri utenti del sistema.
 
-
 *** initdb
 Creazione di una directory per la memorizzazione del database (alcuni
 sistemi operativi lo fanno automaticamente al momento dell'installazione
@@ -655,19 +654,10 @@ abbia una base comune riconosciuta (es. schemi, linguaggi, ecc.).
 
 *** Database templating
 I due database template non svolgono alcuna funzione particolare se non quella di essere
-usati come possibili punti di origine di un nuovo database. In default, se non specificato, PostgreSQL
-copia ~template1~, mentre ~template0~ dovrebbe essere lasciato /vergine/ per operazioni particolari
+usati come possibili punti di origine di un nuovo database. In default, se non specificato, PostgreSQL copia ~template1~, mentre ~template0~ dovrebbe essere lasciato /vergine/ per operazioni particolari
 quali restore (può servire un database vuoto a cui collegarsi).
 
-**** Creare i propri template
-    E' possibile creare quanti database template si vuole e istruire il comando
-    ~CREATE DATABASE~ per usare altri template oltre ~template1~. Si noti però
-    che un database template non accetta connessioni durante la creazione, quindi
-    questo *non è un meccanismo di /clonazione/ dei database!*
-**** End of block                                           :B_ignoreheading:
-:PROPERTIES:
-:BEAMER_env: ignoreheading
-:END:
+E' possibile creare quanti database template si vuole e istruire il comando ~CREATE DATABASE~ per usare altri template oltre ~template1~. Si noti però che un database template non accetta connessioni durante la creazione, quindi questo *non è un meccanismo di /clonazione/ dei database!*
 
 ** Terminale psql
 *** psql
@@ -734,10 +724,7 @@ del build del pacchetto binario.
 
 
 *** psql, ruoli, database
-In default ~psql~ cerca di collegarsi a un database che ha lo stesso nome
-utente dell'utente che esegue il comando stesso, con un ruolo che ha
-lo stesso nome.
-In altre parole:
+In default ~psql~ cerca di collegarsi a un database che ha lo stesso nome utente dell'utente che esegue il comando stesso, con un ruolo che ha lo stesso nome. In altre parole:
 
 #+BEGIN_SRC sh
 % id -p
@@ -754,9 +741,7 @@ corrisponde a:
 #+END_SRC
 
 *** psql: ruoli, database e variabili di ambiente
- In realtà quando non viene specificato un utente e/o un database
- ~psql~ cerca di collegarsi a quanto stabilito dalle variabili
- di ambiente ~PGUSER~ e ~PGDATABASE~ (e le relative ~PGHOST~ e ~PGPORT~):
+Quando non viene specificato un utente e/o un database  ~psql~ cerca di collegarsi a quanto stabilito dalle variabili  di ambiente ~PGUSER~ e ~PGDATABASE~ (e le relative ~PGHOST~ e ~PGPORT~):
 
 #+BEGIN_SRC sh
 % export PGUSER=foo PGDATABASE=myDB
@@ -768,45 +753,29 @@ psql: FATAL:  no pg_hba.conf entry for host "[local]",
 
 *** psql: aiuto
 All'interno di ~psql~ ci sono due tipologie di aiuto:
-- /aiuto sui comandi SQL/: si ottiene con ~\h~
+- /aiuto sugli statement SQL/: si ottiene con ~\h~
   - ~\h~ senza argomenti mostra tutti i comandi SQL disponibili;
-  - ~\h COMANDO~ mostra l'aiuto del comando SQL specificato;
-- /aiuto su ~psql~/: si ottiene con ~\?~ e mostra tutti i comandi
-  speciali di ~psql~. Tutti i comandi ~psql~ iniziano con backslash
-  (es. ~\d~).
+  - ~\h STATEMENT~ mostra l'aiuto dello statement SQL specificato;
+- /aiuto su ~psql~/: si ottiene con ~\?~ e mostra tutti i comandi  speciali di ~psql~. Tutti i comandi ~psql~ iniziano con backslash  (es. ~\d~).
 
 *** psql: evitare la password
-~psql~ consente di impostare un file di credenziali (~$HOME/.pgpass~) per collegarsi
-a uno specifico database/host con uno specifico utente senza dover digitare
-una password.
+~psql~ consente di impostare un file di credenziali (~$HOME/.pgpass~) per collegarsi a uno specifico database/host con uno specifico utente senza dover digitare una password.
 Ogni riga nel file contiene:
 - host e porta a cui collegarsi;
 - database a cui collegarsi (~*~ per tutti);
 - username e password con cui collegarsi.
 
-Il file non deve essere leggibile da altri utenti (es. permessi ~600~).
+Il file non deve essere leggibile da altri utenti (es. permessi Unix ~600~).
 
 #+BEGIN_SRC sh
 % cat ~/.pgpass
 127.0.0.1:5432:template1:postgres:xxxxxxxx
-
-% psql -U postgres template1
-template1=#
 #+END_SRC
 
-**** Errori comuni
-    *Il file deve avere permessi ~rw~ per il solo proprietario*. Inoltre si deve specificare
-    la porta a cui collegarsi dopo l'hostname!
-**** End of block                                           :B_ignoreheading:
-:PROPERTIES:
-:BEAMER_env: ignoreheading
-:END:
-
+*Il file deve avere permessi ~rw~ per il solo proprietario*. Inoltre si deve specificare la porta a cui collegarsi dopo l'hostname!
 
 *** psql: configurazione utente
-~psql~ consente di specificare delle configurazioni utente nel file ~$HOME/.psqlrc~.
-Tutti i comandi (~psql~ compatibili) specificati in tale file vengono eseguiti
-prima di fornire il prompt all'utente.
+~psql~ consente di specificare delle configurazioni utente nel file ~$HOME/.psqlrc~. Tutti i comandi (~psql~ compatibili) specificati in tale file vengono eseguiti prima di fornire il prompt all'utente.
 
 Utile per impostare variabili, prompt, formati di output, ecc.
 *** psql: ~/.psqlrc di esempio
@@ -818,35 +787,22 @@ Utile per impostare variabili, prompt, formati di output, ecc.
 \set PROMPT1 '[%n @ %/ on %m] %l %x %# '
 #+END_SRC
 
-Il prompt corrisponde a: /username/ (~%n~), /database/ (~%/~),
-/hostname/ (~%m~), /linea/ (~%l~), /stato transazione/ (~%x~)
-e /prompt superutente o utente normale/ (~%#~).
-
+Il prompt corrisponde a: /username/ (~%n~), /database/ (~%/~), /hostname/ (~%m~), /linea/ (~%l~), /stato transazione/ (~%x~) e /prompt superutente o utente normale/ (~%#~).
 
 A differenza di ~ON_ERROR_STOP~ che fa quello che il nome suggerisce, il parametro ~ON_ERROR_ROLLBACK~ fa il suo opposto:
-/When set to on, if a statement in a transaction block generates an error, the error is ignored and the transaction continues./
+>> When set to on, if a statement in a transaction block generates an error, the error is ignored and the transaction continues.
 
 
 ** Interazione: ruoli, database, tabelle
 *** Ruoli e Utenti
-   Dalla versione 8.1 in poi PostgreSQL non distingue piu' fra utenti e gruppi
-   ma usa il concetto di *ruolo* che rappresenta entrambi:
-   - un ruolo può rappresentare un utente;
-   - ad un ruolo si possono aggiungere altri ruoli (e quindi rappresenta un gruppo).
+Dalla versione 8.1 in poi PostgreSQL non distingue piu' fra utenti e gruppi ma usa il concetto di *ruolo* che rappresenta entrambi:
+- un ruolo può rappresentare un utente;
+- ad un ruolo si possono aggiungere altri ruoli (e quindi rappresenta un gruppo).
 
-**** Ruoli e Connessioni
-    *Per collegarsi ad un database occorre sempre un ruolo*, ossia un utente
-    PostgreSQL (che è logicamente separato da quello del sistema operativo).
-    Quando viene inizializzato un cluster viene creato un ruolo superutente
-    per permetterne la gestione (negli esempi ~postgres~).
-**** End of block                                           :B_ignoreheading:
-:PROPERTIES:
-:BEAMER_env: ignoreheading
-:END:
+*Per collegarsi ad un database occorre sempre un ruolo*, ossia un utente PostgreSQL (che è logicamente separato da quello del sistema operativo). Quando viene inizializzato un cluster viene creato un ruolo superutente per permetterne la gestione (negli esempi ~postgres~).
 
 *** Ruoli e connessioni
-L'accesso al sistema viene garantito dalla configurazione del file ~pg_hba.conf~, che rappresenta
-il listato di quali utenti, database e host possono ottenere una connessione.
+L'accesso al sistema viene garantito dalla configurazione del file ~pg_hba.conf~, che rappresenta il listato di quali utenti, database e host possono ottenere una connessione.
 
 *E' sufficiente un ~SIGHUP~ per far riconoscere al cluster le modifiche ai permessi di connessione!*
 *** Vedere i ruoli
@@ -854,7 +810,7 @@ Il catalogo ~pg_roles~ contiene le informazioni sui ruoli e le loro proprietà:
 
 #+BEGIN_SRC sql
 # SELECT rolname, rolsuper, rolcreatedb, rolcanlogin
-FROM pg_roles;
+  FROM pg_roles;
        rolname        | rolsuper | rolcreatedb | rolcanlogin
 ----------------------+----------+-------------+-------------
  pg_monitor           | f        | f           | f
@@ -870,8 +826,7 @@ database e di collegarsi o no al cluster.
 
 *** Creare i ruoli
 Il comand SQL ~CREATE ROLE~ (o da terminale ~createuser~) consente di creare un nuovo utente/gruppo.
-Ad esempio si supponga di voler gestire un database di una applicazione definendo due utenti: uno applicativo
-e uno amministrativo/interattivo:
+Ad esempio si supponga di voler gestire un database di una applicazione definendo due utenti: uno applicativo e uno amministrativo/interattivo:
 
 #+BEGIN_SRC sql
 # CREATE ROLE my_app
@@ -958,8 +913,7 @@ host    all     all             127.0.0.1/32     trust
 #+END_SRC
 *** La vista ~pg_shadow~
 In analogia con i sistemi Unix, è disponibuile una vista ~pg_shadow~ che riassume i dati degli account utente (ruoli) comprensivi di password.
-Se la password inizia con ~md5~ la password è stata cifrata con tale algoritmo.
-Ovviamente occorre essere superutente per poter interrogare la vista.
+Se la password inizia con ~md5~ la password è stata cifrata con tale algoritmo. Ovviamente occorre essere superutente per poter interrogare la vista.
 #+BEGIN_SRC sql
 # SELECT usename, usecreatedb, usesuper,
          userepl, passwd
@@ -1027,8 +981,7 @@ Ctype             | C
 Access privileges |
 #+END_SRC
 *** Eliminare un database
- Avendo i privilegi corretti, si può usare il comando SQL ~DROP DATABASE~
- o il comando shell ~dropdb~:
+ Avendo i privilegi corretti, si può usare il comando SQL ~DROP DATABASE~ o il comando shell ~dropdb~:
 
 #+BEGIN_SRC sql
 % psql -h localhost -U postgres template1
@@ -1040,7 +993,7 @@ DROP DATABASE
 % dropdb -h localhost -U postgres testdb
 #+END_SRC
 *** Creare una tabella
-   L'istruzione SQL è ~CREATE TABLE~.
+L'istruzione SQL è ~CREATE TABLE~.
 #+BEGIN_SRC sql
 % psql -h localhost testdb
 > CREATE TABLE persona(
@@ -1054,8 +1007,7 @@ DROP DATABASE
 #+END_SRC
 
 *** Modificare una tabella
-   Ci sono varie istruzioni, in particolare ~ALTER TABLE~ che consente di agire sulla tabella
-   e sui relativi vincoli:
+Ci sono varie istruzioni, in particolare ~ALTER TABLE~ che consente di agire sulla tabella e sui relativi vincoli:
 
 #+BEGIN_SRC sql
 > ALTER TABLE persona ADD COLUMN eta integer;
@@ -1063,7 +1015,7 @@ DROP DATABASE
 #+END_SRC
 
 *** Come è fatta la tabella?
-   Il comando speciale di ~psql~ ~\d~ consente di ispezionare una tabella e i suoi vincoli:
+Il comando speciale di ~psql~ ~\d~ consente di ispezionare una tabella e i suoi vincoli:
 #+BEGIN_SRC sql
 > \d persona
                                     Table "public.persona"
