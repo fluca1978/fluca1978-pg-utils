@@ -348,7 +348,7 @@ Una connessione può essere *TCP/IP* oppure su *socket locale*.
    #+end_src
 
 
-*** Installazione
+*** Installazione (FreeBSD)
 Compilazione dai ports:
 #+begin_src sh
 # cd /usr/ports/databases/postgresql10-server
