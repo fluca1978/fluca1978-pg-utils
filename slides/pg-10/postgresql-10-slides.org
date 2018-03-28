@@ -1,10 +1,10 @@
 #+TITLE:     PostgreSQL 10
 #+AUTHOR:    Luca Ferrari
 #+EMAIL:     fluca1978@gmail.com
-#+DATE:      <2017-08-25 ven>
+#+DATE:      <2018-03-28 mer>
 #+LANGUAGE:  it
 
-#+OPTIONS:   H:3 num:t toc:nil \n:nil @:t ::t |:t ^:t -:t f:t *:t <:t
+#+OPTIONS:   H:3 num:nil toc:nil \n:nil @:t ::t |:t ^:t -:t f:t *:t <:t
 #+OPTIONS:   TeX:t LaTeX:t skip:nil d:nil todo:t pri:nil tags:not-in-toc
 #+INFOJS_OPT: view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
 #+EXPORT_SELECT_TAGS: export
@@ -20,7 +20,7 @@
 #+BEAMER_HEADER: \subtitle{il database Open Source piu' avanzato del pianeta}
 
 #+BEAMER_HEADER: \institute[fluca1978]{fluca1978\\\url{https://fluca1978.github.io}}
-
+#+BEAMER_FRAME_LEVEL: 1
 
 
 
@@ -28,7 +28,16 @@
 #+LATEX_HEADER: \DefineVerbatimEnvironment{verbatim}{Verbatim}{fontsize=\scriptsize}
 
 
-
+* Licenza
+This work is licensed under the *Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License*.
+To view a copy of this license,
+visit http://creativecommons.org/licenses/by-nc-sa/4.0/
+or send a letter to
+Creative Commons,
+PO Box 1866,
+Mountain View,
+CA 94042,
+USA. 
 * Introduzione
 ** Il progetto PostgreSQL
 *** Cos'è?
@@ -316,7 +325,7 @@ Una connessione può essere *TCP/IP* oppure su *socket locale*.
    Questo offre diversi vantaggi, fra i quali la possibilità di un tuning molto raffinato
    circa le opzioni di funzionamento del filesystem (replica, journaling, ecc.).
 
-   Dall'altra parte, il filesystem deve essere *affidabile*, pena il rischio di perdita dati.
+   Dall'altra parte, il filesystem deve essere *affidabile*, pena il rischio di perdita dati. 
 * Installazione
 ** Installazione
 *** Tipologie di installazione
@@ -1032,7 +1041,7 @@ Indexes:
 Check constraints:
     "persona_eta_check" CHECK (eta > 0 AND eta < 120)
 #+end_src
-
+ 
 * SQL PostgreSQL
 ** Accorgimenti iniziali
 *** SELECT not dual !
@@ -3146,8 +3155,7 @@ Il comando ~DEALLOCATE~ annulla un prepared statement. Occorre specificare il no
 > EXECUTE find_persona_stmt( 'c' );
 ERROR:  prepared statement "find_persona_stmt" does not exist
 #+end_src
-
-
+ 
 * Backup e restore
 ** Backup
 *** Introduzione
@@ -3280,7 +3288,7 @@ Loutput di ~--list~ può a sua volta essere usato, manipolato, come input di ~-L
 % pg_restore --list testdb.dump > testdb.restore.list
 % emacs testdb.restore.list
 % pg_restore -L testdb.restore.list testdb.dump
-#+end_src
+#+end_src 
 * Large Objects
 ** Large Objects vs TOAST
 PostgreSQL supporta due meccanismi di memorizzazione di oggetti binari "grossi":
@@ -7130,7 +7138,6 @@ ma non funziona per comparazioni /in mezzo alla stringa/:
  Execution time: 99.718 ms
 #+end_src
 
-
 * Foreign Data Wrapper
 ** SQLMED & FDW
 *** Introduzione
@@ -7930,7 +7937,6 @@ I parametri sono:
 - ~default_statistics_target~ il valore di default per il campionamento di /Most Common Values/ e degli istogrammi;
 - ~constraint_exclusion~ permette di sfruttare le /constraint/ di tabella per ottimizzare le query.
 
-
 * Benchmarking & Testing
 ** Benchmarking
 *** pgbench
@@ -8203,8 +8209,7 @@ All tests successful.
 Files=2, Tests=7,  1 wallclock secs ( 0.02 usr  0.02 sys +  0.00 cusr  0.01 csys =  0.05 CPU)
 Result: PASS
 #+end_src
-
-
+ 
 * Indici
 ** Tipi di indici
 *** Introduzione
@@ -10564,7 +10569,6 @@ La ~REPLICA IDENTITY~ può essere ~DEFAULT~ (usa i vincoli ~UNIQYE~ e quindi le 
 dell'intera tupla).
 
 
-
 * Background Workers
 ** Concetti e definizioni
 *** Background Workers
@@ -11167,13 +11171,4 @@ e quindi
  postgres
 #+end_src
 
-* Licenza
-This work is licensed under the *Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License*.
-To view a copy of this license,
-visit http://creativecommons.org/licenses/by-nc-sa/4.0/
-or send a letter to
-Creative Commons,
-PO Box 1866,
-Mountain View,
-CA 94042,
-USA.
+
