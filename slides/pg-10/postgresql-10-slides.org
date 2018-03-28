@@ -2860,6 +2860,8 @@ Il comando ~COPY~ permette di importare dati da un file in una tabella.
 *Se si copia da un file occorre essere superutenti*, per copiare da standard input non serve.
 
 *Il file deve essere locale al server!*
+Il percorso del file è relativo a ~PGDATA~ o va specificato come assoluto.
+
 
 *** Esportare dati con ~COPY~
 Il comando ~COPY~ consente anche di esportare i dati verso un file:
