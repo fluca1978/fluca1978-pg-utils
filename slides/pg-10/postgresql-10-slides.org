@@ -23,7 +23,7 @@
 
 
 
-#+BEAMER_THEME: magpie
+
 #+LATEX_HEADER: \RequirePackage{fancyvrb}
 #+LATEX_HEADER: \DefineVerbatimEnvironment{verbatim}{Verbatim}{fontsize=\scriptsize}
 
