@@ -434,14 +434,14 @@ psql: FATAL:  the database system is shutting down
 Una volta avviato il processo principale, denominato /postmaster/, il sistema avrà una serie di processi differenti in esecuzione:
 
 #+begin_src shell
-% pstre
- \-+- 02057 postgres /usr/local/bin/postgres -D /mnt/data1/pgdata
-   |--= 02058 postgres postgres: pg9.6.5-FreeBSD: logger process    (postgres)
-   |--= 02060 postgres postgres: pg9.6.5-FreeBSD: checkpointer process    (postgres)
-   |--= 02061 postgres postgres: pg9.6.5-FreeBSD: writer process    (postgres)
-   |--= 02062 postgres postgres: pg9.6.5-FreeBSD: wal writer process    (postgres)
-   |--= 02063 postgres postgres: pg9.6.5-FreeBSD: autovacuum launcher process    (postgres)
-   |--= 02064 postgres postgres: pg9.6.5-FreeBSD: stats collector process    (postgres)
+% pstree
+\-+- 02057 postgres /usr/local/bin/postgres -D /mnt/data1/pgdata
+ |--= 02058 postgres postgres: pg9.6.5: logger process    (postgres)
+ |--= 02060 postgres postgres: pg9.6.5: checkpointer process    (postgres)
+ |--= 02061 postgres postgres: pg9.6.5: writer process    (postgres)
+ |--= 02062 postgres postgres: pg9.6.5: wal writer process    (postgres)
+ |--= 02063 postgres postgres: pg9.6.5: autovacuum launcher process    (postgres)
+ |--= 02064 postgres postgres: pg9.6.5: stats collector process    (postgres)
 #+end_src
 
 I processi principali sono:
