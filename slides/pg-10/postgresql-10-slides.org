@@ -1196,6 +1196,18 @@ Timing is on.
 
 Time: 2573.297 ms
 #+end_src
+*** Generare dati random (suggerimenti)
+E' possibile generare delle sequenze di dati con:
+- ~generate_series( a, b )~ che genera una serie di numeri interi compresi fra ~a~ e ~b~;
+- ~random()~ che generare un ~float~ casuale;
+- ~md5( t )~ che calcola l'hash della stringa ~t~.
+Ad esempio per generare una chiave /univoca/ lunga 16 caratteri:
+#+begin_src sql
+SELECT substring( 
+         md5( 
+           ( random() * random() )::text ) 
+        from 1 for 16 );
+#+end_src
 ** Tipi di dato
 *** Numerici
 Sono presenti i tipi interni ~integer~, ~smallint~, ~bigint~.
