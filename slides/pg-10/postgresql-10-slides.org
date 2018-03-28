@@ -329,24 +329,21 @@ Una connessione può essere *TCP/IP* oppure su *socket locale*.
 * Installazione
 ** Installazione
 *** Tipologie di installazione
-   E' possibile installare PostgreSQL:
-   - mediante installer ufficiale
-   - mediante pacchetti binari della propria installazione
-   - compilando l'albero dei sorgenti
+E' possibile installare PostgreSQL:
+- mediante installer ufficiale
+- mediante pacchetti binari della propria installazione
+- compilando l'albero dei sorgenti
 
-
-   Tutte le prove qui mostrate sono state effettuate su una macchina virtuale con
-   quattro dischi da 2GB utilizzati come spazio dati:
-   #+begin_src sh
-   $ uname -a
-   FreeBSD olivia 11.1-RELEASE FreeBSD 11.1-RELEASE
-   $ mount
-   /dev/ada1p1 on /mnt/data1 (ufs, local, soft-updates)
-   /dev/ada2p1 on /mnt/data2 (ufs, local, soft-updates)
-   /dev/ada3p1 on /mnt/data3 (ufs, local, soft-updates)
-   /dev/ada4p1 on /mnt/data4 (ufs, local, soft-updates)
-   #+end_src
-
+Tutte le prove qui mostrate sono state effettuate su una macchina virtuale con quattro dischi da 2GB utilizzati come spazio dati:
+#+begin_src sh
+$ uname -a
+FreeBSD olivia 11.1-RELEASE FreeBSD 11.1-RELEASE
+$ mount
+/dev/ada1p1 on /mnt/data1 (ufs, local, soft-updates)
+/dev/ada2p1 on /mnt/data2 (ufs, local, soft-updates)
+/dev/ada3p1 on /mnt/data3 (ufs, local, soft-updates)
+/dev/ada4p1 on /mnt/data4 (ufs, local, soft-updates)
+#+end_src
 
 *** Installazione (FreeBSD)
 Compilazione dai ports:
@@ -728,7 +725,6 @@ template1=# SELECT version();
 La funzione speciale ~version()~ viene compilata al momento
 del build del pacchetto binario.
 
-
 *** psql, ruoli, database
 In default ~psql~ cerca di collegarsi a un database che ha lo stesso nome utente dell'utente che esegue il comando stesso, con un ruolo che ha lo stesso nome. In altre parole:
 
@@ -797,7 +793,6 @@ Il prompt corrisponde a: /username/ (~%n~), /database/ (~%/~), /hostname/ (~%m~)
 
 A differenza di ~ON_ERROR_STOP~ che fa quello che il nome suggerisce, il parametro ~ON_ERROR_ROLLBACK~ fa il suo opposto:
 >> When set to on, if a statement in a transaction block generates an error, the error is ignored and the transaction continues.
-
 
 ** Interazione: ruoli, database, tabelle
 *** Ruoli e Utenti
