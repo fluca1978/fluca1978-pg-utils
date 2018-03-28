@@ -431,8 +431,6 @@ psql: FATAL:  the database system is shutting down
 #+end_src
 
 *** Processi
-Una volta avviato il processo principale, denominato /postmaster/, il sistema avrà una serie di processi differenti in esecuzione:
-
 #+begin_src shell
 % pstree
 \-+- 02057 postgres /usr/local/bin/postgres -D /mnt/data1/pgdata
@@ -443,14 +441,13 @@ Una volta avviato il processo principale, denominato /postmaster/, il sistema av
  |--= 02063 postgres postgres: pg9.6.5: autovacuum launcher process    (postgres)
  |--= 02064 postgres postgres: pg9.6.5: stats collector process    (postgres)
 #+end_src
-
-I processi principali sono:
-- ~wal_writer~ che si occupa di rendere persistenti i record di WAL;
-- ~writer~ (denominato anche /bgwriter/) che si occupa di scrivere le pagine dati delle relazioni su disco;
-- ~logger~ (a seconda della configurazione) cattura i log e li ridireziona verso un altro canale;
-- ~checkpointer~ si occupa di schedulare e gestire i checkpoint, istanti speciali ove il sistema raggiunge uno stato consistente;
-- ~autovacuum launcher~ si occupa di gestire i processi autovacuum che, ciclicamente, "puliscono" il cluster;
-- ~stats collector~ colleziona le statistiche di run-time del sistema fornito da ogni altro processo collegato.
+- ~postgres~ (denominato anche *postmaster*), accetta le connessioni;
+- ~wal_writer~ scrive i record WAL;
+- ~writer~ (/bgwriter/) scrive le pagine dati;
+- ~logger~ gestisce i log testuali del server;
+- ~checkpointer~ schedula e gestisce i checkpoint;
+- ~autovacuum launcher~ gestisce i processi /autovacuum/;
+- ~stats collector~ raccoglie le statistiche dinamiche.
 
 ** Layout su disco
 *** PGDATA
