@@ -320,12 +320,9 @@ Una connessione può essere *TCP/IP* oppure su *socket locale*.
    La shared memory viene organizzata in */pagine dati/* che rappresentano la copia in memoria dei dati persistenti su disco.
    Vi sono una serie di processi di utilità che si occupano di scaricare/caricare i dati dalla /shared memory/ e dal disco.
 *** File System
-   PostgreSQL si appoggia al *filesystem* per lo stoccaggio dei dati in maniera persistenza.
+PostgreSQL si appoggia al *filesystem* per lo stoccaggio dei dati in maniera persistente..
 
-   Questo offre diversi vantaggi, fra i quali la possibilità di un tuning molto raffinato
-   circa le opzioni di funzionamento del filesystem (replica, journaling, ecc.).
-
-   Dall'altra parte, il filesystem deve essere *affidabile*, pena il rischio di perdita dati. 
+Questo offre diversi vantaggi, fra i quali la possibilità di un tuning molto raffinato circa le opzioni di funzionamento del filesystem (replica, journaling, ecc.). Dall'altra parte, il filesystem deve essere *affidabile*, pena il rischio di perdita dati. 
 * Installazione
 ** Installazione
 *** Tipologie di installazione
