@@ -1236,7 +1236,11 @@ Il tipo ~money~ rappresenta una valuta con cifre dopo la virgole. Può essere co
 numeric | 10.25
 #+end_src
 *** Stringhe
-Ci sono i tipi standard ~varchar(n)~ (~character varying(n)~ e ~char(n)~, entrambi che contengono fino a un massimo di ~n~ caratteri (con padding a blank nel caso di ~char~).
+I tipi principali sono:
+- ~char(n)~ stringa di lunghezza fissa con blank a destra, tutto ciò che supera ~n~ viene troncato (standard SQL);
+- ~varchar(n)~ memorizza fino a ~n~ caratteri ma senza padding (lunghezza variabile);
+- ~text~ *stringa illimitata* (fino a 1GB)
+- ~name~ stringa di 64 byte ad uso interno (es. nomi degli identificatori).
 
 Da notare che il ~char(n)~ non viene interpretato dagli operatori come ci si potrebbe aspettare:
 #+begin_src sql
@@ -1248,9 +1252,19 @@ Da notare che il ~char(n)~ non viene interpretato dagli operatori come ci si pot
 
 *Gli spazi a destra nei ~char~ non sono considerati significativi*, mentre lo sono per i dati a lunghezza variabile.
 
-*Il tipo ~text~ non pone limite sulla lunghezza della stringa*.
+*** I blank (a destra) non sono significativi!
+*Si ricordi che solo nei tipi a lunghezza variabile i /rigth-blank/ sono considerati significativi!*
 
-C'è anche un tipo ~name~ corrispondente a una stringa di 64 byte ma usato internamente solo da PostgreSQL per il catalogo di sistema.
+Tuttavia un ~char(n)~ viene effettivamente memorizzato (e restituito all'esterno) come un /blank-padded/ di lunghezza /n/.
+
+#+begin_src sql
+> SELECT 
+    length( rpad( 'abc', 10 ) ) AS text_length,
+    length( rpad( 'abc', 10 )::char( 10 ) ) AS char_length;
+
+text_length | 10
+char_length | 3
+#+end_src
 *** Funzioni basilari per la manipolazione di stringhe
 #+begin_src sql
 > SELECT length( 'Perl' ); 
