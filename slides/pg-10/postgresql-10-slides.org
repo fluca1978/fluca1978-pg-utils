@@ -1275,6 +1275,24 @@ version_array  | {5.27}
 regexp_replace | Perl v6
 
 #+end_src
+*** ~format()~: il ritorno della ~sprintf(3)~
+La funzione ~format()~ permette la costruzione di stringhe in modalità analoga a quanto fatto da ~psrintf(3)~, tuttavia i formati hanno placeholder limitati:
+- ~%s~ stringa e valori numerici;
+- ~%I~ identificatore SQL;
+- ~%L~ valore SQL.
+#+begin_src sql
+> SELECT format( 'SELECT %I FROM %I WHERE x = %L ORDER BY %s',
+                          'y', 'Coordinates', 30, 'distance' );
+                            format                            
+--------------------------------------------------------------
+ SELECT y FROM "Coordinates" 
+ WHERE x = '30' ORDER BY distance
+
+> SELECT format( '%3$s, %2$s, %1$s', 10, 20, 30 );
+   format   
+------------
+ 30, 20, 10
+#+end_src
 *** Bytea
 ~bytea~ è una stringa binaria illimitata con un header variabile da 1 a 4 byte. Usa generalmente il formato esadecimale per input e output.
 *** Tempo
