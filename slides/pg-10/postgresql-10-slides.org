@@ -4308,6 +4308,21 @@ END;
 $BODY$ LANGUAGE plpgsql;
 #+end_src
 
+*** RETURN QUERY
+Se si vuole ritornare il risultato di una query si può usare l'operatore ~RETURN QUERY~:
+#+begin_src sql
+CREATE OR REPLACE FUNCTION find_maggiorenni()
+RETURNS SETOF persona
+AS $BODY$
+DECLARE
+        current_maggiorenne persona%rowtype;
+BEGIN
+        RETURN QUERY SELECT * FROM persona WHERE eta >= 18;
+        RETURN;
+END;
+$BODY$ LANGUAGE plpgsql;
+#+end_src
+
 *** IF...ELSE
 #+begin_src sql
   IF eta >= 18 THEN
@@ -4391,21 +4406,6 @@ oppure la variante con ~EXECUTE~ se la query viene specificata da una stringa:
 query_string := 'SELECT * FROM persona';
 FOR my_record IN EXECUTE query_string LOOP
 END LOOP;
-#+end_src
-
-*** RETURN QUERY
-Se si vuole ritornare il risultato di una query si può usare l'operatore ~RETURN QUERY~:
-#+begin_src sql
-CREATE OR REPLACE FUNCTION find_maggiorenni()
-RETURNS SETOF persona
-AS $BODY$
-DECLARE
-        current_maggiorenne persona%rowtype;
-BEGIN
-        RETURN QUERY SELECT * FROM persona WHERE eta >= 18;
-        RETURN;
-END;
-$BODY$ LANGUAGE plpgsql;
 #+end_src
 
 *** Eccezioni
