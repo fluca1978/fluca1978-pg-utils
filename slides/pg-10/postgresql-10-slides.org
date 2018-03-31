@@ -5163,6 +5163,22 @@ BEGIN
   WHERE codice_fiscale = 'FRRLCU78L19F257B';
 INFO:  Aggiusto eta' UPDATE da 39 a 10
 #+end_src
+*** Vedere i trigger
+I trigger attivi su una tabella possono essere visti con il comando ~\d~ in ~psqlì, oppure interrogando il catalogo di sistema ~pg_trigger~ e la funzione speciale ~pg_get_trigger_def()~:
+
+#+begin_src sql
+> SELECT tgname, pg_get_triggerdef(oid, false) 
+    FROM pg_trigger 
+    WHERE tgname = 't_in_up';
+
+tgname            | t_in_up
+pg_get_triggerdef | CREATE TRIGGER t_in_up 
+                           BEFORE INSERT OR UPDATE 
+                           ON public.events 
+                           FOR EACH ROW 
+                           EXECUTE PROCEDURE f_tr_ins_up()
+#+end_src
+
 ** Tiggers DDL
 *** Introduzione ai trigger DDL
 PostgreSQL permette di definire dei trigger per /eventi/ di DDL, ovvero
