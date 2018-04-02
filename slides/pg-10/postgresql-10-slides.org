@@ -5670,6 +5670,23 @@ Le /Window Functions/ sono funzioni che *effettuano un calcolo su tuple correlat
 Una window function è solitamente seguita da una clausola ~OVER~ che identifica su quale sottoinsieme di dati effettuare il calcolo. All'interno della clausola ~OVER~ si può specificare:
 - ~PARTITION BY~ per indicare quali colonne usare per correlare le tuple (concettualmente simile a /group by/);
 - ~ORDER BY~ per specificare l'ordinamento per processare le tuple nella funzione di correlazione.
+*** Comprendere la /window/
+La window è calcolata dinamicamente sul result set con riferimento alla tuple sulla quale ci si trova:
+
+#+begin_src sql
+> SELECT v, 
+         first_value(v) OVER (ORDER BY v DESC), 
+         last_value(v) OVER (ORDER BY v DESC), 
+         array_agg(v) OVER (ORDER BY v DESC)  
+  FROM generate_series( 1, 4 ) v;
+
+ v | first_value | last_value | array_agg 
+---+-------------+------------+-----------
+ 4 |           4 |          4 | {4}
+ 3 |           4 |          3 | {4,3}
+ 2 |           4 |          2 | {4,3,2}
+ 1 |           4 |          1 | {4,3,2,1}
+#+end_src
 *** Esempio di base per le Window Functions
 #+begin_src sql
 > CREATE TABLE software( pk SERIAL PRIMARY KEY,
