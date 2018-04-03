@@ -21,7 +21,7 @@
 
 #+BEAMER_HEADER: \institute[fluca1978]{fluca1978\\\url{https://fluca1978.github.io}}
 #+BEAMER_FRAME_LEVEL: 1
-
+#+BEAMER_THEME: magpie
 
 
 #+LATEX_HEADER: \RequirePackage{fancyvrb}
@@ -5373,7 +5373,7 @@ di altri utenti:
   WITH CHECK (usernam = CURRENT_USER); -- condizione DML
 #+end_src
 
-** *ACL*
+** ACL
 *** Access Control List
 PostgreSQL memorizza i permessi dati con ~GRANT~ sono memorizzati come /Access Contol List (ACL)/.
 
