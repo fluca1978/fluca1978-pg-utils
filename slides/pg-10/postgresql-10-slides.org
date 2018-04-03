@@ -922,7 +922,7 @@ La vista ~pg_hba_file_rules~ consente di effettuare il /debugging/ delle imposta
 
 #+begin_src sql
 # SELECT line_number, type, database, user_name, auth_method
-testdb-# FROM pg_hba_file_rules;
+  FROM pg_hba_file_rules;
 line_number| type  | database |   user_name    | auth_method
 -----------+-------+----------+----------------+-------------
         84 | local | {all}    | {all}          | trust
@@ -1204,9 +1204,9 @@ I tipi ~serial~, ~bigserial~, ~smallserial~ sono collegati ai relativi tipi inte
 I tipi di dato ~real~ e ~real~ sono *imprecisi*, i tipi ~numeric~ e ~decimal~ sono precisi (dipendentemente dalla scala):
 #+begin_src sql
 > SELECT 1 - 0.0000000000000001::float AS float_result,
-1 - 0.0000000000000001::numeric AS numeric_result,
-1 - 0.0000000000000001::decimal AS decimal_result,
-testdb-> 1 - 0.0000000000000001::decimal( 10, 8 ) AS decimal_fix_result;
+  1 - 0.0000000000000001::numeric AS numeric_result,
+  1 - 0.0000000000000001::decimal AS decimal_result,
+  1 - 0.0000000000000001::decimal( 10, 8 ) AS decimal_fix_result;
 -[ RECORD 1 ]------+-------------------
 float_result       | 1
 numeric_result     | 0.9999999999999999
