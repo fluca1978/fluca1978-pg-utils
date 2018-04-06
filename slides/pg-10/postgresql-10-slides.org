@@ -1140,6 +1140,17 @@ testdb-> concat( 'before', NULL, 'after' ) AS ignoring;
 -------------+-------------
              | beforeafter
 #+end_src
+*** ~concat_ws()~
+Oltre all'operatore ~||~ e alla funzione ~concat()~ vi è la funzione ~concat_ws()~ che accetta come primo argomento un /separatore/ da interporre *ciclicamente* fra gli argomenti:
+#+begin_src sql
+ > SELECT concat_ws( '-', 'Here', 'is', 'a', 'text', NULL, '.' );
+    concat_ws
+------------------
+ Here-is-a-text-.
+#+end_src
+
+Il valore ~NULL~ viene igonrato (come in ~concat()~) a meno che non sia usato come /separatore/, nel qual caso tutto il risultato si annulla.
+
 *** Camel Case vs Text
 *ATTENZIONE: ogni apice doppio ~"~ viene considerato come delimitatore di nome camel-case di colonna, non di testo!*
 *** ~SHOW~ e ~SET~
