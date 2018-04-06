@@ -1130,6 +1130,16 @@ quote_nullable | NULL
 ----------
  t
 #+end_src
+*** ~NULL~ concatenation
+Ogni cosa /aggiunta/ a ~NULL~ fornisce come risultato un (diverso) ~NULL~.
+La funzione ~concat~ permette di concatenare molte cose, ignorando eventuali ~NULL~.
+#+begin_src sql
+> SELECT 'before' || NULL || 'after' AS no_ignoring,
+testdb-> concat( 'before', NULL, 'after' ) AS ignoring;
+ no_ignoring |  ignoring
+-------------+-------------
+             | beforeafter
+#+end_src
 *** Camel Case vs Text
 *ATTENZIONE: ogni apice doppio ~"~ viene considerato come delimitatore di nome camel-case di colonna, non di testo!*
 *** ~SHOW~ e ~SET~
