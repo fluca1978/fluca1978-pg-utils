@@ -1181,7 +1181,7 @@ Time: 2573.297 ms
 #+end_src
 *** Generare dati random (suggerimenti)
 E' possibile generare delle sequenze di dati con:
-- ~generate_series( a, b )~ che genera una serie di numeri interi compresi fra ~a~ e ~b~;
+- ~generate_series( a, b )~ che genera una serie di numeri interi compresi fra ~a~ e ~b~ (ma anche una serie di ~timestamp~);
 - ~random()~ che generare un ~float~ casuale;
 - ~md5( t )~ che calcola l'hash della stringa ~t~.
 Ad esempio per generare una chiave /univoca/ lunga 16 caratteri:
@@ -1190,6 +1190,12 @@ SELECT substring(
          md5( 
            ( random() * random() )::text ) 
         from 1 for 16 );
+#+end_src
+mentre per generare dei giorni
+#+begin_src sql
+> SELECT day::date
+  FROM generate_series( '2018-01-01', '2018-03-01',
+                        '1 day'::interval ) day;
 #+end_src
 ** Tipi di dato
 *** Numerici
