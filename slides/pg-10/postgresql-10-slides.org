@@ -21,7 +21,7 @@
 
 #+BEAMER_HEADER: \institute[fluca1978]{fluca1978\\\url{https://fluca1978.github.io}}
 #+BEAMER_FRAME_LEVEL: 1
-#+BEAMER_THEME: magpie
+
 
 
 #+LATEX_HEADER: \RequirePackage{fancyvrb}
@@ -1340,6 +1340,26 @@ La funzione ~format()~ permette la costruzione di stringhe in modalità analoga 
 Ci sono tipi di ~date~, ~time~, ~timestamp~ con e senza timezone. Il tipo ~timestampz~ è un sinonimo di ~timestamp with time zone~.
 
 Si noti che, nonostante lo standard SQL lo permetta, il timezone ha senso solo quando è presente sia la data che l'ora.
+*** ~datestyle~
+PostgreSQL fa del suo meglio per interpretare le stringhe come date, ma qualora non sia sufficiente occorre variare il parametro ~datestyle~:
+
+#+begin_src sql
+> SELECT '19/7/2018'::date;
+ERROR:  date/time field value out of range: "19/7/2018"
+LINE 2: select '19/7/2018'::date;
+
+> show datestyle
+testdb-> ;
+ DateStyle
+-----------
+ ISO, MDY
+
+> set datestyle TO 'ISO,DMY';
+> SELECT '19/7/2018'::date;
+    date
+------------
+ 2018-07-19
+#+end_src
 *** Manipolazione del tempo
 Ci sono alcune regole:
 1. la differenza fra due ~timestamp~ è sempre un ~interval~, e di conseguenza aggiungere un ~interval~ ad un ~timestamp~ produce un altro ~timestamp~;
