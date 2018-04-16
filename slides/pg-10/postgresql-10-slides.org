@@ -4044,22 +4044,22 @@ Si può quindi procedere alla sua eliminazione tramite il relativo pid:
 * Transazioni
 ** Livello di isolamento
 *** Livelli di isolamento
-   Le problematiche sono:
-   - *dirty reads*: è possibile vedere (leggere) tuple non ancora committate da altre  transazioni;
-   - *unrepeatable reads*: una tupla riletta piu' volte durante una transazione presenta valori modificati da un'altra transazione;
-   - *phantom reads*: la stessa query eseguita piu' volta fornisce un resultset modificato (nella quantità) da un'altra transazione
+Le problematiche sono:
+- *dirty reads*: è possibile vedere (leggere) tuple non ancora committate da altre transazioni;
+- *unrepeatable reads*: una query ripetuta piu' volte riporta risultati con valori differenti (valori dei dati);
+- *phantom reads*: la stessa eseguita con gli stessi filtri fornisce un result set differente (dimensione dei dati).
 
 *** Livelli di isolamento in PostgreSQL
-   PostgreSQL supporta 3 livelli di isolamento sui 4 standard (/read uncommited/, /read committed/, /repeatable read/, /serializable/). Questo non rappresenta un problema poiché è sufficiente garantire il /livello di isolamento superiore/.
+PostgreSQL supporta 3 livelli di isolamento sui 4 standard (/read uncommited/, /read committed/, /repeatable read/, /serializable/). Questo non rappresenta un problema poiché è sufficiente garantire il /livello di isolamento superiore/.
 
-   Una transazione può essere di tipo:
-   - *read committed*: /(default)/ uno statement vede solo le tuple consolidate prima dell'inizio dello statement stesso;
-   - *repeatable read*: ogni statement della transazione può vedere solo le tuple consolidate prima dell'esecuzione del primo statement (ovvero, all'inizio della transazione);
-   - *serializable*: come *repeatable read* ma impone che le transazioni siano /idempotenti/ rispetto al loro effettivo ordine di esecuzione (monitoring di consistenza seriale).
+Una transazione può essere di tipo:
+- *read committed*: /(default)/ uno statement vede solo le tuple consolidate prima dell'inizio dello statement stesso;
+- *repeatable read*: ogni statement della transazione può vedere solo le tuple consolidate prima dell'esecuzione del primo statement (ovvero, all'inizio della transazione);
+- *serializable*: come *repeatable read* ma impone che le transazioni siano /idempotenti/ rispetto al loro effettivo ordine di esecuzione (monitoring di consistenza seriale).
 *** Impostare i livelli di isolamento in PostgreSQL
-   All'interno di una transazione è possibile impostare il livello
-   di isolamento, che però non può essere piu' cambiato dopo l'esecuzione di uno statement di modifica (incluso ~SELECT~).
-   Quando si avvia una transazione è possibile specificare l'isolation level direttamente nel blocco ~BEGIN~, mentre per gli altri casi c'è ~SET TRANSACTION~:
+All'interno di una transazione è possibile impostare il livello
+di isolamento, che però non può essere piu' cambiato dopo l'esecuzione di uno statement di modifica (incluso ~SELECT~).
+Quando si avvia una transazione è possibile specificare l'isolation level direttamente nel blocco ~BEGIN~, mentre per gli altri casi c'è ~SET TRANSACTION~:
 
 #+begin_src sql
 > BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ;
@@ -4068,20 +4068,18 @@ ERROR:  SET TRANSACTION ISOLATION LEVEL must not be called in a subtransaction
 #+end_src
 ** Casistiche particolari delle transazioni
 *** Transazioni ~READ ONLY~ contro ~READ WRITE~
-   PostgreSQL permette di specificare due tipi di transazioni:
-   - *READ WRITE*: (default) è possibile eseguire ogni statement SQL;
-   - *READ ONLY*: è una /promessa/ di non alterare i dati. Tutti i comandi
-     generici (~UPDATE, INSERT, DELETE, EXECUTE, ALTER TABLE, VACUUM~, ecc.)
-     sono disabilitati a meno che non agiscano su tabelle temporanee.
+PostgreSQL permette di specificare due tipi di transazioni:
+- *READ WRITE*: (default) è possibile eseguire ogni statement SQL;
+- *READ ONLY*: è una /promessa/ di non alterare i dati. Tutti i comandi
+  generici (~UPDATE, INSERT, DELETE, EXECUTE, ALTER TABLE, VACUUM~, ecc.)
+  sono disabilitati a meno che non agiscano su tabelle temporanee.
 
   *Non c'è nessuna garanzia che una transazione ~READ ONLY~ non effettui scritture su disco!*
 *** Transazioni ~DEFERRABLE~
-   C'è un caso particolare di transazione: ~DEFERRABLE~.
-   Questo si applica solo a transazioni ~READ ONLY~ e ~SERIALIZABLE~.
+C'è un caso particolare di transazione: ~DEFERRABLE~.
+Questo si applica solo a transazioni ~READ ONLY~ e ~SERIALIZABLE~.
 
-   L'idea è che la transazione accetta di "attendere" prima della sua esecuzione, e in cambio
-   l'overhead di monitoring per la serializzazione è ridotto. Ciò produce dei vantaggi
-   per le transazioni di reportistica.
+L'idea è che la transazione accetta di "attendere" prima della sua esecuzione, e in cambio l'overhead di monitoring per la serializzazione è ridotto. Ciò produce dei vantaggi per le transazioni di reportistica.
 *** Il tempo nelle transazioni
 Il tempo nelle transazioni è *discreto*: ~now()~ e ~CURRENT_TIMESTAMP~ restituiscono sempre lo stesso valore (sono definite come /stable/). Esiste la funzione speciale ~clock_timestamp()~ che restituisce il valore basato sul clock di sistema, quindi differente ogni volta:
 
