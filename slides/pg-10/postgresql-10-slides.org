@@ -4681,7 +4681,8 @@ AS $BODY$
    my $result_set = spi_exec_query( "SELECT $column FROM $table" );
    my @found;
    for my $current_row ( @{ $result_set->{ rows } } ) {
-       push @found, $current_row->{ $column } if ( $current_row->{ $column } =~ /$pattern/ );
+       push @found, $current_row->{ $column }
+              if ( $current_row->{ $column } =~ /$pattern/ );
    }
    return \@found;
 $BODY$
@@ -4697,7 +4698,8 @@ AS $BODY$
    my ( $table, $column, $pattern ) = @_;
    my $result_set = spi_exec_query( "SELECT $column FROM $table" );
    for my $current_row ( @{ $result_set->{ rows } } ){
-      return_next( $current_row->{ $column } ) if ( $current_row->{ $column } =~ /$pattern/ );
+      return_next( $current_row->{ $column } )
+             if ( $current_row->{ $column } =~ /$pattern/ );
    }
    return undef; # IMPORTANTE !!
 $BODY$
