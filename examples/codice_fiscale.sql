@@ -1,7 +1,31 @@
+/*
+ + An example to compute an italian codice fiscale
+ * using plpgsql functions.
+ *
+ * All functions and data is placed into a specific schema to not pollute
+ * ordinary data.
+ *
+ * In order to see debug messages:
+ *
+ * set client_min_messages to debug;
+ *
+ * To check the whole generator invoke cf.cf() function.
+ * See <https://it.wikipedia.org/wiki/Codice_fiscale>
+ */
+
+
 BEGIN;
 
 CREATE SCHEMA IF NOT EXISTS cf;
 
+ /**
+  * Computes the date string for a specific birth date and
+  * gender.
+  * Example of invocation:
+  * SELECT cf.cf_date( '1978-7-19', true );
+  * which produces:
+  * 78L19
+  */
 CREATE OR REPLACE FUNCTION cf.cf_date( birth_date date,
                                        male boolean DEFAULT true )
 RETURNS char(5)
@@ -55,7 +79,9 @@ $CODE$
 LANGUAGE plpgsql;
 
 
-
+/**
+ * Computes the sequence of three chars for a name and/or surname.
+ */
 CREATE OR REPLACE FUNCTION cf.cf_letters( subject text )
 RETURNS char(3)
 AS $BODY$
@@ -91,10 +117,15 @@ $BODY$
 LANGUAGE plpgsql;
 
 
-
+/**
+ * Each birth-place has a specific code that has to be inserted into
+ * the resulting string. In order to look up codes by place names,
+ * use a simple table.
+ */
 CREATE TABLE IF NOT EXISTS cf.places( code char(4) PRIMARY KEY,
                                       description text NOT NULL,
                                       UNIQUE( description ) );
+
 
 TRUNCATE cf.places;
 
@@ -105,6 +136,13 @@ VALUES
 ( 'A944', 'Bologna' ),
 ( 'F357', 'Serramazzoni' );
 
+
+
+/**
+ * Translate a place name, case-insensitively, into
+ * a code string. This is not a very strong alghoritm, since
+ * it is based on text comparison...
+ */
 CREATE OR REPLACE FUNCTION cf.cf_place( birth_place text )
 RETURNS char(4)
 AS $CODE$
@@ -122,7 +160,12 @@ $CODE$
 LANGUAGE plpgsql;
 
 
-
+/**
+ + In order to compute the checksum character
+ * it is required to compute a sum based on the value of each
+ * character and its position, odd or even.
+ * This table contains all the values required to compute the sum.
+ */
 CREATE TABLE IF NOT EXISTS cf.check_chars( c char PRIMARY KEY,
                                            odd_value int NOT NULL,
                                            even_value int NOT NULL );
@@ -169,6 +212,10 @@ VALUES
 
 
 
+
+/**
+ + Compute the checksum character.
+ */
 CREATE OR REPLACE FUNCTION cf.cf_check( subject char(15) )
 RETURNS char
 AS $BODY$
@@ -179,6 +226,9 @@ DECLARE
   i int;
   current_value int;
   final_value int;
+  odd_in text := '';
+  even_in text := '';
+  current_letter char;
 BEGIN
 
   FOR i in 1..length( subject ) LOOP
@@ -200,8 +250,46 @@ BEGIN
   END LOOP;
 
 
-  final_value := ( odd_sum + even_sum ) % 26;
-  RAISE DEBUG 'cf_check: % + % %% 26 = %', odd_sum, even_sum, final_value;
+  /*
+   + The following produces the same computation
+   * by looping the string, getting the single letter and
+   * append it to an IN clause.
+   * Then the query is dynamically executed.
+   */
+  /*
+  FOR i IN 1..length( subject ) LOOP
+      current_letter := substring( subject FROM i FOR 1 );
+
+      IF i % 2 <> 0 THEN 
+         IF length( odd_in ) > 0 THEN
+            odd_in := odd_in || ',';
+         END IF;
+
+        odd_in := odd_in || quote_literal( current_letter );
+      ELSE
+        IF length( even_in ) > 0 THEN
+          even_in := even_in || ',';
+        END IF;
+
+       even_in := even_in || quote_literal( current_letter );
+      END IF;
+  END LOOP;
+
+  EXECUTE 'SELECT sum( even_value )
+           FROM cf.check_chars
+           WHERE c IN (' || even_in || ')'
+  INTO even_sum;
+
+  EXECUTE 'SELECT sum( odd_value )
+           FROM cf.check_chars
+           WHERE c IN (' || odd_in || ')'
+  INTO even_sum;
+
+  */
+
+
+   final_value := ( odd_sum + even_sum ) % 26;
+   RAISE DEBUG 'cf_check: % + % %% 26 = %', odd_sum, even_sum, final_value;
 
   -- this is a trick: the remaining part
   -- indicates the positional order of the letter
