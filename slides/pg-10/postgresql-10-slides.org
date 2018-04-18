@@ -21,7 +21,7 @@
 
 #+BEAMER_HEADER: \institute[fluca1978]{fluca1978\\\url{https://fluca1978.github.io}}
 #+BEAMER_FRAME_LEVEL: 1
-#+BEAMER_THEME: magpie
+
 
 
 #+LATEX_HEADER: \RequirePackage{fancyvrb}
@@ -1340,6 +1340,26 @@ La funzione ~format()~ permette la costruzione di stringhe in modalità analoga 
 Ci sono tipi di ~date~, ~time~, ~timestamp~ con e senza timezone. Il tipo ~timestampz~ è un sinonimo di ~timestamp with time zone~.
 
 Si noti che, nonostante lo standard SQL lo permetta, il timezone ha senso solo quando è presente sia la data che l'ora.
+*** ~datestyle~
+PostgreSQL fa del suo meglio per interpretare le stringhe come date, ma qualora non sia sufficiente occorre variare il parametro ~datestyle~:
+
+#+begin_src sql
+> SELECT '19/7/2018'::date;
+ERROR:  date/time field value out of range: "19/7/2018"
+LINE 2: select '19/7/2018'::date;
+
+> show datestyle
+testdb-> ;
+ DateStyle
+-----------
+ ISO, MDY
+
+> set datestyle TO 'ISO,DMY';
+> SELECT '19/7/2018'::date;
+    date
+------------
+ 2018-07-19
+#+end_src
 *** Manipolazione del tempo
 Ci sono alcune regole:
 1. la differenza fra due ~timestamp~ è sempre un ~interval~, e di conseguenza aggiungere un ~interval~ ad un ~timestamp~ produce un altro ~timestamp~;
@@ -4024,22 +4044,22 @@ Si può quindi procedere alla sua eliminazione tramite il relativo pid:
 * Transazioni
 ** Livello di isolamento
 *** Livelli di isolamento
-   Le problematiche sono:
-   - *dirty reads*: è possibile vedere (leggere) tuple non ancora committate da altre  transazioni;
-   - *unrepeatable reads*: una tupla riletta piu' volte durante una transazione presenta valori modificati da un'altra transazione;
-   - *phantom reads*: la stessa query eseguita piu' volta fornisce un resultset modificato (nella quantità) da un'altra transazione
+Le problematiche sono:
+- *dirty reads*: è possibile vedere (leggere) tuple non ancora committate da altre transazioni;
+- *unrepeatable reads*: una query ripetuta piu' volte riporta risultati con valori differenti (valori dei dati);
+- *phantom reads*: la stessa eseguita con gli stessi filtri fornisce un result set differente (dimensione dei dati).
 
 *** Livelli di isolamento in PostgreSQL
-   PostgreSQL supporta 3 livelli di isolamento sui 4 standard (/read uncommited/, /read committed/, /repeatable read/, /serializable/). Questo non rappresenta un problema poiché è sufficiente garantire il /livello di isolamento superiore/.
+PostgreSQL supporta 3 livelli di isolamento sui 4 standard (/read uncommited/, /read committed/, /repeatable read/, /serializable/). Questo non rappresenta un problema poiché è sufficiente garantire il /livello di isolamento superiore/.
 
-   Una transazione può essere di tipo:
-   - *read committed*: /(default)/ uno statement vede solo le tuple consolidate prima dell'inizio dello statement stesso;
-   - *repeatable read*: ogni statement della transazione può vedere solo le tuple consolidate prima dell'esecuzione del primo statement (ovvero, all'inizio della transazione);
-   - *serializable*: come *repeatable read* ma impone che le transazioni siano /idempotenti/ rispetto al loro effettivo ordine di esecuzione (monitoring di consistenza seriale).
+Una transazione può essere di tipo:
+- *read committed*: /(default)/ uno statement vede solo le tuple consolidate prima dell'inizio dello statement stesso;
+- *repeatable read*: ogni statement della transazione può vedere solo le tuple consolidate prima dell'esecuzione del primo statement (ovvero, all'inizio della transazione);
+- *serializable*: come *repeatable read* ma impone che le transazioni siano /idempotenti/ rispetto al loro effettivo ordine di esecuzione (monitoring di consistenza seriale).
 *** Impostare i livelli di isolamento in PostgreSQL
-   All'interno di una transazione è possibile impostare il livello
-   di isolamento, che però non può essere piu' cambiato dopo l'esecuzione di uno statement di modifica (incluso ~SELECT~).
-   Quando si avvia una transazione è possibile specificare l'isolation level direttamente nel blocco ~BEGIN~, mentre per gli altri casi c'è ~SET TRANSACTION~:
+All'interno di una transazione è possibile impostare il livello
+di isolamento, che però non può essere piu' cambiato dopo l'esecuzione di uno statement di modifica (incluso ~SELECT~).
+Quando si avvia una transazione è possibile specificare l'isolation level direttamente nel blocco ~BEGIN~, mentre per gli altri casi c'è ~SET TRANSACTION~:
 
 #+begin_src sql
 > BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ;
@@ -4048,20 +4068,18 @@ ERROR:  SET TRANSACTION ISOLATION LEVEL must not be called in a subtransaction
 #+end_src
 ** Casistiche particolari delle transazioni
 *** Transazioni ~READ ONLY~ contro ~READ WRITE~
-   PostgreSQL permette di specificare due tipi di transazioni:
-   - *READ WRITE*: (default) è possibile eseguire ogni statement SQL;
-   - *READ ONLY*: è una /promessa/ di non alterare i dati. Tutti i comandi
-     generici (~UPDATE, INSERT, DELETE, EXECUTE, ALTER TABLE, VACUUM~, ecc.)
-     sono disabilitati a meno che non agiscano su tabelle temporanee.
+PostgreSQL permette di specificare due tipi di transazioni:
+- *READ WRITE*: (default) è possibile eseguire ogni statement SQL;
+- *READ ONLY*: è una /promessa/ di non alterare i dati. Tutti i comandi
+  generici (~UPDATE, INSERT, DELETE, EXECUTE, ALTER TABLE, VACUUM~, ecc.)
+  sono disabilitati a meno che non agiscano su tabelle temporanee.
 
   *Non c'è nessuna garanzia che una transazione ~READ ONLY~ non effettui scritture su disco!*
 *** Transazioni ~DEFERRABLE~
-   C'è un caso particolare di transazione: ~DEFERRABLE~.
-   Questo si applica solo a transazioni ~READ ONLY~ e ~SERIALIZABLE~.
+C'è un caso particolare di transazione: ~DEFERRABLE~.
+Questo si applica solo a transazioni ~READ ONLY~ e ~SERIALIZABLE~.
 
-   L'idea è che la transazione accetta di "attendere" prima della sua esecuzione, e in cambio
-   l'overhead di monitoring per la serializzazione è ridotto. Ciò produce dei vantaggi
-   per le transazioni di reportistica.
+L'idea è che la transazione accetta di "attendere" prima della sua esecuzione, e in cambio l'overhead di monitoring per la serializzazione è ridotto. Ciò produce dei vantaggi per le transazioni di reportistica.
 *** Il tempo nelle transazioni
 Il tempo nelle transazioni è *discreto*: ~now()~ e ~CURRENT_TIMESTAMP~ restituiscono sempre lo stesso valore (sono definite come /stable/). Esiste la funzione speciale ~clock_timestamp()~ che restituisce il valore basato sul clock di sistema, quindi differente ogni volta:
 
@@ -4663,7 +4681,8 @@ AS $BODY$
    my $result_set = spi_exec_query( "SELECT $column FROM $table" );
    my @found;
    for my $current_row ( @{ $result_set->{ rows } } ) {
-       push @found, $current_row->{ $column } if ( $current_row->{ $column } =~ /$pattern/ );
+       push @found, $current_row->{ $column }
+              if ( $current_row->{ $column } =~ /$pattern/ );
    }
    return \@found;
 $BODY$
@@ -4679,7 +4698,8 @@ AS $BODY$
    my ( $table, $column, $pattern ) = @_;
    my $result_set = spi_exec_query( "SELECT $column FROM $table" );
    for my $current_row ( @{ $result_set->{ rows } } ){
-      return_next( $current_row->{ $column } ) if ( $current_row->{ $column } =~ /$pattern/ );
+      return_next( $current_row->{ $column } )
+             if ( $current_row->{ $column } =~ /$pattern/ );
    }
    return undef; # IMPORTANTE !!
 $BODY$
