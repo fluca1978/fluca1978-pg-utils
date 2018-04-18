@@ -151,9 +151,14 @@ DECLARE
   birth_code char(4);
 BEGIN
   SELECT code
-  INTO STRICT birth_code
+  INTO birth_code  -- no strict! allow NOT FOUND to work!
   FROM cf.places
   WHERE lower( description ) = lower( birth_place );
+
+  IF NOT FOUND THEN
+     RAISE WARNING '% not in cf.places!', birth_place;
+     RETURN 'XXXX';
+  END IF;
 
   RETURN birth_code;
 END
