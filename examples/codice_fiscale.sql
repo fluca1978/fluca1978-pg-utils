@@ -82,7 +82,7 @@ LANGUAGE plpgsql;
 /**
  * Computes the sequence of three chars for a name and/or surname.
  */
-CREATE OR REPLACE FUNCTION cf.cf_letters( subject text )
+CREATE OR REPLACE FUNCTION cf.cf_letters( subject text, is_name bool DEFAULT false )
 RETURNS char(3)
 AS $BODY$
 DECLARE
@@ -102,6 +102,16 @@ BEGIN
                              subject,
                              consonants,
                              vowels;
+
+  IF is_name THEN 
+    IF length( consonants ) >= 4 THEN
+       consonants := substring( consonants FROM 1 FOR 1 )
+                        || substring( consonants FROM 3 FOR 1 )
+                        || substring( consonants FROM 4 FOR 1 );
+    ELSIF length( consonants ) = 3 THEN
+      consonants := substring( consonants FROM 1 FOR 3 );
+    END IF;
+  END IF;
 
   IF length( consonants ) >= 3 THEN
      final_chars := substring( consonants FROM 1 FOR 3 );
@@ -325,7 +335,7 @@ DECLARE
   cf_check  char(1);
 BEGIN
   cf_string := cf.cf_letters( surname )
-               || cf.cf_letters( name )
+               || cf.cf_letters( name, true )
                || cf.cf_date( birth_date, gender )
                || cf.cf_place( birth_place );
 
