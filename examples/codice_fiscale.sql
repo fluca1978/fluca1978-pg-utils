@@ -124,7 +124,8 @@ LANGUAGE plpgsql;
  */
 CREATE TABLE IF NOT EXISTS cf.places( code char(4) PRIMARY KEY,
                                       description text NOT NULL,
-                                      UNIQUE( description ) );
+                                      UNIQUE( description ),
+                                      EXCLUDE( lower( trim( description ) ) WITH = ) );
 
 
 TRUNCATE cf.places;
