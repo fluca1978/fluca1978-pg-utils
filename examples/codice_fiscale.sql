@@ -266,43 +266,6 @@ BEGIN
   END LOOP;
 
 
-  /*
-   + The following produces the same computation
-   * by looping the string, getting the single letter and
-   * append it to an IN clause.
-   * Then the query is dynamically executed.
-   */
-  /*
-  FOR i IN 1..length( subject ) LOOP
-      current_letter := substring( subject FROM i FOR 1 );
-
-      IF i % 2 <> 0 THEN 
-         IF length( odd_in ) > 0 THEN
-            odd_in := odd_in || ',';
-         END IF;
-
-        odd_in := odd_in || quote_literal( current_letter );
-      ELSE
-        IF length( even_in ) > 0 THEN
-          even_in := even_in || ',';
-        END IF;
-
-       even_in := even_in || quote_literal( current_letter );
-      END IF;
-  END LOOP;
-
-  EXECUTE 'SELECT sum( even_value )
-           FROM cf.check_chars
-           WHERE c IN (' || even_in || ')'
-  INTO even_sum;
-
-  EXECUTE 'SELECT sum( odd_value )
-           FROM cf.check_chars
-           WHERE c IN (' || odd_in || ')'
-  INTO even_sum;
-
-  */
-
 
    final_value := ( odd_sum + even_sum ) % 26;
    RAISE DEBUG 'cf_check: % + % %% 26 = %', odd_sum, even_sum, final_value;
