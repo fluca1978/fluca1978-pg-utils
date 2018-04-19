@@ -7627,7 +7627,7 @@ Il ~GoogleFdw~ è un modulo /Multicorn/.
   FOREIGN DATA WRAPPER multicorn
   OPTIONS( wrapper 'multicorn.googlefdw.GoogleFdw' );
 #+end_src
-*** fase 2: creazione della tabella
+*** Fase 2: creazione della tabella
 #+begin_src sql
 # CREATE FOREIGN TABLE google_search(
     url text,
