@@ -7643,6 +7643,52 @@ SELECT * FROM google_search WHERE search = 'postgresql';
 ERROR:  Error in python: TypeError
 DETAIL:  'NoneType' object has no attribute '__getitem__'
 #+end_src
+** Esempio di FDW: SQLite3
+*** Installazione
+Occorre avere le librerie SQLite3 installate e clonare un repository git:
+
+#+begin_src sh
+% sudo pkg install sqlite3-3.22.0_2
+% git clone https://github.com/gleu/sqlite_fdw.git
+% cd sqlite_fdw
+% gmake
+% sudo gmake install
+#+end_src
+
+*E' un wrapper in sola lettura!*
+
+*** Fase 1: definizione del server
+#+begin_src sql
+# CREATE EXTENSION sqlite_fdw;
+# CREATE SERVER digikam_sqlite_server
+    FOREIGN DATA WRAPPER sqlite_fdw
+    OPTIONS( database '/home/luca/digikam4.db' );
+#+end_src
+*** Fase 2: creazione della tabella
+#+begin_src sql
+# CREATE FOREIGN TABLE digikam_albums(
+     id INTEGER ,
+     albumRoot INTEGER NOT NULL,
+     relativePath TEXT NOT NULL,
+     date DATE,
+     caption TEXT,
+     collection TEXT,
+     icon INTEGER  )
+  SERVER digikam_sqlite_server
+  OPTIONS( table 'Albums' );
+#+end_src
+*** Fase 3: effettuare una ricerca
+#+begin_src sql
+# SELECT relativePath, date FROM digikam_albums ORDER BY date DESC LIMIT 3;
+
+        relativepath        |    date
+----------------------------+------------
+ /                          | 2018-02-15
+ /2018_FESTE                | 2018-02-15
+ /2018_FESTE/2018_CARNEVALE | 2018-02-11
+
+#+end_src
+
 * Configurazione del Server
 ** Configurazione: concetti
 *** ~pg_config~
