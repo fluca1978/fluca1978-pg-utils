@@ -240,35 +240,38 @@ DECLARE
   odd_sum int := 0;
   even_sum int := 0;
   i int;
-  current_value int;
   final_value int;
-  odd_in text := '';
-  even_in text := '';
+  odd_in char[];
+  even_in char[];
   current_letter char;
 BEGIN
 
   FOR i in 1..length( subject ) LOOP
       IF i % 2 = 0 THEN
-         SELECT even_value
-         INTO STRICT current_value
-         FROM cf.check_chars
-         WHERE c = upper( substring( subject FROM i FOR 1 ) );
-
-         even_sum := even_sum + current_value;
+         even_in := array_append( even_in,
+                                  upper( substring( subject FROM i FOR 1 ) )::char );
       ELSE
-        SELECT odd_value
-        INTO STRICT current_value
-        FROM cf.check_chars
-        WHERE c = upper( substring( subject FROM i FOR 1 ) );
-
-        odd_sum := odd_sum + current_value;
+        odd_in := array_append( odd_in,
+                                upper( substring( subject FROM i FOR 1 ) )::char );
      END IF;
   END LOOP;
 
 
+   SELECT sum(even_value)
+   INTO even_sum
+   FROM cf.check_chars
+   JOIN unnest( even_in ) AS letter
+   ON c = letter;
+
+   SELECT sum(odd_value)
+   INTO odd_sum
+   FROM cf.check_chars
+   JOIN unnest( odd_in ) AS letter
+   ON c = letter;
 
    final_value := ( odd_sum + even_sum ) % 26;
    RAISE DEBUG 'cf_check: % + % %% 26 = %', odd_sum, even_sum, final_value;
+
 
   -- this is a trick: the remaining part
   -- indicates the positional order of the letter
