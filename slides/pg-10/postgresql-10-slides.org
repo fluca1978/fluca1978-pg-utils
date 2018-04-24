@@ -4604,7 +4604,7 @@ $BODY$ LANGUAGE plpgsql;
 #+end_src
 Si filtra sulla chiave per ottenere esattamente un record!
 
-*** EXECUTE
+*** ~EXECUTE~
 Il comando ~EXECUTE~ consente l'esecuzione di query costruite al volo (/no-caching/)
 in formato stringa.
 Il comando permette la sotituzione di variabili all'iterno della stringa di query:
@@ -4614,7 +4614,7 @@ Il comando permette la sotituzione di variabili all'iterno della stringa di quer
 *I parametri possono essere usati solo per dei dati, per i nomi di tabella/colonna si deve effettuare una concatenazione di stringa!*
 
 Inoltre ~EXECUTE~ permette di effettuare un ~INTO [STRICT]~ come una normale ~SELECT~.
-*** EXECUTE: esempio
+*** ~EXECUTE~: esempio
 #+begin_src sql
 -- SELECT do_count( 2, 'persona' );
 CREATE OR REPLACE FUNCTION do_count( pk int, tabella text)
@@ -4633,7 +4633,7 @@ END;
 $BODY$ LANGUAGE plpgsql;
 #+end_src
 
-*** EXECUTE USING: esempio
+*** ~EXECUTE USING~: esempio
 #+begin_src sql
 CREATE OR REPLACE FUNCTION f_tellers( tid int )
 RETURNS SETOF pgbench_tellers
