@@ -4532,6 +4532,22 @@ che:
   ~LIMIT 1~);
 - se la query ritorna piu' di una riga ed è specificato ~STRICT~ allora si ha un errore di esecuzione
   (ossia *~STRICT~ impone che la query fornisca una sola tupla*).
+*** ~SELECT INTO~ vs ~:=~
+Lo statement ~SELECT INTO~ permette l'assegnamento contemporaneo a piu' variabili (simile a Perl), mentre ~:=~ tratta un assegnamento alla volta.
+
+#+begin_src sql
+DECLARE
+  y int; m int; d int;
+BEGIN
+  SELECT extract( year from current_date ),
+         extract( month from current_date ),
+         extract( day from current_date )
+ INTO y, m, d;
+ -- y := extract( year from current_date );
+ -- m := extract( month from current_date );
+ -- d := extract( day from current_date );
+END
+#+end_src
 *** ~SELECT INTO~: esempio senza STRICT
 #+begin_src sql
 CREATE OR REPLACE FUNCTION do_select()
@@ -4588,22 +4604,6 @@ $BODY$ LANGUAGE plpgsql;
 #+end_src
 Si filtra sulla chiave per ottenere esattamente un record!
 
-*** ~SELECT INTO~ vs ~:=~
-Lo statement ~SELECT INTO~ permette l'assegnamento contemporaneo a piu' variabili (simile a Perl), mentre ~:=~ tratta un assegnamento alla volta.
-
-#+begin_src sql
-DECLARE
-  y int; m int; d int;
-BEGIN
-  SELECT extract( year from current_date ),
-         extract( month from current_date ),
-         extract( day from current_date )
- INTO y, m, d;
- -- y := extract( year from current_date );
- -- m := extract( month from current_date );
- -- d := extract( day from current_date );
-END
-#+end_src
 *** EXECUTE
 Il comando ~EXECUTE~ consente l'esecuzione di query costruite al volo (/no-caching/)
 in formato stringa.
