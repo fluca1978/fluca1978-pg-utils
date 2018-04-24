@@ -4523,7 +4523,7 @@ $BODY$ LANGUAGE plpgsql;
 
     *PERFORM* sostituisce *SELECT* in una query!
 
-*** SELECT INTO
+*** ~SELECT INTO~
 E' possibile assegnare a una (o piu') variabili il risultato di una ~SELECT~
 specificando appunto la lista di variabile ove inserire (~INTO~) il risultato, considerando
 che:
@@ -4532,7 +4532,7 @@ che:
   ~LIMIT 1~);
 - se la query ritorna piu' di una riga ed è specificato ~STRICT~ allora si ha un errore di esecuzione
   (ossia *~STRICT~ impone che la query fornisca una sola tupla*).
-*** SELECT INTO: esempio senza STRICT
+*** ~SELECT INTO~: esempio senza STRICT
 #+begin_src sql
 CREATE OR REPLACE FUNCTION do_select()
 RETURNS VOID AS $BODY$
@@ -4550,7 +4550,7 @@ BEGIN
 END;
 $BODY$ LANGUAGE plpgsql;
 #+end_src
-*** SELECT INTO: esempio senza STRICT (2)
+*** ~SELECT INTO~: esempio senza STRICT (2)
 #+begin_src sql
 > SELECT count(*) FROM persona;
  count
@@ -4559,7 +4559,7 @@ $BODY$ LANGUAGE plpgsql;
 > SELECT do_select();
 INFO:  Trovati EMANUELA SANTUNIONE
 #+end_src
-*** SELECT INTO: errore di STRICT
+*** ~SELECT INTO~: errore di STRICT
 Se la query viene eseguita con ~STRICT~ si ottiene un errore di esecuzione:
 
 #+begin_src sql
@@ -4567,7 +4567,7 @@ Se la query viene eseguita con ~STRICT~ si ottiene un errore di esecuzione:
 ERROR:  query returned more than one row
 #+end_src
 
-*** SELECT INTO: esempio con STRICT
+*** ~SELECT INTO~: esempio con STRICT
 #+begin_src sql
 CREATE OR REPLACE FUNCTION do_select()
 RETURNS VOID AS $BODY$
@@ -4588,6 +4588,22 @@ $BODY$ LANGUAGE plpgsql;
 #+end_src
 Si filtra sulla chiave per ottenere esattamente un record!
 
+*** ~SELECT INTO~ vs ~:=~
+Lo statement ~SELECT INTO~ permette l'assegnamento contemporaneo a piu' variabili (simile a Perl), mentre ~:=~ tratta un assegnamento alla volta.
+
+#+begin_src sql
+DECLARE
+  y int; m int; d int;
+BEGIN
+  SELECT extract( year from current_date ),
+         extract( month from current_date ),
+         extract( day from current_date )
+ INTO y, m, d;
+ -- y := extract( year from current_date );
+ -- m := extract( month from current_date );
+ -- d := extract( day from current_date );
+END
+#+end_src
 *** EXECUTE
 Il comando ~EXECUTE~ consente l'esecuzione di query costruite al volo (/no-caching/)
 in formato stringa.
