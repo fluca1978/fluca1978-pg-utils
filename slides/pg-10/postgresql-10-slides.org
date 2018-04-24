@@ -2117,6 +2117,16 @@ LINE 1: SELECT count(*) FROM persona;
   -- ok !
 #+end_src
 
+*** Considerazioni di sicurezza sul ~search_path~ e ~public~
+Sostanzialmente si applicano tutte le considerazioni di sicurezza relative al ~PATH~ di Unix.
+
+Inoltre PostgreSQL consente la creazione di nuovi oggetti a ogni utente (in default) che abbia accesso al database. Questo significa che è possibuile "mascherare" oggetti e funzioni maliziosamente nello schema ~public~.
+A tal fine è opportuno rimuovere il permesso di creazione sullo schema ~public~:
+
+#+begin_src sql
+REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+#+end_src
+
 ** Cast
 *** Modalità di cast
 In PostgreSQL il cast può essere effettuato in quattro modi:
