@@ -5,7 +5,7 @@ CREATE SCHEMA IF NOT EXISTS url_stat;
 /*
  * A table that holds urls and the counter of each visit to such URL.
  */
-CREATE TABLE url_stat.url (
+CREATE TABLE IF NOT EXISTS url_stat.url (
        pk int GENERATED ALWAYS AS IDENTITY,
        protocol  varchar(10) DEFAULT 'http',
        site      text NOT NULL,
