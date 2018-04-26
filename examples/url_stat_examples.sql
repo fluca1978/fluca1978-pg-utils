@@ -55,7 +55,7 @@ LANGUAGE plpgsql;
 
 
 --
--- POLUATE THE TABLE
+-- POPULATE THE TABLE
 --
 WITH urls_array AS (
     SELECT url_stat.split_url( url ) AS url_array
