@@ -10,18 +10,36 @@ CREATE TABLE IF NOT EXISTS url_stat.url (
        protocol  varchar(10) DEFAULT 'http',
        site      text NOT NULL,
        url       text NOT NULL,
+       params    text[],
        visited   int  DEFAULT 0,
        published bool DEFAULT true,
 
        PRIMARY KEY( pk ),
        CHECK ( visited >= 0 ),
-       UNIQUE( site, url ) -- allow  different protocols for the same site
+       UNIQUE( site, url, params ) -- allow  different protocols for the same site
 );
 
 
 /**
  * Internal function to allow splitting an URL into
  * parts.
+ *
+ * @returns an array with the following indexing:
+ * 1 => protocol
+ * 2 => site (base url)
+ * 3 => path (action url)
+ * 4 => parameters (or an empty array)
+ *
+ * Example of invocation:
+
+SELECT url_stat.split_url( 'https://www.google.com/search?q=postgresql&lang=it' );
+> SELECT url_stat.split_url( 'https://www.google.com/search?q=postgresql&lang=it' );
+DEBUG:  split_url: [https] + [www.google.com] + [search/] + [q=postgresql&lang=it]
+split_url
+-----------------------------------------------------
+{https,www.google.com,search/,q=postgresql,lang=it}
+
+ *
  */
 CREATE OR REPLACE FUNCTION url_stat.split_url( url text )
 RETURNS text[]
@@ -46,8 +64,25 @@ BEGIN
   -- and reassemble the string with the '/' separator
   url      := array_to_string( parts[ 4: ], '/' );
 
-  RAISE DEBUG 'split_url: [%] + [%] + [%]', protocol, site, url;
-  RETURN ARRAY[ protocol, site, url ]::text[];
+  -- do I have any param?
+  IF url LIKE '%?%' THEN
+     -- if I have parameters split the 'url' part
+     -- into two dimension array:
+     -- 'url' = 'search?q=foo&b=bar' => { 'search', 'q=foo&b=bar' }
+     -- then get back the 'url' part and build an array
+     -- from the remaining string
+     -- 'search?q=foo&b=bar' => { 'search', 'q=foo', 'b=bar' }
+     parts := string_to_array( url, '?' );
+     url   := parts[ 1 ] || '/';
+     parts := string_to_array( array_to_string( parts[ 2: ], '' ), '&' );
+
+  ELSE
+    -- no parameters, avoid inserting...
+    parts := NULL;
+  END IF;
+
+  RAISE DEBUG 'split_url: [%] + [%] + [%] + [%]', protocol, site, url, array_to_string( parts, '&' );
+  RETURN array_cat( ARRAY[ protocol, site, url ]::text[], parts[ 1: ] );
 END
 $CODE$
 LANGUAGE plpgsql;
@@ -69,11 +104,14 @@ WITH urls_array AS (
     , 'https://fluca1978.github.io/2018/04/12/PostgreSQL-plpython.html'
     , 'https://fluca1978.github.io/about/'
     , 'https://fluca1978.github.io/papers/'
+
+    , 'https://www.google.com/search?q=hello+world'
+    , 'https://www.google.com/search?q=postgresql&lang=it'
     ]
     ) url
 )
-INSERT INTO url_stat.url( protocol, site, url )
-SELECT url_array[ 1 ], url_array[ 2 ], url_array[ 3 ]
+INSERT INTO url_stat.url( protocol, site, url, params, visited )
+SELECT url_array[ 1 ], url_array[ 2 ], url_array[ 3 ], url_array[ 4: ], random() * 1000
 FROM urls_array;
 
 
