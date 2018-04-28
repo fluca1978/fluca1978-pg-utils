@@ -75,7 +75,6 @@ BEGIN
      -- 'url' = 'search?q=foo&b=bar' => { 'search', 'q=foo&b=bar' }
      -- then get back the 'url' part and build an array
      -- from the remaining string
-     -- 'search?q=foo&b=bar' => { 'search', 'q=foo', 'b=bar' }
      parts := string_to_array( url, '?' );
      url   := parts[ 1 ] || '/';
      parts := string_to_array( array_to_string( parts[ 2: ], '' ), '&' );
