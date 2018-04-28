@@ -233,7 +233,6 @@ RETURNS text[]
 AS  $CODE$
     my ( $url ) = @_;
 
-
     my ( $protocol, $site, $path, $param_string ) =
                ( $url =~ / ^ ([a-zA-Z]+)
                          : \/ \/
@@ -273,6 +272,8 @@ FROM unnest( ARRAY[
  * Perl trigger for managing the updates.
  * A Perl trigger must return the special
  * strings 'SKIP' or 'MODIFY'.
+ * Each trigger argument is placed into the $_TD special hash.
+ * Variables are passed as strings!
  */
 CREATE OR REPLACE FUNCTION url_stat.f_tr_url_manage_publishing_pl()
 RETURNS TRIGGER
@@ -281,7 +282,9 @@ AS $BODY$
        # do not work on not update trigger!
       return 'SKIP' if ( $_TD->{event} ne 'UPDATE' );
 
-
+      # get some shorten variable
+      # WANRING: value 'false' is translate to the string 'f' so
+      # check it against 't' to be able to use it as a Perl false variable
       my ( $new_published, $old_published ) = ( $_TD->{new}->{published} eq 't',
                                                 $_TD->{old}->{published} eq 't' );
 
@@ -292,14 +295,19 @@ AS $BODY$
      elog( DEBUG, "visited $old_visited -> $new_visited" );
 
      if ( $old_published != $new_published ){
+          # page turned published
           $_TD->{new}->{visited} = 0 if ( $new_published && ! $old_published
                                           && $new_visited == $old_visited );
-          $_TD->{new}->{visited} = $_TD->{old}->{visited} if ( ! $new_published && $old_published );
+          # page turned unpublished
+          $_TD->{new}->{visited} = $_TD->{old}->{visited}
+                                    if ( ! $new_published && $old_published );
      }
      else {
+           # page still unpublished
           return 'SKIP' if ( ! $new_published );
      }
 
+     # page was published but the counter is decreasing...
      $_TD->{new}->{visited} = $_TD->{old}->visited
              if ( $new_published && $old_published && $old_visited > $new_visited );
 
