@@ -245,7 +245,8 @@ AS  $CODE$
                          (.+)
                          /x );
 
-    my @params = split '&', $param_string if ( $param_string );
+    my @params;
+    @params = split '&', $param_string if ( $param_string );
     return [ $protocol,
              $site,
              $path,
