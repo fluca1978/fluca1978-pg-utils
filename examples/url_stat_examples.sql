@@ -53,18 +53,20 @@ DECLARE
   parts    text[];
 BEGIN
   -- split depending on the slash
-  parts := string_to_array( url, '/' );
+  parts := string_to_array( url, '://' );
   /*
      string_to_array( 'http://www.google.com/hello', '/' );
-        =>   {http:,"",www.google.com,hello}
+        =>   {http:,www.google.com,hello}
   */
 
-  -- remove the trail ':' from the protocol
-  protocol := translate( parts[ 1 ], ':', '' );
-  site     := parts[ 3 ];
-  -- do slicing for any remaining part (4: -> 4 to the end)
+
+  protocol := parts[ 1 ];
+  -- split the remaining by '/'
+  parts    := string_to_array( parts[ 2 ], '/' );
+  site     := parts[ 1 ];
+  -- do slicing for any remaining part (2: -> 2 to the end)
   -- and reassemble the string with the '/' separator
-  url      := array_to_string( parts[ 4: ], '/' );
+  url      := array_to_string( parts[ 2: ], '/' );
 
   -- do I have any param?
   IF url LIKE '%?%' THEN
@@ -109,6 +111,8 @@ WITH urls_array AS (
 
     , 'https://www.google.com/search?q=hello+world'
     , 'https://www.google.com/search?q=postgresql&lang=it'
+
+    , 'jdbc:postgresql://localhost/testdb?username=luca'
     ]
     ) url
 )
