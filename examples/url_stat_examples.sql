@@ -199,7 +199,7 @@ BEGIN
 RETURN NEW;
 END
 $BODY$
-LANGUAGE create;
+LANGUAGE plpgsql;
 
 
 
@@ -221,3 +221,97 @@ url_stat.f_tr_url_manage_publishing();
 select site, url, visited, row_number() over (), rank() over ( partition by site order by visited desc) from url_stat.url;
 
  */
+
+
+
+
+/*
+ * Perl implementation of the split_url function
+ */
+CREATE OR REPLACE FUNCTION url_stat.split_url_pl( url text )
+RETURNS text[]
+AS  $CODE$
+    my ( $url ) = @_;
+
+
+    my ( $protocol, $site, $path, $param_string ) =
+               ( $url =~ / ^ ([a-zA-Z]+)
+                         : \/ \/
+                         ([a-zA-Z0-9.]+\/?)
+                         ([\/a-zA-Z0-9]+)\??
+                         (.+)
+                         /x );
+
+    my @params = split '&', $param_string if ( $param_string );
+    return [ $protocol,
+             $site,
+             $path,
+             @params ];
+$CODE$
+LANGUAGE plperl;
+
+/*
+SELECT url_stat.split_url_pl( url ) AS url_array
+FROM unnest( ARRAY[
+'https://conoscerelinux.org/courses/postgresql/'
+, 'https://conoscerelinux.org/il-consiglio/'
+, 'https://conoscerelinux.org/courses/conoscere-wordpress-maggio-2018/'
+, 'https://conoscerelinux.org/hack-team-t2h/'
+
+, 'https://fluca1978.github.io/2018/04/20/SQLiteRenamingTable.html'
+, 'https://fluca1978.github.io/2018/04/12/PostgreSQL-plpython.html'
+, 'https://fluca1978.github.io/about/'
+, 'https://fluca1978.github.io/papers/'
+
+, 'https://www.google.com/search?q=hello+world'
+, 'https://www.google.com/search?q=postgresql&lang=it'
+]
+) url;
+*/
+
+/*
+ * Perl trigger for managing the updates.
+ * A Perl trigger must return the special
+ * strings 'SKIP' or 'MODIFY'.
+ */
+CREATE OR REPLACE FUNCTION url_stat.f_tr_url_manage_publishing_pl()
+RETURNS TRIGGER
+AS $BODY$
+
+       # do not work on not update trigger!
+      return 'SKIP' if ( $_TD->{event} ne 'UPDATE' );
+
+
+      my ( $new_published, $old_published ) = ( $_TD->{new}->{published} eq 't',
+                                                $_TD->{old}->{published} eq 't' );
+
+      my ( $new_visited, $old_visited ) = ( $_TD->{new}->{visited},
+                                            $_TD->{old}->{visited} );
+
+     elog( DEBUG, "published $old_published -> $new_published " );
+     elog( DEBUG, "visited $old_visited -> $new_visited" );
+
+     if ( $old_published != $new_published ){
+          $_TD->{new}->{visited} = 0 if ( $new_published && ! $old_published
+                                          && $new_visited == $old_visited );
+          $_TD->{new}->{visited} = $_TD->{old}->{visited} if ( ! $new_published && $old_published );
+     }
+     else {
+          return 'SKIP' if ( ! $new_published );
+     }
+
+     $_TD->{new}->{visited} = $_TD->{old}->visited
+             if ( $new_published && $old_published && $old_visited > $new_visited );
+
+     return 'MODIFY';
+
+$BODY$
+LANGUAGE plperl;
+
+/*
+CREATE TRIGGER tr_url_check
+BEFORE UPDATE OF published, visited
+ON url_stat.url
+FOR EACH ROW EXECUTE PROCEDURE
+url_stat.f_tr_url_manage_publishing_pl();
+*/
