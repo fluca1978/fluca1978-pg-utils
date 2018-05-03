@@ -96,6 +96,38 @@ INSERT INTO digikam.images_2017 SELECT NEW.*;
 
 
 
+CREATE TABLE digikam.images_2017_1_6
+(
+   CHECK (modificationdate >= '2017-01-01'::date
+      AND modificationdate < '2017-07-01'::date )
+) INHERITS ( digikam.images_2017 );
+
+CREATE OR REPLACE RULE r_partition_insert_images_2017_first_semester AS
+ON INSERT
+TO digikam.images_2017
+WHERE (modificationdate >= '2017-01-01'::date
+AND modificationdate < '2017-07-01'::date )
+DO INSTEAD
+INSERT INTO digikam.images_2017_1_6 SELECT NEW.*;
+
+
+
+CREATE TABLE digikam.images_2017_7_12
+(
+   CHECK (modificationdate >= '2017-07-01'::date
+      AND modificationdate < '2018-01-01'::date )
+) INHERITS ( digikam.images_2017 );
+
+CREATE OR REPLACE RULE r_partition_insert_images_2017_second_semester AS
+ON INSERT
+TO digikam.images_2017
+WHERE (modificationdate >= '2017-07-01'::date
+AND modificationdate < '2018-01-01'::date )
+DO INSTEAD
+INSERT INTO digikam.images_2017_7_12 SELECT NEW.*;
+
+
+
 
 CREATE TABLE digikam.images_2016
 (
