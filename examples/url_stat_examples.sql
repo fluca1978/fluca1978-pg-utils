@@ -320,6 +320,8 @@ AS $BODY$
 $BODY$
 LANGUAGE plperl;
 
+
+COMMIT;
 /*
 CREATE TRIGGER tr_url_check
 BEFORE UPDATE OF published, visited
