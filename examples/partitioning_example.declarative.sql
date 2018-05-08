@@ -62,6 +62,32 @@ CREATE SCHEMA IF NOT EXISTS digikam;
 CREATE TABLE digikam.images_root( LIKE digikam_images )
 PARTITION BY RANGE ( modificationdate );
 
+
+--
+-- 2017 table with subpartitions
+--
+CREATE TABLE digikam.images_2017
+       PARTITION OF digikam.images_root
+       FOR VALUES FROM ( '2017-01-01' )
+                    TO ( '2018-01-01' )
+      PARTITION BY LIST ( extract( month from modificationdate ) );
+
+--
+-- first semester of 2017
+--
+CREATE TABLE digikam.images_2017_1_6
+       PARTITION OF digikam.images_2017
+       FOR VALUES IN (1, 2, 3, 4, 5, 6);
+
+--
+-- second semester of 2017
+--
+CREATE TABLE digikam.images_2017_7_12
+       PARTITION OF digikam.images_2017
+       FOR VALUES IN (7, 8, 9, 10, 11, 12);
+
+
+
 CREATE TABLE digikam.images_2017
   PARTITION OF digikam.images_root
   FOR VALUES FROM ( '2017-01-01' )

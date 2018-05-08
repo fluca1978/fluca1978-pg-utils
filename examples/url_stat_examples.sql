@@ -7,7 +7,7 @@ CREATE SCHEMA IF NOT EXISTS url_stat;
  */
 CREATE TABLE IF NOT EXISTS url_stat.url (
        pk int GENERATED ALWAYS AS IDENTITY,
-       protocol  varchar(10) DEFAULT 'http',
+       protocol  text DEFAULT 'http',
        site      text NOT NULL,
        url       text NOT NULL,
        params    text[],
