@@ -22,6 +22,8 @@ CREATE TABLE IF NOT EXISTS url_stat.url (
 
 TRUNCATE TABLE url_stat.url;
 
+ALTER TABLE url_stat.url ALTER COLUMN pk RESTART;
+
 /**
  * Internal function to allow splitting an URL into
  * parts.
