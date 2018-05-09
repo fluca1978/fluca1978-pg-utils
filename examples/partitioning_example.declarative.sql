@@ -88,10 +88,6 @@ CREATE TABLE digikam.images_2017_7_12
 
 
 
-CREATE TABLE digikam.images_2017
-  PARTITION OF digikam.images_root
-  FOR VALUES FROM ( '2017-01-01' )
-               TO ( '2018-01-01' );
 
 CREATE TABLE digikam.images_2016
 PARTITION OF digikam.images_root
