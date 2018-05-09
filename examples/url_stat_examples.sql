@@ -22,6 +22,8 @@ CREATE TABLE IF NOT EXISTS url_stat.url (
 
 TRUNCATE TABLE url_stat.url;
 
+ALTER TABLE url_stat.url ALTER COLUMN pk RESTART;
+
 /**
  * Internal function to allow splitting an URL into
  * parts.
@@ -130,7 +132,32 @@ DO INSTEAD UPDATE url_stat.url SET published = false WHERE pk = OLD.pk;
 
 
 
+/*
+ + Delete trigger, similar to the above rule but using ctid
+ */
+-- CREATE OR REPLACE FUNCTION url_stat.tr_f_delete_unpublish()
+-- RETURNS TRIGGER
+-- AS $CODE$
+-- DECLARE
+-- BEGIN
+--   IF TG_OP <> 'DELETE' THEN
+--      RETURN NULL;
+--   END IF;
 
+--   UPDATE url_stat.url SET published = false
+--      WHERE ctid = OLD.ctid;
+
+--   RETURN NULL;
+-- END
+-- $CODE$
+-- LANGUAGE plpgsql;
+
+
+-- CREATE TRIGGER tr_delete_unpublish
+-- BEFORE DELETE
+-- ON url_stat.url
+-- FOR EACH ROW
+-- EXECUTE PROCEDURE url_stat.tr_f_delete_unpublish();
 
 /*
  * Rules are as follows:
@@ -320,6 +347,8 @@ AS $BODY$
 $BODY$
 LANGUAGE plperl;
 
+
+COMMIT;
 /*
 CREATE TRIGGER tr_url_check
 BEFORE UPDATE OF published, visited
