@@ -10,6 +10,7 @@ DATA_SRC=$1
 DATA_DST=$2
 LABEL=$3
 RECOVERY_CONF=$4
+CLONE_PORT=5433
 
 if [ ! $# -ge 2 ]
 then
@@ -78,12 +79,16 @@ echo "4) Executing $QUERY"
 psql -X -h localhost -U postgres -d template1 -c "$QUERY"
 
 echo "5) disable some features on the clone..."
-echo "" >> "$DATA_DST"/postgresql.conf
-echo "# just for test when playing with replication..."
-echo "log_destination = stderr " >> "$DATA_DST"/postgresql.conf
-echo "loggin_collector = off " >> "$DATA_DST"/postgresql.conf
-echo "port = 5433 " >> "$DATA_DST"/postgresql.conf
+echo ""                                                 >> "$DATA_DST"/postgresql.conf
+echo "# just for test when playing with replication..." >> "$DATA_DST"/postgresql.conf
+echo "log_destination = stderr "                        >> "$DATA_DST"/postgresql.conf
+echo "logging_collector = off "                         >> "$DATA_DST"/postgresql.conf
+echo "port = $CLONE_PORT "                              >> "$DATA_DST"/postgresql.conf
 
+echo "6) remove log files and other things on the clone..."
+rm "$DATA_DST"/pg_log/*
+
+echo
 echo "Ready to test"
-echo "Edit $DATA_DST/recovery.conf and then"
-echo "   sudo -u postgres pg_ctl -D $DATA_DST -o '-p 5433' start"
+echo "Edit $DATA_DST/recovery.conf (optionally $DATA_DST/postgresql.conf) and then"
+echo "   sudo -u $PGOWNER pg_ctl -D $DATA_DST -o '-p $CLONE_PORT' start"
