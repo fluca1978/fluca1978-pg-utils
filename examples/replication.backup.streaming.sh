@@ -93,8 +93,13 @@ echo "6) remove log files and other things on the clone..."
 rm "$DATA_DST"/pg_log/*
 
 
-echo "7) enable the master to accept the connection from the slave..."
-echo "host  replication  $PGOWNER    127.0.0.1/32  trust" >> $DATA_SRC/pg_hba.conf
+
+grep -E "'^host\W+replication\W+$PGOWNER'" $DATA_SRC/pg_hba.conf
+if [ $? -ne 0 ]
+then
+    echo "7) enable the master to accept the connection from the slave..."
+    echo "host  replication  $PGOWNER    127.0.0.1/32  trust" >> $DATA_SRC/pg_hba.conf
+fi
 
 echo
 echo "Ready to test"
