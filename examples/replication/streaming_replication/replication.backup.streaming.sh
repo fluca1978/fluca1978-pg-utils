@@ -79,14 +79,15 @@ echo "4) Executing $QUERY"
 psql -X -h localhost -U postgres -d template1 -c "$QUERY"
 
 echo "5) disable some features on the clone..."
-echo ""                                                 >> "$DATA_DST"/postgresql.conf
-echo "wal_level       = minimal" >> "$DATA_DST"/postgresql.conf
-echo "archive_mode    = off"     >> "$DATA_DST"/postgresql.conf
-echo "max_wal_senders = 0"       >> "$DATA_DST"/postgresql.conf
-echo "hot_standby     = on"      >> "$DATA_DST"/postgresql.conf
-echo "log_destination = stderr " >> "$DATA_DST"/postgresql.conf
-echo "logging_collector = off "  >> "$DATA_DST"/postgresql.conf
-echo "port = $CLONE_PORT "       >> "$DATA_DST"/postgresql.conf
+echo ""                             >> "$DATA_DST"/postgresql.conf
+echo "# minimal slave conf from $0" >> "$DATA_DST"/postgresql.conf
+echo "wal_level       = minimal"    >> "$DATA_DST"/postgresql.conf
+echo "archive_mode    = off"        >> "$DATA_DST"/postgresql.conf
+echo "max_wal_senders = 0"          >> "$DATA_DST"/postgresql.conf
+echo "hot_standby     = on"         >> "$DATA_DST"/postgresql.conf
+echo "log_destination = stderr "    >> "$DATA_DST"/postgresql.conf
+echo "logging_collector = off "     >> "$DATA_DST"/postgresql.conf
+echo "port = $CLONE_PORT "          >> "$DATA_DST"/postgresql.conf
 
 
 echo "6) remove log files and other things on the clone..."
@@ -98,6 +99,8 @@ grep -E "'^host\W+replication\W+$PGOWNER'" $DATA_SRC/pg_hba.conf
 if [ $? -ne 0 ]
 then
     echo "7) enable the master to accept the connection from the slave..."
+    echo ""                                                   >> $DATA_SRC/pg_hba.conf
+    echo "# line automatically inserted by $0"                >> $DATA_SRC/pg_hba.conf
     echo "host  replication  $PGOWNER    127.0.0.1/32  trust" >> $DATA_SRC/pg_hba.conf
 fi
 
