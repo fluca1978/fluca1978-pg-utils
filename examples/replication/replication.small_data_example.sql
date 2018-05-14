@@ -14,14 +14,17 @@ COMMIT;
 
 BEGIN;
 TRUNCATE TABLE rep_data;
+SELECT pg_sleep( 5 );
 INSERT INTO rep_data( comment, xid ) VALUES( 'First', txid_current() );
 COMMIT;
 
 BEGIN;
+SELECT pg_sleep( 10 );
 INSERT INTO rep_data( comment, xid ) VALUES( 'Second', txid_current() );
 COMMIT;
 
 
 BEGIN;
+SELECT pg_sleep( 20 );
 INSERT INTO rep_data( comment, xid ) VALUES( 'Third', txid_current() );
 COMMIT;
