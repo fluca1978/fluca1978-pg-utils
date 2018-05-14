@@ -8,11 +8,12 @@ CREATE TABLE IF NOT EXISTS rep_data (
 );
 
 
-TRUNCATE TABLE rep_data;
+
 
 COMMIT;
 
 BEGIN;
+TRUNCATE TABLE rep_data;
 INSERT INTO rep_data( comment, xid ) VALUES( 'First', txid_current() );
 COMMIT;
 
