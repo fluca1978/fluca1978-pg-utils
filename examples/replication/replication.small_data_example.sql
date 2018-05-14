@@ -12,19 +12,19 @@ CREATE TABLE IF NOT EXISTS rep_data (
 
 COMMIT;
 
+SELECT pg_sleep( 5 );
 BEGIN;
 TRUNCATE TABLE rep_data;
-SELECT pg_sleep( 5 );
 INSERT INTO rep_data( comment, xid ) VALUES( 'First', txid_current() );
 COMMIT;
 
+SELECT pg_sleep( 100 );
 BEGIN;
-SELECT pg_sleep( 10 );
 INSERT INTO rep_data( comment, xid ) VALUES( 'Second', txid_current() );
 COMMIT;
 
 
+SELECT pg_sleep( 200 );
 BEGIN;
-SELECT pg_sleep( 20 );
 INSERT INTO rep_data( comment, xid ) VALUES( 'Third', txid_current() );
 COMMIT;
