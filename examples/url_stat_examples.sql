@@ -283,7 +283,7 @@ LANGUAGE plperl;
 /*
 SELECT url_stat.split_url_pl( url ) AS url_array
 FROM unnest( ARRAY[
-'https://conoscerelinux.org/courses/postgresql/'
+  'https://conoscerelinux.org/courses/postgresql/'
 , 'https://conoscerelinux.org/il-consiglio/'
 , 'https://conoscerelinux.org/courses/conoscere-wordpress-maggio-2018/'
 , 'https://conoscerelinux.org/hack-team-t2h/'
