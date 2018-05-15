@@ -21,31 +21,32 @@ COMMIT;
 
 /*
  * The recursive CTE provides the following:
- pk |      name      | gender | parent_of |          stato           | level
-----+----------------+--------+-----------+--------------------------+-------
-  1 | Kilo Ren       | t      |           | -- son --                |     0
-  2 | Luke Skywalker | t      |           | -- son --                |     0
-  3 | Rey            | f      |           | -- daughter --           |     0
-  4 | Han Solo       | t      | {1,3}     | Father of Kilo Ren       |     1
-  5 | Leia Organa    | f      | {1,3}     | Mother of Kilo Ren       |     1
-  6 | Darth Vader    | t      | {2,5}     | Father of Luke Skywalker |     1
-  7 | Padem Andala   | f      | {2,5}     | Mother of Luke Skywalker |     1
-  4 | Han Solo       | t      | {1,3}     | Father of Rey            |     1
-  5 | Leia Organa    | f      | {1,3}     | Mother of Rey            |     1
-  6 | Darth Vader    | t      | {2,5}     | Father of Leia Organa    |     2
-  7 | Padem Andala   | f      | {2,5}     | Mother of Leia Organa    |     2
+ pk |      name      | gender | parent_of |     status     | level
+ ---+----------------+--------+-----------+----------------+-------
+ 1 | Kilo Ren       | t      |           | -- son --      |     0
+ 2 | Luke Skywalker | t      |           | -- son --      |     0
+ 3 | Rey            | f      |           | -- daughter -- |     0
+ 4 | Han Solo       | t      | {1,3}     | Kilo Ren       |     1
+ 5 | Leia Organa    | f      | {1,3}     | Kilo Ren       |     1
+ 6 | Darth Vader    | t      | {2,5}     | Luke Skywalker |     1
+ 7 | Padem Andala   | f      | {2,5}     | Luke Skywalker |     1
+ 4 | Han Solo       | t      | {1,3}     | Rey            |     1
+ 5 | Leia Organa    | f      | {1,3}     | Rey            |     1
+ 6 | Darth Vader    | t      | {2,5}     | Leia Organa    |     2
+ 7 | Padem Andala   | f      | {2,5}     | Leia Organa    |     2
 
 and the main query compress it using array-join so that it outputs
 
-     name      |                 array_to_string
----------------+-------------------------------------------------
-Kilo Ren       | -- son --
-Luke Skywalker | -- son --
-Rey            | -- daughter --
-Han Solo       | Father of Kilo Ren, Father of Rey
-Leia Organa    | Mother of Kilo Ren, Mother of Rey
-Darth Vader    | Father of Luke Skywalker, Father of Leia Organa
-Padem Andala   | Mother of Luke Skywalker, Mother of Leia Organa
+     name      |                status
+---------------+---------------------------------------
+Darth Vader    | Father of Luke Skywalker, Leia Organa
+Han Solo       | Father of Kilo Ren, Rey
+Kilo Ren       | Father of none!
+Leia Organa    | Mother of Kilo Ren, Rey
+Luke Skywalker | Father of none!
+Padem Andala   | Mother of Luke Skywalker, Leia Organa
+Rey            | Mother of none!
+
 
 */
 
@@ -65,8 +66,8 @@ WITH RECURSIVE star_wars AS
   UNION
 
   SELECT f.*,
-          CASE f.gender WHEN true THEN 'Father of '
-                        ELSE 'Mother of '
+          CASE  WHEN sw.level > 1 THEN ', '
+                        ELSE ''
           END
          || sw.name
          , sw.level + 1 AS level
@@ -74,9 +75,18 @@ WITH RECURSIVE star_wars AS
   ON sw.pk = ANY( f.parent_of )
 )
 
+
 SELECT f.name
-       , array_to_string(
-          ARRAY( SELECT status FROM star_wars sw WHERE sw.pk = f.pk )
-          , ', '
-       ) AS status
-       FROM star_wars_family_tree f;
+       , CASE f.gender WHEN true THEN 'Father of '
+                                 ELSE 'Mother of '
+         END
+         ||
+         CASE WHEN f.level = 0 THEN 'none!'
+                               ELSE
+                                     array_to_string(
+                                               ARRAY( SELECT status FROM star_wars sw WHERE sw.pk = f.pk )
+                                              , ', '
+                                      )
+        END AS status
+       FROM star_wars f
+       GROUP BY 1,2;
