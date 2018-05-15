@@ -4,13 +4,24 @@
 # clone of a PostgreSQL instance.
 #
 # Invocation example:
-# % sudo sh replication.backup.sh /mnt/data1/pgdata /mnt/clone/pgdata 'FLUCA' replication.streaming.recovery.conf
+# % sudo sh replication.backup.streaming.sh /mnt/data1/pgdata /mnt/clone/pgdata 'FLUCA' replication.streaming.recovery.conf
 
 DATA_SRC=$1
 DATA_DST=$2
 LABEL=$3
 RECOVERY_CONF=$4
 CLONE_PORT=5433
+
+if [ $# -eq 0 ]
+then
+    echo "Usage:"
+    echo "$0 <source PGDATA> <destination PGDATA> [LABEL] [recovery.conf template]"
+    echo "example: "
+    echo "  $0 /mnt/data1/pgdata /mnt/clone/pgdata 'STREAMING' replication.streaming.recovery.conf"
+    exit 2
+fi
+
+
 
 if [ ! $# -ge 2 ]
 then
