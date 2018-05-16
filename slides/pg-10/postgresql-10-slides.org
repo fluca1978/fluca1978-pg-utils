@@ -8482,7 +8482,7 @@ Solitamente la query viene "smontata" in piu' piani di esecuzione, ciascuno cole
 Le varie bitmap (una per indice) sono poi aggregate logicamente con ~AND~ o ~OR~ per costruire la mappa finale delle tuple che hanno passato ogni indice.
 
 La mappa finale è ordinata naturalmente per posizione /fisica/ delle tuple, quindi se c'è un ~ORDER BY~ sarà necessario un ulteriore passaggio di sorting.
-** Quanto viene usato un indice?
+** Quando viene usato un indice?
 *** Quali sono le tabelle che potenzialmente richiedono un indice?
 La vista ~pg_stat_user_tables~ può fornire delle indicazione sull'utilizzo delle tabelle e dei relativi indici. Ove ci sono dei /sequential scan/ elevati si può ipotizzare sia necessario un indice:
 #+begin_src sql
