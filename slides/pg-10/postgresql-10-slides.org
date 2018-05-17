@@ -9168,7 +9168,7 @@ tup_deleted   | 119
 
 In particolare se il rapporto fra ~xact_committed~ e  ~xact_rollback~ si avvicina all'uguaglianza (o ~xact_rollback~ supera il numero di ~xact_committed~ è probabile che ci sia un errore applicativo o una query entrata in loop.
 
-*** Vedere come stanno i database: ~pg_stata_database_conflicts~
+*** Vedere come stanno i database: ~pg_stat_database_conflicts~
 Questa vistra mostra le indicazioni circa eventuali conflitti nei database: lock in attesa, deadlocks e conflitti su snapshot.
 *** Informazioni sulle tabelle: ~pg_stat_user_tables~
 Le viste speciali ~pg_stat_user_tables~, ~pg_stat_sys_tables~ e l'unione ~pg_stat_all_tables~ forniscono dati sull'utilizzo delle tabelle utente, di sistema (catalogo) o complessive:
@@ -9524,7 +9524,7 @@ Un superutente può forzare un checkpoint immediato con il comando ~CHECKPOINT~.
 ** Quanti sono i WAL?
 Stabilito che i segmenti di WAL sono /riciclati/ dopo un checkpoint, è possibile stimare l'occupazione della directory ~pg_xlog~ che è pressoché costante nel tempo e vale:
 #+begin_src sh
- ( 2 + checkpoint_completion_target ) * ( max_wal_size / 16 ) + 1.
+ ( 2 + checkpoint_completion_target ) * ( max_wal_size / 16 ) + 1
 #+end_src
 ossia è dominata da ~max_wal_segments~. Il valore sopra calcolato indica quanti segmenti di 16 MB ciascuno saranno presenti in ~pg_xlog~.
 *Durante un uso intenso potrebbe capitare che il numero di segmenti aumenti oltre ~checkpoint_segments~*, ma il sistema provvederà all'eliminazione del residuo una volta ripristinato l'ordine. e' quindi consigliato mantenere una certa quota disco per consentire qualche segmento ulteriore a quanto calcolato sopra.
