@@ -804,6 +804,19 @@ Se occorre fare una interpolazione di stringa si deve usare il carattere ~:~ e i
 > INSERT INTO foo VALUES( :'my_string' );
 #+end_src
 
+*** psql: variabili di visualizzazione
+Le variabili che controllano la visualizzazione sono gestite tramite ~\pset~, alcuni esempi:
+
+#+begin_src sql
+\set QUIET 1          -- non visualizzare i comandi \
+
+\pset expanded on     -- abilita versione estesa
+\pset title 'ITEMS'   -- titolo della query
+...query...
+\pset title           -- disabilita titolo per query successive
+\pset expanded off    -- disabilita versione estesa
+#+end_src
+
 ** Interazione: ruoli, database, tabelle
 *** Ruoli e Utenti
 Dalla versione 8.1 in poi PostgreSQL non distingue piu' fra utenti e gruppi ma usa il concetto di *ruolo* che rappresenta entrambi:
