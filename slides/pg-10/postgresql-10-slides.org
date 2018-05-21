@@ -8612,6 +8612,8 @@ Con l'aggiunta di ~ANALYZE~ viene effettivamente eseguita la query e si può ver
  Execution time: 4.174 ms
 #+end_src
 
+La query non effettua un ~ANALYZE~!
+
 *** Formati di output di ~EXPLAIN~
 E' possibile ottenere diversi formati di output di ~EXPLAIN~ mediante l'opzione ~FORMAT~. Tali formati possono essere usati per una migliore interpretazione da parte di programmi automatici e includono:
 - /text/ output di default;
