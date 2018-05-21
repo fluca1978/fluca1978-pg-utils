@@ -1,0 +1,5 @@
+\set example_table_name pictures
+\set min_file_size 275
+\set initial_tuple_load 100
+\set upgrade_tuple_load 4900
+\set item_number 5
