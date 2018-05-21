@@ -75,4 +75,5 @@ WHERE
 	relname = :'example_table_name'
 ;
 
-
+-- unset the title
+\pset title

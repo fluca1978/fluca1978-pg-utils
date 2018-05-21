@@ -14,14 +14,10 @@ SELECT  mcv AS file_size_MCV, mcf
 
 
 
-SELECT  mcv AS file_date_MCV, mcf
-  FROM pg_stats,
-   ROWS FROM ( unnest( most_common_vals::text::text[] ),
-               unnest( most_common_freqs ) )
-             r( mcv, mcf )
+SELECT  unnest( histogram_bounds::text::date[] ) AS bounds
+  FROM pg_stats
   WHERE tablename = :'example_table_name'
   AND attname = 'file_date'
-  ORDER BY mcv
   LIMIT :item_number;
 
 
