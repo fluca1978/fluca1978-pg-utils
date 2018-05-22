@@ -9719,6 +9719,17 @@ al prossimo riavvio il sistema andrà in /PANIC/:
 #+begin_src sql
 # SELECT pg_drop_replication_slot( 'logical_decoding_slot' );
 #+end_src
+** Reset dei WAL: ~pg_resetwal~
+In condizioni *estreme* il server potrebbe non essere in grado di riavviarsi per un grave danneggiamento dei WAL.
+In tali circostanze è possibile forzare un /reset dei WAL/: vengono buttati via i WAL e il sistema è in grado di ripartire, ma *la garanzia del recupero della consistenza non è fornita* (dopotutto il sistema è già gravemente danneggiato).
+Il comando ~pg_resetwal~ funge allo scopo, solitamente è bene usare l'opzione ~-n~ per eseguire un /dry-run/.
+#+begin_src shell
+% sudo -u postgres pg_resetwal -D /mnt/data1/pgdata
+Write-ahead log reset
+#+end_src
+
+*NON USARE MAI QUESTO COMANDO!*
+
 * Point in Time Recovery & Replication
 ** Point in Time Recovery (PITR)
 *** Introduzione al PITR
