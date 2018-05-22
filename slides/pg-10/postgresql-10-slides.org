@@ -1,5 +1,5 @@
 #+TITLE:     PostgreSQL 10
-#+AUTHOR:    Luca Ferrari
+#+AUTHOR:    ing. Luca Ferrari, PhD
 #+EMAIL:     fluca1978@gmail.com
 #+DATE:      <2018-05-22 mar>
 #+LANGUAGE:  it
