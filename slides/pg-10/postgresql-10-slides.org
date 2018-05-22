@@ -1,7 +1,7 @@
 #+TITLE:     PostgreSQL 10
 #+AUTHOR:    Luca Ferrari
 #+EMAIL:     fluca1978@gmail.com
-#+DATE:      <2018-03-28 mer>
+#+DATE:      <2018-05-22 mar>
 #+LANGUAGE:  it
 
 #+OPTIONS:   H:3 num:nil toc:nil 
