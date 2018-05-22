@@ -823,6 +823,26 @@ In maniera simile ai principali editor il carattere ~!~ passa il comando ad una 
  > \! uname -a
    FreeBSD olivia 11.1-RELEASE FreeBSD 11.1-RELEASE #0 r321309: ...
 #+end_src
+
+*** psql: ~NULL~
+E' possibile visualizzare i campi con valori ~NULL~ (che altrimenti non sono visualizzati) usando la variabile speciale ~null~ (siccome è una opzione di visualizzazione va impostata con ~\pset~):
+#+begin_src sql
+> \pset null 'Null Value'
+Null display is "Null Value".
+
+> SELECT 1, NULL, 2;
+ ?column? |  ?column?  | ?column?
+----------+------------+----------
+        1 | Null Value |        2
+#+end_src
+
+La funzione ~quote_nullable~ è maggiormente portabile (client differenti):
+#+begin_src sql
+> SELECT 1, NULL, 2, quote_nullable( NULL );
+ ?column? |  ?column?  | ?column? | quote_nullable
+----------+------------+----------+----------------
+        1 | Null Value |        2 | NULL
+#+end_src
 ** Interazione: ruoli, database, tabelle
 *** Ruoli e Utenti
 Dalla versione 8.1 in poi PostgreSQL non distingue piu' fra utenti e gruppi ma usa il concetto di *ruolo* che rappresenta entrambi:
