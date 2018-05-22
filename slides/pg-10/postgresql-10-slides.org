@@ -4085,6 +4085,15 @@ Si può quindi procedere alla sua eliminazione tramite il relativo pid:
 
 * Transazioni
 ** Livello di isolamento
+*** Autocommit
+Il terminale ~psql~ utilizza in default l'/autocommit/. La variabile che controlla questo comportamento è ~AUTOCOMMIT~, che se impostata a ~0~ apre una transazione non committandola:
+#+begin_src sql
+[luca @ testdb on localhost] 1  > \set AUTOCOMMIT 0
+
+[luca @ testdb on localhost] 1  > TRUNCATE pictures;
+-- l'asterisco indica che c'è una transazione non terminata!
+[luca @ testdb on localhost] 1 * > COMMIT;
+#+end_src
 *** Livelli di isolamento
 Le problematiche sono:
 - *dirty reads*: è possibile vedere (leggere) tuple non ancora committate da altre transazioni;
