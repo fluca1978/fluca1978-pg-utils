@@ -8148,12 +8148,15 @@ I valori possibili sono:
 - ~minimal~ scrive il numero di dati minimo, necessari solo per riprendersi da un crash;
 - ~replica~ scrive informazioni sufficienti per il ripristino dei dati da parte di un /base backup/;
 - ~logical~ aggiunge informazioni per il logical decoding.
-*** Fsync etc.
+*** ~fsync~ e i suoi amici
 Il parametro ~fsync~ stabilisce come rendere persistenti le modifiche. Disabilitarlo è altamente rischioso e andrebbe fatto solo quando si può ripristinare completamente il database senza perdita di dati (es. caricamento iniziale).
 
 Il parametro ~wal_sync_method~ è comandato solo da ~fsync = on~ e indica quale metodo si deve usare per forzare il flush dei dati dei WAL. Il parametro di *default è ~fsync~* e comunque i valori dipendono dal sistema operativo e dalla system calls messe a disposizione.
 Il metodo ~fdatasync~ è disponibile su Linux per evitare aggiornamenti dei metadati.
 
+L'utility ~pg_test_fsync~ consente di fare alcuni test particolari per scegliere il metodo migliore di ~wal_sync_method~.
+
+*** ~fsync~ e i suoi amici (2)
 Il parametro ~syncrhonous_commit~ indica come viene gestito il commit di una transazione. Questo parametro può essere impostato per ogni singola transazione e non produce perdita di consistenza. I valori possibili sono:
 - ~on~ (default) si attende che il sistema operativo dia conferma della scrittura (non significa che i dati siano persistenti!);
 - ~off~ non si attende nessuna conferma, e si possono perdere transazioni per un certo periodo (3 volte il delay del WAL writer);
