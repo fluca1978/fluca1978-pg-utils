@@ -836,6 +836,29 @@ Se il query buffer contiene una query complessa da salvare su un file locale è 
 > \e test.sql   -- edita quel file
 #+end_src
 Il risultato è il salvataggio del query buffer fino a quel punto, quindi senza il terminatore ~;~ inserito dopo ~\w~.
+*** psql: history
+~psql~ salva l'history degli statement eseguiti, che solitamente vengono salvati in un file nascosto (vedere la variabile ~HISTFILE~ e ~HISTSIZE~).
+All'interno dell'interprete ~psql~ è possibile scorrere la history con /freccia sù/ o con ~\s~.
+*** psql: output
+E' possibile redirigere automaticamente il risultato di uno statement su un output differente rispetto a ~STDOUT~. con il comando speciale ~\o~ si indica su quale file salvare il contenuto della query.
+Ad esempio per creare al volo un report CSV:
+#+begin_src sql
+> \a
+Output format is unaligned.
+> \f ','
+Field separator is ",".
+> \t
+Tuples only is on.
+
+> \o report.csv
+> SELECT relname, reltuples, relpages FROM pg_class;
+
+-- reset
+> \o
+> \t
+> \a
+> \f '|'
+#+end_src
 *** psql: comandi della shell
 In maniera simile ai principali editor il carattere ~!~ passa il comando ad una shell:
 #+begin_src sql
