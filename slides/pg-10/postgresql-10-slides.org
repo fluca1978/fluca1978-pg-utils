@@ -875,6 +875,28 @@ Il comando speciale ~\gset~ consente di eseguire una query salvando il valore di
 #+end_src
 
 *E' necessario che la query ritorni solo una tupla!*
+*** psql: conditionals
+~psql~ supporta un sistema di conditionals elementari: ~\if~, ~\elif~, ~\endif~. Il supporto è ancora /elementare/, ovvero si testano /condizioni booleane e non espressioni/. Questo significa che ogni variabile passata ad un condizionale deve già essere nella forma booleana:
+#+begin_src sql
+SELECT relpages > 0 AS has_data
+      , reltuples AS tuples
+FROM pg_class
+WHERE relname = 'digikam_images'
+AND relkind = 'r' \gset img_
+
+\if :img_has_data
+ \echo 'Trovate ' :img_tuples
+\elif
+ \echo 'Nessun dato'
+\endif
+#+end_src
+
+che se eseguito produce un output simile al seguente:
+
+#+begin_src sql
+Trovate  55258
+#+end_src
+
 ** Interazione: ruoli, database, tabelle
 *** Ruoli e Utenti
 Dalla versione 8.1 in poi PostgreSQL non distingue piu' fra utenti e gruppi ma usa il concetto di *ruolo* che rappresenta entrambi:
