@@ -861,7 +861,20 @@ Le variabili che controllano la visualizzazione sono gestite tramite ~\pset~, al
 \pset title           -- disabilita titolo per query successive
 \pset expanded off    -- disabilita versione estesa
 #+end_src
+*** psql: ~\gset~
+Il comando speciale ~\gset~ consente di eseguire una query salvando il valore di ogni colonna in un insieme di variabili con prefisso stabilito:
+#+begin_src sql
+> SELECT relpages, reltuples
+  FROM pg_class
+  WHERE relname = 'digikam_images'
+  AND relkind = 'r'
+  \gset img_  -- create variables with 'img_' prefix
 
+> \echo :img_reltuples
+55258
+#+end_src
+
+*E' necessario che la query ritorni solo una tupla!*
 ** Interazione: ruoli, database, tabelle
 *** Ruoli e Utenti
 Dalla versione 8.1 in poi PostgreSQL non distingue piu' fra utenti e gruppi ma usa il concetto di *ruolo* che rappresenta entrambi:
