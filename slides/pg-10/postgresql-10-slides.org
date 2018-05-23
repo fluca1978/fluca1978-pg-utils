@@ -804,6 +804,14 @@ Se occorre fare una interpolazione di stringa si deve usare il carattere ~:~ e i
 > INSERT INTO foo VALUES( :'my_string' );
 #+end_src
 
+*** psql: visualizzazione di variabili
+Il comando speciale ~\echo~ consente di visualizzare il valore di una variabile:
+
+#+begin_src sql
+> \set my_name fluca
+> \echo :my_name
+fluca
+#+end_src
 *** psql: variabili di visualizzazione
 Le variabili che controllano la visualizzazione sono gestite tramite ~\pset~, alcuni esempi:
 
@@ -843,9 +851,8 @@ La funzione ~quote_nullable~ è maggiormente portabile (client differenti):
 ----------+------------+----------+----------------
         1 | Null Value |        2 | NULL
 #+end_src
-
 *** psql: includere gli script
-Il comando special ~\i~ consente di includere ed eseguire altri file, ad esempio script shell.
+Il comando special ~\i~ consente di includere ed eseguire altri file, ad esempio script shell. Il suo duale ~\ir~ legge un file e lo esegue considerando il /percorso relativo/.
 Tali script possono contenere a loro volta comandi speciali che ~psql~ interpreta.
 
 Il comando ~\cd~ consente di spostarsi sul file system locale.
