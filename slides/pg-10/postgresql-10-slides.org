@@ -785,46 +785,6 @@ Il prompt corrisponde a: /username/ (~%n~), /database/ (~%/~), /hostname/ (~%m~)
 A differenza di ~ON_ERROR_STOP~ che fa quello che il nome suggerisce, il parametro ~ON_ERROR_ROLLBACK~ fa il suo opposto:
 >> When set to on, if a statement in a transaction block generates an error, the error is ignored and the transaction continues.
 
-*** psql: variabili
-All'interno di una sessione ~psql~ si possono impostare delle variabili da usare per una sostituzione letterale:
-#+begin_src sql
-> \set my_limit 10
-> \set my_table foo
-
-> SELECT *
-  FROM :my_table
-  LIMIT :my_limit
-#+end_src
-
-L'interpolazione di una variabile avviene usando il carattere ~:~ prima del nome della variabile stessa.
-Se occorre fare una interpolazione di stringa si deve usare il carattere ~:~ e il nome della variabile va fra apici (doppi o semplici):
-
-#+begin_src sql
-> \set my_string blah
-> INSERT INTO foo VALUES( :'my_string' );
-#+end_src
-
-*** psql: visualizzazione di variabili
-Il comando speciale ~\echo~ consente di visualizzare il valore di una variabile:
-
-#+begin_src sql
-> \set my_name fluca
-> \echo :my_name
-fluca
-#+end_src
-*** psql: variabili di visualizzazione
-Le variabili che controllano la visualizzazione sono gestite tramite ~\pset~, alcuni esempi:
-
-#+begin_src sql
-\set QUIET 1          -- non visualizzare i comandi \
-
-\pset expanded on     -- abilita versione estesa
-\pset title 'ITEMS'   -- titolo della query
-...query...
-\pset title           -- disabilita titolo per query successive
-\pset expanded off    -- disabilita versione estesa
-#+end_src
-
 *** psql: comandi della shell
 In maniera simile ai principali editor il carattere ~!~ passa il comando ad una shell:
 #+begin_src sql
@@ -861,6 +821,47 @@ Il comando ~\cd~ consente di spostarsi sul file system locale.
 > \cd scripts/sql
 > \i setup.sql
 #+end_src
+
+*** psql: variabili
+All'interno di una sessione ~psql~ si possono impostare delle variabili da usare per una sostituzione letterale:
+#+begin_src sql
+> \set my_limit 10
+> \set my_table foo
+
+> SELECT *
+  FROM :my_table
+  LIMIT :my_limit
+#+end_src
+
+L'interpolazione di una variabile avviene usando il carattere ~:~ prima del nome della variabile stessa.
+Se occorre fare una interpolazione di stringa si deve usare il carattere ~:~ e il nome della variabile va fra apici (doppi o semplici):
+
+#+begin_src sql
+> \set my_string blah
+> INSERT INTO foo VALUES( :'my_string' );
+#+end_src
+
+*** psql: interpolazione di variabili
+Il comando speciale ~\echo~ consente di visualizzare il valore di una variabile:
+
+#+begin_src sql
+> \set my_name fluca
+> \echo :my_name
+fluca
+#+end_src
+*** psql: variabili di visualizzazione
+Le variabili che controllano la visualizzazione sono gestite tramite ~\pset~, alcuni esempi:
+
+#+begin_src sql
+\set QUIET 1          -- non visualizzare i comandi \
+
+\pset expanded on     -- abilita versione estesa
+\pset title 'ITEMS'   -- titolo della query
+...query...
+\pset title           -- disabilita titolo per query successive
+\pset expanded off    -- disabilita versione estesa
+#+end_src
+
 ** Interazione: ruoli, database, tabelle
 *** Ruoli e Utenti
 Dalla versione 8.1 in poi PostgreSQL non distingue piu' fra utenti e gruppi ma usa il concetto di *ruolo* che rappresenta entrambi:
