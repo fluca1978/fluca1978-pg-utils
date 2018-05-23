@@ -843,6 +843,17 @@ La funzione ~quote_nullable~ è maggiormente portabile (client differenti):
 ----------+------------+----------+----------------
         1 | Null Value |        2 | NULL
 #+end_src
+
+*** psql: includere gli script
+Il comando special ~\i~ consente di includere ed eseguire altri file, ad esempio script shell.
+Tali script possono contenere a loro volta comandi speciali che ~psql~ interpreta.
+
+Il comando ~\cd~ consente di spostarsi sul file system locale.
+
+#+begin_src sql
+> \cd scripts/sql
+> \i setup.sql
+#+end_src
 ** Interazione: ruoli, database, tabelle
 *** Ruoli e Utenti
 Dalla versione 8.1 in poi PostgreSQL non distingue piu' fra utenti e gruppi ma usa il concetto di *ruolo* che rappresenta entrambi:
