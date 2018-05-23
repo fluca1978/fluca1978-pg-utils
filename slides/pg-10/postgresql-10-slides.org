@@ -784,7 +784,46 @@ Il prompt corrisponde a: /username/ (~%n~), /database/ (~%/~), /hostname/ (~%m~)
 
 A differenza di ~ON_ERROR_STOP~ che fa quello che il nome suggerisce, il parametro ~ON_ERROR_ROLLBACK~ fa il suo opposto:
 >> When set to on, if a statement in a transaction block generates an error, the error is ignored and the transaction continues.
+*** psql: eseguire statement
+~psql~ riconosce due terminatori di statement:
+- ~;~
+- ~\g~ (e similari)
+Ogni volta che si preme ~RETURN~ viene eseguito lo statement fino al suo terminatore.
+#+begin_src sql
 
+> SELECT 1 + 1
+ ;
+ ?column?
+----------
+        2
+> SELECT 1 + 1
+\g
+ ?column?
+----------
+        2
+#+end_src
+*** psql: query buffer
+Ogni spazio non significativo verticale non interrompe lo statement corrente. Ogni riga inserita finisce nel /query buffer/ di ~psql~, ovvero viene concatenata per formare lo statement finale che sarà eseguito una volta che si trova il terminatore di statement (~;~ o ~\g~).
+E' possibile vedere lo stato del query buffer, svuotarlo (in caso di comandi errati) ed editarlo con un editor esterno (~$EDITOR):
+
+#+begin_src sql
+> SELECT 1
+-> +
+-> \p     -- mostra query buffer fino ad ora
+SELECT 1
++
+-> 1
+-> ;
+ ?column?
+----------
+        2
+
+> SELECT 1
+-> \r    -- cancella il query buffer
+Query buffer reset (cleared).
+
+> \e script.sql 5    -- apre $EDITOR sul file script.sql, linea 5
+#+end_src
 *** psql: comandi della shell
 In maniera simile ai principali editor il carattere ~!~ passa il comando ad una shell:
 #+begin_src sql
