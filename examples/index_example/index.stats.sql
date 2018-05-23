@@ -11,20 +11,26 @@ SELECT
 	count(*) AS total_tuples
 	, count(*) FILTER ( WHERE file_type = 'jpg' ) AS jpg
 	, count(*) FILTER ( WHERE file_type = 'png' ) AS png
-	, min( EXTRACT( month FROM file_date ) ) AS min_file_month
+  , ( SELECT EXTRACT( month FROM file_date )
+      	FROM pictures
+        OFFSET :item_number
+	      LIMIT 1 ) AS selected_file_month
 	, count(*) FILTER ( WHERE EXTRACT( month FROM file_date ) =
 	                            ( SELECT EXTRACT( month FROM file_date )
 				      FROM pictures
 				      OFFSET :item_number
 				      LIMIT 1 ) )
-	                   AS count_min_file_month
-	, min( file_size ) AS min_file_size
+	                   AS count_selected_file_month
+  , ( SELECT file_size
+    	FROM pictures
+	    OFFSET :item_number
+	    LIMIT 1 ) AS selected_file_size
 	, count(*) FILTER ( WHERE file_size =
 	                           ( SELECT file_size
 				     FROM pictures
 				     OFFSET :item_number
 				     LIMIT 1 ) )
-	                   AS count_min_file_size
+	                   AS count_selected_file_size
 FROM
 	:example_table_name
 ;	
