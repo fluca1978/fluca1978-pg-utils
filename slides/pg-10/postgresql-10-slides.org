@@ -824,6 +824,18 @@ Query buffer reset (cleared).
 
 > \e script.sql 5    -- apre $EDITOR sul file script.sql, linea 5
 #+end_src
+*** psql: salvare il query buffer
+Se il query buffer contiene una query complessa da salvare su un file locale è possibile usare il comando speciale ~\w~ seguito dal nome del file, il contenuto del query buffer sarà salvato su quel file locale per successive modifiche.
+#+begin_src sql
+> SELECT 1 + 1 \w test.sql
+-> ;
+ ?column?
+----------
+        2
+
+> \e test.sql   -- edita quel file
+#+end_src
+Il risultato è il salvataggio del query buffer fino a quel punto, quindi senza il terminatore ~;~ inserito dopo ~\w~.
 *** psql: comandi della shell
 In maniera simile ai principali editor il carattere ~!~ passa il comando ad una shell:
 #+begin_src sql
