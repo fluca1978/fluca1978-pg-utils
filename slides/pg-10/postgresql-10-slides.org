@@ -2292,6 +2292,29 @@ DELETE FROM digikam_images
    USING deleting_albums
    WHERE album = deleting_albums.id;
 #+end_src
+** ~UPDATE FROM~
+Lo statement ~UPDATE~ supporta la clausola ~FROM~ che consente di effettuare un join:
+
+#+begin_src sql
+> UPDATE digikam_images
+   SET modificationdate = CURRENT_DATE
+   FROM digikam_albums da
+   WHERE album = da.id
+   AND da.relativepath LIKE '%CASA%';
+#+end_src
+
+che è equivalente a
+#+begin_src sql
+> WITH updating_albums AS (
+     SELECT id
+     FROM digikam_albums
+     WHERE relativepath LIKE '%CASA%'
+)
+UPDATE digikam_images
+SET modificationdate = CURRENT_DATE
+WHERE album IN ( SELECT id FROM updating_albums );
+#+end_src
+
 ** Search Path
 *** Cos'è il search path?
 Ogni utente definisce un /percorso/ (simile al ~PATH~ di una shell) che rappresenta dove trovare gli oggetti del database (tabelle, funzioni, ecc.).
