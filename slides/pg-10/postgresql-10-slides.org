@@ -2304,6 +2304,7 @@ Lo statement ~UPDATE~ supporta la clausola ~FROM~ che consente di effettuare un 
 #+end_src
 
 che è equivalente a
+
 #+begin_src sql
 > WITH updating_albums AS (
      SELECT id
