@@ -39,7 +39,7 @@ FROM
 CREATE INDEX IF NOT EXISTS idx_file_size
 ON :example_table_name( file_size );
 
-CREATE INDEX IF NOT EXISTS id_month
+CREATE INDEX IF NOT EXISTS idx_month
 ON :example_table_name( EXTRACT( month FROM file_date ) );
 
 
