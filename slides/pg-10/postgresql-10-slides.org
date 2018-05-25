@@ -5986,6 +5986,20 @@ E' possibile /bloccare/ una tabella con una rule ~DO NOTHING~.
   TO persona
   DO INSTEAD NOTHING;
 #+end_src
+*** Dove sono memorizzate le rules?
+Le rule vengono memorizzate nel catalogo di sistema ~pg_rewrite~, ma la definizione (~ev_action~) è un albero già scomposto:
+#+begin_src sql
+> SELECT * FROM pg_rewrite WHERE rulename = 'r_insert_usr';
+
+rulename   | r_insert_usr
+ev_class   | 63257
+ev_type    | 3
+ev_enabled | O
+is_instead | f
+ev_qual    | <>
+ev_action  | ({QUERY :commandType 6 :querySource 0 :canSetTag false
+                     :utilityStmt <> :resultRelation 0 :hasAggs false :hasWindowFuncs false ...
+#+end_src
 * Window Functions & CTE
 ** Window Functions
 *** Cosa è una window function?
