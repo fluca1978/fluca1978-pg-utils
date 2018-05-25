@@ -2014,6 +2014,48 @@ In questo caso per ogni tupla della tabella esterna si valuta la query annidata:
                Filter: (mod(pk, 2) <> 0)
 #+end_src
 
+*** Esempio concreto di ~LATERAL~
+Si vogliono estrarre gli eventi con la loro data e la data del prossimo evento.
+#+begin_src sql
+> SELECT e.description
+     , e.ts::date
+    , next.ts::date
+ FROM evento e
+ JOIN LATERAL (
+      SELECT min(ts) AS ts
+      FROM evento next
+      WHERE next.ts > e.ts )   -- valuta min(ts) per ogni e.ts
+    next
+  ON true   -- soddisfa il join
+ LIMIT 5;
+
+  description   |     ts     |     ts
+----------------+------------+------------
+ Evento dispari | 2018-05-24 |
+ Evento pari    | 2018-05-23 | 2018-05-24
+ Evento pari    | 2018-05-22 | 2018-05-23
+ Evento dispari | 2018-05-21 | 2018-05-22
+ Evento pari    | 2018-05-20 | 2018-05-21
+#+end_src
+*** Senza ~LATERAL~
+La query non potrebbe essere eseguita:
+#+begin_src sql
+> SELECT e.description
+     , e.ts::date
+    , next.ts::date
+ FROM evento e
+ JOIN  (
+      SELECT min(ts) AS ts
+      FROM evento next
+      WHERE next.ts > e.ts )
+    next
+  ON true   -- soddisfa il join
+ LIMIT 5;
+
+ERROR:  invalid reference to FROM-clause entry for table "e"
+LINE 2: ...ct min(ts) as ts from evento next where next.ts > e.ts ) nex...
+#+end_src
+
 ** Foreign Keys
 *** Foreign Keys
 Vegono specificate con ~REFERENCES~ o ~FOREIGN KEY~ e supportano piu' colonne.
