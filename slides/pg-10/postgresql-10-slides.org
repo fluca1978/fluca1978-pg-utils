@@ -7299,7 +7299,7 @@ La FTS si basa sulla capacità di suddividere il testo in /token/, riconoscendo 
 
 Infine la FTS /si basa sul supporto linguistico/, ovvero ci deve essere un meccanismo conosciuto per la lingua specificata di ottnere i lexems dal documento originale.
 *** Dizionari
-Nella terminologia FTS un /dizionario/ è una collezione di termine che permettono di identificare le /stop words/ (parole che non devono essere considerate nella ricerca), riconoscere i sinonimi e i plurali per normalizzare meglio una parola.
+Nella terminologia FTS un /dizionario/ è una collezione di termini che permettono di identificare le /stop words/ (parole che non devono essere considerate nella ricerca), riconoscere i sinonimi e i plurali per normalizzare meglio una parola.
 
 Solitamente il dizionario si basa su ~ispell(1)~.
 
@@ -7314,7 +7314,7 @@ La funzione speciale ~to_tsvector~ converte un documento di testo in un insieme 
  'avanz':7 'databas':5 'mond':9 'piu':6 'postgresql':1
 #+end_src
 
-Come si può notare ogni termine è stato convertito in minuscolo, dopodiché le stop-words (es., avverbi) sono stati rimossi, e infine ogni parola è stata riportata alla sua radice con la posizione (indice) della parola nel documento. Ad esempio la parola ~database~ viene normalizzata a ~databas~ e si trova all'indice ~5~ nel documento di testo (l'indice parte da 1!).
+Come si può notare ogni termine è stato convertito in minuscolo, dopodiché le stop-words (es. avverbi) sono stati rimossi, e infine ogni parola è stata riportata alla sua radice con la posizione (indice) della parola nel documento. Ad esempio la parola ~database~ viene normalizzata a ~databas~ e si trova all'indice ~5~ nel documento di testo (l'indice parte da 1!).
 *** Query FTS
 Una query FTS si compone di un insieme di /termini/ eventualmente uniti da uno dei seguenti operatori:
 - ~&~ and logico, entrambi i termini devono essere presenti in qualunque ordine;
@@ -7366,16 +7366,16 @@ Una volta che si sono costruiti i ~tsvector~ e ~tsquery~ è possibile applicare 
 > SELECT to_tsquery( 'italian', 'database & open <-> source' )
      && to_tsquery( 'italian', '! avanzato' );
 
- > SELECT to_tsquery( 'italian', 'database & open <-> source' )
+-------------------------------------------
+ 'databas' & 'open' <-> 'sourc' & !'avanz'
+
+> SELECT to_tsquery( 'italian', 'database & open <-> source' )
       <@
     to_tsquery( 'italian',
                 'database & free <-> libre <-> open <-> source' );
 
 ----------
  t
-
--------------------------------------------
- 'databas' & 'open' <-> 'sourc' & !'avanz'
 #+end_src
 
 ** Eseguire ricerche FTS
