@@ -766,6 +766,7 @@ Il file non deve essere leggibile da altri utenti (es. permessi Unix ~600~).
 #+end_src
 
 *Il file deve avere permessi ~rw~ per il solo proprietario*. Inoltre si deve specificare la porta a cui collegarsi dopo l'hostname!
+*ATTENZIONE: i nomi di host e gli indirizzi IP devono fare match sintattico!*
 
 *** psql: configurazione utente
 ~psql~ consente di specificare delle configurazioni utente nel file ~$HOME/.psqlrc~. Tutti i comandi (~psql~ compatibili) specificati in tale file vengono eseguiti prima di fornire il prompt all'utente.
