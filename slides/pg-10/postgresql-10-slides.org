@@ -14,7 +14,7 @@
 
 #+startup: beamer
 #+LaTeX_CLASS: beamer
-#+latex_header: \mode<beamer>{\usetheme{magpie}}
+#+latex_header: \mode<beamer>{\usetheme{madrid}}
 
 
 #+BEAMER_HEADER: \subtitle{il database Open Source piu' avanzato del pianeta}
