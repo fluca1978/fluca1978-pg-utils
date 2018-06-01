@@ -1,4 +1,4 @@
-s-#+TITLE:     PostgreSQL 10
+#+TITLE:     PostgreSQL 10
 #+AUTHOR:    ing. Luca Ferrari, PhD
 #+EMAIL:     fluca1978@gmail.com
 #+DATE:      <2018-05-22 mar>
@@ -14,7 +14,7 @@ s-#+TITLE:     PostgreSQL 10
 
 #+startup: beamer
 #+LaTeX_CLASS: beamer
-#+latex_header: \mode<beamer>{\usetheme{Madrid}}
+#+latex_header: \mode<beamer>{\usetheme{magpie}}
 
 
 #+BEAMER_HEADER: \subtitle{il database Open Source piu' avanzato del pianeta}
