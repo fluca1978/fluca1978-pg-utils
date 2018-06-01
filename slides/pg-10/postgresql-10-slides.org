@@ -437,6 +437,17 @@ psql: FATAL:  the database system is shutting down
 - ~autovacuum launcher~ gestisce i processi /autovacuum/;
 - ~stats collector~ raccoglie le statistiche dinamiche.
 
+*** Version mismatch
+Se si cerca di forzare una /major version/ differente rispetto a quella usata per ~PGDATA~ si ottiene un errore in fase di avvio del servizio:
+
+#+begin_src sh
+FATAL:  "/mnt/data1/pgdata" is not a valid data directory
+DETAIL:  File "/mnt/data1/pgdata/PG_VERSION" does not contain valid data.
+HINT:  You might need to initdb.
+#+end_src
+
+*ATTENZIONE: se la directory di log è impostata relativamente a ~PGDATA~ nessun log sarà prodotto!*
+Il sistema si rifiuta semplicemente di lavorare su una ~PGDATA~ contente un file ~PG_VERSION~ che indica una versione differente.
 ** Layout su disco
 *** PGDATA
 PostgreSQL utilizza il filesystem del sistema operativo per salvare i dati in modo
