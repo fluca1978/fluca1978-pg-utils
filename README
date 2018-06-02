@@ -1,4 +1,4 @@
-This repository contains a few scripts, examples, and utilities I use to manage, tune and
-explain PostgreSQL related stuff.
+This repository contains my material about PostgreSQL, mainly scripts, examples and slides to teach and explain PostgreSQL features at events, meetings and courses.
+
 All the stuff in this repository is released under a BSD like license, please read
 the LICENSE text file for further information.
