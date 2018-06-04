@@ -7372,7 +7372,12 @@ Una volta che si sono costruiti i ~tsvector~ e ~tsquery~ è possibile applicare 
 - ~&&~ effettua un and logico fra due ~tsquery~;
 - ~!!~ negazione di un ~tsquery~;
 - ~@>~ e ~<@~ indicano se una ~tsquery~ ne contiene un'altra o è contenuta.
-
+*** Usare gli operatori in una ~tsquery~
+All'interno della stringa di una ~tsquery~ si possono usare i seguenti operatori:
+- ~&~ indica che entrambe le parole devono essere presenti (es. ~hello & world~);
+- ~!~ indica che la parola successiva non deve essere presente (es. ~hello & world & ! cruel~);
+- ~<->~ indica che le due parole devono susseguirsi, /non ci devono essere stop words!/ (es. ~hello <-> world~);
+- ~<n>~ indica che le due parole devono susseguirsi con in mezzo /n/ altre parole (es. ~hello <2> world~).
 *** Esempio di operatori di FTS
 #+begin_src sql
 > SELECT to_tsquery( 'italian', 'database & open <-> source' )
