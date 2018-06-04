@@ -1544,6 +1544,30 @@ La funzione ~format()~ permette la costruzione di stringhe in modalità analoga 
 ------------
  30, 20, 10
 #+end_src
+*** Collation
+PostgreSQL supporta la /collation/ su ogni tipo testuale. Le collation disponibili si trovano nella vista ~pg_collation~. E' possibile specificare la collation a livello di colonna (nella costruzione di una tabella), nella clausola ~ORDER BY~, nella estrazione di ogni colonna.
+*ATTENZIONE: le collation hanno nomi camel-case, occorre usare le virgolette doppie!*
+
+#+begin_src sql
+> SELECT v1 AS zh_tw, v2 AS c
+  FROM unnest( ARRAY[ '{', '}', '$' ]::text[] ) v1,
+       unnest( ARRAY[ '{', '}', '$' ]::text[] ) v2
+  ORDER BY
+       v1 COLLATE "zh_TW",
+       v2 COLLATE "C";
+
+ zh_tw | c
+-------+---
+ {     | $
+ {     | {
+ {     | }
+ }     | $
+ }     | {
+ }     | }
+ $     | $
+ $     | {
+ $     | }
+#+end_src
 *** Bytea
 ~bytea~ è una stringa binaria illimitata con un header variabile da 1 a 4 byte. Usa generalmente il formato esadecimale per input e output.
 *** Tempo
