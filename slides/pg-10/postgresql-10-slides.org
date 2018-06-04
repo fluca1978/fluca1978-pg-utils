@@ -4,7 +4,7 @@
 #+DATE:      <2018-05-22 mar>
 #+LANGUAGE:  it
 
-#+OPTIONS:   H:3 num:nil toc:nil 
+#+OPTIONS:   H:3 num:nil toc:nil
 #+OPTIONS:   TeX:t LaTeX:t skip:nil d:nil todo:t pri:nil tags:not-in-toc
 #+INFOJS_OPT: view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
 #+EXPORT_SELECT_TAGS: export
@@ -14,7 +14,7 @@
 
 #+startup: beamer
 #+LaTeX_CLASS: beamer
-#+latex_header: \mode<beamer>{\usetheme{madrid}}
+#+latex_header: \mode<beamer>{\usetheme{magpie}}
 
 
 #+BEAMER_HEADER: \subtitle{il database Open Source piu' avanzato del pianeta}
