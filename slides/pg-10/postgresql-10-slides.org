@@ -1440,51 +1440,50 @@ mentre per generare dei giorni
   FROM generate_series( '2018-01-01', '2018-03-01',
                         '1 day'::interval ) day;
 #+end_src
-** Tipi di dato
+** Principali tipi di dato
 *** Numerici
-**** Numerici
- Sono presenti i tipi interni ~integer~, ~smallint~, ~bigint~.
+Sono presenti i tipi interni ~integer~, ~smallint~, ~bigint~.
 
- I tipi *esatti* con virgola sono ~decimal~ e ~numeric~ (equivalenti), da definirsci con una /precisione/ (cifre significative) e una /scala/ (cifre dopo la virgola). Ad esempio ~123.456789~ ha precisione 9 e scala 6.
+I tipi *esatti* con virgola sono ~decimal~ e ~numeric~ (equivalenti), da definirsci con una /precisione/ (cifre significative) e una /scala/ (cifre dopo la virgola). Ad esempio ~123.456789~ ha precisione 9 e scala 6.
 
- I tipi *inesatti* ~real~ e ~real~ sono a virgola mobile con arrotondamenti.
+I tipi *inesatti* ~real~ e ~real~ sono a virgola mobile con arrotondamenti.
 
- I tipi ~serial~, ~bigserial~, ~smallserial~ sono collegati ai relativi tipi interi e alle sequenze.
-**** Numerici precisi e imprecisi
- I tipi di dato ~real~ e ~real~ sono *imprecisi*, i tipi ~numeric~ e ~decimal~ sono precisi (dipendentemente dalla scala):
- #+begin_src sql
- > SELECT 1 - 0.0000000000000001::float AS float_result,
-   1 - 0.0000000000000001::numeric AS numeric_result,
-   1 - 0.0000000000000001::decimal AS decimal_result,
-   1 - 0.0000000000000001::decimal( 10, 8 ) AS decimal_fix_result;
- -[ RECORD 1 ]------+-------------------
- float_result       | 1
- numeric_result     | 0.9999999999999999
- decimal_result     | 0.9999999999999999
- decimal_fix_result | 1.00000000
+I tipi ~serial~, ~bigserial~, ~smallserial~ sono collegati ai relativi tipi interi e alle sequenze.
+*** Numerici precisi e imprecisi
+I tipi di dato ~real~ e ~real~ sono *imprecisi*, i tipi ~numeric~ e ~decimal~ sono precisi (dipendentemente dalla scala):
+#+begin_src sql
+> SELECT 1 - 0.0000000000000001::float AS float_result,
+  1 - 0.0000000000000001::numeric AS numeric_result,
+  1 - 0.0000000000000001::decimal AS decimal_result,
+  1 - 0.0000000000000001::decimal( 10, 8 ) AS decimal_fix_result;
+-[ RECORD 1 ]------+-------------------
+float_result       | 1
+numeric_result     | 0.9999999999999999
+decimal_result     | 0.9999999999999999
+decimal_fix_result | 1.00000000
 
- #+end_src
-**** Numeric: scala e precisione
- I tipi numerici sono definibili con due vincoli: /scala/ e /precisione/. Il primo valore (*precisione*) indica /quante cifre totali comporranno il numero/, il secondo (*scala*) quante cifre saranno presenti dopo la virgola.
+#+end_src
+*** Numeric: scala e precisione
+I tipi numerici sono definibili con due vincoli: /scala/ e /precisione/. Il primo valore (*precisione*) indica /quante cifre totali comporranno il numero/, il secondo (*scala*) quante cifre saranno presenti dopo la virgola.
 
- Ne consegue che scala e precisione vincolano il massimo valore del dato stesso:
+Ne consegue che scala e precisione vincolano il massimo valore del dato stesso:
 
- #+begin_src sql
- #     numeric(p, s) --> 10^(p-s)
- > SELECT 39::numeric(2,1);
- ERROR:  numeric field overflow
- DETAIL:  A field with precision 2,
-          scale 1 must round to an
-          absolute value less than 10^1.
- #+end_src
-**** Valute
- Il tipo ~money~ rappresenta una valuta con cifre dopo la virgole. Può essere convertito in ~numeric~ senza perdita di precisione, ma convertirlo in altri formati (intero, reale) produce perdita di precisione.
+#+begin_src sql
+#     numeric(p, s) --> 10^(p-s)
+> SELECT 39::numeric(2,1);
+ERROR:  numeric field overflow
+DETAIL:  A field with precision 2,
+         scale 1 must round to an
+         absolute value less than 10^1.
+#+end_src
+*** Valute
+Il tipo ~money~ rappresenta una valuta con cifre dopo la virgole. Può essere convertito in ~numeric~ senza perdita di precisione, ma convertirlo in altri formati (intero, reale) produce perdita di precisione.
 
- #+begin_src sql
- > SELECT 10.25::money::numeric(5, 2);
+#+begin_src sql
+> SELECT 10.25::money::numeric(5, 2);
 
- numeric | 10.25
- #+end_src
+numeric | 10.25
+#+end_src
 *** Testo
 **** Stringhe
  I tipi principali sono:
@@ -1582,291 +1581,291 @@ mentre per generare dei giorni
   $     | {
   $     | }
  #+end_src
+** Tipi di dati Tempo
 *** Tempo
-**** Tempo
- Ci sono tipi di ~date~, ~time~, ~timestamp~ con e senza timezone. Il tipo ~timestampz~ è un sinonimo di ~timestamp with time zone~.
+Ci sono tipi di ~date~, ~time~, ~timestamp~ con e senza timezone. Il tipo ~timestampz~ è un sinonimo di ~timestamp with time zone~.
 
- Si noti che, nonostante lo standard SQL lo permetta, il timezone ha senso solo quando è presente sia la data che l'ora.
-**** ~datestyle~
- PostgreSQL fa del suo meglio per interpretare le stringhe come date, ma qualora non sia sufficiente occorre variare il parametro ~datestyle~:
+Si noti che, nonostante lo standard SQL lo permetta, il timezone ha senso solo quando è presente sia la data che l'ora.
+*** ~datestyle~
+PostgreSQL fa del suo meglio per interpretare le stringhe come date, ma qualora non sia sufficiente occorre variare il parametro ~datestyle~:
 
- #+begin_src sql
- > SELECT '19/7/2018'::date;
- ERROR:  date/time field value out of range: "19/7/2018"
- LINE 2: select '19/7/2018'::date;
+#+begin_src sql
+> SELECT '19/7/2018'::date;
+ERROR:  date/time field value out of range: "19/7/2018"
+LINE 2: select '19/7/2018'::date;
 
- > show datestyle
- testdb-> ;
-  DateStyle
- -----------
-  ISO, MDY
+> show datestyle;
+ DateStyle
+-----------
+ ISO, MDY
 
- > set datestyle TO 'ISO,DMY';
- > SELECT '19/7/2018'::date;
-     date
- ------------
-  2018-07-19
- #+end_src
-**** Manipolazione del tempo
- Ci sono alcune regole:
- 1. la differenza fra due ~timestamp~ è sempre un ~interval~, e di conseguenza aggiungere un ~interval~ ad un ~timestamp~ produce un altro ~timestamp~;
- 2. la somma/differenza di due ~interval~ è sempre un ~interval~ (non un ~timestamp~);
- 3. non si sommano/sottraggono due ~timestamp~;
- 4. la differenza fra due ~date~ è sempre un valore intero, ovvero il numero di giorni di differenza, e di conseguenza aggiungere un intero ad una data produce un'altra data;
-**** Esempi di manipolazione del tempo
- #+begin_src sql
- > SELECT '2017-11-15T22:00'::timestamp - interval '3 days';
-       ?column?
- ---------------------
-  2017-11-12 22:00:00
+> set datestyle TO 'ISO,DMY';
+> SELECT '19/7/2018'::date;
+    date
+------------
+ 2018-07-19
+#+end_src
+*** Manipolazione del tempo
+Ci sono alcune regole:
+1. la differenza fra due ~timestamp~ è sempre un ~interval~, e di conseguenza aggiungere un ~interval~ ad un ~timestamp~ produce un altro ~timestamp~;
+2. la somma/differenza di due ~interval~ è sempre un ~interval~ (non un ~timestamp~);
+3. non si sommano/sottraggono due ~timestamp~;
+4. la differenza fra due ~date~ è sempre un valore intero, ovvero il numero di giorni di differenza, e di conseguenza aggiungere un intero ad una data produce un'altra data;
+*** Esempi di manipolazione del tempo
+#+begin_src sql
+> SELECT '2017-11-15T22:00'::timestamp - interval '3 days';
+      ?column?
+---------------------
+ 2017-11-12 22:00:00
 
- > SELECT interval '1 month' - interval '3 days';
-    ?column?
- ---------------
-  1 mon -3 days
+> SELECT interval '1 month' - interval '3 days';
+   ?column?
+---------------
+ 1 mon -3 days
 
- > SELECT '2017-11-15'::date + 3 - '2017-10-12'::date;
-  ?column?
- ----------
-        37
+> SELECT '2017-11-15'::date + 3 - '2017-10-12'::date;
+ ?column?
+----------
+       37
 
- #+end_src
-**** Funzioni per manipolare il tempo
- - ~age()~ calcola la differenza fra due ~timestamp~, con un solo argomento la differenza dal momento corrente (~now()~);
- - ~extract()~ e l'equivalente ~date_part()~ estraggono una informazione da un ~date~ o ~timestamp~, quali ad esempio:
-   + ~century~, ~millenium~, ~epoch~;
-   + ~year~, ~month~, ~quarter~, ~day~, ~dow~ (day of week), ~doy~ (day of year);
-   + ~hour~, ~minute~, ~seconds~, ~milliseconds~, ~microseconds~;
- - ~date_trunc()~ aggiusta la precisione del ~date~ o del ~timestamp~ alla parte specificata, mettendo a zero ogni campo piu' preciso;
- - ~justify_days~, ~justify_hours~ aggiusta il periodo temporale a frazioni intere di 30 giorni e 24 ore, ~adjust_interval~ applica entrambi.
-**** Esempio di funzioni di manipolazione del tempo
- #+begin_src sql
- > SELECT age( current_timestamp, '2017-12-25T23:59:59'::timestamp ) as to_xmas,
-         extract( 'year' from current_date ),
-         date_part( 'hours', current_time ),
-         justify_days( '35 days'::interval );
- -[ RECORD 1 ]+---------------------------------
- to_xmas      | -1 mons -4 days -05:20:00.051659
- date_part    | 2017
- date_part    | 18
- justify_days | 1 mon 5 days
- #+end_src
-**** ~extract~ vs ~date_part~
- Le due funzioni ~extract()~ e ~date_part()~ svolgono sostanzialmente la stessa funzione ma:
- - in ~estract~ la parte da estrarre può non essere quotata, mentre in ~date_part~ deve essere una stringa;
- - in ~extract~ si usa la parola chiave ~from~, in ~date_part~ gli argomenti sono separati da ~,~.
+#+end_src
+*** Funzioni per manipolare il tempo
+- ~age()~ calcola la differenza fra due ~timestamp~, con un solo argomento la differenza dal momento corrente (~now()~);
+- ~extract()~ e l'equivalente ~date_part()~ estraggono una informazione da un ~date~ o ~timestamp~, quali ad esempio:
+  + ~century~, ~millenium~, ~epoch~;
+  + ~year~, ~month~, ~quarter~, ~day~, ~dow~ (day of week), ~doy~ (day of year);
+  + ~hour~, ~minute~, ~seconds~, ~milliseconds~, ~microseconds~;
+- ~date_trunc()~ aggiusta la precisione del ~date~ o del ~timestamp~ alla parte specificata, mettendo a zero ogni campo piu' preciso;
+- ~justify_days~, ~justify_hours~ aggiusta il periodo temporale a frazioni intere di 30 giorni e 24 ore, ~adjust_interval~ applica entrambi.
+*** Esempio di funzioni di manipolazione del tempo
+#+begin_src sql
+> SELECT age( current_timestamp, '2017-12-25T23:59:59'::timestamp ) as to_xmas,
+        extract( 'year' from current_date ),
+        date_part( 'hours', current_time ),
+        justify_days( '35 days'::interval );
+-[ RECORD 1 ]+---------------------------------
+to_xmas      | -1 mons -4 days -05:20:00.051659
+date_part    | 2017
+date_part    | 18
+justify_days | 1 mon 5 days
+#+end_src
+*** ~extract~ vs ~date_part~
+Le due funzioni ~extract()~ e ~date_part()~ svolgono sostanzialmente la stessa funzione ma:
+- in ~estract~ la parte da estrarre può non essere quotata, mentre in ~date_part~ deve essere una stringa;
+- in ~extract~ si usa la parola chiave ~from~, in ~date_part~ gli argomenti sono separati da ~,~.
 
- #+begin_src sql
- > SELECT
-   date_part( 'year', '2018-01-31'::date ) AS anno,
-   extract( 'month' from '2018-01-31'::date ) AS mese, -- stringa
-   extract( day from '2018-01-31'::date ) AS giorno;   -- non stringa
- -[ RECORD 1 ]
- anno   | 2018
- mese   | 1
- giorno | 31
+#+begin_src sql
+> SELECT
+  date_part( 'year', '2018-01-31'::date ) AS anno,
+  extract( 'month' from '2018-01-31'::date ) AS mese, -- stringa
+  extract( day from '2018-01-31'::date ) AS giorno;   -- non stringa
+-[ RECORD 1 ]
+anno   | 2018
+mese   | 1
+giorno | 31
 
- #+end_src
-**** ~date_part~ non solo per le date ma anche per il tempo!
- #+begin_src sql
- > SELECT extract( hour from current_time ),
-          date_part( 'hour', current_time ),
-          date_trunc( 'hour', current_timestamp );
+#+end_src
+*** ~date_part~ non solo per le date ma anche per il tempo!
+#+begin_src sql
+> SELECT extract( hour from current_time ),
+         date_part( 'hour', current_time ),
+         date_trunc( 'hour', current_timestamp );
 
- date_part  | 18
- date_part  | 18
- date_trunc | 2018-02-17 18:00:00+01
- #+end_src
-**** Costruttori del tempo
- Oltre al cast esplicito di stringhe, sono disponibili i costruttori ~make_date()~, ~make_time()~ e ~make_timestamp()~. Esiste anche un ~make_interval()~ che ha una serie di valori di default che possono quindi essere specificati uno alla volta:
- #+begin_src sql
- > SELECT make_date( 2017, 12, 25 ) as xmas_date,
-         make_time( 23, 59, 59 ) as santa_arrives,
-         make_interval( days => 25 );
- -[ RECORD 1 ]-+-----------
- xmas_date     | 2017-12-25
- santa_arrives | 23:59:59
- make_interval | 25 days
- #+end_src
-**** Costruttori speciali del tempo
- Esistono delle /stringhe particolari/ per specificare date e tempo che possono essere usate come input per un campo ~date~ e ~timestamp~:
- #+begin_src sql
-  > SELECT 'epoch'::timestamp AS epoch,
-           'now'::timestamp AS now,
-           'yesterday'::timestamp AS yesterday,
-           'today'::timestamp AS today,
-           'tomorrow'::timestamp AS tomorrow,
-           'allballs'::time AS allballs;  -- solo time!
+date_part  | 18
+date_part  | 18
+date_trunc | 2018-02-17 18:00:00+01
+#+end_src
+*** Costruttori del tempo
+Oltre al cast esplicito di stringhe, sono disponibili i costruttori ~make_date()~, ~make_time()~ e ~make_timestamp()~. Esiste anche un ~make_interval()~ che ha una serie di valori di default che possono quindi essere specificati uno alla volta:
+#+begin_src sql
+> SELECT make_date( 2017, 12, 25 ) as xmas_date,
+        make_time( 23, 59, 59 ) as santa_arrives,
+        make_interval( days => 25 );
+-[ RECORD 1 ]-+-----------
+xmas_date     | 2017-12-25
+santa_arrives | 23:59:59
+make_interval | 25 days
+#+end_src
+*** Costruttori speciali del tempo
+Esistono delle /stringhe particolari/ per specificare date e tempo che possono essere usate come input per un campo ~date~ e ~timestamp~:
+#+begin_src sql
+ > SELECT 'epoch'::timestamp AS epoch,
+          'now'::timestamp AS now,
+          'yesterday'::timestamp AS yesterday,
+          'today'::timestamp AS today,
+          'tomorrow'::timestamp AS tomorrow,
+          'allballs'::time AS allballs;  -- solo time!
 
- epoch     | 1970-01-01 00:00:00
- now       | 2018-02-19 18:44:55.015914
- yesterday | 2018-02-18 00:00:00
- today     | 2018-02-19 00:00:00
- tomorrow  | 2018-02-20 00:00:00
- allballs  | 00:00:00
- #+end_src
+epoch     | 1970-01-01 00:00:00
+now       | 2018-02-19 18:44:55.015914
+yesterday | 2018-02-18 00:00:00
+today     | 2018-02-19 00:00:00
+tomorrow  | 2018-02-20 00:00:00
+allballs  | 00:00:00
+#+end_src
 
- *Si noti che a parte ~now~ tutti gli altri campi sono /troncati/ alla data!*
-**** Variabili speciali per il tempo
- Esistono una serie di variabili ~CURRENT_~ che restituiscono il tempo corrente, e una serie di variabili ~LOCALTIME~ e ~LOCALTIMESTAMP~ che restituiscono il tempo /locale/ ossia senza timezone.
- #+begin_src sql
- > SELECT
- CURRENT_DATE AS today,
- CURRENT_TIME AS time,
- CURRENT_TIMESTAMP AS timestamp,
- LOCALTIME AS local_time,
- LOCALTIMESTAMP AS local_timestamp;
- -[ RECORD 1 ]---+------------------------------
- today           | 2018-06-02
- time            | 11:33:51.978132+02
- timestamp       | 2018-06-02 11:33:51.978132+02
- local_time      | 11:33:51.978132
- local_timestamp | 2018-06-02 11:33:51.978132
- #+end_src
-**** Precisione di ~TIME~ e ~TIMESTAMP~
- I dati ~TIME~ e ~TIMESTAMP~ accettano una precisione fino a 6 cifre decimali; tale precisione può essere specificata come argomento ad ogni variabile speciale ~LOCALTIME~, ~LOCALTIMESTAMP~, ~CURRENT_TIME~ e ~CURRENT_TIMESTAMP~. Se non si specifica alcuna precisione viene usato il default di 6 cifre, se la precisione è superiore a 6 allora viene emesso un warning e si tronca a 6 cifre:
+*Si noti che a parte ~now~ tutti gli altri campi sono /troncati/ alla data!*
+*** Variabili speciali per il tempo
+Esistono una serie di variabili ~CURRENT_~ che restituiscono il tempo corrente, e una serie di variabili ~LOCALTIME~ e ~LOCALTIMESTAMP~ che restituiscono il tempo /locale/ ossia senza timezone.
+#+begin_src sql
+> SELECT
+CURRENT_DATE AS today,
+CURRENT_TIME AS time,
+CURRENT_TIMESTAMP AS timestamp,
+LOCALTIME AS local_time,
+LOCALTIMESTAMP AS local_timestamp;
+-[ RECORD 1 ]---+------------------------------
+today           | 2018-06-02
+time            | 11:33:51.978132+02
+timestamp       | 2018-06-02 11:33:51.978132+02
+local_time      | 11:33:51.978132
+local_timestamp | 2018-06-02 11:33:51.978132
+#+end_src
+*** Precisione di ~TIME~ e ~TIMESTAMP~
+I dati ~TIME~ e ~TIMESTAMP~ accettano una precisione fino a 6 cifre decimali; tale precisione può essere specificata come argomento ad ogni variabile speciale ~LOCALTIME~, ~LOCALTIMESTAMP~, ~CURRENT_TIME~ e ~CURRENT_TIMESTAMP~. Se non si specifica alcuna precisione viene usato il default di 6 cifre, se la precisione è superiore a 6 allora viene emesso un warning e si tronca a 6 cifre:
 
- #+begin_src sql
- > SELECT CURRENT_TIME AS no_precision,
-          CURRENT_TIME(2) AS two_precision,
-          CURRENT_TIME(10) AS ten_precision;
+#+begin_src sql
+> SELECT CURRENT_TIME AS no_precision,
+         CURRENT_TIME(2) AS two_precision,
+         CURRENT_TIME(10) AS ten_precision;
 
- WARNING:  TIME(10) WITH TIME ZONE precision reduced to maximum allowed, 6
+WARNING:  TIME(10) WITH TIME ZONE precision reduced to maximum allowed, 6
 
- no_precision  | 11:38:08.609862+02
- two_precision | 11:38:08.61+02
- ten_precision | 11:38:08.609862+02
- #+end_src
-**** Convertire il tempo
- Le funzioni ~to_char()~ convertono un tempo (~timestamp~, ~date~, ~interval~) in una stringa, mentre ~to_date()~ e ~to_timestamp()~ convertono una stringa in un tempo.
- I parametri di formattazione del tempo solitamente usati sono:
- - ~HH~, ~HH24~, ~MI~, ~SS~, ~MS~, ~US~ per il tempo da ore fino a microsecondi;
- - ~Y~, ~mon~ (uppercase, lowercase, upperfirst), ~MM~, ~day~ (uppercase, lowercase, uppperfirst), ~DD~ per anno, mese, giorno del mese.
- #+begin_src sql
- > SELECT to_char( current_date, 'YYYY-Mon-DD' ),
-          to_char( current_date, 'DD/MM/YYYY' ),
-          to_date( '25/12/2017', 'DD/MM/YYYY' );
- -[ RECORD 1 ]--------
- to_char | 2017-Nov-21
- to_char | 21/11/2017
- to_date | 2017-12-25
- #+end_src
-**** Intervalli: sintassi ammesse
- Il tipo ~interval~ ammette almeno tre sintassi differenti:
- #+begin_src sql
- > SELECT
-    current_timestamp + '1 month 3 days 4 hours 25 minutes 12 seconds' AS pg_interval,
-    current_timestamp + '0-1 3 4:25:12' AS sql_interval,
-    current_timestamp + 'P0Y1M3DT4H25M12S' AS iso_interval;
+no_precision  | 11:38:08.609862+02
+two_precision | 11:38:08.61+02
+ten_precision | 11:38:08.609862+02
+#+end_src
+*** Convertire il tempo
+Le funzioni ~to_char()~ convertono un tempo (~timestamp~, ~date~, ~interval~) in una stringa, mentre ~to_date()~ e ~to_timestamp()~ convertono una stringa in un tempo.
+I parametri di formattazione del tempo solitamente usati sono:
+- ~HH~, ~HH24~, ~MI~, ~SS~, ~MS~, ~US~ per il tempo da ore fino a microsecondi;
+- ~Y~, ~mon~ (uppercase, lowercase, upperfirst), ~MM~, ~day~ (uppercase, lowercase, uppperfirst), ~DD~ per anno, mese, giorno del mese.
+#+begin_src sql
+> SELECT to_char( current_date, 'YYYY-Mon-DD' ),
+         to_char( current_date, 'DD/MM/YYYY' ),
+         to_date( '25/12/2017', 'DD/MM/YYYY' );
+-[ RECORD 1 ]--------
+to_char | 2017-Nov-21
+to_char | 21/11/2017
+to_date | 2017-12-25
+#+end_src
+*** Intervalli: sintassi ammesse
+Il tipo ~interval~ ammette almeno tre sintassi differenti:
+#+begin_src sql
+> SELECT
+   current_timestamp + '1 month 3 days 4 hours 25 minutes 12 seconds' AS pg_interval,
+   current_timestamp + '0-1 3 4:25:12' AS sql_interval,
+   current_timestamp + 'P0Y1M3DT4H25M12S' AS iso_interval;
 
- pg_interval  | 2018-03-22 22:59:42.618705+01
- sql_interval | 2018-03-22 22:59:42.618705+01
- iso_interval | 2018-03-22 22:59:42.618705+01
- #+end_src
+pg_interval  | 2018-03-22 22:59:42.618705+01
+sql_interval | 2018-03-22 22:59:42.618705+01
+iso_interval | 2018-03-22 22:59:42.618705+01
+#+end_src
 
-**** Sovrapposizioni temporali: ~OVERLAPS~
- L'operatore SQL ~OVERLAPS~ consente di confrontare due /intervalli/ temporali (date, timestamp) fra di loro. Ogni intervallo deve avere un inizio e una fine dello stesso tipo:
+*** Sovrapposizioni temporali: ~OVERLAPS~
+L'operatore SQL ~OVERLAPS~ consente di confrontare due /intervalli/ temporali (date, timestamp) fra di loro. Ogni intervallo deve avere un inizio e una fine dello stesso tipo:
 
- #+begin_src sql
- > SELECT ( CURRENT_DATE - 10, CURRENT_DATE + 10 )
-          OVERLAPS
-         ( CURRENT_DATE - 1, CURRENT_DATE + 1 );
-  overlaps
- ----------
-  t
- #+end_src
-**** Timezone
- PostgreSQL supporta il timezone sui tipi ~TIME~ e ~TIMESTAMP~ ma solo su quest'ultimo ha senso usare il timezone. Secondo lo standard SQL ~TIMESTAMP~ è abbreviazione per ~TIMESTAMP WITHOUT TIME ZONE~. E' disponibile il tipo particolare ~timestamptz~ che è una abbreviazione per ~TIMESTAMP WITH TIME ZONE~.
+#+begin_src sql
+> SELECT ( CURRENT_DATE - 10, CURRENT_DATE + 10 )
+         OVERLAPS
+        ( CURRENT_DATE - 1, CURRENT_DATE + 1 );
+ overlaps
+----------
+ t
+#+end_src
+*** Timezone
+PostgreSQL supporta il timezone sui tipi ~TIME~ e ~TIMESTAMP~ ma solo su quest'ultimo ha senso usare il timezone. Secondo lo standard SQL ~TIMESTAMP~ è abbreviazione per ~TIMESTAMP WITHOUT TIME ZONE~. E' disponibile il tipo particolare ~timestamptz~ che è una abbreviazione per ~TIMESTAMP WITH TIME ZONE~.
 
- #+begin_src sql
- > SELECT current_timestamp::timestamp,
-          current_timestamp::timestamptz;
+#+begin_src sql
+> SELECT current_timestamp::timestamp,
+         current_timestamp::timestamptz;
 
- now | 2018-06-04 16:48:28.81021
- now | 2018-06-04 16:48:28.81021+02
- #+end_src
+now | 2018-06-04 16:48:28.81021
+now | 2018-06-04 16:48:28.81021+02
+#+end_src
 
- I timezones disponibili sono mantenuti nella vista ~pg_timezone_names~:
- #+begin_src sql
- > SELECT * FROM pg_timezone_names
-   WHERE name like '%Rome%';
-     name     | abbrev | utc_offset | is_dst
- -------------+--------+------------+--------
-  Europe/Rome | CEST   | 02:00:00   | t
- #+end_src
-**** Timezones e offset
- I timezone sono espressi con la convezione dell'offset rispetto a UTC:
- #+begin_src sql
- > SELECT timestamp with time zone '2018-06-03 11:51:02.871328 CEST';
-           timestamptz
- -------------------------------
-  2018-06-03 11:51:02.871328+02
- #+end_src
+I timezones disponibili sono mantenuti nella vista ~pg_timezone_names~:
+#+begin_src sql
+> SELECT * FROM pg_timezone_names
+  WHERE name like '%Rome%';
+    name     | abbrev | utc_offset | is_dst
+-------------+--------+------------+--------
+ Europe/Rome | CEST   | 02:00:00   | t
+#+end_src
+*** Timezones e offset
+I timezone sono espressi con la convezione dell'offset rispetto a UTC:
+#+begin_src sql
+> SELECT timestamp with time zone '2018-06-03 11:51:02.871328 CEST';
+          timestamptz
+-------------------------------
+ 2018-06-03 11:51:02.871328+02
+#+end_src
 
- dove il campo finale ~+02~ indica appunto ~utc_offset~ per ~CEST~ (vedere ~pg_timezone_names~.
+dove il campo finale ~+02~ indica appunto ~utc_offset~ per ~CEST~ (vedere ~pg_timezone_names~.
 
- #+begin_src sql
- > SELECT timestamp without time zone '2018-06-03 11:51:02.871328 CEST';
-          timestamp
- ----------------------------
-  2018-06-03 11:51:02.871328
- #+end_src
+#+begin_src sql
+> SELECT timestamp without time zone '2018-06-03 11:51:02.871328 CEST';
+         timestamp
+----------------------------
+ 2018-06-03 11:51:02.871328
+#+end_src
 
- *ATTENZIONE: in default ~timestamp~ è senza timezone!*
- #+begin_src sql
- > SELECT timestamp  '2018-06-03 11:51:02.871328 CEST';
-          timestamp
- ----------------------------
-  2018-06-03 11:51:02.871328
- #+end_src
+*ATTENZIONE: in default ~timestamp~ è senza timezone!*
+#+begin_src sql
+> SELECT timestamp  '2018-06-03 11:51:02.871328 CEST';
+         timestamp
+----------------------------
+ 2018-06-03 11:51:02.871328
+#+end_src
 
-**** Convertire un timezone: ~AT TIME ZONE~
- L'operatore speciale ~AT TIME ZONE~ consente di specificare con quale time zone si deve valutare un ~timestamp~. Ad esempio prendendo un time zone con 4 ore di offset:
- #+begin_src sql
- > SELECT timestamp with time zone '2018-06-03 11:51:02.871328 CEST' AS here,
-          timestamp with time zone '2018-06-03 11:51:02.871328 CEST'
-                                            AT TIME ZONE 'Europe/Saratov';
+*** Convertire un timezone: ~AT TIME ZONE~
+L'operatore speciale ~AT TIME ZONE~ consente di specificare con quale time zone si deve valutare un ~timestamp~. Ad esempio prendendo un time zone con 4 ore di offset:
+#+begin_src sql
+> SELECT timestamp with time zone '2018-06-03 11:51:02.871328 CEST' AS here,
+         timestamp with time zone '2018-06-03 11:51:02.871328 CEST'
+                                           AT TIME ZONE 'Europe/Saratov';
 
- here     | 2018-06-03 11:51:02.871328+02
- timezone | 2018-06-03 13:51:02.871328
- #+end_src
+here     | 2018-06-03 11:51:02.871328+02
+timezone | 2018-06-03 13:51:02.871328
+#+end_src
 
- Si noti che ~AT TIME ZONE~ /localizza/ l'istante temporale, che perde l'estensione offset UTC.
-*** Booleani e Bit
-**** Booleani
- Il tipo di dato ~boolean~ rappresenta un booleano che accetta come input:
- - ~TRUE~ oppure una delle stringhe ~'t'~, ~'true'~, ~'on'~, ~'yes'~;
- - ~FALSE~ oppure una delle stringhe ~'f'~, ~'false'~, ~'off'~, ~'no'~;
-**** Bit
- Sono supportati due tipi di stringhe bit: a lunghezza fissa ~bit(n)~ e variabile ~bit varying(n)~.
+Si noti che ~AT TIME ZONE~ /localizza/ l'istante temporale, che perde l'estensione offset UTC.
+** Tipi di dato Booleani e Bit
+*** Booleani
+Il tipo di dato ~boolean~ rappresenta un booleano che accetta come input:
+- ~TRUE~ oppure una delle stringhe ~'t'~, ~'true'~, ~'on'~, ~'yes'~;
+- ~FALSE~ oppure una delle stringhe ~'f'~, ~'false'~, ~'off'~, ~'no'~;
+*** Bit
+Sono supportati due tipi di stringhe bit: a lunghezza fissa ~bit(n)~ e variabile ~bit varying(n)~.
 
- Gli operatori logici sulle stringhe di bit sono definiti.
- #+begin_src sql
- > SELECT 35::bit(8);
-    bit
- ----------
-  00100011
+Gli operatori logici sulle stringhe di bit sono definiti.
+#+begin_src sql
+> SELECT 35::bit(8);
+   bit
+----------
+ 00100011
 
- > SELECT ( 35::bit(8) | 12::bit(8) )::int;
-  int4
- ------
-    47
- #+end_src
+> SELECT ( 35::bit(8) | 12::bit(8) )::int;
+ int4
+------
+   47
+#+end_src
 
- *Le stringhe di bit devono avere la stessa lunghezza per essere utilizzate con gli operatori!*
-**** Bit vs Boolean
- Le stringhe di bit possono essere usate per memorizzare piu' valori booleani in un solo campo.
- Le funzioni speciali ~set_bit~ e ~get_bit~ consentono di agire sui singoli bit specificandone l'offset (e l'eventuale valore):
+*Le stringhe di bit devono avere la stessa lunghezza per essere utilizzate con gli operatori!*
+*** Bit vs Boolean
+Le stringhe di bit possono essere usate per memorizzare piu' valori booleani in un solo campo.
+Le funzioni speciali ~set_bit~ e ~get_bit~ consentono di agire sui singoli bit specificandone l'offset (e l'eventuale valore):
 
- #+begin_src sql
- > SELECT 10::bit(4) AS bit_array,
-    get_bit( 10::bit(4), 2 ) AS second_bit,
-    set_bit( 10::bit(4), 2, 0 ) AS result_second_bit;
+#+begin_src sql
+> SELECT 10::bit(4) AS bit_array,
+   get_bit( 10::bit(4), 2 ) AS second_bit,
+   set_bit( 10::bit(4), 2, 0 ) AS result_second_bit;
 
- bit_array         | 1010
- second_bit        | 1
- result_second_bit | 1000
- #+end_src
+bit_array         | 1010
+second_bit        | 1
+result_second_bit | 1000
+#+end_src
+** Altri tipi di dato
 *** Bytea
 ~bytea~ è una stringa binaria illimitata con un header variabile da 1 a 4 byte. Usa generalmente il formato esadecimale per input e output.
 *** Indirizzi di rete
