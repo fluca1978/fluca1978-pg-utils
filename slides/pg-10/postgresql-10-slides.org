@@ -2476,6 +2476,21 @@ RETURNING nome, cognome;
  Luca | Ferrari
 
 #+end_src
+*** UPSERT: considerazioni
+UPSERT può essere usato solo con vincoli ~UNIQUE~, di conseguenza non è possibile applicare l'UPSERT su un vincolo ~EXCLUDE~.
+
+Un UPSERT non può rivalutare piu' volte il conflitto. Ad esempio, ipotizzando di inserire due volte la stessa chiave:
+#+begin_src sql
+> INSERT INTO foo(pk)
+  VALUES (10), (10)
+  ON CONFLICT( pk )
+  DO UPDATE SET pk = EXCLUDED.pk + 1;
+ERROR:  ON CONFLICT DO UPDATE command cannot affect row a second time
+HINT:  Ensure that no rows proposed for insertion
+       within the same command have duplicate constrained values.
+#+end_src
+
+ovvero in questo caso l'~INSERT~ produce un conflitto nella transazione stessa prima che con i dati sulla tabella.
 ** ~DELETE USING~
 Lo statement ~DELETE~ supporta la clausola ~USING~ che consente di specificare le condizioni per la cancellazione.
 
