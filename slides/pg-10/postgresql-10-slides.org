@@ -3898,7 +3898,7 @@ Il comando ~pg_restore~ consente di visionare il contenuto del backup (binario):
 #+end_src
 
 *** Riordinare il restore
-Loutput di ~--list~ può a sua volta essere usato, manipolato, come input di ~-L~ per:
+L'output di ~list~ può a sua volta essere usato, manipolato, come input di ~L~ per:
 - escludere determinati oggetti dal ripristino (elimando le righe o commentadole con un ~;~);
 - riordinare l'esecuzione di ripristino.
 
