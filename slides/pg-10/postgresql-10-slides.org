@@ -1440,7 +1440,7 @@ mentre per generare dei giorni
   FROM generate_series( '2018-01-01', '2018-03-01',
                         '1 day'::interval ) day;
 #+end_src
-** Principali tipi di dato
+** Tipi di dato Numerici
 *** Numerici
 Sono presenti i tipi interni ~integer~, ~smallint~, ~bigint~.
 
@@ -1484,103 +1484,103 @@ Il tipo ~money~ rappresenta una valuta con cifre dopo la virgole. Può essere co
 
 numeric | 10.25
 #+end_src
-*** Testo
-**** Stringhe
- I tipi principali sono:
- - ~char(n)~ stringa di lunghezza fissa con blank a destra, tutto ciò che supera ~n~ viene troncato (standard SQL);
- - ~varchar(n)~ memorizza fino a ~n~ caratteri ma senza padding (lunghezza variabile);
- - ~text~ *stringa illimitata* (fino a 1GB)
- - ~name~ stringa di 64 byte ad uso interno (es. nomi degli identificatori).
+** Tipi di dato Testo
+*** Stringhe
+I tipi principali sono:
+- ~char(n)~ stringa di lunghezza fissa con blank a destra, tutto ciò che supera ~n~ viene troncato (standard SQL);
+- ~varchar(n)~ memorizza fino a ~n~ caratteri ma senza padding (lunghezza variabile);
+- ~text~ *stringa illimitata* (fino a 1GB)
+- ~name~ stringa di 64 byte ad uso interno (es. nomi degli identificatori).
 
- Da notare che il ~char(n)~ non viene interpretato dagli operatori come ci si potrebbe aspettare:
- #+begin_src sql
- > SELECT length( 'abc'::char(10) );
-  length
- --------
-       3
- #+end_src
+Da notare che il ~char(n)~ non viene interpretato dagli operatori come ci si potrebbe aspettare:
+#+begin_src sql
+> SELECT length( 'abc'::char(10) );
+ length
+--------
+      3
+#+end_src
 
- *Gli spazi a destra nei ~char~ non sono considerati significativi*, mentre lo sono per i dati a lunghezza variabile.
+*Gli spazi a destra nei ~char~ non sono considerati significativi*, mentre lo sono per i dati a lunghezza variabile.
 
-**** I blank (a destra) non sono significativi!
- *Si ricordi che solo nei tipi a lunghezza variabile i /rigth-blank/ sono considerati significativi!*
+*** I blank (a destra) non sono significativi!
+*Si ricordi che solo nei tipi a lunghezza variabile i /rigth-blank/ sono considerati significativi!*
 
- Tuttavia un ~char(n)~ viene effettivamente memorizzato (e restituito all'esterno) come un /blank-padded/ di lunghezza /n/.
+Tuttavia un ~char(n)~ viene effettivamente memorizzato (e restituito all'esterno) come un /blank-padded/ di lunghezza /n/.
 
- #+begin_src sql
- > SELECT
-     length( rpad( 'abc', 10 ) ) AS text_length,
-     length( rpad( 'abc', 10 )::char( 10 ) ) AS char_length;
+#+begin_src sql
+> SELECT
+    length( rpad( 'abc', 10 ) ) AS text_length,
+    length( rpad( 'abc', 10 )::char( 10 ) ) AS char_length;
 
- text_length | 10
- char_length | 3
- #+end_src
-**** Funzioni basilari per la manipolazione di stringhe
- #+begin_src sql
- > SELECT length( 'Perl' );
-    -- 4, le stringhe iniziano da 1!!!!
+text_length | 10
+char_length | 3
+#+end_src
+*** Funzioni basilari per la manipolazione di stringhe
+#+begin_src sql
+> SELECT length( 'Perl' );
+   -- 4, le stringhe iniziano da 1!!!!
 
- > SELECT upper( 'luca' ), -- LUCA
-          lower( 'LUCA' ); -- luca
+> SELECT upper( 'luca' ), -- LUCA
+         lower( 'LUCA' ); -- luca
 
- > SELECT 'Perl' || ' v5.27' AS concat,
-    replace( 'Perl 5', '5', '6') AS replace,
-    substr( 'Perl v5.27', 1, 4 ) AS substr,
-    regexp_match( 'Perl v5.27',
-                  '\d+\.\d+' ) AS version_array,
-    regexp_replace( 'Perl v5.27',
-                    '\d+\.\d+',
-                    '6' );
+> SELECT 'Perl' || ' v5.27' AS concat,
+   replace( 'Perl 5', '5', '6') AS replace,
+   substr( 'Perl v5.27', 1, 4 ) AS substr,
+   regexp_match( 'Perl v5.27',
+                 '\d+\.\d+' ) AS version_array,
+   regexp_replace( 'Perl v5.27',
+                   '\d+\.\d+',
+                   '6' );
 
- concat         | Perl v5.27
- replace        | Perl 6
- substr         | Perl
- version_array  | {5.27}
- regexp_replace | Perl v6
+concat         | Perl v5.27
+replace        | Perl 6
+substr         | Perl
+version_array  | {5.27}
+regexp_replace | Perl v6
 
- #+end_src
-**** ~format()~: il ritorno della ~sprintf(3)~
- La funzione ~format()~ permette la costruzione di stringhe in modalità analoga a quanto fatto da ~psrintf(3)~, tuttavia i formati hanno placeholder limitati:
- - ~%s~ stringa e valori numerici;
- - ~%I~ identificatore SQL;
- - ~%L~ valore SQL.
- #+begin_src sql
- > SELECT format( 'SELECT %I FROM %I WHERE x = %L ORDER BY %s',
-                           'y', 'Coordinates', 30, 'distance' );
-                             format
- --------------------------------------------------------------
-  SELECT y FROM "Coordinates"
-  WHERE x = '30' ORDER BY distance
+#+end_src
+*** ~format()~: il ritorno della ~sprintf(3)~
+La funzione ~format()~ permette la costruzione di stringhe in modalità analoga a quanto fatto da ~psrintf(3)~, tuttavia i formati hanno placeholder limitati:
+- ~%s~ stringa e valori numerici;
+- ~%I~ identificatore SQL;
+- ~%L~ valore SQL.
+#+begin_src sql
+> SELECT format( 'SELECT %I FROM %I WHERE x = %L ORDER BY %s',
+                          'y', 'Coordinates', 30, 'distance' );
+                            format
+--------------------------------------------------------------
+ SELECT y FROM "Coordinates"
+ WHERE x = '30' ORDER BY distance
 
- > SELECT format( '%3$s, %2$s, %1$s', 10, 20, 30 );
-    format
- ------------
-  30, 20, 10
- #+end_src
-**** Collation
- PostgreSQL supporta la /collation/ su ogni tipo testuale. Le collation disponibili si trovano nella vista ~pg_collation~. E' possibile specificare la collation a livello di colonna (nella costruzione di una tabella), nella clausola ~ORDER BY~, nella estrazione di ogni colonna.
- *ATTENZIONE: le collation hanno nomi camel-case, occorre usare le virgolette doppie!*
+> SELECT format( '%3$s, %2$s, %1$s', 10, 20, 30 );
+   format
+------------
+ 30, 20, 10
+#+end_src
+*** Collation
+PostgreSQL supporta la /collation/ su ogni tipo testuale. Le collation disponibili si trovano nella vista ~pg_collation~. E' possibile specificare la collation a livello di colonna (nella costruzione di una tabella), nella clausola ~ORDER BY~, nella estrazione di ogni colonna.
+*ATTENZIONE: le collation hanno nomi camel-case, occorre usare le virgolette doppie!*
 
- #+begin_src sql
- > SELECT v1 AS zh_tw, v2 AS c
-   FROM unnest( ARRAY[ '{', '}', '$' ]::text[] ) v1,
-        unnest( ARRAY[ '{', '}', '$' ]::text[] ) v2
-   ORDER BY
-        v1 COLLATE "zh_TW",
-        v2 COLLATE "C";
+#+begin_src sql
+> SELECT v1 AS zh_tw, v2 AS c
+  FROM unnest( ARRAY[ '{', '}', '$' ]::text[] ) v1,
+       unnest( ARRAY[ '{', '}', '$' ]::text[] ) v2
+  ORDER BY
+       v1 COLLATE "zh_TW",
+       v2 COLLATE "C";
 
-  zh_tw | c
- -------+---
-  {     | $
-  {     | {
-  {     | }
-  }     | $
-  }     | {
-  }     | }
-  $     | $
-  $     | {
-  $     | }
- #+end_src
+ zh_tw | c
+-------+---
+ {     | $
+ {     | {
+ {     | }
+ }     | $
+ }     | {
+ }     | }
+ $     | $
+ $     | {
+ $     | }
+#+end_src
 ** Tipi di dati Tempo
 *** Tempo
 Ci sono tipi di ~date~, ~time~, ~timestamp~ con e senza timezone. Il tipo ~timestampz~ è un sinonimo di ~timestamp with time zone~.
