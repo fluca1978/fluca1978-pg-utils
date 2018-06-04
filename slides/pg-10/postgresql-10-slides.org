@@ -1774,8 +1774,16 @@ L'operatore SQL ~OVERLAPS~ consente di confrontare due /intervalli/ temporali (d
 ----------
  t
 #+end_src
-*** Timezones
-PostgreSQL supporta il timezone sui tipi ~TIME~ e ~TIMESTAMP~ ma solo su quest'ultimo ha senso usare il timezone. Secondo lo standard SQL ~TIMESTAMP~ è abbreviazione per ~TIMESTAMP WITHOUT TIME ZONE~.
+*** Timezone
+PostgreSQL supporta il timezone sui tipi ~TIME~ e ~TIMESTAMP~ ma solo su quest'ultimo ha senso usare il timezone. Secondo lo standard SQL ~TIMESTAMP~ è abbreviazione per ~TIMESTAMP WITHOUT TIME ZONE~. E' disponibile il tipo particolare ~timestamptz~ che è una abbreviazione per ~TIMESTAMP WITH TIME ZONE~.
+
+#+begin_src sql
+> SELECT current_timestamp::timestamp,
+         current_timestamp::timestamptz;
+
+now | 2018-06-04 16:48:28.81021
+now | 2018-06-04 16:48:28.81021+02
+#+end_src
 
 I timezones disponibili sono mantenuti nella vista ~pg_timezone_names~:
 #+begin_src sql
@@ -6287,7 +6295,9 @@ ev_action  | ({QUERY :commandType 6 :querySource 0 :canSetTag false
 ** Window Functions
 *** Cosa è una window function?
 Le /Window Functions/ sono funzioni che *effettuano un calcolo su tuple correlate a quella corrente*, qualcosa idealmente simile ad una funzione di aggregazione ma senza la necessità di aggregare le tuple. Inoltre una window function può essere eseguita su una partizione delle tuple, non su tutte le tuple di una query.
-*** Definire la window
+
+Ogni window function è seguita da una clausola ~OVER~ che identifica su quale /window/ (insieme di dati) deve eseguire. Piu' finestre possono essere usate all'interno di ogni query.
+*** Definire la Window
 La finestra ove si applica la funzione viene definita con la clausola ~OVER~.
 E' possibile usare due definizioni di finestra:
 1) /in-line/ si definisce la finestra fra parentesi tonde;
@@ -6302,10 +6312,35 @@ E' possibile usare due definizioni di finestra:
          FROM v
          WINDOW my_window AS ();  -- window definition
 #+end_src
-*** OVER & PARTITION
-Una window function è solitamente seguita da una clausola ~OVER~ che identifica su quale sottoinsieme di dati effettuare il calcolo. All'interno della clausola ~OVER~ si può specificare:
+*** Dimensione della Window
+Una window può essere definita e limitata con i seguenti parametri:
 - ~PARTITION BY~ per indicare quali colonne usare per correlare le tuple (concettualmente simile a /group by/);
-- ~ORDER BY~ per specificare l'ordinamento per processare le tuple nella funzione di correlazione.
+- ~ORDER BY~ per specificare l'ordinamento per processare le tuple nella funzione di correlazione;
+- ~RANGE~ indica l'insieme di dati che compongono la finestra, solitamente ~UNBOUND~;
+- ~ROWS~ indica esattamente da quante righe è formata la finestra.
+*** Esempi di dimensionamento di finestra
+#+begin_src sql
+> SELECT *, array_agg( value ) OVER w
+  FROM v
+  WINDOW w AS ( ORDER BY value DESC
+                -- tutte le tuple prima e tutte le tuple dopo quella corrente
+                RANGE BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING );
+
+> ...
+  WINDOW w AS ( ORDER BY value DESC
+                -- solo due tuple precedenti e quattro seguenti
+                ROWS BETWEEN 2 PRECEDING AND 4 FOLLOWING );
+
+> ...
+  WINDOW w AS ( ORDER BY value DESC
+                -- solo due tuple prima di quella corrente
+                ROWS BETWEEN 2 PRECEDING AND CURRENT ROW );
+
+> ...
+               -- considera solo la riga stessa
+  WINDOW w AS ( ROWS BETWEEN CURRENT ROW AND CURRENT ROW );
+#+end_src
+
 *** Comprendere la /window/
 La window è calcolata dinamicamente sul result set con riferimento alla tuple sulla quale ci si trova:
 
