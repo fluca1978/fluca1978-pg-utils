@@ -1697,6 +1697,17 @@ sql_interval | 2018-03-22 22:59:42.618705+01
 iso_interval | 2018-03-22 22:59:42.618705+01
 #+end_src
 
+*** Sovrapposizioni temporali: ~OVERLAPS~
+L'operatore SQL ~OVERLAPS~ consente di confrontare due /intervalli/ temporali (date, timestamp) fra di loro. Ogni intervallo deve avere un inizio e una fine dello stesso tipo:
+
+#+begin_src sql
+> SELECT ( CURRENT_DATE - 10, CURRENT_DATE + 10 )
+         OVERLAPS
+        ( CURRENT_DATE - 1, CURRENT_DATE + 1 );
+ overlaps
+----------
+ t
+#+end_src
 *** Booleani
 Il tipo di dato ~boolean~ rappresenta un booleano che accetta come input:
 - ~TRUE~ oppure una delle stringhe ~'t'~, ~'true'~, ~'on'~, ~'yes'~;
