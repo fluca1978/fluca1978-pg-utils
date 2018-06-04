@@ -2085,6 +2085,42 @@ Gli indici creati su una tabella /unlogged/ sono anch'essi automaticamente unlog
 > CREATE UNLOGGED TABLE baz( b text );
 #+end_src
 
+*** Tabelle in ereditarietà
+E' possibile specificare da quale tabella ereditare la definizione delle colonne con ~INHERITS~. La tabella figlia avrà tutte le colonne della tabella padre, le due saranno legate ovvero ogni lettura di una tabella andrà a percorrere (~UNION~) anche le tabelle figlie (vedere la sezione sul /partitioning/).
+
+E' possibile ereditare da piu' di una tabella alla volta, ma potrebbero esserci conflitti per colonne con lo stesso nome e  default value differente:
+#+begin_src sql
+> CREATE TABLE basic_info(
+        pk serial PRIMARY KEY,
+        name text,
+        surname text );
+
+> CREATE TABLE birth_info(
+        pk serial PRIMARY KEY,
+        birth_date date,
+        gender char(1) DEFAULT 'M',
+        birth_place text  );
+
+> CREATE TABLE person() INHERITS ( basic_info, birth_info );
+NOTICE:  merging multiple inherited definitions of column "pk"
+ERROR:  column "pk" inherits conflicting default values
+HINT:  To resolve the conflict, specify a default explicitly.
+#+end_src
+
+*** Tabelle in ereditarietà: risolvere i conflitti
+In caso di conflitto occorre specificare manualmente la colonna (e solo quella) nella definizione della tabella:
+
+#+begin_src sql
+ > CREATE TABLE person(
+        pk int DEFAULT nextval( 'basic_info_pk_seq' )
+   ) INHERITS ( basic_info, birth_info );
+NOTICE:  merging multiple inherited definitions of column "pk"
+NOTICE:  merging column "pk" with inherited definition
+CREATE TABLE
+#+end_src
+
+*ATTENZIONE: non è possibile ereditare se la stessa colonna ha tipologie differenti!*
+
 ** Tablesample
 *** Estrarre un sottoinsieme dei dati
 Una ~SELECT~ permette di specificare un meccanismo di /sampling/ mediante la clausola ~TABLESAMPLE~ al quale si specifica l'algoritmo e la percentuale di tabella da campionare. Il risultato è l'applicazione dei vincoli della query sul campionamento della tabella.
