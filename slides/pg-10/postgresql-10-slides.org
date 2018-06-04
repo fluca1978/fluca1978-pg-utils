@@ -2359,6 +2359,16 @@ Indexes:
 
 In un certo senso, ~EXCLUDE~ è la negazione di un vincolo ~UNIQUE~.
 
+*** ~EXCLUDE~ vs ~CREATE UNIQUE INDEX~
+La creazione di un indice ~UNIQUE~ su una espressione porta allo stesso risultato di un vincolo ~EXCLUDE~ con uguaglianza, ma fisicamente gli indici sono differenti:
+
+#+begin_src sql
+> CREATE UNIQUE INDEX idx_value ON v ( abs( value ) );
+
+> INSERT INTO v( name, value ) VALUES ( 'v1', -100 );
+ERROR:  duplicate key value violates unique constraint "idx_value"
+DETAIL:  Key (abs(value))=(100) already exists.
+#+end_src
 ** Commenti
 *** Commenti
 L'istruzione speciale ~COMMENT~ permette di agganciare dei commenti agli oggetti definiti nel database.
