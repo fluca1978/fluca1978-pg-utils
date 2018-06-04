@@ -1444,7 +1444,7 @@ mentre per generare dei giorni
 *** Numerici
 Sono presenti i tipi interni ~integer~, ~smallint~, ~bigint~.
 
-I tipi *esatti* con virgola sono ~decimal~ e ~numeric~, da definirsci con una /precisione/ (cifre significative) e una /scala/ (cifre dopo la virgola). Ad esempio ~123.456789~ ha precisione 9 e scala 6.
+I tipi *esatti* con virgola sono ~decimal~ e ~numeric~ (equivalenti), da definirsci con una /precisione/ (cifre significative) e una /scala/ (cifre dopo la virgola). Ad esempio ~123.456789~ ha precisione 9 e scala 6.
 
 I tipi *inesatti* ~real~ e ~real~ sono a virgola mobile con arrotondamenti.
 
