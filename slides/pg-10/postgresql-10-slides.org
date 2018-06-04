@@ -2714,6 +2714,35 @@ e di espressioni da valutare al volo:
 -----------------------
  (FRRLCU71L19F257B,16)
 #+end_src
+*** ~LIMIT~
+La clausola ~LIMIT~ permette di specificare quante tuple estrarre dal result set:
+#+begin_src sql
+ > SELECT * FROM v LIMIT 3;
+ pk  |  name  | value
+-----+--------+-------
+ 103 | 1pippo |     1
+ 104 | 2pippo |     2
+ 105 | 3pippo |     3
+#+end_src
+*** ~OFFSET~
+La clausola ~OFFSET~ consente di specificare da quale spiazzamento iniziare ad estrarre il result set:
+#+begin_src sql
+> SELECT * FROM v OFFSET 5;
+#+end_src
+
+Unendo ~LIMIT~ e ~OFFSET~ si può ottenere un rudimentale sistema di /paginazione/ dei risultati.
+*** ~OFFSET FETCH~
+Lo standard SQL 2008 consente di specificare ~OFFSET FETCH~:
+
+#+begin_src sql
+> SELECT * FROM v
+  OFFSET 5 ROWS
+  FETCH NEXT 3 ROWS ONLY;
+
+-- corrisponde a
+> SELECT * FROM v
+   OFFSET 5 LIMIT 3;
+#+end_src
 ** Array
 *** Costruttore di un array
 Gli array sono dichiarati con il tipo seguito da parentesi quadre (es. ~integer[]~).
