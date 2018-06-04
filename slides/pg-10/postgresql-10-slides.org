@@ -6287,6 +6287,21 @@ ev_action  | ({QUERY :commandType 6 :querySource 0 :canSetTag false
 ** Window Functions
 *** Cosa è una window function?
 Le /Window Functions/ sono funzioni che *effettuano un calcolo su tuple correlate a quella corrente*, qualcosa idealmente simile ad una funzione di aggregazione ma senza la necessità di aggregare le tuple. Inoltre una window function può essere eseguita su una partizione delle tuple, non su tutte le tuple di una query.
+*** Definire la window
+La finestra ove si applica la funzione viene definita con la clausola ~OVER~.
+E' possibile usare due definizioni di finestra:
+1) /in-line/ si definisce la finestra fra parentesi tonde;
+2) /named/ si definisce la finestra "in fondo" alla query dandovi un alias.
+#+begin_src sql
+> SELECT row_number() OVER () -- in-line
+        , *
+  FROM v;
+
+> SELECT row_number() OVER my_window  -- 2) named window
+         , *
+         FROM v
+         WINDOW my_window AS ();  -- window definition
+#+end_src
 *** OVER & PARTITION
 Una window function è solitamente seguita da una clausola ~OVER~ che identifica su quale sottoinsieme di dati effettuare il calcolo. All'interno della clausola ~OVER~ si può specificare:
 - ~PARTITION BY~ per indicare quali colonne usare per correlare le tuple (concettualmente simile a /group by/);
