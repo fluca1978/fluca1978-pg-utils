@@ -1225,9 +1225,8 @@ Check constraints:
  
 * SQL PostgreSQL
 ** Accorgimenti iniziali
-*** SELECT not dual !
-   In PostgreSQL non esiste la "famosa" tabella ~dual~ e lo statement ~SELECT~
-   fa esattamente quello che ci si aspetta:
+*** ~SELECT~ not dual !
+In PostgreSQL non esiste la "famosa" tabella ~dual~ e lo statement ~SELECT~  fa esattamente quello che ci si aspetta:
 
 #+begin_src sql
 > SELECT 1 FROM dual;
@@ -1237,6 +1236,19 @@ ERROR:  relation "dual" does not exist
  ?column?
 ----------
         1
+#+end_src
+*** ~TABLE~
+L'istruzione particolare ~TABLE~ corrisponde A ~SELECT * FROM~, ma non ammette clausole ~WHERE~ (mentre supporta ~ORDER BY~, ~LIMIT~, ecc):
+
+#+begin_src sql
+> TABLE v LIMIT 3;
+-- corrisponde a
+-- SELECT * FROM v LIMIT 3;
+ pk  |   name   | value
+-----+----------+-------
+ 103 | 1 VALUE  |     1
+ 104 | 2 VALUE  |     2
+ 105 | 3 VALUE  |     3
 #+end_src
 *** NULL (breve ripasso)
 Tutte le seguenti ritornano ~NULL~:
@@ -2718,11 +2730,11 @@ e di espressioni da valutare al volo:
 La clausola ~LIMIT~ permette di specificare quante tuple estrarre dal result set:
 #+begin_src sql
  > SELECT * FROM v LIMIT 3;
- pk  |  name  | value
------+--------+-------
- 103 | 1pippo |     1
- 104 | 2pippo |     2
- 105 | 3pippo |     3
+ pk  |   name  | value
+-----+---------+-------
+ 103 | 1 VALUE |     1
+ 104 | 2 VALUE |     2
+ 105 | 3 VALUE |     3
 #+end_src
 *** ~OFFSET~
 La clausola ~OFFSET~ consente di specificare da quale spiazzamento iniziare ad estrarre il result set:
