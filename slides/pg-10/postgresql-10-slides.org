@@ -1738,6 +1738,43 @@ L'operatore SQL ~OVERLAPS~ consente di confrontare due /intervalli/ temporali (d
 ----------
  t
 #+end_src
+*** Timezones
+PostgreSQL supporta il timezone sui tipi ~TIME~ e ~TIMESTAMP~ ma solo su quest'ultimo ha senso usare il timezone. Secondo lo standard SQL ~TIMESTAMP~ è abbreviazione per ~TIMESTAMP WITHOUT TIME ZONE~.
+
+I timezones disponibili sono mantenuti nella vista ~pg_timezone_names~:
+#+begin_src sql
+> SELECT * FROM pg_timezone_names
+  WHERE name like '%Rome%';
+    name     | abbrev | utc_offset | is_dst
+-------------+--------+------------+--------
+ Europe/Rome | CEST   | 02:00:00   | t
+#+end_src
+*** Timezones e offset
+I timezone sono espressi con la convezione dell'offset rispetto a UTC:
+#+begin_src sql
+> SELECT timestamp with time zone '2018-06-03 11:51:02.871328 CEST';
+          timestamptz
+-------------------------------
+ 2018-06-03 11:51:02.871328+02
+#+end_src
+
+dove il campo finale ~+02~ indica appunto ~utc_offset~ per ~CEST~ (vedere ~pg_timezone_names~.
+
+#+begin_src sql
+> SELECT timestamp without time zone '2018-06-03 11:51:02.871328 CEST';
+         timestamp
+----------------------------
+ 2018-06-03 11:51:02.871328
+#+end_src
+
+*ATTENZIONE: in default ~timestamp~ è senza timezone!*
+#+begin_src sql
+> SELECT timestamp  '2018-06-03 11:51:02.871328 CEST';
+         timestamp
+----------------------------
+ 2018-06-03 11:51:02.871328
+#+end_src
+
 *** Booleani
 Il tipo di dato ~boolean~ rappresenta un booleano che accetta come input:
 - ~TRUE~ oppure una delle stringhe ~'t'~, ~'true'~, ~'on'~, ~'yes'~;
