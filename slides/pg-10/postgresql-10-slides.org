@@ -1775,6 +1775,18 @@ dove il campo finale ~+02~ indica appunto ~utc_offset~ per ~CEST~ (vedere ~pg_ti
  2018-06-03 11:51:02.871328
 #+end_src
 
+*** Convertire un timezone: ~AT TIME ZONE~
+L'operatore speciale ~AT TIME ZONE~ consente di specificare con quale time zone si deve valutare un ~timestamp~. Ad esempio prendendo un time zone con 4 ore di offset:
+#+begin_src sql
+> SELECT timestamp with time zone '2018-06-03 11:51:02.871328 CEST' AS here,
+         timestamp with time zone '2018-06-03 11:51:02.871328 CEST'
+                                           AT TIME ZONE 'Europe/Saratov';
+
+here     | 2018-06-03 11:51:02.871328+02
+timezone | 2018-06-03 13:51:02.871328
+#+end_src
+
+Si noti che ~AT TIME ZONE~ /localizza/ l'istante temporale, che perde l'estensione offset UTC.
 *** Booleani
 Il tipo di dato ~boolean~ rappresenta un booleano che accetta come input:
 - ~TRUE~ oppure una delle stringhe ~'t'~, ~'true'~, ~'on'~, ~'yes'~;
