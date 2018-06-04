@@ -1398,6 +1398,18 @@ Timing is on.
 
 Time: 2573.297 ms
 #+end_src
+*** Addormentarsi per piu' tempo: ~pg_sleep_for~ e ~pg_sleep_until~
+La funzione ~pg_sleep_for~ consente di addormentarsi per /circa/ un ~interval~, mentre ~pg_sleep_until~ consente di addormentarsi fino ad un ~timestamp~ specificato:
+
+#+begin_src sql
+> SELECT pg_sleep_for( '2 minutes' );
+...
+Time: 120054.906 ms -- 120 secondi circa!
+
+> SELECT pg_sleep_until( CURRENT_TIMESTAMP + '1 minute' );
+...
+Time: 60069.992 ms -- 60 secondi circa!
+#+end_src
 *** Generare dati random (suggerimenti)
 E' possibile generare delle sequenze di dati con:
 - ~generate_series( a, b )~ che genera una serie di numeri interi compresi fra ~a~ e ~b~ (ma anche una serie di ~timestamp~);
