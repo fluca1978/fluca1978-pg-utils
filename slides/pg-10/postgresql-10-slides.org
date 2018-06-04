@@ -7505,6 +7505,16 @@ Ad esempio:
  link slides         | 0.303964
  PR-175              |        0
 #+end_src
+*** ~phraseto_tsquery~
+La funzione ~phraseto_tsquery~ consente di costruire una ~tsquery~ sulla base di un testo, e quindi permette anche di analizzare gli operatori necessari alla composizione di una query:
+
+#+begin_src sql
+> SELECT phraseto_tsquery( 'italian',
+                'PostgreSQL e'' un database open source molto avanzato' );
+                             phraseto_tsquery
+--------------------------------------------------------------------------
+ 'postgresql' <3> 'databas' <-> 'open' <-> 'sourc' <-> 'molt' <-> 'avanz'
+#+end_src
 ** Indici FTS
 *** Capire cosa è indicizzabile
 Non tutta la parte di una ~tsquery~ è sempre indicizzabile, la funzione ~querytree()~ consente di capire cosa si può effettivamente indicizzare:
