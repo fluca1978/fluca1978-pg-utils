@@ -1670,6 +1670,36 @@ allballs  | 00:00:00
 #+end_src
 
 *Si noti che a parte ~now~ tutti gli altri campi sono /troncati/ alla data!*
+*** Variabili speciali per il tempo
+Esistono una serie di variabili ~CURRENT_~ che restituiscono il tempo corrente, e una serie di variabili ~LOCALTIME~ e ~LOCALTIMESTAMP~ che restituiscono il tempo /locale/ ossia senza timezone.
+#+begin_src sql
+> SELECT
+CURRENT_DATE AS today,
+CURRENT_TIME AS time,
+CURRENT_TIMESTAMP AS timestamp,
+LOCALTIME AS local_time,
+LOCALTIMESTAMP AS local_timestamp;
+-[ RECORD 1 ]---+------------------------------
+today           | 2018-06-02
+time            | 11:33:51.978132+02
+timestamp       | 2018-06-02 11:33:51.978132+02
+local_time      | 11:33:51.978132
+local_timestamp | 2018-06-02 11:33:51.978132
+#+end_src
+*** Precisione di ~TIME~ e ~TIMESTAMP~
+I dati ~TIME~ e ~TIMESTAMP~ accettano una precisione fino a 6 cifre decimali; tale precisione può essere specificata come argomento ad ogni variabile speciale ~LOCALTIME~, ~LOCALTIMESTAMP~, ~CURRENT_TIME~ e ~CURRENT_TIMESTAMP~. Se non si specifica alcuna precisione viene usato il default di 6 cifre, se la precisione è superiore a 6 allora viene emesso un warning e si tronca a 6 cifre:
+
+#+begin_src sql
+> SELECT CURRENT_TIME AS no_precision,
+         CURRENT_TIME(2) AS two_precision,
+         CURRENT_TIME(10) AS ten_precision;
+
+WARNING:  TIME(10) WITH TIME ZONE precision reduced to maximum allowed, 6
+
+no_precision  | 11:38:08.609862+02
+two_precision | 11:38:08.61+02
+ten_precision | 11:38:08.609862+02
+#+end_src
 *** Convertire il tempo
 Le funzioni ~to_char()~ convertono un tempo (~timestamp~, ~date~, ~interval~) in una stringa, mentre ~to_date()~ e ~to_timestamp()~ convertono una stringa in un tempo.
 I parametri di formattazione del tempo solitamente usati sono:
