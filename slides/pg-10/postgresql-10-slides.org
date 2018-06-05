@@ -6122,30 +6122,31 @@ In particolare ~WITH CHECK OPTION~ può essere:
 - ~CASCADED~ si considera la definizione di eventuali sottoviste.
 *** Viste aggiornabili: esempio ~WITH CHECK OPTION~
 #+begin_src sql
-> CREATE TABLE numbers( value int DEFAULT O );
+> CREATE TABLE numbers( value int DEFAULT 0 );
 
-> CREATE VIEW vw_positives AS 
-   SELECT value FROM numbers 
-   WHERE value > 0;
+> CREATE VIEW vw_positives AS
+         SELECT * FROM numbers
+         WHERE value > 0;
 
-> CREATE VIEW vw_positives AS 
-   SELECT value FROM vw_real 
-   WITH CASCADED CHECK OPTION;
+> CREATE VIEW vw_positive_evens AS
+         SELECT * FROM vw_positives
+         WHERE value % 2 = 0
+         WITH CASCADED CHECK OPTION;
+
 #+end_src
 *** Viste aggiornabili: esempio ~WITH CHECK OPTION~ (2)
 #+begin_src sql
--- KO: local check option
-> INSERT INTO vw_real( value ) VALUES( -1 );
-ERROR:  new row violates check option for view "vw_real"
-DETAIL:  Failing row contains (-1).
-
--- KO: cascaded check option 
+-- OK: positives non ha check options!
 > INSERT INTO vw_positives( value ) VALUES( -1 );
-ERROR:  new row violates check option for view "vw_real"
-DETAIL:  Failing row contains (-1).
 
--- OK: cascaded check option
-> INSERT INTO vw_positives( value ) VALUES( 0 );
+-- KO: vw_positive_evens controlla in cascade
+-- la vista vw_positives che vuole solo numeri positivi
+> INSERT INTO vw_positive_evens( value ) VALUES( -2 );
+ERROR:  new row violates check option for view "vw_positives"
+DETAIL:  Failing row contains (-2).
+
+-- OK (local per vw_positive_evens)
+> INSERT INTO vw_positive_evens( value ) VALUES( 2 );
 #+end_src
 *** Viste materializzate
 Si utilizza il comando ~CREATE MATERIALIZED VIEW~ specificando se prelevare subito i dati (~WITH DATA~)
