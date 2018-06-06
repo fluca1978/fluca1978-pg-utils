@@ -9746,8 +9746,8 @@ Le statistche sono visibili tramite una serie di viste speciali, denominate ~pg_
 *** Configurazione dello statistic collector
 In ~postgresql.conf~ vi sono una serie di parametri ~track_xxx~ che abilitano o disabilitano la collezione delle statistiche. Tali parametri possono anche essere impostati a livello di sessione (ma solo per i superutenti, per evitare utilizzi maliziosi). I parametri sono:
 - ~track_activities~ informazioni sulle attività utente correntemente in atto (visibile solo dal proprietario e dai superutenti);
-- ~tack_counts~ informazioni sulle attività di database, necessario per autovacuum;
-- ~tack_functions~ informazioni sulle chiamate di funzione (bisogna specificare quale *tipo* di linguaggio va tracciato, es ~pl~);
+- ~track_counts~ informazioni sulle attività di database, necessario per autovacuum;
+- ~track_functions~ informazioni sulle chiamate di funzione (bisogna specificare quale *tipo* di linguaggio va tracciato, es ~pl~);
 - ~track_io_timing~ informazioni sulle operazioni di I/O, molto "costoso" e solitamente disabilitato (può servire per monitorare nuovo hardware o configurazioni aggressive).
 *** Interazione con lo statistic collector
 Occorre tenere presente che le statistiche non sono aggiornate in /real time/:
