@@ -5309,6 +5309,29 @@ Una volta collegati al server, nel database voluto, si crea il linguaggio, ma pr
 
 # ALTER DATABASE testdb SET pljava.libjvm_location FROM CURRENT;
 #+end_src
+
+*** Installare un jar
+Si usa la funzione amministrativa ~sqlj.install_jar~ alla quale si passano diversi argomenti, fra i quali il percorso assoluto del jar da installare:
+
+#+begin_src sql
+# SELECT sqlj.install_jar( 'file:///home/luca/.../fluca1978-pljava-0.0.1.jar',
+           'fluca1978', -- nome simbolico con cui riferirsi a questo jar nel sistema
+           true );      -- usa il deployment descriptor per l'installazione
+
+# SELECT sqlj.set_classpath('public', 'fluca1978');
+#+end_src
+
+L'impostazione del classpath è necessaria perché *ogni schema ha un suo classpath obbligatorio!*.
+Una volta impostato il classpath non è piu' necessario impostarlo ad ogni sessione.
+*** Sostituire un jar con un'altra versione
+Si invoca la funzione ~replace_jar~ con gli stessi argomenti di ~install_jar~:
+
+#+begin_src sql
+# SELECT sqlj.replace_jar( 'file:///home/luca/.../fluca1978-pljava-0.0.1.jar',
+           'fluca1978', -- nome simbolico con cui riferirsi a questo jar nel sistema
+           true );      -- usa il deployment descriptor per l'installazione
+#+end_src
+
 ** DO
 *** ~DO~
 PostgreSQL supporta un costrutto ~DO~ che permette l'esecuzione di un blocco di codice.
