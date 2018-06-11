@@ -5332,6 +5332,80 @@ Si invoca la funzione ~replace_jar~ con gli stessi argomenti di ~install_jar~:
            true );      -- usa il deployment descriptor per l'installazione
 #+end_src
 
+*** Un esempio di semplice funzione
+#+begin_src java
+public class Functions {
+ public static String concat( String s1, String s2, String separator ){
+         return s1 + separator + s2;
+    }
+}
+#+end_src
+
+e lato SQL
+
+#+begin_src sql
+# CREATE OR REPLACE FUNCTION
+  jconcat( s1 text, s2 text, s3 text )
+  RETURNS text
+  AS 'fluca1978.Functions.concat'
+  LANGUAGE java;
+#+end_src
+
+*** Usare il deployment descriptor
+La API ~pljava~ mette a disposizione una serie di annotazioni che consentono la generazione del codice collante SQL per installare automaticamente le funzioni, i trigger, ecc:
+
+#+begin_src java
+public class Functions {
+  @Function(
+     comment = "Concatenates two strings with an optional delimiter. Accepts null values"
+     , name  = "fluca1978_concat" // or defaults to function name
+     , effects = Function.Effects.STABLE
+     , onNullInput = Function.OnNullInput.RETURNS_NULL
+ )
+ public static String concat( String s1, String s2, String separator ){
+         return s1 + separator + s2;
+    }
+}
+#+end_src
+
+In questo modo ogni volta che si isntalla il jar tramite ~install_jar~ o ~replace_jar~ viene creato automaticamente il codice SQL per la funzione, che viene "mappata" con nome ~fluca1978_concat~.
+*** Creazione di un trigger
+Il workflow è il seguente:
+1) si crea una funzione statica che effettua la logica del trigger e che accetta come argomento un oggetto ~TriggerData~ dal quale estrae le condizioni di esecuzione;
+2) si crea una funzione SQL che richiama la funzione del trigger;
+3) si crea il trigger richiamando la funzione SQL.
+
+*** Creazione di un trigger: fase 1
+#+begin_src java
+public static void upperText( TriggerData td )
+throws SQLException {
+  Logger logger = Logger.getAnonymousLogger();
+
+  if ( td.isFiredBefore() && td.isFiredForEachRow() ){
+      ResultSet NEW = td.getNew();
+      logger.info( "Trigger invocato per ogni tupla, evento before!" );
+
+      for ( String columnToUpdate : td.getArguments() ){
+          logger.info( "Update colonna " + columnToUpdate );
+          NEW.updateString( columnToUpdate,
+                            NEW.getString( columnToUpdate ).toUpperCase() );
+      }
+  }
+}
+#+end_src
+
+*** Creazione di un trigger: fasi 2, 3
+#+begin_src sql
+# CREATE FUNCTION trj()
+  RETURNS TRIGGER AS
+     'fluca1978.Functions.upperText'
+  LANGUAGE java;
+
+# CREATE TRIGGER trj
+  BEFORE INSERT ON t
+  FOR EACH ROW EXECUTE PROCEDURE trj( 't' );
+#+end_src
+
 ** DO
 *** ~DO~
 PostgreSQL supporta un costrutto ~DO~ che permette l'esecuzione di un blocco di codice.
