@@ -5282,6 +5282,9 @@ LANGUAGE plperl;
 Il linguaggio ~pljava~ consente di usare Java come backend per la scrittura di funzioni e trigger iniettate direttamente dentro al server.
 
 L'utilità è quella di riutilizzare librerie già esistenti.
+
+*ATTENZIONE: i linguaggi si chiamano ~java~ e ~javau~*, ovvero mancano del support ~pl~.
+
 *** Installazione
 Occorre compilare la libreria tramite /Apache Maven/:
 
