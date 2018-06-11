@@ -3,3 +3,9 @@
 *~
 *.tex
 *.html
+/*.class
+/*.ddr
+*.jar
+*.class
+*.ddr
+/target/
