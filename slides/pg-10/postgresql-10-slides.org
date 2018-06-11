@@ -5277,6 +5277,38 @@ $BODY$
 LANGUAGE plperl;
 #+end_src
 
+** Il linguaggio pljava
+*** Introduzione a pljava
+Il linguaggio ~pljava~ consente di usare Java come backend per la scrittura di funzioni e trigger iniettate direttamente dentro al server.
+
+L'utilità è quella di riutilizzare librerie già esistenti.
+*** Installazione
+Occorre compilare la libreria tramite /Apache Maven/:
+
+#+begin_src sh
+% git clone https://github.com/tada/pljava.git
+% cd pljava
+% mvn clean install
+#+end_src
+
+e poi installare il /jar/ creato nella sottocartella ~target~:
+
+#+begin_src sh
+% sudo java
+      -jar pljava-packaging/target/pljava-pg9.6-amd64-FreeBSD-gpp.jar
+#+end_src
+
+*** Creazione del linguaggio
+Una volta collegati al server, nel database voluto, si crea il linguaggio, ma prima occorre impostare il path completo alla libreria della JVM:
+
+#+begin_src sql
+# SET pljava.libjvm_location
+  TO '/usr/local/openjdk8/jre/lib/amd64/server/libjvm.so';
+
+# CREATE EXTENSION pljava;
+
+# ALTER DATABASE testdb SET pljava.libjvm_location FROM CURRENT;
+#+end_src
 ** DO
 *** ~DO~
 PostgreSQL supporta un costrutto ~DO~ che permette l'esecuzione di un blocco di codice.
