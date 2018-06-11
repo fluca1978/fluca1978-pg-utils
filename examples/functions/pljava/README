@@ -1,0 +1,6 @@
+In order to compile:
+
+mvn clean package
+
+
+Install on PostgreSQL: use sqlj.install_jar.

@@ -1,0 +1,66 @@
+<project
+ xmlns="http://maven.apache.org/POM/4.0.0"
+ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation=
+ "http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+>
+  <modelVersion>4.0.0</modelVersion>
+
+  <!-- Above is all boilerplate. Next: your project's "Maven coordinates" -->
+
+  <groupId>fluca1978</groupId>
+  <artifactId>fluca1978-pljava</artifactId>
+  <version>0.0.1</version>
+
+  <!-- Coordinates are nice, but so are names and descriptions for humans. -->
+
+  <name>fluca1978-pljava-examples</name>
+  <description>Porvides some simple functions to use as triggers and pljava experiments</description>
+
+
+  <!-- Here's where you say your project depends on a pljava-api version. -->
+
+  <dependencies>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>pljava-api</artifactId>
+      <version>1.5.1-BETA1</version>
+    </dependency>
+  </dependencies>
+
+  <!-- The rest here is pretty much boilerplate. -->
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>2.6</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <!-- This identifies and version-stamps the jar.
+                 Not essential, but easy and useful. -->
+              <addDefaultImplementationEntries>
+                true
+              </addDefaultImplementationEntries>
+            </manifest>
+
+            <manifestSections>
+              <!-- This identifies a file in the jar named
+                 pljava.ddr as an SQLJDeploymentDescriptor. -->
+              <manifestSection>
+                <name>pljava.ddr</name>
+                <manifestEntries>
+                  <SQLJDeploymentDescriptor>
+                    true
+                  </SQLJDeploymentDescriptor>
+                </manifestEntries>
+              </manifestSection>
+            </manifestSections>
+          </archive>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
