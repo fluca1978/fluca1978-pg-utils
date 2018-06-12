@@ -4759,6 +4759,10 @@ AS
 LANGUAGE language [<volatilità>];
 #+end_src
 
+*** Funzioni temporanee
+Non esiste un modo di creare una ~TEMP FUNCTION~ per evitare l'iniezione di codice malevolo.
+E' tuttavia possibile creare una funzione con nome qualificato nello schema ~pg_temp~: *tale funzione verrà eliminata alla chiusura della sessione*.
+Non è però possibile impostare il ~search_path~ per eseguire in modo de-qualificato la funzione temporanea.
 *** Prototiti di funzione
 - la lista di parametri può includere solo i tipi, nel qual caso i parametri sono accessibili con ~$1~, ~$2~, ecc.;
 - i parametri possono includere un valore di default specificato con ~DEFAULT~;
