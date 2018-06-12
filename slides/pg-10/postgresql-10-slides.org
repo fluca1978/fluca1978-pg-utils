@@ -3784,7 +3784,100 @@ Il comando ~DEALLOCATE~ annulla un prepared statement. Occorre specificare il no
 > EXECUTE find_persona_stmt( 'c' );
 ERROR:  prepared statement "find_persona_stmt" does not exist
 #+end_src
- 
+
+** Oggetti temporanei
+*** Lo schema ~pg_temp~
+Ogni volta che viene creato un oggetto temporaneo questo viene assegnato ad uno schema con nome ~pg_temp_N~ (con ~N~ un numero progressivo).
+
+Tale schema è visibile solo all'utente che lo ha generato (implicitamente) e alla relativa sessione (non si possono usare per la condivisione di oggetti fra sessioni dello stesso utente).
+
+Referenziare un oggetto tramite lo spazio dei nomi ~pg_temp~ permette di trovare un oggetto anche se il nome effettivo del tablespace risulta differente.
+
+*** ~pg_temp_N~ vs ~pg_temp~
+#+begin_src sql
+> CREATE TEMP TABLE foo( t text );
+> \d foo
+   Table "pg_temp_2.foo"
+ Column | Type | Modifiers
+--------+------+-----------
+ t      | text |
+#+end_src
+
+La tabella è stata assegnata al tablespace temporane ~pg_temp_2~.
+
+*** ~pg_temp_N~ vs ~pg_temp~ (2)
+#+begin_src sql
+> INSERT INTO foo
+  VALUES( 'Hello' ), ( 'World' );
+
+> SELECT * FROM foo;
+   t
+-------
+ Hello
+ World
+
+> SELECT * FROM pg_temp_2.foo;
+   t
+-------
+ Hello
+ World
+(2 rows)
+
+> SELECT * FROM pg_temp.foo;
+   t
+-------
+ Hello
+ World
+#+end_src
+*** ~pg_temp_N~ vs ~pg_temp~ (3)
+Lo schema speciale ~pg_temp~ funziona da /alias/ globale per lo schema effettivo temporaneo (es. ~pg_temp_2~) definito nella sessione.
+
+*Lo schema speciale ~pg_temp~ viene sempre cercato qualora esista!* Non occorre modificare il ~search_path~ per rendere visibili gli oggetti.
+*** Forzare la mano agli oggetti temporanei
+Creare un oggetto nello schema ~pg_temp~ rappresenta un modo per rendere tale oggetto temporaneo:
+
+#+begin_src sql
+> CREATE TABLE pg_temp.foo( t text );
+-- equivalente a
+> CREATE TEMP TABLE foo( t text );
+#+end_src
+
+e può essere usato anche per quegli oggetti che non prevedono un ~TEMP~ diretto:
+
+#+begin_src sql
+> CREATE FUNCTION pg_temp.hello_world()
+  RETURNS text AS $$
+     SELECT 'Hello World!'::text;
+  $$ LANGUAGE sql;
+
+> SELECT pg_temp.hello_world();
+ hello_world
+--------------
+ Hello World!
+#+end_src
+*** Scovare gli oggetti temporanei
+Le funzioni speciali ~pg_table_is_visible()~ e ~pg_function_is_visible()~ consentono di capire se un oggetto è visibile con l'attuale ~search_path~. Questo può essere utile, nel caso delle tabelle, per vedere se una tabella è definita in uno schema temporaneo. Viceversa la stessa cosa non vale per le funzioni, poiché lo schema ~pg-temp~ *non viene mai usato per l'esecuzione di codice* nemmeno se esplicitamente citato nel ~search_path~.
+
+
+#+begin_src sql
+> SELECT c.relname, n.nspname, pg_table_is_visible( c.oid )
+   FROM pg_class c
+   LEFT JOIN pg_namespace n ON n.oid = c.relnamespace
+   WHERE relname = 'foo' AND relkind = 'r' AND n.nspname LIKE 'pg_temp%';
+ relname |  nspname  | pg_table_is_visible
+---------+-----------+---------------------
+ foo     | pg_temp_2 | t
+
+> SELECT p.proname, n.nspname, pg_function_is_visible( p.oid )
+   FROM pg_proc p
+   LEFT JOIN pg_namespace n ON n.oid = p.pronamespace
+   WHERE proname = 'hello_world';
+
+   proname   |  nspname  | pg_function_is_visible
+-------------+-----------+------------------------
+ hello_world | pg_temp_2 | f
+#+end_src
+
 * Backup e restore
 ** Backup
 *** Introduzione
