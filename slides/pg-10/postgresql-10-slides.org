@@ -8645,6 +8645,18 @@ Esempio:
 LOG:  connection received: host=127.0.0.1 port=36828
 LOG:  connection authorized: user=postgres database=testdb
 #+end_src
+*** Esempio di logging
+#+begin_src sh
+log_destination = 'stderr'
+logging_collector = on
+log_directory = 'pg_log'
+log_file_mode = 0600
+log_filename  = 'postgresql-%Y-%m-%d.log'
+
+log_min_duration_statement = 0   # log every statement
+log_line_prefix = '%t [%p] [%l-1]  user=%u, database=%d, 
+                       application=%a, connection=%r, txid=%x '
+#+end_src
 *** Parametri di networking
 - ~listen_address~ indica su quale indirizzo IPv4/IPv6 o nome host il server deve attendere connessioni (sistemi multi-home);
 - ~port~ indica la porta su cui rimanere in ascolto di connessioni (default ~5432~);
