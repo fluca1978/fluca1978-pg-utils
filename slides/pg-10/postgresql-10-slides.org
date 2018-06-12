@@ -11780,6 +11780,13 @@ LOG: Ok, generating html report...
 #+end_src
 
 Nella directory ~reports~ viene inserito un file HTML che contiene grafici e statistiche sull'utilizzo del cluster.
+
+*** Altri scenari di utilizzo
+pgBadger può generare report relativi ai soli errori, per esempio:
+#+begin_src sh
+# pgbadger -w /mnt/data1/pgdata/pg_log/postgresql-2018-06-12.log
+#+end_src
+
 * Corruzione dei dati
 *** Page Checksum
 Se il cluster è stato inizializzato opportunamente (opzione ~-k~ di ~initdb~) ogni pagina dati ha associato un /checksum/. Tale checksum viene controllato ogni volta che la pagina dati viene portata da disco nello shared buffer, se il checksum non corrisponde PostgreSQL segnala l'anomalia e si rifiuta di leggere i dati da quella pagina.
