@@ -11733,6 +11733,7 @@ E' un progetto per l'analisi a posteriori dei dati di utilizzo del cluster.
 Analizza i log testuali del server per individuare l'andamento nel tempo.
 
 Utilizza Perl 5 e, a seconda delle opzioni e dei formati, alcune librerie esterne.
+*Si tratta di un tool per analisi a posteriori*, per una analisi in tempo reale occorre usare ~pg_stat_statements~.
 *** Installazione
 Richiede Perl ed eventualmente i moduli CSV e/o JSON.
 
