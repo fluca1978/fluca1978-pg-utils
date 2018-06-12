@@ -11728,6 +11728,11 @@ make: *** [all] Error 2
 #+end_src
 
 ** pgBadger
+*** Introduzione
+E' un progetto per l'analisi a posteriori dei dati di utilizzo del cluster.
+Analizza i log testuali del server per individuare l'andamento nel tempo.
+
+Utilizza Perl 5 e, a seconda delle opzioni e dei formati, alcune librerie esterne.
 *** Installazione
 Richiede Perl ed eventualmente i moduli CSV e/o JSON.
 
@@ -11739,7 +11744,6 @@ Richiede Perl ed eventualmente i moduli CSV e/o JSON.
 #+end_src
 *** Configurazione del server
 Non è indispensabile avere i log in formato CSV.
-
 #+begin_src sh
 log_destination = 'stderr'
 logging_collector = on
