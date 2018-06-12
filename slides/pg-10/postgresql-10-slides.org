@@ -5277,6 +5277,138 @@ $BODY$
 LANGUAGE plperl;
 #+end_src
 
+** Il linguaggio pljava
+*** Introduzione a pljava
+Il linguaggio ~pljava~ consente di usare Java come backend per la scrittura di funzioni e trigger iniettate direttamente dentro al server.
+
+L'utilità è quella di riutilizzare librerie già esistenti.
+
+*ATTENZIONE: i linguaggi si chiamano ~java~ e ~javau~*, ovvero mancano del support ~pl~.
+
+*** Installazione
+Occorre compilare la libreria tramite /Apache Maven/:
+
+#+begin_src sh
+% git clone https://github.com/tada/pljava.git
+% cd pljava
+% mvn clean install
+#+end_src
+
+e poi installare il /jar/ creato nella sottocartella ~target~:
+
+#+begin_src sh
+% sudo java
+      -jar pljava-packaging/target/pljava-pg9.6-amd64-FreeBSD-gpp.jar
+#+end_src
+
+*** Creazione del linguaggio
+Una volta collegati al server, nel database voluto, si crea il linguaggio, ma prima occorre impostare il path completo alla libreria della JVM:
+
+#+begin_src sql
+# SET pljava.libjvm_location
+  TO '/usr/local/openjdk8/jre/lib/amd64/server/libjvm.so';
+
+# CREATE EXTENSION pljava;
+
+# ALTER DATABASE testdb SET pljava.libjvm_location FROM CURRENT;
+#+end_src
+
+*** Installare un jar
+Si usa la funzione amministrativa ~sqlj.install_jar~ alla quale si passano diversi argomenti, fra i quali il percorso assoluto del jar da installare:
+
+#+begin_src sql
+# SELECT sqlj.install_jar( 'file:///home/luca/.../fluca1978-pljava-0.0.1.jar',
+           'fluca1978', -- nome simbolico con cui riferirsi a questo jar nel sistema
+           true );      -- usa il deployment descriptor per l'installazione
+
+# SELECT sqlj.set_classpath('public', 'fluca1978');
+#+end_src
+
+L'impostazione del classpath è necessaria perché *ogni schema ha un suo classpath obbligatorio!*.
+Una volta impostato il classpath non è piu' necessario impostarlo ad ogni sessione.
+*** Sostituire un jar con un'altra versione
+Si invoca la funzione ~replace_jar~ con gli stessi argomenti di ~install_jar~:
+
+#+begin_src sql
+# SELECT sqlj.replace_jar( 'file:///home/luca/.../fluca1978-pljava-0.0.1.jar',
+           'fluca1978', -- nome simbolico con cui riferirsi a questo jar nel sistema
+           true );      -- usa il deployment descriptor per l'installazione
+#+end_src
+
+*** Un esempio di semplice funzione
+#+begin_src java
+public class Functions {
+ public static String concat( String s1, String s2, String separator ){
+         return s1 + separator + s2;
+    }
+}
+#+end_src
+
+e lato SQL
+
+#+begin_src sql
+# CREATE OR REPLACE FUNCTION
+  jconcat( s1 text, s2 text, s3 text )
+  RETURNS text
+  AS 'fluca1978.Functions.concat'
+  LANGUAGE java;
+#+end_src
+
+*** Usare il deployment descriptor
+La API ~pljava~ mette a disposizione una serie di annotazioni che consentono la generazione del codice collante SQL per installare automaticamente le funzioni, i trigger, ecc:
+
+#+begin_src java
+public class Functions {
+  @Function(
+     comment = "Concatenates two strings with an optional delimiter. Accepts null values"
+     , name  = "fluca1978_concat" // or defaults to function name
+     , effects = Function.Effects.STABLE
+     , onNullInput = Function.OnNullInput.RETURNS_NULL
+ )
+ public static String concat( String s1, String s2, String separator ){
+         return s1 + separator + s2;
+    }
+}
+#+end_src
+
+In questo modo ogni volta che si isntalla il jar tramite ~install_jar~ o ~replace_jar~ viene creato automaticamente il codice SQL per la funzione, che viene "mappata" con nome ~fluca1978_concat~.
+*** Creazione di un trigger
+Il workflow è il seguente:
+1) si crea una funzione statica che effettua la logica del trigger e che accetta come argomento un oggetto ~TriggerData~ dal quale estrae le condizioni di esecuzione;
+2) si crea una funzione SQL che richiama la funzione del trigger;
+3) si crea il trigger richiamando la funzione SQL.
+
+*** Creazione di un trigger: fase 1
+#+begin_src java
+public static void upperText( TriggerData td )
+throws SQLException {
+  Logger logger = Logger.getAnonymousLogger();
+
+  if ( td.isFiredBefore() && td.isFiredForEachRow() ){
+      ResultSet NEW = td.getNew();
+      logger.info( "Trigger invocato per ogni tupla, evento before!" );
+
+      for ( String columnToUpdate : td.getArguments() ){
+          logger.info( "Update colonna " + columnToUpdate );
+          NEW.updateString( columnToUpdate,
+                            NEW.getString( columnToUpdate ).toUpperCase() );
+      }
+  }
+}
+#+end_src
+
+*** Creazione di un trigger: fasi 2, 3
+#+begin_src sql
+# CREATE FUNCTION trj()
+  RETURNS TRIGGER AS
+     'fluca1978.Functions.upperText'
+  LANGUAGE java;
+
+# CREATE TRIGGER trj
+  BEFORE INSERT ON t
+  FOR EACH ROW EXECUTE PROCEDURE trj( 't' );
+#+end_src
+
 ** DO
 *** ~DO~
 PostgreSQL supporta un costrutto ~DO~ che permette l'esecuzione di un blocco di codice.
@@ -11607,6 +11739,47 @@ Makefile:478: recipe for target 'all' failed
 make: *** [all] Error 2
 #+end_src
 
+** pgBadger
+*** Introduzione
+E' un progetto per l'analisi a posteriori dei dati di utilizzo del cluster.
+Analizza i log testuali del server per individuare l'andamento nel tempo.
+
+Utilizza Perl 5 e, a seconda delle opzioni e dei formati, alcune librerie esterne.
+*Si tratta di un tool per analisi a posteriori*, per una analisi in tempo reale occorre usare ~pg_stat_statements~.
+*** Installazione
+Richiede Perl ed eventualmente i moduli CSV e/o JSON.
+
+#+begin_src sh
+% tar xzvf pgbadger-9.2.tar.gz
+% cd pgbadger-9.2
+% perl Makefile.PL
+% make && make install
+#+end_src
+*** Configurazione del server
+Non è indispensabile avere i log in formato CSV.
+#+begin_src sh
+log_destination = 'stderr'
+logging_collector = on
+
+log_min_duration_statement = 0
+log_line_prefix = '%t [%p]: [%l-1] user=%u,db=%d,app=%a,client=%h '
+log_checkpoints = on
+log_connections = on
+log_disconnections = on
+log_lock_waits = on
+log_temp_files = 0
+log_autovacuum_min_duration = 0
+log_error_verbosity = default
+#+end_src
+*** Utilizzo
+#+begin_src sh
+# mkdir reports
+# pgbadger /mnt/data1/pgdata/pg_log/postgresql-2018-06-12.log
+[========================>] Parsed 4094 bytes of 4094 (100.00%), queries: 17, events: 1
+LOG: Ok, generating html report...
+#+end_src
+
+Nella directory ~reports~ viene inserito un file HTML che contiene grafici e statistiche sull'utilizzo del cluster.
 * Corruzione dei dati
 *** Page Checksum
 Se il cluster è stato inizializzato opportunamente (opzione ~-k~ di ~initdb~) ogni pagina dati ha associato un /checksum/. Tale checksum viene controllato ogni volta che la pagina dati viene portata da disco nello shared buffer, se il checksum non corrisponde PostgreSQL segnala l'anomalia e si rifiuta di leggere i dati da quella pagina.
