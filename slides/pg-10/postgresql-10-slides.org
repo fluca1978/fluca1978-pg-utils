@@ -11727,6 +11727,42 @@ Makefile:478: recipe for target 'all' failed
 make: *** [all] Error 2
 #+end_src
 
+** pgBadger
+*** Installazione
+Richiede Perl ed eventualmente i moduli CSV e/o JSON.
+
+#+begin_src sh
+% tar xzvf pgbadger-9.2.tar.gz
+% cd pgbadger-9.2
+% perl Makefile.PL
+% make && make install
+#+end_src
+*** Configurazione del server
+Non è indispensabile avere i log in formato CSV.
+
+#+begin_src sh
+log_destination = 'stderr'
+logging_collector = on
+
+log_min_duration_statement = 0
+log_line_prefix = '%t [%p]: [%l-1] user=%u,db=%d,app=%a,client=%h '
+log_checkpoints = on
+log_connections = on
+log_disconnections = on
+log_lock_waits = on
+log_temp_files = 0
+log_autovacuum_min_duration = 0
+log_error_verbosity = default
+#+end_src
+*** Utilizzo
+#+begin_src sh
+# mkdir reports
+# pgbadger /mnt/data1/pgdata/pg_log/postgresql-2018-06-12.log
+[========================>] Parsed 4094 bytes of 4094 (100.00%), queries: 17, events: 1
+LOG: Ok, generating html report...
+#+end_src
+
+Nella directory ~reports~ viene inserito un file HTML che contiene grafici e statistiche sull'utilizzo del cluster.
 * Corruzione dei dati
 *** Page Checksum
 Se il cluster è stato inizializzato opportunamente (opzione ~-k~ di ~initdb~) ogni pagina dati ha associato un /checksum/. Tale checksum viene controllato ogni volta che la pagina dati viene portata da disco nello shared buffer, se il checksum non corrisponde PostgreSQL segnala l'anomalia e si rifiuta di leggere i dati da quella pagina.
