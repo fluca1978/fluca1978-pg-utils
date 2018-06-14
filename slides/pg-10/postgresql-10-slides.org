@@ -325,7 +325,7 @@ E' possibile installare PostgreSQL:
 - mediante pacchetti binari della propria installazione
 - compilando l'albero dei sorgenti
 
-Tutte le prove qui mostrate sono state effettuate su una macchina virtuale con quattro dischi da 2GB utilizzati come spazio dati:
+Le prove mostrate in questo documento sono state effettuate su una macchina virtual ~FreeBSD~ 11.1 (o superiore) con diversi dischi per permettere la clonazione e l'archiviazione dei WAL.
 #+begin_src sh
 $ uname -a
 FreeBSD olivia 11.1-RELEASE FreeBSD 11.1-RELEASE
@@ -334,6 +334,7 @@ $ mount
 /dev/ada2p1 on /mnt/data2 (ufs, local, soft-updates)
 /dev/ada3p1 on /mnt/data3 (ufs, local, soft-updates)
 /dev/ada4p1 on /mnt/data4 (ufs, local, soft-updates)
+...
 #+end_src
 
 *** Installazione (FreeBSD)
