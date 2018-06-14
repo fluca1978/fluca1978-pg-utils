@@ -264,20 +264,11 @@ L'isolamento e la gestione di un cluster ricorda molto quella di un sistema oper
 
 *** Schema a Processi: Connessioni
 PostgreSQL utilizza uno *schema a processi*: /ogni connessione viene gestita da un sottoprocesso creato ad-hoc/.
-
-
-**** Processi vs Thread
+#+begin_quote
 Ci sono svariate ragioni per preferire uno schema a processi rispetto ad uno a thread: *isolamento* e *portabilità*
 sono le principali.
-
-**** End of block                                           :B_ignoreheading:
-:PROPERTIES:
-:BEAMER_env: ignoreheading
-:END:
-Il processo principale è denominato *postmaster*; ogni volta che questo riceve una richiesta di connessione si effettua una /fork/
-di un processo *postgres* (denominato anche *backend*) delegato a gestire la connessione.
-
-
+#+end_quote
+Il processo principale è denominato *postmaster*; ogni volta che questo riceve una richiesta di connessione si effettua una /fork/ di un processo *postgres* (denominato anche *backend*) delegato a gestire la connessione.
 Una connessione può essere *TCP/IP* oppure su *socket locale*.
 *** Schema a Processi: IPC
    Siccome ogni processo è /fisicamente/ isolato, ma piu' connessioni possono dover condividere i dati, PostgreSQL
