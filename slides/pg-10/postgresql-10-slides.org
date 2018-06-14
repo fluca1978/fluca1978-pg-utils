@@ -75,21 +75,17 @@ Thanks to Professor Michael Stonebraker for making this possible.
 #+end_quotation
 
 *** Di chi è?
-   PostgreSQL non è guidato da nessun vendor e di conseguenza _non ha una
-   lista di clienti da soddisfare_. Questo significa che
-   una feature sarà implementata in PostgreSQL solo se ha senso dal punto di
-   vista /tecnico/ e /scientifico/.
+PostgreSQL non è guidato da nessun vendor e di conseguenza _non ha una lista di clienti da soddisfare_. Questo significa che una feature sarà implementata in PostgreSQL solo se ha senso dal punto di vista /tecnico/ e /scientifico/.
 
+#+begin_quote
+PostgreSQL is a *non-commercial, all volunteer, free software project*,
+and as such *there is no formal list of feature requirements*
+required for development.
+We really do follow the mantra of
+letting developers scratch their own itches.
+#+end_quote
 
-    PostgreSQL is a *non-commercial, all volunteer, free software project*,
-    and as such *there is no formal list of feature requirements*
-    required for development.
-    We really do follow the mantra of
-    letting developers scratch their own itches.
-
-Ad esempio, PostgreSQL non supporta i /query-hints/ tanto famosi in altri sistemi
-commerciali: per gli sviluppatori questa funzionalità non ha senso e non è mai stata
-(e mai verrà) implementata.
+Ad esempio, PostgreSQL non supporta i /query-hints/ tanto famosi in altri sistemi commerciali: per gli sviluppatori questa funzionalità non ha senso e non è mai stata (e mai verrà) implementata.
 
 #+begin_quote
 Approccio simile a quello di OpenBSD!
