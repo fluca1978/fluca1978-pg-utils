@@ -93,9 +93,7 @@ Approccio simile a quello di OpenBSD!
 
 *** Per chi è?
 Licenza *BSD* (anche per il logo):
-
-
-#+begin_src
+#+begin_quote
 PostgreSQL Database Management System
 (formerly known as Postgres, then as Postgres95)
 
@@ -107,68 +105,54 @@ Permission to use, copy, modify, and distribute this software and its
 documentation for any purpose, without fee, and without a written agreement
 is hereby granted, provided that the above copyright notice and this
 paragraph and the following two paragraphs appear in all copies.
-#+end_src
+#+end_quote
 
 *** Quanto costa?
-   Il progetto è /Open Source/ ed è /Free/.
+Il progetto è /Open Source/ ed è /Free/.
 
-   Esistono diverse varianti commerciali che si differenziano dalla versione
-   /mainstream/ per funzionalità (es. replica multi-master, query multi-nodo, ecc.)
-   e per un /costo/ che dipende direttamente dal vendor.
+Esistono diverse varianti commerciali che si differenziano dalla versione /mainstream/ per funzionalità (es. replica multi-master, query multi-nodo, ecc.) e per un /costo/ che dipende direttamente dal vendor.
 
-   Molti degli sviluppatori della versione mainstream sono in realtà _anche_ sviluppatori
-   di un qualche vendor.
-
+Molti degli sviluppatori della versione mainstream sono in realtà _anche_ sviluppatori di un qualche vendor.
 *** Qual'era?
-   In PostgreSQL i numeri di versione */erano/* a tre cifre separati da punto:
-   - */release brand/* (es. 7, no-crash, 8 MS Windows portability, 9 Replication)
-   - */year release/*  (da quanti anni si ha questo brand)
-   - */minor release/* (rilasciata circa ogni quattro mesi o in presenza di gravi
-     problemi di sicurezza o consistenza)
+In PostgreSQL i numeri di versione */erano/* a tre cifre separati da punto:
+- */release brand/* (es. 7, no-crash, 8 MS Windows portability, 9 Replication)
+- */year release/*  (da quanti anni si ha questo brand)
+- */minor release/* (rilasciata circa ogni quattro mesi o in presenza di gravi
+  problemi di sicurezza o consistenza)
 
-    - *9.5*.1 # major version 9.5, minor version 1
-      - 9.5.1 compatibile con 9.5.2, 9.5.3, ...
-    - *9.6*.2 # major version 9.6, minor version 2
-      - incompatibile con 9.5.x!
+ - *9.5*.1 # major version 9.5, minor version 1
+   - 9.5.1 compatibile con 9.5.2, 9.5.3, ...
+ - *9.6*.2 # major version 9.6, minor version 2
+   - incompatibile con 9.5.x!
 
-   Le prime due cifre rappresentavano una *major version* e quindi erano segnale di
-   possibile incompatibilità.
+Le prime due cifre rappresentavano una *major version* e quindi erano segnale di possibile incompatibilità.
 
 *** Qual'é?
-   Dalla versione 10 la numerazione è diventata a due sole cifre.
+Dalla versione 10 la numerazione è diventata a due sole cifre.
+La cifra prima del punto rappresenta la /major version/.
+*Questo rappresenta una incompatibilità semantica con il passato*: gli script che facevano affidamento alla versione devono modificare la propria logica!
 
-   La cifra prima del punto rappresenta la /major version/.
+L'unico metodo affidabile è quello di considerare che ogni cifra viene usata con un formato ~printf(2)~ pari a ~%02d~ e che il numero dell'anno da ora in avanti è sempre zero.
 
-   *Questo rappresenta una incompatibilità semantica con il passato*: gli script
-   che facevano affidamento alla versione devono modificare la propria logica!
-
-   L'unico metodo affidabile è quello di considerare che ogni cifra viene
-   usata con un formato ~printf(2)~ pari a ~%02d~ e che il numero
-   dell'anno da ora in avanti è sempre zero.
-
-   | Versione | Major | Minor | Internal |
-   |----------+-------+-------+----------|
-   |    9.5.1 |   9.5 |     1 |   090501 |
-   |    9.6.4 |   9.6 |     4 |   090604 |
-   |----------+-------+-------+----------|
-   |     10.0 |    10 |     0 |   100000 |
-   |     10.1 |    10 |     1 |   100001 |
+| Versione | Major | Minor | Internal |
+|----------+-------+-------+----------|
+|    9.5.1 |   9.5 |     1 |   090501 |
+|    9.6.4 |   9.6 |     4 |   090604 |
+|----------+-------+-------+----------|
+|     10.0 |    10 |     0 |   100000 |
+|     10.1 |    10 |     1 |   100001 |
 
 *** Quanto dura?
-   Ogni /major release/ di PostgreSQL viene manutenuta per *5 anni* dalla data di primo rilascio.
-   Una volta che una release raggiunge la *End Of Life* nessun pacchetto binario sarà piu' rilasciato
-   ma potrebbe essere aggiornato (in retrocompatibilità) l'albero dei sorgenti (a discrezione degli
-   sviluppatori e senza alcuna garanzia).
+Ogni /major release/ di PostgreSQL viene manutenuta per *5 anni* dalla data di primo rilascio. Una volta che una release raggiunge la *End Of Life* nessun pacchetto binario sarà piu' rilasciato ma potrebbe essere aggiornato (in retrocompatibilità) l'albero dei sorgenti (a discrezione degli sviluppatori e senza alcuna garanzia).
+Ecco un esempio delle prossime "scadenze":
 
-   Ecco un esempio delle prossime "scadenze":
-
-| Version | First release date  | 	EOL date       |
-|---------+---------------------+------------------|
-|     9.6 | 	September 2016 	 | September 2021   |
-|     9.5 | 	January 2016 	   | January 2021     |
-|     9.4 | 	December 2014 	  | December 2019    |
-|     9.3 | 	September 2013 	 | September 2018   |
-|     9.2 | 	September 2012 	 | *September 2017* |
+| Ver | Released on    | 	EOL date        |
+|---------+------------+------------------|
+| 9.6 |	September 2016 | September 2021   |
+| 9.5 |	January 2016 	 | January 2021     |
+| 9.4 |	December 2014  | December 2019    |
+| 9.3 |	September 2013 | September 2018   |
+| 9.2 |	September 2012 | *September 2017* |
 
 *** Quanto è?
    E' difficile /spaventare/ una istanza PostgreSQL!
