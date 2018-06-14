@@ -168,56 +168,48 @@ E' difficile /spaventare/ una istanza PostgreSQL!
 | Maximum Indexes per Table	 | Unlimited                            |
 
 *** Chi lo sviluppa?
-   *Chiunque*, anche tu! Non esiste un /benevolent dictator/!
-
-   Tre livelli principali di sviluppatori:
-   1. *core team*: 5 membri storici che si occupano di gestire il ciclo di rilascio e tutte le questioni
-      "spinose" (mancanza di consenso, disciplina, ecc)
-      - Peter Eisentraut
-      - Magnus Hagander
-      - Tom Lane
-      - Bruce Momjian
-      - Dave Page
-   2. *major contributors*: /sviluppatori fidati/ (commit access) che lavorano abitualmente alle funzionalità del
-      progetto
-   3. *contributor*: chiunque fornisca una patch, una proposta, una traduzione, ...
-
-
-   - *hacker emeritus*: chi ha lavorato in passato al progetto con particolare successo
-      (Josh Berkus, Marc G. Fournier, Thomas G. Lockhart, Vadim B. Mikheev, Jan Wieck)
+*Chiunque*, anche tu! Non esiste un /benevolent dictator/!
+Tre livelli principali di sviluppatori:
+1. *core team*: 5 membri storici che si occupano di gestire il ciclo di rilascio e tutte le questioni "spinose" (mancanza di consenso, disciplina, ecc)
+   - Peter Eisentraut
+   - Magnus Hagander
+   - Tom Lane
+   - Bruce Momjian
+   - Dave Page
+2. *major contributors*: /sviluppatori fidati/ (commit access) che lavorano abitualmente alle funzionalità del progetto
+3. *contributor*: chiunque fornisca una patch, una proposta, una traduzione, ...
+- *hacker emeritus*: chi ha lavorato in passato al progetto con particolare successo (Josh Berkus, Marc G. Fournier, Thomas G. Lockhart, Vadim B. Mikheev, Jan Wieck)
 
 *** Come si sviluppa?
-   Si utilizza ~git~ (migrato da CVS intorno al 2009).
+Si utilizza ~git~ (migrato da CVS intorno al 2009).
 
-   #+begin_src sh
-   % git clone git://git.postgresql.org/git/postgresql.git
+#+begin_src sh
+% git clone git://git.postgresql.org/git/postgresql.git
 
-   Cloning into 'postgresql'...
-   ...
-   % du -hs postgresql
-   356M    postgresql
-   % git rev-list --all --count
-   59672
-   #+end_src
+Cloning into 'postgresql'...
+...
+% du -hs postgresql
+356M    postgresql
+% git rev-list --all --count
+59672
+#+end_src
 
-   - Linguaggio di programmazione principale: ~C~, stile BSD (~style(9)~).
-   - Strumenti di sviluppo ben noti: ~gcc~, ~gmake~, ~autoconf~, ecc.
-   - Strumenti (anche Perl) ad-hoc per mantenere il codice: ~pgindent~, ~git_changelog~,
-     ~make_ctags~, ecc.
+- Linguaggio di programmazione principale: ~C~, stile BSD (~style(9)~).
+- Strumenti di sviluppo ben noti: ~gcc~, ~gmake~, ~autoconf~, ecc.
+- Strumenti (anche Perl) ad-hoc per mantenere il codice: ~pgindent~, ~git_changelog~, ~make_ctags~, ecc.
 
 *** Da quanto si sviluppa?
-   Da molto tempo (oltre 30 anni), ma non si torna prima della versione 1.01 di *Postgres95*,
-   ramo di sviluppo 6 del Postgres "attuale":
+Da molto tempo (oltre 30 anni), ma non si torna prima della versione 1.01 di *Postgres95*, ramo di sviluppo 6 del Postgres "attuale":
 
-   #+begin_src sh
-   % git log `git rev-list --max-parents=0 HEAD`
+#+begin_src sh
+% git log `git rev-list --max-parents=0 HEAD`
 
-   commit d31084e9d1118b25fd16580d9d8c2924b5740dff
-   Author: Marc G. Fournier <scrappy@hub.org>
-   Date:   Tue Jul 9 06:22:35 1996 +0000
+commit d31084e9d1118b25fd16580d9d8c2924b5740dff
+Author: Marc G. Fournier <scrappy@hub.org>
+Date:   Tue Jul 9 06:22:35 1996 +0000
 
-       Postgres95 1.01 Distribution - Virgin Sources
-   #+end_src
+    Postgres95 1.01 Distribution - Virgin Sources
+#+end_src
 
 ** Concetti Generali
 *** Terminologia
