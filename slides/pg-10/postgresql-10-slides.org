@@ -271,11 +271,9 @@ sono le principali.
 Il processo principale è denominato *postmaster*; ogni volta che questo riceve una richiesta di connessione si effettua una /fork/ di un processo *postgres* (denominato anche *backend*) delegato a gestire la connessione.
 Una connessione può essere *TCP/IP* oppure su *socket locale*.
 *** Schema a Processi: IPC
-   Siccome ogni processo è /fisicamente/ isolato, ma piu' connessioni possono dover condividere i dati, PostgreSQL
-   utilizza un'area *shared memory* ove mantiene i dati. Tale zona di memoria è visibile a tutti i processi *postgres*.
+Siccome ogni processo è /fisicamente/ isolato, ma piu' connessioni possono dover condividere i dati, PostgreSQL utilizza un'area *shared memory* ove mantiene i dati. Tale zona di memoria è visibile a tutti i processi *postgres*.
 
-   La shared memory viene organizzata in */pagine dati/* che rappresentano la copia in memoria dei dati persistenti su disco.
-   Vi sono una serie di processi di utilità che si occupano di scaricare/caricare i dati dalla /shared memory/ e dal disco.
+La shared memory viene organizzata in */pagine dati/* che rappresentano la copia in memoria dei dati persistenti su disco. Vi sono una serie di processi di utilità che si occupano di scaricare/caricare i dati dalla /shared memory/ e dal disco.
 *** File System
 PostgreSQL si appoggia al *filesystem* per lo stoccaggio dei dati in maniera persistente..
 
