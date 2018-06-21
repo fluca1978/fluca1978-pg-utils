@@ -9934,7 +9934,7 @@ L'ottimizzatore esegue alcuni passaggi fondamentali per comprendere quanto una c
    - nel caso di /uguaglianza/ si controllano i /Most Common Values/:
      + se il valore è fra quelli comuni la selettività è data dalla frequenza del valore;
      + se il valore non è fra quelli comuni si sommano le frequenze dei MCVs che soddisfano la condizione, tale somma è la selettività (lineare);
-   - nel caso di disigueglianza si controlla l'/istogramma/ dei valori, supporti a frequenza costante:
+   - nel caso di disigueglianza si controlla l'/istogramma/ dei valori, supposti a frequenza costante:
      + si cerca di capire in quale/i bucket cade il valore;
      + se cade in un solo bucket si calcola l'andamento lineare: ampiezza del bucket rispetto al numero di bucket totali;
      + se cade in piu' bucket si calcola la percentuale di bucket colpiti.
