@@ -9341,7 +9341,7 @@ La vista speciale ~pg_user_stat_indexes~ fornisce indicazioni sull'utilizzo degl
  evento           | idx_desc                   |        2 |            1 |             1
  evento           | evento_pkey                |        0 |            0 |             0
 #+end_src
-*** Reset delle statisitche
+*** Reset delle statistiche
 Con la funzione speciale ~pg_stats_reset()~ (da eseguire da superutente) le statistiche ~pg_stat_xxxx~ sono azzerate!
 ** EXPLAIN
 *** Introduzione
