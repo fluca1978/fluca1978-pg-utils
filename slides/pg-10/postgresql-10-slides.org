@@ -4741,6 +4741,9 @@ Le funzioni hanno tre livelli di /volatilità/:
 - ~IMMUTABLE~: non modifica il database e ritorna lo stesso valore con gli stessi
   argomenti /sempre/.
 
+/Una funzione ~IMMUTABLE~ non *deve* accedere al database nemmeno in lettura!/
+*Solo le funzioni ~IMMUTABLE~ possono essere usati per costruire indici!*
+
   Esempi: ~random()~ è ~VOLATILE~, ~current_timestamp~ è ~STABLE~,
   ~version()~ è ~IMMUTABLE~.
 
