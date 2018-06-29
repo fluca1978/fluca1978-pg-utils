@@ -4733,19 +4733,14 @@ Non è però possibile impostare il ~search_path~ per eseguire in modo de-qualif
 
 *** Volatilità di una funzione
 Le funzioni hanno tre livelli di /volatilità/:
-- ~VOLATILE~: /default/, modifica il database e può dare risultati diversi
-  anche se inocata con gli stessi argomenti;
-- ~STABLE~: non modifica il database e ritorna lo stesso valore con gli stessi
-  argomenti /per tutte le tuple nello stesso statement/ (è indipendente dal valore
-  delle singole tuple), utile per operatori di confronto (es. negli indici);
-- ~IMMUTABLE~: non modifica il database e ritorna lo stesso valore con gli stessi
-  argomenti /sempre/.
+- ~VOLATILE~: /default/, modifica il database e può dare risultati diversi anche se inocata con gli stessi argomenti;
+- ~STABLE~: non modifica il database e ritorna lo stesso valore con gli stessi argomenti /per tutte le tuple nello stesso statement/ (è indipendente dal valore   delle singole tuple), utile per operatori di confronto (es. negli indici);
+- ~IMMUTABLE~: non modifica il database e ritorna lo stesso valore con gli stessi argomenti /sempre/. In genere sono funzioni matematiche.
 
 /Una funzione ~IMMUTABLE~ non *deve* accedere al database nemmeno in lettura!/
 *Solo le funzioni ~IMMUTABLE~ possono essere usati per costruire indici!*
 
-  Esempi: ~random()~ è ~VOLATILE~, ~current_timestamp~ è ~STABLE~,
-  ~version()~ è ~IMMUTABLE~.
+Alcuni esempi: ~random()~ è ~VOLATILE~, ~now()~ è ~STABLE~, ~version()~ é ~IMMUTABLE~.
 
 *** Security
 Una stored procedure può essere definita in due contesti di sicurezza:
