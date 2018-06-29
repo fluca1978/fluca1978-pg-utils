@@ -9555,7 +9555,7 @@ Ci sono una serie di nodi per le operazioni principali:
 - ~CTEScan~ effettua il join fra una CTE e la query principale;
 - ~Materialize~ crea un recordset in memoria partendo da una porzione di risultati di un nodo;
 - ~Append~ usata con ~UNION ALL~.
-** Statistische Legate agli indici
+** Statistische legate agli indici
 *** Dove sono le statistische?
 Il catalogo ~pg_statistic~ contiene le informazioni statistiche su ogni attributo di ogni tabella, ad sempio:
 #+begin_src sql
