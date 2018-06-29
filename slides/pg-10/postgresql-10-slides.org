@@ -9937,6 +9937,45 @@ L'ottimizzatore esegue alcuni passaggi fondamentali per comprendere quanto una c
      + se cade in un solo bucket si calcola l'andamento lineare: ampiezza del bucket rispetto al numero di bucket totali;
      + se cade in piu' bucket si calcola la percentuale di bucket colpiti.
 
+** Statistiche di correlazione
+*** Introduzione
+A partire dalla versione 10 esiste un comando ~CREATE STATISTICS~ che consente di creare delle statistiche personalizzate sulla correlazione di colonne.
+Ad esempio, supponendo di avere una tabella definita come:
+
+#+begin_src sql
+> CREATE TABLE expenses(
+   day date,
+   year int,
+   ...
+   CHECK( year = EXTRACT( year FROM day ) )
+);
+#+end_src
+
+è possibile creare una statistica di correlazione fra ~day~ e ~year~ il cui valore dipende appunto dalla precedente colonna:
+
+#+begin_src sql
+> CREATE STATISTICS stat_day_year ( dependencies )
+ ON day, year
+ FROM expenses;
+#+end_src
+*** La vista ~pg_statistics_ext~
+La vista speciale ~pg_statistics_ext~ permette di vedere la correlazione creata (una riga per tipologia di statistica) e le colobnne implicate, nonché il rapporto fra i valori:
+
+#+begin_src sql
+> SELECT * FROM pg_statistic_ext;
+
+stxrelid        | 51015
+stxname         | stat_day_year
+stxnamespace    | 2200
+stxowner        | 16384
+stxkeys         | 3 5
+stxkind         | {f}
+stxndistinct    |
+stxdependencies | {"3 => 5": 1.000000}
+#+end_src
+
+*Queste statistiche sono usate per informare il planner della dimensione del result set!*
+
 * Statistiche sullo stato del cluster
 ** Statistics Collector
 *** Introduzione
