@@ -6712,11 +6712,16 @@ In sostanza la prima riga nel /set/ assume il valore di default (0), la riga suc
 
 ** Common Table Expressions
 *** CTE
-Una /Common Table Expression (CTE)/ è una forma speciale di statement SQL (~SELECT~, ~INSERT~, ~UPDATE~, ~DELETE~)
-che viene /attaccato/ mediante una clausola ~WITH~.
+Una /Common Table Expression (CTE)/ è una forma speciale di statement SQL (~SELECT~, ~INSERT~, ~UPDATE~, ~DELETE~) che viene /attaccato/ mediante una clausola ~WITH~. Ogni componente della clausola ~WITH~ è detto /statement ausiliario/ mentre lo statement alla quale la clausola ~WITH~ è agganciato viene detto /top level statement/.
 
-Concettualmente è come definire una tabella temporanea che può essere usata in uno
-statement piu' complesso.
+Concettualmente è come definire una tabella temporanea che può essere usata in uno statement piu' complesso.
+*** CTE: read-only e writable
+Una CTE che non modifichi i dati (ossia usi solo ~SELECT~) è detta /read-only/, mentre una che modifica i dati è detta /writable/.
+*** CTE: esecuzione degli statement ausiliari
+Gli statement ausiliari vengono eseguiti *massimo una volta* per la durata della top level statement.
+In particolare:
+- se sono read-only vengono eseguiti *solo se esplicitamente referenziati*;
+- se sono writable vengono *sempre eseguiti una sola volta, anche se non referenziati*.
 *** CTE SELECT
 #+begin_src sql
 > WITH max_sw AS (
