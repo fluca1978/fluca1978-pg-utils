@@ -4701,6 +4701,8 @@ now             | 2018-02-17 12:05:05.483757+01
 clock_timestamp | 2018-02-17 12:05:14.071801+01
 --                                ^^^^
 #+end_src
+*** Il tempo negli statement
+Esiste la funzione ~statement_timestamp()~ che ritorna l'istante di inizio di ogni statement, quindi un valore costante all'interno dello stesso statement.
 * Stored Procedures & Cursori
 ** FUNCTION
 *** Funzioni
