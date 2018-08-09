@@ -676,8 +676,7 @@ In modo simile alla shell, il prompt di ~psql~ mostra:
 Si esce da ~psql~ con ~\q~.
 
 *** Quale versione del server?
-~psql~ mostra all'avvio la propria versione (client) ma con una query
-è possibile capire anche la versione del server:
+~psql~ mostra all'avvio la propria versione (client) ma con una query è possibile capire anche la versione del server:
 
 #+begin_src SQL
 template1=# SELECT version();
@@ -686,8 +685,27 @@ template1=# SELECT version();
 #+end_src
 
 
-La funzione speciale ~version()~ viene compilata al momento
-del build del pacchetto binario.
+La funzione speciale ~version()~ viene compilata al momento del build del pacchetto binario.
+*** Numeri di versione (usabili)
+La funzione ~version()~ restituisce la stringa identifica del server, ma per essere usata all'interno di script e programmi questa deve essere opportunamente trattata con espressioni regolari. Esistono due variabili particolari, accessibili con ~SHOW~, che consentono di ottenere solo la parta /numerica/ della versione o quella interna:
+
+#+begin_src sql
+testdb=> SELECT version();
+
+ PostgreSQL 11beta2 on x86_64-unknown-freebsd11.1,
+   compiled by FreeBSD clang version 4.0.0 (tags/RELEASE_400/final 297347)
+   (based on LLVM 4.0.0), 64-bit
+
+testdb=> SHOW server_version;
+ server_version
+----------------
+ 11beta2
+
+testdb=> SHOW server_version_num;
+ server_version_num
+--------------------
+ 110000
+#+end_src
 
 *** psql, ruoli, database
 In default ~psql~ cerca di collegarsi a un database che ha lo stesso nome utente dell'utente che esegue il comando stesso, con un ruolo che ha lo stesso nome. In altre parole:
