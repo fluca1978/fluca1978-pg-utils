@@ -11908,6 +11908,39 @@ pgBadger può generare report relativi ai soli errori, per esempio:
 # pgbadger -w /mnt/data1/pgdata/pg_log/postgresql-2018-06-12.log
 #+end_src
 
+** pg_upgrade
+*** pg_updgrade (pg_migrator)
+E' un tool distribuito con PostgreSQL per l'upgrade in-place di una istanza.
+Può funzionare in varie modalità, sostanzialmente effetta un upgrade binario da una versione all'altra.
+
+*Richiede il doppio dello spazio di un cluster* (effettua una copia fisica).
+
+Nella modalità *link* non copia i file ma li collega, quindi non richiede il doppio dello spazio, ma se fallisce distrugge la directory del cluster.
+*** Accorgimenti iniziali
+1. ~pg_upgrade~ deve essere eseguito dalla versione piu' recente
+2. i cluster devono essere spenti
+3. la ~PGDATA~ di destinazione deve esistere
+4. le librerie linkate dinamicamente (es. PL/Java) devono già essere installate sul nodo di destinazione
+5. ~pg_upgrade~ avvierà le due istanze e vi ci si collegarà, quindi è bene configurare una connessione senza passowrd.
+*** Esempio di upgrade
+#+begin_src shell
+% sudo -u postgres
+        pg_upgrade -b /opt/pg11b2/bin
+                   -B /opt/pg11b3/bin
+                   -d /mnt/data1/pgdata
+                   -D /mnt/data1/pgdata11b3
+                   -v
+...
+Upgrade Complete
+----------------
+Optimizer statistics are not transferred by pg_upgrade so,
+once you start the new server, consider running:
+    ./analyze_new_cluster.sh
+
+Running this script will delete the old cluster's data files:
+    ./delete_old_cluster.sh
+
+#+end_src
 * Corruzione dei dati
 *** Page Checksum
 Se il cluster è stato inizializzato opportunamente (opzione ~-k~ di ~initdb~) ogni pagina dati ha associato un /checksum/. Tale checksum viene controllato ogni volta che la pagina dati viene portata da disco nello shared buffer, se il checksum non corrisponde PostgreSQL segnala l'anomalia e si rifiuta di leggere i dati da quella pagina.
