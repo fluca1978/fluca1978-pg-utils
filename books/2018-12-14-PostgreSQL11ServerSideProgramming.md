@@ -8,6 +8,7 @@ Near the end of November, Packt published the book **[PostgreSQL 11 Server Side 
 <center>
 <a href="https://www.packtpub.com/big-data-and-business-intelligence/postgresql-11-server-side-programming-quick-start-guide" >
 <img src="https://dz13w8afd47il.cloudfront.net/sites/default/files/imagecache/ppv4_main_book_cover/B11208.png" alt="PostgreSQL 11 Server Side Programming Book" />
+</a>
 </center>
 <br/>
 <br/>
