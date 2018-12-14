@@ -676,8 +676,7 @@ In modo simile alla shell, il prompt di ~psql~ mostra:
 Si esce da ~psql~ con ~\q~.
 
 *** Quale versione del server?
-~psql~ mostra all'avvio la propria versione (client) ma con una query
-è possibile capire anche la versione del server:
+~psql~ mostra all'avvio la propria versione (client) ma con una query è possibile capire anche la versione del server:
 
 #+begin_src SQL
 template1=# SELECT version();
@@ -686,8 +685,27 @@ template1=# SELECT version();
 #+end_src
 
 
-La funzione speciale ~version()~ viene compilata al momento
-del build del pacchetto binario.
+La funzione speciale ~version()~ viene compilata al momento del build del pacchetto binario.
+*** Numeri di versione (usabili)
+La funzione ~version()~ restituisce la stringa identifica del server, ma per essere usata all'interno di script e programmi questa deve essere opportunamente trattata con espressioni regolari. Esistono due variabili particolari, accessibili con ~SHOW~, che consentono di ottenere solo la parta /numerica/ della versione o quella interna:
+
+#+begin_src sql
+testdb=> SELECT version();
+
+ PostgreSQL 11beta2 on x86_64-unknown-freebsd11.1,
+   compiled by FreeBSD clang version 4.0.0 (tags/RELEASE_400/final 297347)
+   (based on LLVM 4.0.0), 64-bit
+
+testdb=> SHOW server_version;
+ server_version
+----------------
+ 11beta2
+
+testdb=> SHOW server_version_num;
+ server_version_num
+--------------------
+ 110000
+#+end_src
 
 *** psql, ruoli, database
 In default ~psql~ cerca di collegarsi a un database che ha lo stesso nome utente dell'utente che esegue il comando stesso, con un ruolo che ha lo stesso nome. In altre parole:
@@ -4701,6 +4719,8 @@ now             | 2018-02-17 12:05:05.483757+01
 clock_timestamp | 2018-02-17 12:05:14.071801+01
 --                                ^^^^
 #+end_src
+*** Il tempo negli statement
+Esiste la funzione ~statement_timestamp()~ che ritorna l'istante di inizio di ogni statement, quindi un valore costante all'interno dello stesso statement.
 * Stored Procedures & Cursori
 ** FUNCTION
 *** Funzioni
@@ -4733,16 +4753,14 @@ Non è però possibile impostare il ~search_path~ per eseguire in modo de-qualif
 
 *** Volatilità di una funzione
 Le funzioni hanno tre livelli di /volatilità/:
-- ~VOLATILE~: /default/, modifica il database e può dare risultati diversi
-  anche se inocata con gli stessi argomenti;
-- ~STABLE~: non modifica il database e ritorna lo stesso valore con gli stessi
-  argomenti /per tutte le tuple nello stesso statement/ (è indipendente dal valore
-  delle singole tuple), utile per operatori di confronto (es. negli indici);
-- ~IMMUTABLE~: non modifica il database e ritorna lo stesso valore con gli stessi
-  argomenti /sempre/.
+- ~VOLATILE~: /default/, modifica il database e può dare risultati diversi anche se inocata con gli stessi argomenti;
+- ~STABLE~: non modifica il database e ritorna lo stesso valore con gli stessi argomenti /per tutte le tuple nello stesso statement/ (è indipendente dal valore   delle singole tuple), utile per operatori di confronto (es. negli indici);
+- ~IMMUTABLE~: non modifica il database e ritorna lo stesso valore con gli stessi argomenti /sempre/. In genere sono funzioni matematiche.
 
-  Esempi: ~random()~ è ~VOLATILE~, ~current_timestamp~ è ~STABLE~,
-  ~version()~ è ~IMMUTABLE~.
+/Una funzione ~IMMUTABLE~ non *deve* accedere al database nemmeno in lettura!/
+*Solo le funzioni ~IMMUTABLE~ possono essere usati per costruire indici!*
+
+Alcuni esempi: ~random()~ è ~VOLATILE~, ~now()~ è ~STABLE~, ~version()~ é ~IMMUTABLE~.
 
 *** Security
 Una stored procedure può essere definita in due contesti di sicurezza:
@@ -6714,11 +6732,16 @@ In sostanza la prima riga nel /set/ assume il valore di default (0), la riga suc
 
 ** Common Table Expressions
 *** CTE
-Una /Common Table Expression (CTE)/ è una forma speciale di statement SQL (~SELECT~, ~INSERT~, ~UPDATE~, ~DELETE~)
-che viene /attaccato/ mediante una clausola ~WITH~.
+Una /Common Table Expression (CTE)/ è una forma speciale di statement SQL (~SELECT~, ~INSERT~, ~UPDATE~, ~DELETE~) che viene /attaccato/ mediante una clausola ~WITH~. Ogni componente della clausola ~WITH~ è detto /statement ausiliario/ mentre lo statement alla quale la clausola ~WITH~ è agganciato viene detto /top level statement/.
 
-Concettualmente è come definire una tabella temporanea che può essere usata in uno
-statement piu' complesso.
+Concettualmente è come definire una tabella temporanea che può essere usata in uno statement piu' complesso.
+*** CTE: read-only e writable
+Una CTE che non modifichi i dati (ossia usi solo ~SELECT~) è detta /read-only/, mentre una che modifica i dati è detta /writable/.
+*** CTE: esecuzione degli statement ausiliari
+Gli statement ausiliari vengono eseguiti *massimo una volta* per la durata della top level statement.
+In particolare:
+- se sono read-only vengono eseguiti *solo se esplicitamente referenziati*;
+- se sono writable vengono *sempre eseguiti una sola volta, anche se non referenziati*.
 *** CTE SELECT
 #+begin_src sql
 > WITH max_sw AS (
@@ -9557,7 +9580,7 @@ Ci sono una serie di nodi per le operazioni principali:
 - ~CTEScan~ effettua il join fra una CTE e la query principale;
 - ~Materialize~ crea un recordset in memoria partendo da una porzione di risultati di un nodo;
 - ~Append~ usata con ~UNION ALL~.
-** Statistische Legate agli indici
+** Statistische legate agli indici
 *** Dove sono le statistische?
 Il catalogo ~pg_statistic~ contiene le informazioni statistiche su ogni attributo di ogni tabella, ad sempio:
 #+begin_src sql
@@ -9938,6 +9961,45 @@ L'ottimizzatore esegue alcuni passaggi fondamentali per comprendere quanto una c
      + si cerca di capire in quale/i bucket cade il valore;
      + se cade in un solo bucket si calcola l'andamento lineare: ampiezza del bucket rispetto al numero di bucket totali;
      + se cade in piu' bucket si calcola la percentuale di bucket colpiti.
+
+** Statistiche di correlazione
+*** Introduzione
+A partire dalla versione 10 esiste un comando ~CREATE STATISTICS~ che consente di creare delle statistiche personalizzate sulla correlazione di colonne.
+Ad esempio, supponendo di avere una tabella definita come:
+
+#+begin_src sql
+> CREATE TABLE expenses(
+   day date,
+   year int,
+   ...
+   CHECK( year = EXTRACT( year FROM day ) )
+);
+#+end_src
+
+è possibile creare una statistica di correlazione fra ~day~ e ~year~ il cui valore dipende appunto dalla precedente colonna:
+
+#+begin_src sql
+> CREATE STATISTICS stat_day_year ( dependencies )
+ ON day, year
+ FROM expenses;
+#+end_src
+*** La vista ~pg_statistics_ext~
+La vista speciale ~pg_statistics_ext~ permette di vedere la correlazione creata (una riga per tipologia di statistica) e le colobnne implicate, nonché il rapporto fra i valori:
+
+#+begin_src sql
+> SELECT * FROM pg_statistic_ext;
+
+stxrelid        | 51015
+stxname         | stat_day_year
+stxnamespace    | 2200
+stxowner        | 16384
+stxkeys         | 3 5
+stxkind         | {f}
+stxndistinct    |
+stxdependencies | {"3 => 5": 1.000000}
+#+end_src
+
+*Queste statistiche sono usate per informare il planner della dimensione del result set!*
 
 * Statistiche sullo stato del cluster
 ** Statistics Collector
@@ -11846,6 +11908,39 @@ pgBadger può generare report relativi ai soli errori, per esempio:
 # pgbadger -w /mnt/data1/pgdata/pg_log/postgresql-2018-06-12.log
 #+end_src
 
+** pg_upgrade
+*** pg_updgrade (pg_migrator)
+E' un tool distribuito con PostgreSQL per l'upgrade in-place di una istanza.
+Può funzionare in varie modalità, sostanzialmente effetta un upgrade binario da una versione all'altra.
+
+*Richiede il doppio dello spazio di un cluster* (effettua una copia fisica).
+
+Nella modalità *link* non copia i file ma li collega, quindi non richiede il doppio dello spazio, ma se fallisce distrugge la directory del cluster.
+*** Accorgimenti iniziali
+1. ~pg_upgrade~ deve essere eseguito dalla versione piu' recente
+2. i cluster devono essere spenti
+3. la ~PGDATA~ di destinazione deve esistere
+4. le librerie linkate dinamicamente (es. PL/Java) devono già essere installate sul nodo di destinazione
+5. ~pg_upgrade~ avvierà le due istanze e vi ci si collegarà, quindi è bene configurare una connessione senza passowrd.
+*** Esempio di upgrade
+#+begin_src shell
+% sudo -u postgres
+        pg_upgrade -b /opt/pg11b2/bin
+                   -B /opt/pg11b3/bin
+                   -d /mnt/data1/pgdata
+                   -D /mnt/data1/pgdata11b3
+                   -v
+...
+Upgrade Complete
+----------------
+Optimizer statistics are not transferred by pg_upgrade so,
+once you start the new server, consider running:
+    ./analyze_new_cluster.sh
+
+Running this script will delete the old cluster's data files:
+    ./delete_old_cluster.sh
+
+#+end_src
 * Corruzione dei dati
 *** Page Checksum
 Se il cluster è stato inizializzato opportunamente (opzione ~-k~ di ~initdb~) ogni pagina dati ha associato un /checksum/. Tale checksum viene controllato ogni volta che la pagina dati viene portata da disco nello shared buffer, se il checksum non corrisponde PostgreSQL segnala l'anomalia e si rifiuta di leggere i dati da quella pagina.
