@@ -1,0 +1,189 @@
+
+
+* Installing ~pgenv~
+The ~pgenv~ program is a single shell script and requires some tipycal Unix command line tools. The fastest way to install ~pgenv~ is to clone the ~git~ repository as follows:
+
+#+begin_src shell
+% git clone https://github.com/theory/pgenv $HOME/.pgenv
+...
+% export PATH=$HOME/.pgenv/bin:$PATH
+% which pgenv
+/home/luca/.pgenv/bin/pgenv
+#+end_src
+
+In the above example the ~pgenv~ stuff is cloned into an hidden directory in the user's home directory, more specifically into the ~.pgenv~ directory. Then, the folder is added to the ~PATH~ variable so that the ~pgenv~ executable can be found and used easily.
+If everything was fine, you can now launch the ~pgenv~ command directly and receive an help output screen as follows:
+
+#+begin_src shell
+% pgenv
+Usage: pgenv <command> [<args>]
+The pgenv commands are:
+    use        Set and start the current PostgreSQL version
+    clear      Stop and unset the current PostgreSQL version
+    start      Start the current PostgreSQL server
+    stop       Stop the current PostgreSQL server
+    restart    Restart the current PostgreSQL server
+    build      Build a specific version of PostgreSQL
+    remove     Remove a specific version of PostgreSQL
+    version    Show the current PostgreSQL version
+    current    Same as 'version'
+    versions   List all PostgreSQL versions available to pgenv
+    help       Show this usage statement and command summary
+    available  Show which versions can be downloaded
+    check      Check all program dependencies
+    config     View, edit, delete the program configuration
+For full documentation, see: https://github.com/theory/pgenv#readme
+#+end_src
+
+Please note that, in order to make the ~pgenv~ executable usable on every session you need to add permanently the ~bin~ subfolder to the ~PATH~ variable, for instance adding it to your ~.profile~ or analogous startup file.
+
+
+*** Dependencies
+The shell script has been designed for a ~bash(1)~ shell, and therefore the first dependency for running ~pgenv~ is to install such shell, either via the ports tree or the package system:
+
+#+begin_src shell
+# pkg install bash
+... or ...
+# cd /usr/ports/shells/bash && make install clean
+#+end_src
+
+With ~bash(1)~ being the main dependency, ~pgenv~ requires also the following main commands to be installed within the system:
+- ~curl(1)~, ~tar(1)~ and ~patch(1)~ in order to download, extract and adjust a PostgreSQL source tree;
+- ~make(1)~ in order to build a PostgreSQL source tree;
+- ~sed(1)~, ~tr(1)~ and ~sort(1)~ to manipulate textual data.
+
+Luckily, ~pgenv~ includes a self-check command named ~check~ that allows you to quickly see if it can run seamlessy:
+
+#+begin_src shell
+% pgenv check
+[OK] make:      /usr/bin/make
+[OK] curl:      /usr/local/bin/curl
+[OK] patch:     /usr/bin/patch
+[OK] tar:       /usr/bin/tar
+[OK] sed:       /usr/bin/sed
+[OK] sort:      /usr/bin/sort
+[OK] tr:        /usr/bin/tr
+#+end_src
+
+In the case any of the command line tools is not found, a ~KO~ line will be printed and you will be able to fix the problem. Please consider that all the dependencies are required to run ~pgenv~ commands.
+
+
+*** Anatomy of a ~pgenv~ Installation
+The directory on which ~pgenv~ is installed has a pretty simple layout:
+- a ~bin~ directory that contains only the ~pgenv~ shell script;
+- a ~patch~ directory that contains other folders, named after either a PostgreSQL version number (e.g., ~8.0~) and an ~index~ directory that contains text files that drive the patching process (described later on).
+
+The ~src~ directory, created once a first build process is launched, contains the source tree for a building/built PostgreSQL version.
+Every ~pgsql-~ directory contains a single cluster version, so for instance ~pgsql-10.7~ contains all the executables and data directory for the PostgreSQL 10.7 version.
+
+* ~pgenv~ Example Workflow
+
+** Step 1: Search Among the Available PostgreSQL Versions
+The first step before building and running a PostgreSQL instance is to determine which version you need. The ~available~ command lists all the available PostgreSQL source distributions, including current (unstable) development. Please consider that the output is really verbose:
+
+#+begin_src shell
+% pgenv available
+      Available PostgreSQL Versions
+========================================================
+               PostgreSQL 1
+------------------------------------------------
+1.08    1.09
+
+              PostgreSQL 6
+------------------------------------------------
+6.0     6.1     6.2     6.3     6.4     6.5
+
+...
+
+             PostgreSQL 9.6
+------------------------------------------------
+9.6.0   9.6.1   9.6.2   9.6.3   9.6.4   9.6.5
+9.6.6   9.6.7   9.6.8   9.6.9   9.6.10  9.6.11
+9.6.12
+
+            PostgreSQL 10
+------------------------------------------------
+10.0    10.1    10.2    10.3    10.4    10.5
+10.6    10.7
+
+           PostgreSQL 11
+------------------------------------------------
+11.0    11.1    11.2
+#+end_src
+
+As you can see, the command provides all the publicly available PostgreSQL source trees and versions, starting from the very old first version, to the latest one. Of course, an ancient available version could not compile on modern systems, but ~pgenv~ allows you to download and try!
+
+In the case you are interested in a specific *major version* and want to see which *minor versions* are available, you can narrow down the command output by specifying the major version numbers you desire to inspect. For instance, to see only ~9.6~ and ~10~ versions, pass the numbers to the ~available~ command:
+
+#+begin_src shell
+% pgenv available 9.6 10
+        Available PostgreSQL Versions
+========================================================
+               PostgreSQL 9.6
+------------------------------------------------
+9.6.0   9.6.1   9.6.2   9.6.3   9.6.4   9.6.5
+9.6.6   9.6.7   9.6.8   9.6.9   9.6.10  9.6.11
+9.6.12
+
+              PostgreSQL 10
+------------------------------------------------
+10.0    10.1    10.2    10.3    10.4    10.5
+10.6    10.7
+#+end_src
+
+One you have chosen the version you need, you can proceed to the installation of such version.
+
+** Step 2: Installing a Specific Version
+
+Suppose you want to install the ~10.7~ version. The ~build~ command is what you need to launch, and such command accepts the specific PostgreSQL version you want to install.
+
+#+begin_src shell
+% pgenv build 10.7
+
+...
+
+     WARNING: no configuration file found for version 10.7
+     HINT: if you wish to customize the build process please
+     stop the execution within 5 seconds (CTRL-c) and run
+          pgenv config write 10.7 && pgenv config edit 10.7
+     adjust 'configure' and 'make' options and flags and run again
+          pgenv build 10.7
+...
+PostgreSQL, contrib, and documentation installation complete.
+pgenv configuration written to file /home/luca/.pgenv/.pgenv.10.7.conf
+PostgreSQL 10.7 built
+#+end_src
+
+As you can see, the command reminds you that no configuration file has been found for such version of PostgreSQL. A configuration file allows you to instrument the build phase, and it will be explained later on. In any case, within a few seconds, the build proceeds.
+
+The command displays a lot of verbose output from the build phase, and such output can be used in the case the build does not succeed. Depending on the machine you are running on and its current workload, the build can require several minutes, so take a coffee.
+
+Once the installation is completed, the program prints a message saying that the specified version has been built (in the above example ~PostgreSQL 10.7 built~), and that a configuration file has been written.
+
+** Step 3: Inspect the Installed Versions
+The ~versions~ command provides a list of installed clusters. Since we have installed only a single version, a single line is printed:
+
+#+begin_src shell
+% pgenv versions
+    10.7      pgsql-10.7
+#+end_src
+
+The above output specifies that the version ~10.7~ has been installed and that it is under the relative folder ~pgsql-10.7~. Such folder is contained into the ~pgenv~ main directory, and you can inspect it:
+
+#+begin_src shell
+% ls -l ~/.pgenv
+total 40
+-rw-r--r--  1 luca  luca   1081 Feb 18 18:48 LICENSE.md
+-rw-r--r--  1 luca  luca  16862 Feb 18 18:48 README.md
+drwxr-xr-x  2 luca  luca    512 Feb 18 18:48 bin
+drwxr-xr-x  4 luca  luca    512 Feb 18 18:48 patch
+drwxr-xr-x  6 luca  luca    512 Feb 18 19:02 pgsql-10.7
+drwxr-xr-x  3 luca  luca    512 Feb 18 18:58 src
+#+end_src
+
+* Configuration and Patching
+** TODO Configuration
+** TODO Pacthing
+
+* References
+- ~pgenv~ Github Repository, available at <https://github.com/theory/pgenv/>
