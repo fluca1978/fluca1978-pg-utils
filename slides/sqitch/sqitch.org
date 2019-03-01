@@ -1,0 +1,250 @@
+#+TITLE:     sqitch
+#+AUTHOR:    ing. Luca Ferrari, PhD
+#+EMAIL:     fluca1978@gmail.com
+#+DATE:      <2019-03-01 ven>
+#+LANGUAGE:  it
+
+#+OPTIONS:   H:3 num:nil toc:nil
+#+OPTIONS:   TeX:t LaTeX:t skip:nil d:nil todo:t pri:nil tags:not-in-toc
+#+INFOJS_OPT: view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+EXPORT_SELECT_TAGS: export
+#+EXPORT_EXCLUDE_TAGS: noexport
+#+LINK_UP:
+#+LINK_HOME:
+
+#+startup: beamer
+#+LaTeX_CLASS: beamer
+#+latex_header: \mode<beamer>{\usetheme{magpie}}
+
+
+#+BEAMER_HEADER: \subtitle{gestione delle modifiche}
+
+#+BEAMER_HEADER: \institute[fluca1978]{fluca1978\\\url{https://fluca1978.github.io}}
+#+BEAMER_FRAME_LEVEL: 1
+
+
+
+#+LATEX_HEADER: \RequirePackage{fancyvrb}
+#+LATEX_HEADER: \DefineVerbatimEnvironment{verbatim}{Verbatim}{fontsize=\scriptsize}
+
+
+* Licenza
+*** Attribution-NonCommercial-ShareAlike 4.0
+This work is licensed under the *Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License*.
+To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/ or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
+
+* Installazione
+** Installazione dai sorgenti
+*** Prerequisiti Perl
+Occorrono ~cpanm~ e ~Dist::Zilla~
+#+begin_src shell
+% sudo cpan install App::cpanminus # se necessario
+% cpanm Dist::Zilla                # se necessario
+% cpanm DBD::Pg                    # and friends...
+#+end_src
+
+/Occorrono anche le GNU ~gettext~!/
+
+*** Installazione dai sorgenti
+*Esistono anche pacchetti binari per molti sistemi operativi!*
+
+#+begin_src shell
+% fetch https://github.com/sqitchers/sqitch/tarball/master -o sqitch.tar.gz
+...
+% tar xzvf sqitch.tar.gz
+...
+% cd sqitchers-sqitch-*
+% dzil authordeps --missing | cpanm
+...
+% dzil listdeps   --missing | cpanm
+...
+% dzil install
+...
+Successfully installed App-Sqitch-0.9999
+#+end_src
+*** Test installazione funzionante
+
+#+begin_src shell
+% which sqitch
+/home/luca/perl5/bin/sqitch
+
+% sqitch help
+Usage
+    sqitch [--etc-path | --help | --man | --version]
+    sqitch <command> [--chdir <path>] [--no-pager] [--quiet] [--verbose]
+...
+#+end_src
+*** Configurazione minimale
+
+#+begin_src shell
+% sqitch config --user engine.pg.client $(which psql)
+% sqitch config --user user.name  "$(git config user.name)"
+% sqitch config --user user.email "$(git config user.email)"
+#+end_src
+* Utilizzo
+** Inizializzazione di un progetto
+
+Occorre inizializzare ~sqitch~ con un nome di progetto e un URI (opzionale ma consigliato).
+
+#+begin_src shell
+% sqitch init testdb \
+         --uri https://github.com/fluca1978/fluca1978-pg-utils \
+         --engine pg
+
+Created sqitch.conf
+Created sqitch.plan
+Created deploy/
+Created revert/
+Created verify/
+#+end_src
+
+** Inizializzazione di un progetto (2)
+/perché ovviamente si usa un sistema di controllo delle versioni!/
+
+#+begin_src shell
+% git add .  # e magari anche `git init .` se necessario
+% git commit -m "Sqitch setup for testdb"
+#+end_src
+** Anatomia di una directory di progetto
+La cartella di progetto contiene due file di configurazione e tre directory:
+- ~sqitch.conf~ configurazione di questo progetto;
+- ~sqitch.plan~ file dei piani di esecuzione;
+- ~deploy~ directory che conterrà gli script di aggiornamento;
+- ~revert~ directory che conterrà gli script di rollback;
+- ~verify~ directory che conterrà gli script di test.
+** Target
+Un /target/ rappresenta un punto verso il quale operare, in parole povere è il database su cui agire.
+
+E' possibile assegnare un nome mnemonico ad un target, così da fare riferimento sempre al suo nome semplice invece che all'URI del database.
+
+Si possono avere target multipli (paragone con ~git remote~).
+
+#+begin_src shell
+% sqitch target add testdb db:pg:testdb
+#+end_src
+** Il file ~sqitch.conf~
+E' un file *di tipo ~ini~* che contiene le proprietà del progetto quali il tipo di connessione, l'endpoint database, ecc.
+** Il file ~sqitch.plan~
+E' un file di testo che contiene, *una riga alla volta* le modifiche da applicare al database.
+** Inserire una nuova modifica
+*** Creazione della modifica per creare una nuova tabella
+Supponiamo di voler aggiungere la modifica denominata /"people"/ che aggiungerà una tabella per anagrafica personale.
+
+#+begin_src shell
+% sqitch add people -n "Creazione tabella personale"
+
+Created deploy/people.sql
+Created revert/people.sql
+Created verify/people.sql
+Added "people" to sqitch.plan
+#+end_src
+
+*** Script di deploy
+
+#+begin_src shell
+% cat deploy/people.sql
+-- Deploy testdb:people to pg
+BEGIN;
+CREATE TABLE persona(
+pk integer generated always as identity
+, nome text
+, cognome text
+, codice_fiscale varchar(16)
+);
+COMMIT;
+#+end_src
+*** Script di revert
+#+begin_src shell
+% cat revert/people.sql
+-- Revert testdb:people from pg
+BEGIN;
+DROP TABLE persona;
+COMMIT;
+#+end_src
+*** Script di verifica
+/... in seguito!/
+*** Deploy!
+
+Indicare il *nome del target* su cui fare il deploy.
+
+#+begin_src shell
+% sqitch deploy testdb
+Adding registry tables to testdb
+Deploying changes to testdb
++ people .. ok
+#+end_src
+
+*** Azz...mi sono sbagliato!
+
+L'operazione di ~revert~ consente di tornare indietro.
+
+*ATTENZIONE: senza una modifica a cui tornare si annulla tutta la storia!*
+
+#+begin_src shell
+% sqitch revert testdb
+Revert all changes from testdb? [Yes]
+- people .. ok
+#+end_src
+*** Ok, ricominciamo
+Aggiungiamo una nuova modifica che si basa su ~people~.
+
+#+begin_src shell
+% sqitch add people_improved -n "Aggiungo altre colonne all'anagrafica personale"
+
+Created deploy/people_improved.sql
+Created revert/people_improved.sql
+Created verify/people_improved.sql
+Added "people_improved" to sqitch.plan
+#+end_src
+
+*** Script per la seconda modifica
+#+begin_src shell
+% cat deploy/people_improved.sql
+
+BEGIN;
+ALTER TABLE persona ADD COLUMN  data_nascita DATE;
+ALTER TABLE persona ADD COLUMN sesso char(1) DEFAULT 'M';
+ALTER TABLE persona ADD CONSTRAINT check_sesso CHECK( sesso IN ('M', 'F') );
+COMMIT;
+#+end_src
+
+#+begin_src shell
+% cat revert/people_improved.sql
+BEGIN;
+ALTER TABLE persona DROP COLUMN sesso;
+ALTER TABLE persona DROP COLUMN data_nascita;
+COMMIT;
+#+end_src
+
+*** Secondo ~deploy~
+Siccome è stato fatto un ~revert~ globale, ora vengono applicate le due modifiche in sequenza:
+
+#+begin_src shell
+% sqitch deploy testdb
+
+Deploying changes to testdb
+ + people ........... ok
+ + people_improved .. ok
+#+end_src
+*** Secondo ~revert~
+Il comando ~revert~ consente di tornare indietro alla modifica specificata (inclusiva).
+
+In questo caso viene rimossa la modifica ~people_improved~ e si torna alla stato identico a ~sqitch deploy people~.
+
+#+begin_src shell
+% sqitch revert testdb people_improved
+No changes deployed since: "people_improved"
+miguel% sqitch revert testdb people
+Revert changes to people from testdb? [Yes]
+  - people_improved .. ok
+#+end_src
+*** Vedere la storia
+Il comando ~log~ consente di visualizzare le modifiche applicate al database:
+
+#+begin_src shell
+% sqitch log testdb --color never --format oneline
+On database testdb
+aa595f4f4385 revert testdb:people_improved Aggiungo altre colonne all'anagrafica personale
+aa595f4f4385 deploy testdb:people_improved Aggiungo altre colonne all'anagrafica personale
+4636de37d2ab deploy testdb:people Creazione tabella personale
+#+end_src
