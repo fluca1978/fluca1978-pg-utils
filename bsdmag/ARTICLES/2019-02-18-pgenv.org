@@ -1,4 +1,25 @@
+#+TITLE:     Managing Multiple PostgreSQL Installations with pgenv
+#+AUTHOR:    ing. Luca Ferrari, PhD
+#+EMAIL:     fluca1978@gmail.com
+#+OPTIONS:   H:3 num:nil toc:nil
 
+*** What you will learn
+- what ~pgenv~ is and how it can help you manage multiple PostgreSQL versions;
+- how to configure each installed version of PostgreSQL via ~pgenv~;
+- how you can specify /aggressive/ patching during the build phase.
+
+*** What you need to know
+- how to use general command line tools, shell and ~git~;
+- what PostgreSQL is, how to basically manage a running instance.
+
+
+* Introduction
+~pgenv~ is a little but useful project released by David Wheeler (aka ~theory~). It allows you to manage several PostgreSQL installations on a single machine, allowing you to /switch/ from one version to another. The aim of ~pgenv~ is not to provide an enterprise level manager for PostgreSQL instances, nor that of letting you running parallel instances at once. The ~pgenv~ aim is to ease and encourage the ease of use and testing of different PostgreSQL versions, so that you can build a /test lab/ in minutes and test your application or workload against different versions of the world's most advanced Open Source database.
+~pgenv~ is also used and suggested as a way to test compability for another important project: ~pgTAP~, the testing suite for PostgreSQL databases.
+
+~pgenv~ belongs to the so called *binary managers* programs: applications that allows you to install different /binary/ versions of executables (in this case of PostgreSQL executables) among which you can choose which one to run at a specific time. A binary manager I've written about, for Perl 5, is ~perlbrew~ (see BSD Magazine Volume 12, n.01)
+
+In this article you will see how to use and interact with ~pgenv~, main concepts behind the configuration and patching process, as well as a typical workflow. ~pgenv~ can run on pretty much any Unix like operating system, and in this article a FreeBSD machine will be used. However, ~pgenv~ can run on top of Mac OSX as well as Linux.
 
 * Installing ~pgenv~
 The ~pgenv~ program is a single shell script and requires some tipycal Unix command line tools. The fastest way to install ~pgenv~ is to clone the ~git~ repository as follows:
@@ -76,6 +97,8 @@ The directory on which ~pgenv~ is installed has a pretty simple layout:
 The ~src~ directory, created once a first build process is launched, contains the source tree for a building/built PostgreSQL version.
 Every ~pgsql-~ directory contains a single cluster version, so for instance ~pgsql-10.7~ contains all the executables and data directory for the PostgreSQL 10.7 version.
 
+The directory on which ~pgenv~ and the clusters resides is named ~PGENV_ROOT~. You can alter the location to whatever you want by setting such variable in your shell session, allowing therefore multiple ~pgenv~ installations.
+
 * ~pgenv~ Example Workflow
 
 ** Step 1: Search Among the Available PostgreSQL Versions
@@ -134,7 +157,6 @@ In the case you are interested in a specific *major version* and want to see whi
 One you have chosen the version you need, you can proceed to the installation of such version.
 
 ** Step 2: Installing a Specific Version
-
 Suppose you want to install the ~10.7~ version. The ~build~ command is what you need to launch, and such command accepts the specific PostgreSQL version you want to install.
 
 #+begin_src shell
@@ -181,9 +203,355 @@ drwxr-xr-x  6 luca  luca    512 Feb 18 19:02 pgsql-10.7
 drwxr-xr-x  3 luca  luca    512 Feb 18 18:58 src
 #+end_src
 
+** Step 4: Use a PostgreSQL Version
+
+Once the version of PostgreSQL has been installed, you can use it. The ~use~ command allows you to *switch to* the specified version of PostgreSQL and start the cluster. In the case this is the first start ever, ~pgenv~ will set up a data directory for you (~PGDATA~) so that the new cluster version will have its own data space.
+
+As an example, in order to start the ~10.7~ freshly installed version, you have to:
+
+#+begin_src shell
+% pgenv use 10.7
+The files belonging to this database system will be owned by user "luca".
+This user must also own the server process.
+The database cluster will be initialized with locale "en_US.UTF-8".
+The default text search configuration will be set to "english".
+Data page checksums are disabled.
+creating directory /home/luca/.pgenv/pgsql/data ... ok
+creating subdirectories ... ok
+selecting default max_connections ... 100
+selecting default shared_buffers ... 128MB
+selecting dynamic shared memory implementation ... posix
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+syncing data to disk ... ok
+WARNING: enabling "trust" authentication for local connections
+You can change this by editing pg_hba.conf or using the option -A, or
+--auth-local and --auth-host, the next time you run initdb.
+Success. You can now start the database server using:
+/home/luca/.pgenv/pgsql/bin/pg_ctl -D /home/luca/.pgenv/pgsql/data -l logfile start
+waiting for server to start.... done
+server started
+PostgreSQL 10.7 started
+Logging to /home/luca/.pgenv/pgsql/data/server.log
+#+end_src
+
+As you can see, much of the output from the ~use~ command is coming out from the ~initdb~ PostgreSQL initialization command. Such command is, of course, run once at the first cluster startup in order to create the ~PGDATA~ directory (in the above example ~/home/luca/.pgenv/pgsql/data~). Then, the cluster is started and the log is set to the file ~server.log~ within the data directory.
+
+If you inspect the ~pgenv~ directory right now, you will see a new directory has appeared: ~pgsql~. The ~pgsql~ directory holds a link to the currently in-use PostgreSQL instance (and consequently the ~PGDATA~ directory for each instance):
+
+#+begin_src shell
+% ls -l ~/.pgenv
+total 40
+-rw-r--r--  1 luca  luca   1081 Feb 18 18:48 LICENSE.md
+-rw-r--r--  1 luca  luca  16862 Feb 18 18:48 README.md
+drwxr-xr-x  2 luca  luca    512 Feb 18 18:48 bin
+drwxr-xr-x  4 luca  luca    512 Feb 18 18:48 patch
+lrwxr-xr-x  1 luca  luca     10 Feb 19 19:15 pgsql -> pgsql-10.7
+drwxr-xr-x  7 luca  luca    512 Feb 19 19:15 pgsql-10.7
+drwxr-xr-x  3 luca  luca    512 Feb 18 18:58 src
+#+end_src
+
+Also, if you ask ~pgenv~ for the installed versions, the output will emphasize that the ~10.7~ version is currently in use and the row will be marked with an asterisk:
+
+#+begin_src shell
+% pgenv versions
+    *   10.7      pgsql-10.7
+#+end_src
+
+Please note that a version *in use* could also be stopped: in other words being *in use* does not mean that the cluster is effectively running, simply that it is the version other commands will operate onto.
+
+For instance, you can stop and start again the in-use cluster with the commands ~stop~ and ~start~:
+
+#+begin_src shell
+% pgenv stop
+waiting for server to shut down.... done
+server stopped
+PostgreSQL 10.7 stopped
+
+% pgenv start
+waiting for server to start.... done
+server started
+PostgreSQL 10.7 started
+Logging to /home/luca/.pgenv/pgsql/data/server.log
+#+end_src
+
+Note that none of the above ~start~ and ~stop~ commands require a version number: ~pgenv~ already knows that the current in-use version is ~10.7~ from the ~use~ command issued before. Also note that the ~start~ command does not create the ~PGDATA~ again, preserving thus the data you already put in the database.
+
+** Step 5: Install Other Versions
+
+Having a single version of PostgreSQL does not provide any advantage over a *manual* approach. The force of ~pgenv~ resides in the capability of installing multiple versions; it is therefore possible to iterate steps from 1 to 3 in order to install other versions. Let's assume you want to assume version 11.2:
+
+#+begin_src shell
+% pgenv build 11.2
+...
+PostgreSQL, contrib, and documentation installation complete.
+pgenv configuration written to file /home/luca/.pgenv/.pgenv.11.2.conf
+PostgreSQL 11.2 built
+#+end_src
+
+Once the build is succesfull, you can see the new version listed among the installed versions:
+
+#+begin_src shell
+% pgenv versions
+    *   10.7      pgsql-10.7
+        11.2      pgsql-11.2
+#+end_src
+
+Note that the default version, that is the version in use, is still ~10.7~, since a ~build~ command does not imply an automatic switch to the new version.
+
+** Step 6: Juggle Among Versions
+If you are diligent and want to switch from a version to another, you have to ~stop~ the current version and then ~use~ the new one. That's a little annoying and in fact ~pgenv~ commands have been designed to be smart enough to figure out what is required to be done for you: a single ~use~ command will stop any version is runnign and switch to the specified one, starting it and initializing if needed as already shown.
+Therefore, switching from ~10.7~ to ~11.2~ is as simple as:
+
+#+begin_src shell
+% pgenv use 11.2
+waiting for server to shut down.... done
+server stopped
+...
+waiting for server to start.... done
+server started
+PostgreSQL 11.2 started
+Logging to /home/luca/.pgenv/pgsql/data/server.log
+#+end_src
+
+As you can see, the ~use~ commands stops the currently running instance (if any), and then starts the selected one. You can inspect the switch by ~versions~ command and observing the link from the ~pgsql~ directory that changed from ~pgsql-10.7~ to ~pgsql-11.2~:
+
+#+begin_src shell
+% pgenv versions
+       10.7      pgsql-10.7
+   *   11.2      pgsql-11.2
+
+% ls -l ~/.pgenv/pgsql
+lrwxr-xr-x  1 luca  luca  10 Feb 19 19:30 /home/luca/.pgenv/pgsql -> pgsql-11.2
+#+end_src
+
+** Miscellaneous Commands
+~pgenv~ does include a lot of commands that can ease the management of the clusters. You have already seen ~versions~ in action: it provides a list of installed versions and marks with an asterisk the currently *in-use* version. The ~version~ (mind the missing 's') and its alias ~current~ shows only the *in-use* version, makign a lot easier for an external program to know which version is in use:
+
+#+begin_src shell
+% pgenv current
+11.2
+
+% pgenv version
+11.2
+#+end_src
+
+Both command works the same and display only the numerical version of the cluster in use, and this makes a lot easier for an external program to parse the version the cluster is using.
+
+If you don't want to accidentally start or work on any version, you can ~clear~ the pgenv working directory. The ~clear~ command stops the running cluster, if any, and removes the link from the ~pgsql~ directory to the cluster version. This prevents any other command to work on the current cluster:
+
+#+begin_src shell
+% pgenv clear
+waiting for server to shut down.... done
+server stopped
+PostgreSQL  stopped
+PostgreSQL  cleared
+
+% pgenv current
+No version of PostgreSQL currently in use
+Run `pgenv use $version` to link and start a specific version
+Run `pgenv versions` to list all installed versions
+
+% pgenv start
+No version of PostgreSQL currently in use
+Run `pgenv use $version` to link and start a specific version
+Run `pgenv versions` to list all installed versions
+#+end_src
+
+As you can see, after the ~clear~ has been executed, ~pgenv~ claims quite loudly about the need of a version to ~use~ for subsequent commands.
+
+Once a cluster is in use, you can control its lifecycle with quite mnemonic commands: ~start~, ~restart~ and ~stop~. Finally, if you want to remove a cluster from the system, that is you want to delete executables and data about such cluster, the ~remove~ command is for you.
+
 * Configuration and Patching
-** TODO Configuration
-** TODO Pacthing
+** Configuration
+~pgenv~ allows for a simple and raw configuration management. The idea is that each installed cluster can be instrumed via a per-version configuration, so that each time you ~use~ a version you will do with the most appropriate configuration.
+
+Configuration is performed through a *per-version* text file that is created, if not already existing, once the cluster is installed: at the end of the installation process you will see a message like the following
+
+#+begin_src shell
+pgenv configuration written to file /home/luca/.pgenv/.pgenv.10.7.conf
+#+end_src
+
+Each configuration file is named after the version it refers to, in the above example the ~10.7~ means such configuration will be used every time the ~10.7~ cluster will be in use.
+
+It is important to note that the configuration file could be created *before* a cluster is installed, providing therefore a configuration used not only to run, but also to build the cluster. That's the reason why an installation process give you time to write a configuration file if none is found:
+
+#+begin_src shell
+% pgenv build 10.7
+
+...
+
+     WARNING: no configuration file found for version 10.7
+     HINT: if you wish to customize the build process please
+     stop the execution within 5 seconds (CTRL-c) and run
+          pgenv config write 10.7 && pgenv config edit 10.7
+     adjust 'configure' and 'make' options and flags and run again
+          pgenv build 10.7
+#+end_src
+
+The configuration is managed via the ~config~ command, that in turns allows for other subcommands.
+If you want to edit an existing configuration, use ~config edit~ and the version you want to edit:
+
+#+begin_src shell
+% pgenv config edit 10.7
+#+end_src
+
+The above will launch your default editor with the configuration file; every option in the file is commented and you can adjust directly within your editor, saving changes and exit from the editor.
+As an example, in the configuration file you can edit build parameters like ~make(1)~ options in ~PGENV_MAKE_OPTS~ (by default set to ~j3~), as well as the cluster log file with ~PGENV_LOG~, or cluster initialization flags via ~PGENV_INITDB_OPTS~. Read the documentation within the configuration file itself to get an idea about what you can customize.
+
+You can inspect the currently in-use configuration by ~config show~, that will provide you the content of the configuration file:
+
+#+begin_src shell
+% pgenv config show
+# PostgreSQL 11.2
+# pgenv configuration for PostgreSQL 11.2
+# File: /home/luca/.pgenv/.pgenv.11.2.conf
+# ---------------------------------------------------
+# pgenv configuration created on Tue Feb 19 19:29:08 CET 2019
+
+# Enables debug output
+# PGENV_DEBUG=''
+
+###### Build settings #####
+# Make command to use for build
+PGENV_MAKE='/usr/bin/make'
+# Make flags
+PGENV_MAKE_OPTS='-j3'
+# Configure flags, including PL languages but without --prefix
+# PGENV_CONFIGURE_OPTS=''
+# A file that lists ordered patches to apply before building starts
+# PGENV_PATCH_INDEX=''
+# Curl command to download source code
+PGENV_CURL='/usr/local/bin/curl'
+# Patch command for specific versions
+PGENV_PATCH='/usr/bin/patch'
+...
+#+end_src
+
+If you don't remember the current cluster version number, or want to automate the configuration management, the special keyword ~current~ will allow you to work against the currently in-use cluster configuration. In other words, assuming ~11.2~ is the version in use, the following two commands are equivalent:
+
+#+begin_src shell
+% pgenv config show 11.2
+
+% pgenv config show current
+#+end_src
+
+There is also another special keyword, ~default~ that works on the default configuration.
+So, what is the *default configuration*? Suppose you want to use the very same configuration for all the installations you are managing: copy and pasting the configuration files for every version is quite boring. Thankfully, ~pgenv~ provides a default configuration, that is a configuration /good for all the versions/ and that is stored in the ~.pgenv.conf~ file (without any version number). The default configuration is exactly done as a per-version configuration and includes all the same parameters.
+
+But when does ~pgenv~ knows which configuration to use? The rules are:
+- if a per-version configuration file exists, use it;
+- if none per-version configuration file exists, but a default configuration does exist, use the latter;
+- if non a per-version nor a default configuration file exists, use internal defaults.
+
+This allows you, for instante, to manage all versions but a few with the very same configuration, giving the ability to configure only those instances that really require a specific set up.
+
+But how can you write the initial configuration *before* any cluster is installed? You can use ~config write~ to produce a new /clean/ configuration file for that specific version (or use ~default~ to produce the default one). Suppose you want to build a PostgreSQL version with specific compilation flags. What you have to do is to write the configuration file (i.e., create it), edit (i.e., review and ajust it) and then start the build process:
+
+#+begin_src shell
+% pgenv config write 11.1
+pgenv configuration written to file /home/luca/.pgenv/.pgenv.11.1.conf
+% pgenv config edit 11.1
+...
+% pgenv build 11.1
+...
+#+end_src
+
+This time the build process will not stop prompting for a configuration file, since it has been found on the system!
+
+*** Backup Configuration
+The ~config write~ command is smart enough to see you already have a configuration for the specified version, in such case it will copy the old configuration file as a backup copy (adding the suffix ~.backup~ to its name). This allows you for a very simple backup scheme that keeps a single backup copy, and therefore abusing of this mechanism can result in the loss of configuration data. It's easy to see this in action:
+
+#+begin_src shell
+% pgenv config write 10.6
+pgenv configuration written to file /home/luca/.pgenv/.pgenv.10.6.conf
+
+% pgenv config write 10.6
+pgenv configuration written to file /home/luca/.pgenv/.pgenv.10.6.conf
+
+% ls  ~/.pgenv/.pgenv.10.6*
+/home/luca/.pgenv/.pgenv.10.6.conf
+/home/luca/.pgenv/.pgenv.10.6.conf.backup
+#+end_src
+
+The same rules applies to the default configuration file.
+
+*** Removing a Configuration
+In the case a cluster is removed by the ~remove~ command, the configuration file (and if any, its backup copy) are deleted too. Nevertheless, you can manually delete a configuration file by means of ~config delete~:
+
+#+begin_src shell
+% pgenv config delete 10.6
+Configuration file /home/luca/.pgenv/.pgenv.10.6.conf (and backup) deleted
+#+end_src
+
+As the message states, both the configuration file and its backup copy has been deleted.
+
+You cannot, however, delete so easily the ~default~ configuration: unless all the instances have been deleted from the ~PGENV_ROOT~, you will not able to programmatically remove the default configuration:
+
+#+begin_src shell
+% pgenv config delete default
+Cannot delete default configuration while version configurations exist
+To remove it anyway, delete /home/luca/.pgenv/.pgenv.conf
+#+end_src
+
+As you can see, the program refuses to do the job for you, but allows you to force the removal by manually deleting the configuration file. This is a gentle reminder for you in order not to loose the wider configuration.
+
+** Pacthing
+During the build process, that is once the ~build~ command is running, ~pgenv~ will apply any required ~patch(1)~ to the downloaded source tree. The patching mechanism can be sligthly instrumented by means of per-version patching files.
+
+The ~PGENV_ROOT~ directory contains a ~patch~ subdiretory, that in turns contains an ~index~ subdirectory. Within such directory a file named after the PostgreSQL version, or a part of it, and the system architectures is searched for. If such file is found, such file is used as a /patch index/, that is a textual list (one line per patch) that provides the order of other files to pass to ~patch(1)~ in order to change the source tree.
+
+Let's explain it thru an example: consider the file ~patch/index/patch.8.0~. Such files is the index for the major version of PostgreSQL 8.0, and its content is as follows:
+
+#+begin_src shell
+% cat .pgenv/patch/index/patch.8.0
+8.0/8.0.plperl.patch
+#+end_src
+
+The file contains a single row, that is the name of a single patch to apply during the build process. The content of the file ~8.0/8.0.plperl.patch~ will be passed to ~patch(1)~ during the build process.
+What happens is that once you issue a build command for the 8.0 version, like ~pgenv build 8.0~ the system searches for the patch index for the version 8, founds the above one and applies any patches listed in such index.
+
+The patch index is searched on a per-version and per-system name:
+1) search for a file that matches *exactly* the version number (including the minor part) and the system type;
+2) search for a file that matches *exactly* the version number (including the minor part);
+3) search for a file that matches the major version and the system type;
+4) search for a file that matches the major version;
+5) search for a file that matches the brand version (for older PostgreSQL versions) and the system type;
+6) search for a file that matches the brand version (for older PostgreSQL versions).
+
+If none of the above index files is found, no patching at all is done.
+
+Assume you are building the 11.2 version of PostgreSQL on a FreeBSD system, which patch indexes are searched for? The systems searches for a list like the following one:
+
+- ~patch/index/patch.11.2.FreeBSD~
+- ~patch/index/patch.11~
+- ~patch/index/patch.11.FreeBSD~
+- ~patch/index/patch.11~
+
+Therefore, again, this provides enough flexibility to let you specify which patches you want to apply on which version, group of versions and operating systems.
+
+
+
+
+* Conclusions
+~pgenv~ is a really useful tool that can help installing and managing different version of PostgreSQL. I've personally used it in PostgreSQL classes and teaching activity, since it can really automate the installation and set up of an instance for beginners. It's usage is encouraged because, making it easy to manage multiple versions, allows for a better compatibility testing and feature testing against different versions of the database.
+
+The feature list of ~pgenv~ is rich when compared to similar projects, and always expanding. Nevertheless, being an Open Source projects, it requires time and efforts by volounteers. The code base is well structured and the program is kept as simple as possible, welcoming new contributors to participate in the project.
+
+* About Luca Ferrari
+Luca lives in Italy with his beautiful wife, his great son and two female cats.
+
+Computer science passionate since the Commodore 64 age, he holds a master degree and a PhD in Computer Science.
+He is a PostgreSQL enthusiast, a Perl lover, an Operating System passionate, a Unix fan and performs as much tasks as possible within Emacs.
+He consider the Open Source the only truly sane way of doing software and services.
+
+Luca is the author of the book *PostgreSQL 11 Server Side Programming* Quick Start Guide, published by Packt.
+
+His web site is available at http://fluca1978.github.io
+
+
 
 * References
 - ~pgenv~ Github Repository, available at <https://github.com/theory/pgenv/>
+- ~pgTAP~ official website, available at <https://pgtap.org/>
