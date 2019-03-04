@@ -1,0 +1,205 @@
+#+TITLE:     pg_backrest
+#+AUTHOR:    ing. Luca Ferrari, PhD
+#+EMAIL:     fluca1978@gmail.com
+#+DATE:      <2019-03-01 ven>
+#+LANGUAGE:  it
+
+#+OPTIONS:   H:3 num:nil toc:nil
+#+OPTIONS:   TeX:t LaTeX:t skip:nil d:nil todo:t pri:nil tags:not-in-toc
+#+INFOJS_OPT: view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+EXPORT_SELECT_TAGS: export
+#+EXPORT_EXCLUDE_TAGS: noexport
+#+LINK_UP:
+#+LINK_HOME:
+
+#+startup: beamer
+#+LaTeX_CLASS: beamer
+#+latex_header: \mode<beamer>{\usetheme{magpie}}
+
+
+#+BEAMER_HEADER: \subtitle{backup, repliche & friends}
+
+#+BEAMER_HEADER: \institute[fluca1978]{fluca1978\\\url{https://fluca1978.github.io}}
+#+BEAMER_FRAME_LEVEL: 1
+
+
+
+#+LATEX_HEADER: \RequirePackage{fancyvrb}
+#+LATEX_HEADER: \DefineVerbatimEnvironment{verbatim}{Verbatim}{fontsize=\scriptsize}
+
+
+* Licenza
+*** Attribution-NonCommercial-ShareAlike 4.0
+This work is licensed under the *Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License*.
+To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/ or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
+
+* Installazione
+** Installazione dai sorgenti
+*** Installazione dai sorgenti
+*Esistono anche pacchetti binari per molti sistemi operativi!*
+
+#+begin_src shell
+% fetch https://github.com/pgbackrest/pgbackrest/archive/release/2.10.tar.gz \
+        -o pgbackrest2.10.tar.gz
+
+...
+% tar xzvf pgbackrest2.10.tar.gz
+...
+% cd pgbackrest*
+% gmake -s -C src
+...
+% sudo gmake install
+#+end_src
+
+#+begin_quote
+/Installare su FreeBSD (o not-Linux) può risultare scomodo e l'applicazione *non è testata*!
+Vedere [PR 686[(https://github.com/pgbackrest/pgbackrest/issues/686).
+#+end_quote
+
+*** Test installazione funzionante
+Una volta che il programma è stato installato è possibile testarne il funzionamento: il programma si compone di un unico eseguibile denominato ~pgbackrest~ che contiene una versione embedded di Perl.
+
+#+begin_src shell
+% pgbackrest
+pgBackRest 2.11dev - General help
+Usage:
+     pgbackrest [options] [command]
+Commands:
+    archive-get     Get a WAL segment from the archive.
+    archive-push    Push a WAL segment to the archive.
+    backup          Backup a database cluster.
+    check           Check the configuration.
+    expire          Expire backups that exceed retention.
+...
+#+end_src
+
+* Concetti Principali
+** Configurazione: Concetti
+La configurazione avviene attraverso uno o piu' file /ini/.
+
+La configurazione prevede due sezioni particolari:
+- *globale* contiene tutte le opzioni impostate a livello globale per il funzionamento (es. log);
+- *stanza* contiene le impostazioni di un determinato set di backup.
+
+#+begin_quote
+Una *stanza* è un set di backup, tipicamente riferito ad un cluster o installazione.
+La stanza contiene le informazioni sull'host, cluster e parametri base di backup.
+#+end_quote
+
+** Configurazione: file
+Il file principale di configurazione è ~/etc/pgbackrest/pgbackrest.conf~. Usare un file differente di configurazione è possibile ma  deve essere specificato coerentemente in ogni uso del programma.
+
+Ogni parametro specificato nel file di configurazione può essere sovrascritto dal relativo parametro fornito su linea di comando.
+
+** Configurazione: Sintassi dei Parametri
+Ogni parametro contenuto in una sezione è specificato con una coppia /chiave=valore/.
+
+*Nella configurazione di una stanza i parametri di un cluster iniziano sempre con ~pgN-~*, con ~N~ un numero progressivo. *Il cluster principale (master) è sempre il numero 1!.* Gli stand-by sono quindi numerati da ~2~ in sequenza.
+
+Analogamente, nei parametri globali i repository sono numerati partendo da 1 (~repo1~), ma al momento piu' repository non sono ancora supportati.
+
+** Configurazione Basilare
+*** ~pgbackrest.conf~: sezione ~global~
+#+begin_src shell
+[global]
+repo1-path=/mnt/backup/pgbackrest/
+repo1-host-config-path=/usr/local/etc/pgbackrest/
+repo1-retention-full=3  # 4 backup su disco prima della rimozione!
+start-fast=y            # forza un checkpoint quando inizia il backup
+stop-auto=y             # interrompe backup abortiti prima (crash del server...)
+#+end_src
+
+*** ~pgbackrest~: sezione di backup
+#+begin_src shell
+[main]
+pg1-path=/mnt/pg_data/pgdata/11.1
+#+end_src
+
+*** Configurazione di PostgreSQL per l'invio dei WAL
+#+begin_src shell
+
+#+end_src
+*** Creazione della Stanza
+Prima di poter avviare il backup occorre creare la stanza, ovvero inizializzare la directory che conterrà i dati:
+
+#+begin_src shell
+% sudo -u postgres \
+  pgbackrest stanza-create --stanza=main \
+   --config=/usr/local/etc/pgbackrest/pgbackrest.conf
+...
+
+% sudo ls /mnt/backup/pgbackrest
+ archive backup  log
+#+end_src
+*** Backup
+Il primo backup deve essere sempre ~full~. E' possibile specificare il tipo di backup con l'opzione ~type~, ma se non viene trovato un backup full viene eseguito in automatico:
+
+#+begin_src shell
+% sudo -u postgres pgbackrest backup --stanza=main \
+      --config=/usr/local/etc/pgbackrest/pgbackrest.conf
+...
+ INFO: full backup size = 31.6MB
+...
+ INFO: pushed WAL segment 000000010000000000000016
+ INFO: archive-push command end: completed successfully (248ms)
+...
+ INFO: full backup total < 3 - using oldest full backup for 11-1 archive retention
+#+end_src
+*** Ulteriori backup
+Se non specificato esplicitamente, i successivi backup saranno incrementali.
+
+*** Stato dei Backup
+Il comando ~info~ fornisce lo stato dei backup fatti fino ad ora:
+
+#+begin_src shell
+% sudo -u postgres pgbackrest info --config=/usr/local/etc/pgbackrest/pgbackrest.conf
+stanza: main
+status: ok
+cipher: none
+ db (current)
+   wal archive min/max (11-1): 000000010000000000000016/00000001000000000000001A
+   full backup: 20190304-191614F
+         timestamp start/stop: 2019-03-04 19:16:14 / 2019-03-04 19:16:21
+         wal start/stop: 000000010000000000000016 / 000000010000000000000016
+         database size: 31.6MB, backup size: 31.6MB
+         repository size: 3.8MB, repository backup size: 3.8MB
+   incr backup: 20190304-191614F_20190304-192050I
+        timestamp start/stop: 2019-03-04 19:20:50 / 2019-03-04 19:20:53
+        wal start/stop: 000000010000000000000018 / 000000010000000000000018
+        database size: 31.6MB, backup size: 8.3KB
+        repository size: 3.8MB, repository backup size: 486B
+        backup reference list: 20190304-191614F
+   incr backup: 20190304-191614F_20190304-192123I
+       timestamp start/stop: 2019-03-04 19:21:23 / 2019-03-04 19:21:25
+       wal start/stop: 00000001000000000000001A / 00000001000000000000001A
+       database size: 31.6MB, backup size: 8.3KB
+       repository size: 3.8MB, repository backup size: 487B
+       backup reference list: 20190304-191614F
+#+end_src
+
+*** Riferimento fra i backup
+Notare che i backup incrementali referenziano il backup principale del quale rappresentano l'incremento:
+
+#+begin_src shell
+   full backup: 20190304-191614F
+         database size: 31.6MB, backup size: 31.6MB
+         repository size: 3.8MB, repository backup size: 3.8MB
+         ...
+   incr backup: 20190304-191614F_20190304-192050I
+        backup reference list: 20190304-191614F
+        ...
+#+end_src
+
+*** Backup su Storage
+La /stanza/ contiene due directory:
+- ~archive~ è lo spazio dove vengono archiviati i WAL mediante il comando ~archive-push~;
+- ~backup~ contiene il backup fisico del cluster.
+
+#+begin_src shell
+% sudo ls -R /mnt/backup/pgbackrest/archive/main/11-1/
+...
+000000010000000000000016-ca0cdb3f956041430751cf66d39fbc9436473952.gz
+000000010000000000000016.00000028.backup
+000000010000000000000017-5b2f636df0646d4ac0b511a660d112f43fe3234c.gz
+000000010000000000000018-6bcfb17a181dfe5000e74b06cfb384b07da589aa.gz
+#+end_src
