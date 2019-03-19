@@ -1,0 +1,1170 @@
+#+TITLE:     Indici
+#+AUTHOR:    ing. Luca Ferrari, PhD
+#+EMAIL:     fluca1978@gmail.com
+#+DATE:      <2019-03-18 ven>
+#+LANGUAGE:  it
+
+#+OPTIONS:   H:3 num:nil toc:nil
+#+OPTIONS:   TeX:t LaTeX:t skip:nil d:nil todo:t pri:nil tags:not-in-toc
+#+INFOJS_OPT: view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+EXPORT_SELECT_TAGS: export
+#+EXPORT_EXCLUDE_TAGS: noexport
+#+LINK_UP:
+#+LINK_HOME:
+
+#+startup: beamer
+#+LaTeX_CLASS: beamer
+#+latex_header: \mode<beamer>{\usetheme{magpie}}
+
+
+#+BEAMER_HEADER: \subtitle{comprendere le query}
+
+#+BEAMER_HEADER: \institute[fluca1978]{fluca1978\\\url{https://fluca1978.github.io}}
+#+BEAMER_FRAME_LEVEL: 1
+
+
+
+#+LATEX_HEADER: \RequirePackage{fancyvrb}
+#+LATEX_HEADER: \DefineVerbatimEnvironment{verbatim}{Verbatim}{fontsize=\scriptsize}
+
+
+* Licenza
+*** Attribution-NonCommercial-ShareAlike 4.0
+This work is licensed under the *Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License*.
+To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/ or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
+
+* Indici
+** Concetti Generali
+*** Percorso di uno statement
+Uno statement (in generale una /query/) passa quattro fasi prima della reale esecuzione:
+1) *parsing*, il /parser/ smonta la query, ne controlla la correttezza formale e ne costruisce un albero sintattico;
+2) il *rewriting system* applica le eventuali /rules/;
+3) l'*optimizer* valuta differenti metodi di accesso (~am~, Access Method) e trova il migliore;
+4) l'*executor* esegue l'accesso fisico ai dati usando il piano di esecuzione fornito dall'*optimizer*.
+*** Introduzione
+PostgreSQL supporta diversi tipi di indici, ognuno specializzato per un algoritmo di /ordinamento/ dei dati.
+E' possibile specificare quale indice usare al momento della creazione.
+
+Un indice può essere *multicolonna* (fino a 32 colonne per indice).
+
+L'indice userà la /collation/ della colonna a cui si applica, ma è possibile specificarne una differente all'atto della creazione dell'indice. Ad ogni modo un indice usa una sola collation!
+*** Cosa si può indicizzare?
+PostgreSQL permette di indicizzare:
+- colonne (fino a 32 per indice);
+- espressioni di colonne;
+- dati parziali.
+
+Le espressioni di colonne sono calcolate ad ogni ~INSERT~ / ~UPDATE~ ma non ad ogni scansione dell'indice.
+
+Gli indici parziali sono costruiti attorno a particolari valori dei dati (ad esempio ~eta >= 18~). L'idea è quella di non indicizzare i valori piu' comuni perché non sarebbero comunque usati (l'indice non è filtrante su valori comuni!). Gli indici parziali possono anche essere ~UNIQUE~: le colonne indicizzate devono essere ~UNIQUE~, il predicato viene fatto su altre colonne.
+*** Heap, Indice secondario, accessi
+*In PostgreSQL gli indici sono memorizzati separatamente dalla tabella*:
+- l'indice è formalmente detto /secondario/;
+- lo spazio di memorizzazione della tabella è detto /heap/.
+
+Questo significa che un accesso attraverso un indice richiede:
+1. il caricamento e la valutazione (scan) delle pagine dati dell'indice;
+2. il caricamento e l'accesso alla pagina dati della tabella individuata dall'indice.
+
+Questo significa che l'accesso tramite indice può essere /costoso/ in termini di risorse e I/O (random access).
+Per questo motivo un indice viene usato solo se il suo utilizzo non aggiunge penalità, altrimenti un accesso sequenziale all'heap viene preferito.
+
+*** Tipologie di Indice
+Il catalogo di sistema ~pg_am~ contiene tutti i tipi di indice supportati; ogni indice ha un metodo di accesso da usare per comparare i dati.
+
+#+begin_src shell
+> SELECT amname, amhandler, amtype
+  FROM pg_am ORDER BY amname;
+amname |  amhandler  | amtype
+--------+-------------+--------
+brin   | brinhandler | i
+btree  | bthandler   | i
+gin    | ginhandler  | i
+gist   | gisthandler | i
+hash   | hashhandler | i
+spgist | spghandler  | i
+
+#+end_src
+*** B-Tree
+E' il tipo di default. *Sono gli unici indici che possono essere definiti ~UNIQUE~!*
+Supporta l'/Index Only Scan/!
+
+Funziona per operazioni di *equalità* e *range* su dati ordinabili in qualche modo, quindi operatori ~=~, ~>~, ~<~, ~>=~, ~<=~, ~BETWEEN~,
+~IN~, ~IS NULL~.
+
+Possono anche essere usati per ricerche ~LIKE~ a patto che:
+- il pattern sia un literal;
+- il pattern sia cercato all'inizio della stringa.
+
+Ad esempio ~LIKE 'Ferr%'~.
+
+Nel caso di indici multicolonna l'indice viene usato in base a delle limitazioni: il fattore di filtro delle *prime colonne con uguaglianza e la prima con disuguaglianza identificano la porzione di indice da "caricare in memoria e valutare"*, le colonne a seguire sono comunque usate ma non riducono la porzione di dati dell'indice da controllare.
+
+*** Hash
+Gli indici /Hash/ sono usabili solo per *uguaglianza*, quindi non saranno mai utilizzati se non assieme all'operatore ~=~.
+
+*ATTENZIONE: gli indici hash non sono attualmente salvati nei WAL.* Questo significa che gli indici hash non sopravvivono ad un crash
+e non sono nemmeno replicati (dalla version 10 entrambi i problemi sono risolti).
+*** GIN
+Sono indici /invertiti/, ovvero invece che "puntare" ad una tupla puntano a dati multipli (es. array).
+
+Sono usati solitamente per testare l'esistenza della chiave fra i possibili valori, ad esempio nell Full Text Search.
+*** BRIN
+Gli indici /BRIN/ (Block Range INdexes) memorizzano dati sommari circa ogni blocco fisico di dati su disco.
+Ad esempio, se i dati sono ordinabili, il BRIN memorizza il valore minimo e massimo di ogni /blocco fisico/ di dati.
+*** GIST
+/GIST/ (Generalized Index Search Tree) non è un vero tipo di indice ma una "piattaforma" per la costruzione di indici personalizzati.
+
+Tali indici vengono costruiti definendo gli operatori applicabili e il relativo comportamento (ad esempio indici spaziali).
+*** SP-GIST
+E' una infrastruttura per la costruzione di indici non bilanciati.
+** Quando viene usato un indice?
+*** Quando sicuramente non viene usato un indice
+Una query che non filtri i dati *non userà mai un indice*.
+
+Si vogliono reperire tutti i dati, che senso avrebbe caricare in memoria prima l'indice per poi accederli tutti?
+*** ORDER BY
+Nel caso di un ~ORDER BY~ è possibile sia utilizzato l'indice, a patto che:
+- le colonne dell'indice comprendano quelle dell'~ORDER BY~;
+- la tabella sia molto piccola, nel qual caso l'I/O per un sort esterno risulterebbe piu' costoso che la visita dell'indice.
+
+In questo caso i B-Tree sono utili: memorizzano i dati in ordine /ascendente/ con i ~NULL~ alla fine.
+
+Un altro caso in cui si "forza" l'uso dell'indice è ~ORDER BY ... LIMIT~, poiché l'indice solitamente è piu' veloce nel restituire le prime n-tuple di ~LIMIT~.
+*** Agggregazione di indici
+PostgreSQL è capace di unire piu' indici al fine di ottimizzare l'esecuzione della query.
+
+Solitamente la query viene "smontata" in piu' piani di esecuzione, ciascuno colelgato ad un indice (a volte anche allo stesso con clausole diverse). Dopo aver percorso un indice il sistema costruisce una *bitmap* che contiene la mappa di match trovati su quella condizione/indice.
+Le varie bitmap (una per indice) sono poi aggregate logicamente con ~AND~ o ~OR~ per costruire la mappa finale delle tuple che hanno passato ogni indice.
+
+La mappa finale è ordinata naturalmente per posizione /fisica/ delle tuple, quindi se c'è un ~ORDER BY~ sarà necessario un ulteriore passaggio di sorting.
+** Quando viene usato un indice?
+*** Quali sono le tabelle che potenzialmente richiedono un indice?
+La vista ~pg_stat_user_tables~ può fornire delle indicazione sull'utilizzo delle tabelle e dei relativi indici. Ove ci sono dei /sequential scan/ elevati si può ipotizzare sia necessario un indice:
+#+begin_src sql
+> SELECT relname, seq_scan, idx_scan,
+         n_tup_ins, n_tup_upd, n_tup_del,
+         n_live_tup, n_dead_tup, last_vacuum
+  FROM pg_stat_user_tables
+  ORDER BY seq_scan DESC;
+        relname         | seq_scan | idx_scan | n_tup_ins | n_tup_upd | n_tup_del | n_live_tup | n_dead_tup | last_vacuum
+------------------------+----------+----------+-----------+-----------+-----------+------------+------------+-------------
+ usr_local_etc_snapshot |       11 |          |         0 |         0 |         0 |          0 |          0 |
+ log_table              |        4 |        0 |        22 |         0 |         0 |         20 |          2 |
+ persona                |        2 |        0 |         0 |         0 |         0 |          0 |          0 |
+ address                |        1 |        0 |         2 |         0 |         0 |          2 |          0 |
+ pgbench_accounts       |        1 |        0 |   1000000 |         0 |         0 |    1000000 |          0 |
+ pgbench_branches       |        1 |        0 |        10 |         0 |         0 |         10 |          0 |
+ pgbench_tellers        |        1 |        0 |       100 |         0 |         0 |        100 |          0 |
+ evento                 |        1 |        0 |   2110336 |         0 |         0 |    2110336 |          0 |
+ persona_femmina        |        0 |          |      5000 |         0 |         0 |       5000 |          0 |
+ persona_maschio        |        0 |          |      5001 |         0 |         0 |       5001 |          0 |
+#+end_src
+
+*** Qual'è lo stato degli indici?
+La vista speciale ~pg_user_stat_indexes~ fornisce indicazioni sull'utilizzo degli indici:
+
+#+begin_src sql
+> SELECT relname, indexrelname,
+         idx_scan, idx_tup_read, idx_tup_fetch
+   FROM pg_stat_user_indexes;
+     relname      |        indexrelname        | idx_scan | idx_tup_read | idx_tup_fetch
+------------------+----------------------------+----------+--------------+---------------
+ address          | address_pkey               |        0 |            0 |             0
+ evento           | idx_desc                   |        2 |            1 |             1
+ evento           | evento_pkey                |        0 |            0 |             0
+#+end_src
+*** Reset delle statistiche
+Con la funzione speciale ~pg_stats_reset()~ (da eseguire da superutente) le statistiche ~pg_stat_xxxx~ sono azzerate!
+** EXPLAIN
+*** Introduzione
+~EXPLAIN~ è un comando di utilita' che consente di interagire con l'ottimizzatore.
+
+PostgreSQL usa un ottimizzatore basato sul */costo/*: la query viene spezzata in un albero di */nodi/* da eseguire, *ogni nodo avrà un costo* e la somma dei costi fornisce il costo della query stessa. *Esistono piu' /percorsi/ per estrarre i dati da una query* (es. con o senza indice) e il piano di esecuzione che risulta avere il costo inferiore è quello che PostgreSQL sceglie per l'esecuzione.
+
+Il costo di un nodo/piano è espresso in una misura aleatoria relativa e fine a se stessa.
+Talve valore dipende fortemente dal tempo di esecuzione ma anche dall'impiego delle risorse.
+
+
+*** ~EXPLAIN~ fornisce un solo piano di uscita
+Il comando ~EXPLAIN~ visualizza il piano migliore scelto fra quelli possibili, e di conseguenza *NON* indica perché un indice non viene usato, *NON* suggerisce la riscrittura di query per ottimizzare il lavoro, *NON* indica come ottenere risultati migliori.
+
+Occorre prendere dimestichezza con lo strumento e fare dei tentativi per migliorare una query lenta!
+
+/Esiste anche il modulo ~autoexplain~ che consente di inserire nei log automaticamente un ~EXPLAIN~ delle query che sono durate piu' di un certo tempo/.
+
+*** ~EXPLAIN~ e ~ANALYZE~
+Il comando ~EXPLAIN~ fornisce indicazione sul piano che sarà usato per fare l'accesso alle tuple.
+
+*Il comando ~EXPLAIN~ non effettua la query*, simula solo l'accesso ai dati. Può essere accompagnato da ~ANALYZE~ per eseguire effettivamente la query e aggiornare anche le statistiche di sistema.
+
+*Solitamente si vuole usare ~EXPLAIN ANALYZE~* a meno che ci siano effetti sui dati o la query esegua per troppo/infinito tempo.
+/ATTENZIONE: siccome ~EXPLAIN ANALYZE~ eseguirà la query, se questa modifica le tuple (es. ~INSERT~, ~UPDATE~, ~DELETE~) è bene inserire il blocco in una transazione e fare un rollback!/
+
+*** Output di ~EXPLAIN~
+Il comando ~EXPLAIN~ fornisce come output una serie di nodi, ciascuno che indica:
+- /tipo di accesso/ ossia come vengono percorsi i dati;
+- /costo/ in unità imparziali, diviso in costo iniziale (setup) e finale (ossia per il completamento del nodo);
+- /numero di tuple/ quante tuple sono estratte da ogni nodo;
+- /dimensione delle tuple/ dimensione dei dati estratti.
+
+*Il numero di tuple sarà sempre almeno 1*, questo perché altrimenti la valutazione di altri nodi risulterebbe impossibile. In generale una sola tupla singifica "pochi dati".
+
+** Esempi di ~EXPLAIN~
+
+*** Tabella di esempio
+#+begin_src shell
+> CREATE TABLE persona(
+    pk int GENERATED ALWAYS AS IDENTITY
+    , nome text
+    , cognome text
+    , codice_fiscale char(16) NOT NULL
+    , eta int DEFAULT 1
+    , data_nascita date NOT NULL
+    , sesso char(1)
+    , PRIMARY KEY(pk)
+    , UNIQUE(codice_fiscale)
+    , CHECK( eta >= 1 )
+    , CHECK( sesso IN ('M', 'F' ) ) );
+#+end_src
+*** Tabella di esempio: inserimento di tuple casuali
+#+begin_src shell
+> WITH stuff AS ( SELECT ( random() * 1000 )::int % 70 + 1 as eta, v
+                  , CASE v % 5 WHEN 0 THEN 'M' ELSE 'F' END as sesso
+                FROM generate_series( 1, 5000000 ) v )
+  INSERT INTO persona( nome, cognome, codice_fiscale, eta, data_nascita, sesso )
+  SELECT 'Nome' || v, 'Cognome' || v,
+         substring( md5( v::text ) from 1 for 16 )
+         , eta
+         , current_date - ( eta || ' years')::interval + ( ( v % 365 )|| ' days')::interval
+         , sesso
+  FROM stuff;
+#+end_src
+*** Tabella di esempio: dimensione
+#+begin_src shell
+> SELECT relname, relpages, reltuples
+  FROM pg_class
+  WHERE relname = 'persona' AND relkind = 'r';
+
+relname | relpages |  reltuples
+---------+----------+-------------
+persona |    51546 | 5.00002e+06
+
+> SELECT pg_size_pretty( pg_table_size( 'persona' ) );
+
+pg_size_pretty
+----------------
+443 MB
+
+> SET max_parallel_workers_per_gather TO 0;
+#+end_src
+
+** Esempi di ~EXPLAIN~: sesso
+
+*** Cercare le persone di sesso maschile
+#+begin_src sql
+> EXPLAIN SELECT * FROM persona WHERE sesso = 'F';
+
+                    QUERY PLAN
+-------------------------------------------------------------------
+Seq Scan on persona  (cost=0.00..119218.19 rows=995416 width=56)
+   Filter: (sesso = 'M'::bpchar)
+#+end_src
+
+Si pensa a circa un milione di tuple, in scansione sequenziale.
+
+*** Calcolare quante tuple escono dalla query
+Controllando le statistiche di sistema:
+
+#+begin_src sql
+# SELECT attname, n_distinct, most_common_vals, most_common_freqs
+  FROM pg_stats
+  WHERE tablename = 'persona' AND attname = 'sesso';
+attname | n_distinct | most_common_vals |  most_common_freqs
+---------+------------+------------------+---------------------
+sesso   |          2 | {F,M}            | {0.800933,0.199067}
+#+end_src
+
+Le pesone con sesso ~M~ hanno una frequenza di ~0.199~, essendoci 5 milioni di tuple si ha che il numero di tuple risultanti risulta ~5000000 * 0.199 = 995000~, valore arrotondato dell'output di explain.
+
+*** Calcolare il costo
+Si deve fare la somma dei singoli costi.
+#+begin_src sql
+> WITH seq AS (
+  SELECT setting::real AS seq_cost
+  FROM pg_settings WHERE name = 'seq_page_cost'
+)
+, cpu_op AS (
+  SELECT setting::real AS cpu_operator_cost
+  FROM pg_settings WHERE name = 'cpu_operator_cost'
+)
+, cpu_tp AS (
+  SELECT setting::real AS cpu_tuple_cost
+  FROM pg_settings WHERE name = 'cpu_tuple_cost'
+)
+SELECT relpages * seq_cost
+      + ( cpu_operator_cost + cpu_tuple_cost ) * reltuples
+      AS costo_totale
+FROM pg_class c, seq, cpu_op, cpu_tp
+WHERE c.relname = 'persona'
+AND   c.relkind = 'r';
+
+  costo_totale
+-----------------
+ 119212.99609375
+#+end_src
+
+*** Costruzione di un indice
+#+begin_src sql
+# CREATE INDEX idx_persona_sesso ON persona(sesso);
+
+# SELECT relname, relpages, reltuples
+  FROM pg_class
+  WHERE relname IN ( 'persona', 'idx_persona_sesso' );
+
+     relname      | relpages | reltuples
+------------------+----------+-----------
+persona           |    56713 |     5e+06
+idx_persona_sesso |    13713 |     5e+06
+#+end_src
+
+L'indice ha lo stesso numero di tuple (è totale), ed occupa 107 MB!
+
+*** Explain con indice
+#+begin_src sql
+# EXPLAIN SELECT * FROM persona WHERE sesso = 'M';
+                   QUERY PLAN
+-----------------------------------------------------------------------------------------
+Bitmap Heap Scan on persona  (cost=18634.26..87788.93 rows=995333 width=56)
+   Recheck Cond: (sesso = 'M'::bpchar)
+     ->  Bitmap Index Scan on idx_persona_sesso  (cost=0.00..18385.43 rows=995333 width=0)
+         Index Cond: (sesso = 'M'::bpchar)
+#+end_src
+
+*** Explain con indice: argh!
+Se si cerca il sesso opposto l'indice non viene piu' usato.
+#+begin_src sql
+# EXPLAIN SELECT * FROM persona WHERE sesso = 'F';
+                      QUERY PLAN
+-------------------------------------------------------------------
+Seq Scan on persona  (cost=0.00..119213.00 rows=4004667 width=56)
+    Filter: (sesso = 'F'::bpchar)
+#+end_src
+
+Il fatto è che si vogliono ~4/5~ delle tuple totali, non ha senso accedere *anche* all'indice!
+
+*** Confondere l'ottimizzatore
+Se la query è scritta /male/ l'ottimizzatore non usa l'indice.
+
+#+begin_src sql
+# EXPLAIN SELECT * FROM persona WHERE sesso <> 'F';
+                     QUERY PLAN
+------------------------------------------------------------------
+Seq Scan on persona  (cost=0.00..119213.00 rows=995333 width=56)
+    Filter: (sesso <> 'F'::bpchar)
+
+# EXPLAIN SELECT * FROM persona WHERE sesso NOT IN ( 'F' );
+                    QUERY PLAN
+------------------------------------------------------------------
+Seq Scan on persona  (cost=0.00..119213.00 rows=995333 width=56)
+    Filter: (sesso <> 'F'::bpchar)
+#+end_src
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+** Esempi di ~EXPLAIN~: età
+*** Cercare le persone con una specifica età
+#+begin_src sql
+# SELECT count(*) FROM persona WHERE eta = 40;
+count
+-------
+70028
+
+# EXPLAIN SELECT * FROM persona WHERE eta = 40;
+
+----------------------------------------------------------------------
+Seq Scan on persona  (cost=0.00..119213.00 rows=69500 width=56)
+    Filter: (eta = 40)
+#+end_src
+
+*** Calcolare quante tuple saranno restituite dalla query
+#+begin_src sql
+# WITH stats AS ( SELECT unnest( most_common_vals::text::text[] ) AS mcv
+                       , unnest( most_common_freqs ) AS mcf
+       FROM pg_stats WHERE tablename = 'persona'
+       AND  attname = 'eta' )
+SELECT * FROM stats WHERE mcv = '40';
+
+mcv |  mcf
+-----+--------
+40  | 0.0139
+#+end_src
+
+~5000000 * 0.0139 = 69500 tuple~
+
+
+*** Costruzione di un indice
+#+begin_src sql
+# CREATE INDEX idx_persona_eta ON persona(eta);
+
+# SELECT relname, relpages, reltuples
+  FROM pg_class WHERE relname IN ( 'persona',
+                                   'idx_persona_sesso',
+                                   'idx_persona_eta' );
+     relname      | relpages | reltuples
+------------------+----------+-----------
+persona           |    56713 |     5e+06
+idx_persona_sesso |    13713 |     5e+06
+idx_persona_eta   |    13713 |     5e+06
+#+end_src
+
+L'indice ha la stessa dimensione di quello precedente.
+
+*** Explain con indice
+#+begin_src sql
+# EXPLAIN SELECT * FROM persona WHERE eta = 40;
+
+-------------------------------------------------------------------------------------
+Bitmap Heap Scan on persona  (cost=1303.06..61852.75 rows=69500 width=56)
+   Recheck Cond: (eta = 40)
+     ->  Bitmap Index Scan on idx_persona_eta
+                           (cost=0.00..1285.68 rows=69500 width=0)
+         Index Cond: (eta = 40)
+#+end_src
+
+*** Combinare gli indici
+#+begin_src sql
+# EXPLAIN SELECT * FROM persona WHERE eta = 40 AND sesso = 'M';
+
+-----------------------------------------------------------------------------------------------
+Bitmap Heap Scan on persona  (cost=19678.28..51960.27 rows=13835 width=56)
+    Recheck Cond: ((eta = 40) AND (sesso = 'M'::bpchar))
+      ->  BitmapAnd  (cost=19678.28..19678.28 rows=13835 width=0)
+        ->  Bitmap Index Scan on idx_persona_eta
+                        (cost=0.00..1285.68 rows=69500 width=0)
+            Index Cond: (eta = 40)
+       ->  Bitmap Index Scan on idx_persona_sesso
+                       (cost=0.00..18385.43 rows=995333 width=0)
+           Index Cond: (sesso = 'M'::bpchar)
+#+end_src
+
+Le tuple in uscita sono calcolate come:
+~tuple totali * selettivita_idx_sesso * selettivita_idx_eta~
+~5000000 * 0.0139 * 0.199 = 13830~
+
+*** Explain con disuguaglianza
+#+begin_src sql
+# EXPLAIN SELECT * FROM persona WHERE eta > 40;
+
+-------------------------------------------------------------------
+Seq Scan on persona  (cost=0.00..119213.00 rows=2101500 width=56)
+    Filter: (eta > 40)
+#+end_src
+
+*** Calcolare la selettività
+Si somma la selettività dei bucket che soddisfano la condizione:
+
+#+begin_src sql
+# WITH stats AS ( SELECT unnest( most_common_vals::text::text[] ) AS mcv
+                       , unnest( most_common_freqs ) AS mcf
+                 FROM pg_stats WHERE tablename = 'persona'
+                 AND  attname = 'eta' )
+SELECT sum( mcf::real ) FROM stats WHERE mcv::int > 40;
+sum
+--------
+0.4203
+#+end_src
+
+~5000000 * 0.4203 = 2101500~
+
+*** Calcolare la selettivita (altro esempio)
+#+begin_src sql
+# EXPLAIN SELECT * FROM persona WHERE eta <> 40;
+
+-------------------------------------------------------------------
+Seq Scan on persona  (cost=0.00..119213.00 rows=4930500 width=56)
+    Filter: (eta <> 40)
+
+# WITH stats AS ( SELECT unnest( most_common_vals::text::text[] ) AS mcv
+                       , unnest( most_common_freqs ) AS mcf
+                 FROM pg_stats WHERE tablename = 'persona'
+                 AND  attname = 'eta' )
+SELECT 1 - mcf::real FROM stats WHERE mcv::int = 40;
+     ?column?
+-------------------
+0.986100000329316
+#+end_src
+
+~5000000 * 0.9861 = 4930500~
+
+
+
+
+
+
+*** Funzioni che usano un indice
+Molte funzioni di aggregazione possono trarre vantaggio dalla presenza di indici.
+#+begin_src sql
+# EXPLAIN SELECT min(eta) FROM persona;
+                                                 QUERY PLAN
+-------------------------------------------------------------------------------------------------------------
+ Result  (cost=0.51..0.52 rows=1 width=4)
+   InitPlan 1 (returns $0)
+     ->  Limit  (cost=0.43..0.51 rows=1 width=4)
+           ->  Index Only Scan using idx_persona_eta on persona
+                          (cost=0.43..369177.07 rows=5000000 width=4)
+                 Index Cond: (eta IS NOT NULL)
+
+#+end_src
+
+*~Index Only Scan~ significa che non si leggono i dati ma solo l'indice!*
+
+
+
+
+
+
+
+
+
+* TODO
+*** Valori cercati
+#+begin_src sql
+-- tutti i nati del 1978
+> SELECT count(*) FROM persona
+  WHERE extract( year from data_nascita ) = 1978;
+count
+-------
+70125
+#+end_src
+*** Esempio di ~EXPLAIN~
+#+begin_src shell
+> EXPLAIN
+  SELECT * FROM persona
+  WHERE EXTRACT( year from data_nascita ) = 1978;
+
+-------------------------------------------------------------------------------------------------------------
+ Seq Scan on persona  (cost=0.00..139046.33 rows=25000 width=54)
+   Filter: (date_part('year'::text,
+           (data_nascita)::timestamp without time zone) = '1978'::double precision)
+#+end_src
+
+Il sistema pensa di estrarre ~25000~ tuple con quella condizione di filtro, ma ve ne sono ~70000~.
+
+
+*** Perché l'ottimizzatore sbaglia il conteggio delle tuple?
+
+
+*** Esempio di ~EXPLAIN~
+Si consideri:
+#+begin_src sql
+>  EXPLAIN SELECT * FROM persona WHERE eta > 48;
+                         QUERY PLAN
+------------------------------------------------------------
+ Seq Scan on persona  (cost=0.00..219.00 rows=175 width=46)
+   Filter: (eta > 48)
+#+end_src
+
+C'è un solo nodo, di tipo ~Seq Scan~ (accesso sequenziale) che ha un costo iniziale nullo (non è richiesto alcun setup) e costo finale di ~219~. Saranno estratte ~175~ tuple, ciascuna di ~46 bytes~.
+
+*** Esempio di ~EXPLAIN ANALYZE~
+Con l'aggiunta di ~ANALYZE~ viene effettivamente eseguita la query e si può verificare se le statistiche erano aggiornate: la query riporta effettivo tempo di esecuzione e dati sulle tuple realmente trovate.
+
+#+begin_src sql
+>  EXPLAIN ANALYZE SELECT * FROM persona WHERE eta > 48;
+                                               QUERY PLAN
+--------------------------------------------------------------------------------------------------------
+ Seq Scan on persona  (cost=0.00..219.00 rows=175 width=46)
+                (actual time=0.027..3.886 rows=175 loops=1)
+   Filter: (eta > 48)
+   Rows Removed by Filter: 9825
+ Planning time: 0.098 ms
+ Execution time: 4.174 ms
+#+end_src
+
+La query non effettua un ~ANALYZE~!
+
+*** Formati di output di ~EXPLAIN~
+E' possibile ottenere diversi formati di output di ~EXPLAIN~ mediante l'opzione ~FORMAT~. Tali formati possono essere usati per una migliore interpretazione da parte di programmi automatici e includono:
+- /text/ output di default;
+- /json/;
+- /xml/;
+- /yaml/.
+
+#+begin_src sql
+> EXPLAIN ( FORMAT JSON )
+  SELECT * FROM persona WHERE eta > 48;
+            QUERY PLAN
+-----------------------------------
+ [                                +
+   {                              +
+     "Plan": {                    +
+       "Node Type": "Seq Scan",   +
+       "Relation Name": "persona",+
+       "Alias": "persona",        +
+       "Startup Cost": 0.00,      +
+       "Total Cost": 219.00,      +
+       "Plan Rows": 175,          +
+       "Plan Width": 46,          +
+       "Filter": "(eta > 48)"     +
+     }                            +
+   }                              +
+ ]
+#+end_src
+
+*** Buffers di ~EXPLAIN~
+Il comando ~EXPLAIN ANALYZE~ accetta l'opzione particolare ~buffers~ che consente di indicare dove sono state trovate le informazioni:
+#+begin_src sql
+> EXPLAIN (ANALYZE, BUFFERS)
+   SELECT * FROM evento WHERE description like '%10%';
+                                                   QUERY PLAN
+-----------------------------------------------------------------------------------------------------------------
+ Seq Scan on evento  (cost=0.00..39806.00 rows=107668 width=18) (actual time=0.122..271.319 rows=113094 loops=1)
+   Filter: (description ~~ '%10%'::text)
+   Rows Removed by Filter: 1996586
+   Buffers: shared hit=64 read=13371
+ Planning time: 1.679 ms
+ Execution time: 285.588 ms
+#+end_src
+
+Si ha che ~64~ buffers erano già in memoria e ~13371~ sono stati riletti da disco.
+
+*** Effetti collaterali di un sistema in produzione
+Quando si esegue un ~EXPLAIN ANALYZE~ si deve tenere in considerazione che alcuni dati potrebbero essere già presenti o assenti dallo shared buffer, e questo dipende dal resto delle query che stanno lavorando sul sistema. Ad esempio se si esegue ricorsivamente la query di explain precedente (ad esempio con ~\watch~) si ottiene:
+
+#+begin_src sql
+> EXPLAIN (ANALYZE, BUFFERS)
+  SELECT * FROM evento WHERE description like '%10%';
+                                                   QUERY PLAN
+-----------------------------------------------------------------------------------------------------------------
+ Seq Scan on evento  (cost=0.00..39806.00 rows=107668 width=18) (actual time=0.000..232.473 rows=113094 loops=1)
+   Filter: (description ~~ '%10%'::text)
+   Rows Removed by Filter: 1996586
+   Buffers: shared hit=13435
+ Planning time: 0.085 ms
+ Execution time: 242.981 ms
+#+end_src
+
+/ossia tutti i dati sono già in memoria!/ Si noti che il tempo è calato, anche se non drasticamente.
+*** Verbosità di ~EXPLAIN~
+L'opzione verbose consente di visualizzare alcuni dati in piu' in uscita, come ad esempio il nome delle colonne restituite da ogni nodo e il nome completo di ogni relazione in alias (utile ad esempio con i join).
+*** Nodi annidati in ~EXPLAIN~
+#+begin_src sql
+> EXPLAIN
+  SELECT * FROM persona
+  WHERE eta > 48 AND sesso IN (
+      SELECT sesso FROM persona
+      GROUP BY sesso HAVING COUNT(*) > 20 );
+                                       QUERY PLAN
+-----------------------------------------------------------------------------------------
+ Hash Semi Join  (cost=244.07..465.48 rows=175 width=46)
+   Hash Cond: (persona.sesso = persona_1.sesso)
+   ->  Seq Scan on persona  (cost=0.00..219.00 rows=175 width=46)
+         Filter: (eta > 48)
+   ->  Hash  (cost=244.05..244.05 rows=2 width=2)
+         ->  HashAggregate  (cost=244.00..244.03 rows=2 width=2)
+               Group Key: persona_1.sesso
+               Filter: (count(*) > 20)
+               ->  Seq Scan on persona persona_1  (cost=0.00..194.00 rows=10000 width=2)
+#+end_src
+
+*** Output di ~EXPLAIN~: come si legge?
+/Tendenzialmente si legge da destra verso sinistra, dal basso verso l'alto/; i nodi con costo minori sono eseguiti per primi.
+Nell'esempio di prima si parte con un ~Seq Scan~ su ~persona_1~ (costo nullo), query inner.
+Successivamente viene eseguito un ~HashAggregate~ che implementa il ~GROUP BY~; tutto questo viene racchiuso in un nodo ~Hash~ che fornisce due tuple e che ha un costo di ~244~.
+Parallelamente si esegue un ~Seq Scan~ sulla tabella ~persona~ (outer) per ottnere un ~Hash~ sulla condizione di ~eta~.
+Infine i due hash sono uniti in un ~Semi Join~, si noti che il costo di partenza di questo nodo è ~244~ pari al massimo costo dei due nodi intermedi (un nodo non può partire prima dei suoi figli).
+
+** Tipi di accesso
+*** Sequential Scan (~Seq Scan~)
+E' il tipo di scansione di default (ossia quando non vi sono indici o il loro utilizzo è inutile e/o costoso).
+
+Viene letta la tabella una pagina dati alla volta fino alla fine.
+*** Bitmap Index Scan (~Bitmap Index Scan~)
+Viene usato quando si hanno dei valori non troppo frequenti e delle clausole di uguaglianza.
+
+Si costruisce una mappa hash di tuple che soddisfano o meno la condizione e si ripercorre questa condizione quando si leggono le pagine dati.
+*** Index Scan (~Index Scan~)
+Viene usato quando si ha un indice altamente filtrante (ossia pochi valori da estrarre).
+
+E' l'accesso classico con indice:
+1. si percorre l'indice;
+2. si estraggono le tuple visibili dall'heap della tabella.
+*** Index Only Scan (~Index Only Scan~)
+E' una funzionalità introdotta nelle ultime versione di PostgreSQL.
+Viene usata se:
+- l'indice supporta l'/Index Only Scan/ (es. B-Tree);
+- la query referenzia *solo* colonne presenti nell'indice.
+
+Tutti i dati sono quindi accessibili solo tramite l'indice, e quindi è possibile accedere all'indice direttamente senza accedere all'heap.
+
+C'è però una complicazione: gli indici non memorizzano i dati di visibilità, quindi l'indice potrebbe referenziare tuple invisibili (MVCC). Per risolvere questo problema ogni pagina heap memorizza un bit che indica se tutte le sue tuple sono visibili. Se non tutte le tuple sono visibili questo accesso si trasforma di fatto in un /Index Scan/.
+*** Nested Loop (~Nested Loop~)
+E' il meccanismo classico di join.
+La tabella di destra viene percorsa con due strategie:
+- /inner/ ~Seq Scan~
+  1. la tabella /outer/ (sinistra) viene percorsa sequenzialmente;
+  2. la tabella /inner/ (destra) viene percorsa sequenzialmente per ogni valore della tabella inner. *Funziona solo per piccole dimensioni della /inner/.*
+- /inner/ ~Index Scan~
+  1. la tabella /outer/ (sinistra) viene letta sequenzialmente (o anche con indice);
+  2. per ogni valore della /outer/ si cerca nell'indice della /inner/ (destra) il match e si accede tramite l'indice alle tuple.
+*** Altri tipi di join
+- ~Hash Join~
+  1. la tabella /inner/ (destra) viene decomposta in un hash con valori multipli per bucket;
+  2. la tabella /outer/ (sinistra) viene percorsa sequenzialmente, per ogni valore si calcola la chiave e si cerca nell'array di valori
+     hash della /inner/
+- ~Merge Join~
+  1. entrambe le tabelle sono prima ordinate (~Sort~) a seguito di una lettura sequenziale (~Seq Scan~);
+  2. la tabella /outer/ (sinistra) viene percorsa sequenzialmente;
+  3. per ogni valore della /outer/ si estraggono tutti i valori della /inner/ che fanno match (sono ordinati);
+  4. al primo valore della /outer/ che non fa match si avanza al prossimo valore della /inner/ e si riparte dalla stessa posizione della /inner/.
+- ~Lateral Join~ viene usato quando ci sono delle espressioni da calcolare dinamicamente;
+- ~Semi Join~ e ~Anti Join~ sono dei join /parziali/ usati per verificare l'esistenza o meno di chiavi fra le tabelle, ad esempio clausole ~EXISTS~ e ~IN~ e relative negazioni.
+
+*** Aggregazioni
+Quando si usa una funzione di aggregazione si possono incontrare i seguenti nodi:
+- ~GroupAggregate~ è il caso classico con ~GROUP BY~;
+- ~HashAggregate~ raggruppamento in memoria mediante una tabella hash;
+- ~WindowAgg~ usato quando si ha una window function.
+*** Nodi /di servizio/
+Ci sono una serie di nodi per le operazioni principali:
+- ~Sort~ usato per il sorting esplicito o implicito;
+- ~Limit~ quando compare una clausola ~LIMIT~;
+- ~Unique~ usato per ~DISTINCT~ oppure ~UNION~.
+*** Nodi per l'unione di query
+- ~SubqueryScan~ effettua il join fra una sottoquery e quella principale;
+- ~CTEScan~ effettua il join fra una CTE e la query principale;
+- ~Materialize~ crea un recordset in memoria partendo da una porzione di risultati di un nodo;
+- ~Append~ usata con ~UNION ALL~.
+** Statistische legate agli indici
+*** Dove sono le statistische?
+Il catalogo ~pg_statistic~ contiene le informazioni statistiche su ogni attributo di ogni tabella, ad sempio:
+#+begin_src sql
+# SELECT pc.relname, ps.stanullfrac, ps.stadistinct, pa.attname, pa.attstattarget
+  FROM pg_class pc JOIN pg_statistic ps ON ps.starelid = pc.oid
+  JOIN pg_attribute pa ON pa.attnum = ps.staattnum
+  WHERE pc.relname = 'software' AND pa.attrelid = pc.oid;
+ relname  | stanullfrac | stadistinct | attname | attstattarget
+----------+-------------+-------------+---------+---------------
+ software |           0 |          -1 | pk      |            -1
+ software |           0 |       -0.25 | name    |            -1
+ software |           0 |          -1 | version |            -1
+ software |           0 |       -0.25 | valid   |            -1
+#+end_Src
+
+che mostra i valori null e il numero di valori distinti per le varie colonne.
+
+*** I valori delle statistiche
+I valori delle statistiche /solitamente/ seguono questa regola:
+- se sono valori positivi allora sono valori esatti;
+- se sono valori negativi hanno un significato speciale.
+
+Ad esempio:
+#+begin_src sql
+ relname  | stanullfrac | stadistinct | attname | attstattarget
+----------+-------------+-------------+---------+---------------
+ software |           0 |          -1 | pk      |            -1
+ software |           0 |       -0.25 | name    |            -1
+#+end_Src
+
+- ~stadistinct~ indica il numero esatto di valori distinti o un valore negativo che il moltiplicatore del numero di tuple, ovvero ~name~ ha valori distinti ogni 4 righe (~-0.25~), mentre ~pk~ ogni riga (è chiave!);
+- ~attstattarget~ indica la granularilarità delle statistiche collezionate da ~ANALYZE~. Il valore dipende dal dominio del dato:
+  - se negativo indica che si usa il default per quel tipo di dato;
+  - se positivo indica che si userà quel valore;
+  - se zero allora nessuna statistica sarà raccolta su quella colonna.
+
+Per valori scalari solitamente il target indica quanti /valori comuni devono essere considerati/.
+
+*** ANALYZE
+PostgreSQL aggiorna il catalogo delle statistiche con il comando ~ANALYZE~ (che può essere eseguito da solo o assieme a ~VACUUM~).
+
+#+begin_src sql
+# ANALYZE VERBOSE software;
+INFO:  analyzing "public.software"
+INFO:  "software": scanned 1 of 1 pages,
+       containing 8 live rows and 0 dead rows;
+       8 rows in sample, 8 estimated total rows
+#+end_Src
+
+Il livello di statistiche (granularità) da raccogliere con ~ANALYZE~ può essere specificato colonna per colonna con:
+
+#+begin_src sql
+> ALTER TABLE software
+  ALTER COLUMN name
+  SET STATISTICS 200;
+#+end_src
+
+Tale valore viene definito *statistic target* e rappresenta il *massimo numero di valori memorizzabili nell'istogramma e nei Most Common Values* di ~pg_statistic~ per quella colonna.
+
+*** Tuple e pagine dati
+Il catalogo ~pg_class~ contiene il numero di tuple e pagine dati di una relazione, questo viene usato dall'ottimizzatore per stimare la quantità di lavoro da fare. Il numero di pagine viene controllato rispetto a quello di ~pg_class~ (*è un'operazione non costosa e non richiede I/O*) e se i due valori non coincidono si aggiorna il numero delle tuple di conseguenza.
+
+#+begin_Src sql
+> SELECT relpages, reltuples
+  FROM pg_class
+  WHERE relname = 'persona';
+ relpages | reltuples
+----------+-----------
+       94 |     10000
+#+end_Src
+*** Statistiche piu' comode
+La vista speciale ~pg_stats~ sul catalogo ~pg_statistic~ (e tabelle collegate) fornisce una visione piu' "comoda" di accesso alle statistiche:
+
+#+begin_src sql
+> SELECT null_frac,
+  n_distinct,
+  most_common_vals,
+  most_common_freqs,
+  histogram_bounds
+  FROM pg_stats
+  WHERE tablename = 'persona'
+  AND attname IN ( 'sesso', 'nome' );
+-[ RECORD 1 ]-
+null_frac         | 0
+n_distinct        | -1
+most_common_vals  |
+most_common_freqs |
+histogram_bounds  | {Nome1,Nome1087,Nome1177,Nome1267,Nome1357,Nome1447,
+                     Nome1537,Nome1627,Nome1717,Nome1807,Nome1898,Nome1988,
+                     Nome2077,Nome2167,Nome2257,Nome2347,Nome2437,Nome2527,
+                     Nome2617,Nome2707,Nome2798,Nome2888,Nome2978,
+                     Nome3067, ... }
+-[ RECORD 2 ]-
+null_frac         | 0
+n_distinct        | 2
+most_common_vals  | {F,M}
+most_common_freqs | {0.5,0.5}
+histogram_bounds  |
+#+end_src
+*** Analizzare MCVs e MCFs in una tabella
+E' possibile utilizzare un doppio cast, ~unnest~ e ~rows from~ per ottenere una tabella di correlazione fra un valore e la sua frequenza:
+#+begin_src sql
+> SELECT  mcv, mcf
+  FROM pg_stats,
+   ROWS FROM ( unnest( most_common_vals::text::text[] ),
+               unnest( most_common_freqs ) )
+             r( mcv, mcf )
+  WHERE tablename = 'evento'
+  AND attname IN ( 'description' );
+#+end_src
+** Istogrammi, valori comuni, selettività
+*** Query di esempio
+Si supponga di avere la tabella ~persona~ popolata con 10000 nomi a caso, come nell'esempio di partizionamento.
+
+#+begin_src sql
+> EXPLAIN
+  SELECT *
+  FROM persona
+  WHERE sesso = 'M'
+  AND nome < 'Nome1177';
+                           QUERY PLAN
+-----------------------------------------------------------------
+ Seq Scan on persona  (cost=0.00..244.00 rows=100 width=46)
+   Filter: ((nome < 'Nome1177'::text) AND (sesso = 'M'::bpchar))
+#+end_src
+
+Il sistema indica che verranno estratte ~100~ tuple, ma come fa a saperlo?
+
+*** Calcolare la selettività
+
+Quando viene effettuata una query l'ottimizzatore cerca di comprendere quale sia la *selettività* di una clausola ~WHERE~. In particolare per ogni clausola si esamina l'/operatore/ nel catalogo di sistema ~pg_operator~.
+In ~pg_operator~ si ha che:
+- ~oprname~ corrisponde al nome dell'operatore;
+- ~oprkind~ vale ~b~ per operatori infissi, ~l~ per unari a sinistra, ~r~ per unari a destra;
+- ~oprrest~ indica la funzione di /restrizione di selettività/ dell'operatore;
+. ~oprleft~, ~oprright~, ~oprresult~ indicano it ~pg_type~ tipo dell'operando o risultato.
+
+#+begin_src sql
+> SELECT oprname, oprkind, oprleft, oprright, oprrest
+   FROM pg_operator
+   WHERE ( oprname = '<' OR oprname = '=' )
+   AND oprleft = ( SELECT oid
+                   FROM pg_type
+                   WHERE typname = 'char' )
+   AND oprright = oprleft;
+-[ RECORD 1 ]---------
+oprname  | =
+oprkind  | b
+oprleft  | 18
+oprright | 18
+oprrest  | eqsel
+-[ RECORD 2 ]---------
+oprname  | <
+oprkind  | b
+oprleft  | 18
+oprright | 18
+oprrest  | scalarltsel
+#+end_src
+
+Quindi nella query di esempio la selettività è data dalla funzione ~eqsel~ e dalla funzione ~scalarltsel~.
+
+*** Most Common Values (MCVs)
+La funzione ~eqsel~ controlla i valori piu' comuni per le colonne specificate, ossia ~most_common_vals~ e ~most_common_freqs~. Dai valori si ottiene che nel caso della colonna ~sesso~:
+
+#+begin_src sql
+most_common_vals  | {F,M}
+most_common_freqs | {0.5,0.5}
+#+end_src
+
+ossia la selettività della colonna su uno dei due valori è del 50% (~0.5~).
+
+*** Histograms
+Nel caso della colonna ~nome~, e quindi della funzione ~scalarltsel~, i valori da usare sono in un /istogramma/ che riporta dei "bucket" di valori ipotizzandoli a distribuzione costante (ossia a pari frequenza):
+
+#+begin_Src sql
+histogram_bounds  | {Nome1,Nome1087,Nome1177,Nome1267,Nome1357,Nome1447,
+                     Nome1537,Nome1627,Nome1717,Nome1807,Nome1898,Nome1988,
+                     Nome2077,Nome2167,Nome2257,Nome2347,Nome2437,Nome2527,
+                     Nome2617,Nome2707,Nome2798,Nome2888,Nome2978,
+                     Nome3067, ... }
+#+end_src
+
+*L'istogramma divide i valori in /bucket/ con pari frequenza*.
+
+In particolare il valore di filtro della clausola ~WHERE ... nome < 'Nome1177`~ individua appunto il terzo bucket, quindi ci sono ~2~ bucket che soddisfano la condizione. I bucket in totale sono 100 (/statistic target/), quindi la selettività è data da ~2/100 = 0.02~.
+
+*** Selettività complessiva
+
+La selettività complessiva della clausola in ~AND~ logico è data dalla moltiplicazione dei valori di selettività individuale, ovvero:
+
+#+begin_src
+10000 tuple * ( 0.5 * 0.02 ) = 100
+#+end_src
+
+che è appunto il risultato fornito dal comando ~EXPLAIN~.
+
+*** Altro esempio analogo
+Si supponga di variare la query come segue:
+
+#+begin_src sql
+> EXPLAIN  SELECT * FROM persona WHERE sesso = 'F' AND nome like 'Nome1%';
+                           QUERY PLAN
+----------------------------------------------------------------
+ Seq Scan on persona  (cost=0.00..244.00 rows=556 width=42)
+   Filter: ((nome ~~ 'Nome1%'::text) AND (sesso = 'F'::bpchar))
+#+end_src
+
+Il procedimento è lo stesso descritto in precedenza, e la selettività ora risulta:
+- ~0.5~ per la colonna ~sesso~;
+- ~12/100 = 0.12~ per la colonna ~nome~;
+
+ovvero ~10000 tuple * 0.5 * 0.12 = 600~
+
+
+*** Controesempio
+Si supponga di usare la query:
+#+begin_Src sql
+> EXPLAIN
+   SELECT *
+   FROM persona
+   WHERE sesso <> 'F'
+   AND nome > 'Nome1177';
+                            QUERY PLAN
+------------------------------------------------------------------
+ Seq Scan on persona  (cost=0.00..244.00 rows=4900 width=46)
+   Filter: ((sesso <> 'F'::bpchar) AND (nome > 'Nome1177'::text))
+#+end_src
+
+che è l'esatto opposto della precedente. Gli operatori hanno funzioni di selettività differente che ragionano in modo opposto:
+#+begin_src sql
+ SELECT oprname, oprkind, oprleft, oprright, oprrest
+   FROM pg_operator
+   WHERE ( oprname = '>' OR oprname = '<>' )
+   AND oprleft = ( SELECT oid
+                   FROM pg_type
+                   WHERE typname = 'char' )
+   AND oprright = oprleft;
+-[ RECORD 1 ]---------
+oprname  | <>
+oprkind  | b
+oprleft  | 18
+oprright | 18
+oprrest  | neqsel
+-[ RECORD 2 ]---------
+oprname  | >
+oprkind  | b
+oprleft  | 18
+oprright | 18
+oprrest  | scalargtsel
+#+end_src
+
+*** Calcolare la selettività complessiva
+Le selettività risultano ora date da:
+- /la selettività restante nel caso di ~sesso~/, ovvero ~1 - 0.5 = 0.5~;
+- /la selettività restante nel caso di ~nome~/, ovvero ~(100 - 2 ) bucket / 100 = 0.98~.
+
+La selettività complessiva è data dalla composizione delle selettività individuali, quindi il numero delle tuple può essere calcolato come:
+#+begin_Src sql
+10000 tuple * ( 0.5 * 0.98 ) = 4900
+#+end_src
+
+che è appunto il risultato fornito da ~EXPLAIN~.
+
+
+*** Caso analogo ma con valori interi
+Aggiungiamo una età random (compresa fra 0 e 50 anni):
+#+begin_src sql
+> ALTER TABLE persona
+   ADD COLUMN eta integer
+   DEFAULT mod( (random() * 1000)::int, 50 );
+
+> ANALYZE persona;
+#+end_src
+
+Le statistiche di sistema riportano:
+#+begin_Src sql
+> SELECT * FROM pg_stats
+  WHERE tablename = 'persona'
+  AND attname = 'eta';
+-[ RECORD 1 ]--
+...
+null_frac              | 0
+avg_width              | 4
+n_distinct             | 50
+most_common_vals       | {32,8,28,15,14,38,22,16,37,41,
+                          19,26,25,12,34,24,4,20,13,17,3,
+                          44,2,7,36,48,30,31,39,0,6,45,
+                          33,43,1,11,46,35,5,40,18,27,
+                          21,47,42,29,10,9,49,23}
+most_common_freqs      | {0.0222,0.0219,0.0218,0.0217,0.0216,
+                          0.0216,0.0214,0.0213,0.0213,0.0212,
+                           ... }
+histogram_bounds       |
+#+end_Src
+
+*** Query di esempio
+#+begin_src sql
+>  EXPLAIN SELECT *
+    FROM persona
+    WHERE eta = 28;
+                         QUERY PLAN
+------------------------------------------------------------
+ Seq Scan on persona  (cost=0.00..219.00 rows=218 width=46)
+   Filter: (eta = 28)
+#+end_Src
+
+*** Calcolo della selettività
+Il valore ~28~ è uno dei valori frequenti per la colonna ~eta~, listato come terzo valore piu' frequente nei ~most_common_vals~, in particolare la sua frequenza è di ~0.0218~ in ~most_common_freqs~.
+
+A questo punto l'ottimizzatore assume che la selettività della condizione sia di ~0.0128~, e quindi le tuple in uscita siano date dal calcolo:
+
+   ~10000 * 0.0218 = 218~
+
+*** Ulteriore esempio
+#+begin_src sql
+ EXPLAIN SELECT * FROM persona WHERE eta < 48;
+                         QUERY PLAN
+-------------------------------------------------------------
+ Seq Scan on persona  (cost=0.00..219.00 rows=9623 width=46)
+   Filter: (eta < 48)
+#+end_src
+
+*** Calcolo della selettività
+Ci sono due bucket che soddisfano la condizione di diseguaglianza:
+- ~48~ con frequenza ~0.0202~;
+- ~49~ con frequenza ~0.0175~.
+
+La frequenza dei bucket che rimangono (e che soddisfano la condizione) è quindi data dalla somma dei relativi valori di frequenza, o anche dalla differenza di quelli sopra che non soddsifano la condizione, ossia:
+#+begin_Src
+10000 tuple * ( 1 - ( 0.0202 + 0.0175 ) ) = 9623
+#+end_src
+
+*** Controesempio
+#+begin_src sql
+>  EXPLAIN SELECT * FROM persona WHERE eta > 48;
+                        QUERY PLAN
+------------------------------------------------------------
+ Seq Scan on persona  (cost=0.00..219.00 rows=175 width=46)
+   Filter: (eta > 48)
+#+end_Src
+
+C'è un solo bucket che verifica la condizione ~eta > 48~, ossia quello con ~49~ e frequenza ~0.0175~, e quindi le tuple in uscita sono:
+#+begin_src sql
+10000 tuple * 0.0175 = 175
+#+end_Src
+
+*** Calcolo della selettività: esempio piu' complesso
+#+begin_Src sql
+> EXPLAIN SELECT *
+   FROM persona
+   WHERE eta > 48
+   AND sesso = 'M'
+   AND nome > 'Nome1177';
+                             QUERY PLAN
+------------------------------------------------------------------------------
+ Seq Scan on persona  (cost=0.00..269.00 rows=86 width=46)
+   Filter: ((eta > 48) AND (nome > 'Nome1177'::text) AND (sesso = 'M'::bpchar))
+#+end_Src
+
+Le singole selettività di filtro sono:
+- ~0.0175~ per la colonna ~età~;
+- ~0.5~ per la colonna ~sesso~;
+- ~0.98~ per la colonna ~nome~;
+
+#+begin_src
+10000 tuple * ( 0.0175 * 0.5 * 0.98 ) = 85.75 = 86
+#+end_src
+
+*** Selettività: riassunto
+L'ottimizzatore esegue alcuni passaggi fondamentali per comprendere quanto una clausola ~WHERE~ sia selettiva sui dati:
+
+1. controlla da ~pg_stat~ quante sono le tuple e quante le pagine dati, se i due numeri non combcaciano si aggiusta il numero delle tuple;
+2. affida alla funzione stabilita dall'operatore (~pg_operator~) il compito di restituire l'indice di selettività:
+   - nel caso di /uguaglianza/ si controllano i /Most Common Values/:
+     + se il valore è fra quelli comuni la selettività è data dalla frequenza del valore;
+     + se il valore non è fra quelli comuni si sommano le frequenze dei MCVs che soddisfano la condizione, tale somma è la selettività (lineare);
+   - nel caso di disigueglianza si controlla l'/istogramma/ dei valori, supposti a frequenza costante:
+     + si cerca di capire in quale/i bucket cade il valore;
+     + se cade in un solo bucket si calcola l'andamento lineare: ampiezza del bucket rispetto al numero di bucket totali;
+     + se cade in piu' bucket si calcola la percentuale di bucket colpiti.
+
+** Statistiche di correlazione
+*** Introduzione
+A partire dalla versione 10 esiste un comando ~CREATE STATISTICS~ che consente di creare delle statistiche personalizzate sulla correlazione di colonne.
+Ad esempio, supponendo di avere una tabella definita come:
+
+#+begin_src sql
+> CREATE TABLE expenses(
+   day date,
+   year int,
+   ...
+   CHECK( year = EXTRACT( year FROM day ) )
+);
+#+end_src
+
+è possibile creare una statistica di correlazione fra ~day~ e ~year~ il cui valore dipende appunto dalla precedente colonna:
+
+#+begin_src sql
+> CREATE STATISTICS stat_day_year ( dependencies )
+ ON day, year
+ FROM expenses;
+#+end_src
+*** La vista ~pg_statistics_ext~
+La vista speciale ~pg_statistics_ext~ permette di vedere la correlazione creata (una riga per tipologia di statistica) e le colobnne implicate, nonché il rapporto fra i valori:
+
+#+begin_src sql
+> SELECT * FROM pg_statistic_ext;
+
+stxrelid        | 51015
+stxname         | stat_day_year
+stxnamespace    | 2200
+stxowner        | 16384
+stxkeys         | 3 5
+stxkind         | {f}
+stxndistinct    |
+stxdependencies | {"3 => 5": 1.000000}
+#+end_src
+
+*Queste statistiche sono usate per informare il planner della dimensione del result set!*

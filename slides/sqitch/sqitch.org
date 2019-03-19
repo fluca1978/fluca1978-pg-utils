@@ -248,3 +248,43 @@ aa595f4f4385 revert testdb:people_improved Aggiungo altre colonne all'anagrafica
 aa595f4f4385 deploy testdb:people_improved Aggiungo altre colonne all'anagrafica personale
 4636de37d2ab deploy testdb:people Creazione tabella personale
 #+end_src
+** Vedere lo stato
+*** Il comando ~status~
+Il comando ~status~ mostra le modifiche effettuate e quelle non ancora applicate:
+
+#+begin_src shell
+% sqitch status testdb
+# On database testdb
+# Project:  testdb
+# Change:   4636de37d2abdab8ca7bc875f7bafe53107d7931
+# Name:     people
+# Deployed: 2019-03-01 13:34:18 +0100
+# By:       Luca Ferrari <fluca1978@gmail.com>
+#
+Undeployed change:
+ * people_improved
+#+end_src
+
+
+* Schema Database
+** Tabella ~changes~
+La tabella ~sqitch.changes~ contiene la lista delle modifiche applicate, assieme al timestamp, l'hash della modifica (script), ecc.
+
+#+begin_src shell
+% sha1 deploy/people.sql
+SHA1 (deploy/people.sql) = 1baf8d4617582a1adfc2e50f10b78a5a10c92f48
+
+% psql -U luca -c 'table sqitch.changes;' --expanded testdb
+-[ RECORD 1 ]---+-----------------------------------------
+change_id       | 4636de37d2abdab8ca7bc875f7bafe53107d7931
+script_hash     | 1baf8d4617582a1adfc2e50f10b78a5a10c92f48
+change          | people
+project         | testdb
+note            | Creazione tabella personale
+committed_at    | 2019-03-01 13:34:18.767272+01
+committer_name  | Luca Ferrari
+committer_email | fluca1978@gmail.com
+planned_at      | 2019-03-01 12:59:51+01
+planner_name    | Luca Ferrari
+planner_email   | fluca1978@gmail.com
+#+end_src
