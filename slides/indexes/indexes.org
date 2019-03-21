@@ -86,13 +86,18 @@ spgist | spghandler  | i
 
 #+end_src
 *** B-Tree
-E' il tipo di default. *Sono gli unici indici che possono essere definiti ~UNIQUE~!*
-Supporta l'/Index Only Scan/!
+E' il tipo di default.
+*Sono gli unici indici che possono essere definiti ~UNIQUE~!*
+*Supporta l'/Index Only Scan/!*
 
 Funziona per operazioni di *equalità* e *range* su dati ordinabili in qualche modo, quindi operatori ~=~, ~>~, ~<~, ~>=~, ~<=~, ~BETWEEN~,
 ~IN~, ~IS NULL~.
 
-Possono anche essere usati per ricerche ~LIKE~ a patto che:
+*Copia l'intero valore della chiave dentro all'indice (quindi la sua profondità/dimensione dipende dalla grandezza del valore indicizzato)*.
+
+*** B-Tree (2)
+
+Può essere usato per ricerche ~LIKE~ a patto che:
 - il pattern sia un literal;
 - il pattern sia cercato all'inizio della stringa.
 
@@ -103,21 +108,58 @@ Nel caso di indici multicolonna l'indice viene usato in base a delle limitazioni
 *** Hash
 Gli indici /Hash/ sono usabili solo per *uguaglianza*, quindi non saranno mai utilizzati se non assieme all'operatore ~=~.
 
-*ATTENZIONE: gli indici hash non sono attualmente salvati nei WAL.* Questo significa che gli indici hash non sopravvivono ad un crash
-e non sono nemmeno replicati (dalla version 10 entrambi i problemi sono risolti).
+Converte il valore della chiave in un hash a 32 bit, si creano bucket che puntano alle tuple.
+*Può essere piu' compatto rispetto ad un B-Tree*.
+
+Utile per confronti con chiavi lunghe (es. URL).
+
+*ATTENZIONE: nelle vecchie versioni gli indici hash non venivano  salvati nei WAL.*
+Questo significa che gli indici hash non sopravvivono ad un crash e non sono nemmeno replicati (dalla version 10 entrambi i problemi sono risolti).
 *** GIN
 Sono indici /invertiti/, ovvero invece che "puntare" ad una tupla puntano a dati multipli (es. array).
 
+/Gli indici B-Tree non funzionano bene con molte chiavi identiche/.
+
 Sono usati solitamente per testare l'esistenza della chiave fra i possibili valori, ad esempio nell Full Text Search.
+
+*** GIN (2)
+
+Le chiavi sono inserite in un B-Tree.
+
+Le foglie del B-Tree sono a loro volta /puntatori/ verso altri B-Tree che identificano le tuple.
+
+Appropriato per Full Text Search, JSON, array (se grandi).
+
 *** BRIN
 Gli indici /BRIN/ (Block Range INdexes) memorizzano dati sommari circa ogni blocco fisico di dati su disco.
 Ad esempio, se i dati sono ordinabili, il BRIN memorizza il valore minimo e massimo di ogni /blocco fisico/ di dati.
+
+Utile per chiavi autoincrementali e dati che in qualche modo correlano la posiziona della tupla alla monotonicità della funzione che ne restituisce il valore (ossia tabelle dove vengono fatte molte ~ISNERT~ con chiavi automatiche e poche ~UPDATE~).
+
+Solitamente è piu' piccolo di un B-Tree.
+
 *** GIST
 /GIST/ (Generalized Index Search Tree) non è un vero tipo di indice ma una "piattaforma" per la costruzione di indici personalizzati.
 
 Tali indici vengono costruiti definendo gli operatori applicabili e il relativo comportamento (ad esempio indici spaziali).
 *** SP-GIST
 E' una infrastruttura per la costruzione di indici non bilanciati.
+*** Scegliere un indice
+1) analizzare le query eseguite
+   - colonne in uscita
+   - numero di tuple ritornate (considerare anche le aggregazioni);
+2) la query ritorna un numero di tuple superiore a circa il 20% del numero totale? Allora un indice non sarà di grande aiuto;
+3) se si vuole costruire un indice, costruirlo sulla condizione con la maggiore selettività.
+*** Scegliere un indice con singola colonna
+Se si tratta di una singola colonna:
+  - vincoli di univocità implicano *B-Tree*;
+  - valori monotoni implicano *BRIN*;
+  - solo uguaglianze (e chiavi grandi) implicano *Hash*;
+*** Scegliere un indice multicolonna
+Se una condizione di selettività è composta da piu' colonne si può costruire un indice multicolonna.
+*Se le singolo colonne sono selettive anche singolarmente, partire con indici distinti*.
+*** Scegliere un indice su espressione
+Se si effettua una query con una espressione, potrebbe valer la pena costruire un indice con quella espressione.
 ** Quando viene usato un indice?
 *** Quando sicuramente non viene usato un indice
 Una query che non filtri i dati *non userà mai un indice*.
@@ -210,8 +252,39 @@ Il comando ~EXPLAIN~ fornisce come output una serie di nodi, ciascuno che indica
 
 *Il numero di tuple sarà sempre almeno 1*, questo perché altrimenti la valutazione di altri nodi risulterebbe impossibile. In generale una sola tupla singifica "pochi dati".
 
-** Esempi di ~EXPLAIN~
+*** Cambiare il formato di output di ~EXPLAIN~
+Il comando ~EXPLAIN~ permette di specificare alcune opzioni, fra le quali ~format~ che può valere:
+- /text/ output di default;
+- /json/;
+- /xml/;
+- /yaml/.
 
+#+begin_src sql
+> EXPLAIN (FORMAT json) SELECT * FROM persona;
+  ...
+     "Plan": {                    +
+       "Node Type": "Seq Scan",   +
+       "Parallel Aware": false,   +
+       "Relation Name": "persona",+
+       "Alias": "persona",        +
+  ...
+#+end_src
+*** ~EXPLAIN ANALYZE~
+Il comando ~EXPLAIN ANALYZE~ effettua un singolo ~EXPLAIN~ ed *esegue effettivamente* la query riportando i dati di previsione e quelli di esecuzione effettiva.
+
+Supporta l'opzione ~BUFFERS~ che indica anche dove sono fisciamente trovati i dati su disco.
+
+#+begin_src sql
+>  EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM persona;
+
+ Seq Scan on persona  (cost=0.00..106713.00 rows=5000000 width=56)
+                      (actual time=1.086..1784.714 rows=5000000 loops=1)
+   Buffers: shared read=56713
+ Planning Time: 0.111 ms
+ Execution Time: 2142.150 ms
+#+end_src
+
+** Esempi di ~EXPLAIN~
 *** Tabella di esempio
 #+begin_src shell
 > CREATE TABLE persona(
@@ -260,7 +333,6 @@ pg_size_pretty
 #+end_src
 
 ** Esempi di ~EXPLAIN~: sesso
-
 *** Cercare le persone di sesso maschile
 #+begin_src sql
 > EXPLAIN SELECT * FROM persona WHERE sesso = 'F';
@@ -383,6 +455,26 @@ Seq Scan on persona  (cost=0.00..119213.00 rows=995333 width=56)
 
 
 
+*** Non accedere ai dati
+Nel caso in cui i dati siano contenuti nell'indice, e si possa usare quest'ultimo, PostgreSQL /potrebbe/ evitare l'accesso ai dati stessi.
+
+#+begin_src sql
+-- order by forza l'uso dell'indice
+>  EXPLAIN SELECT sesso FROM persona ORDER BY sesso;
+                                           QUERY PLAN
+-------------------------------------------------------------------------------------------------
+ Index Only Scan using idx_persona_sesso
+        on persona  (cost=0.43..275729.23 rows=5000000 width=2)
+#+end_src
+
+#+begin_src sql
+-- nessuna selezione/ordinamento: no indice!
+>  EXPLAIN SELECT sesso FROM persona;
+                            QUERY PLAN
+------------------------------------------------------------------
+ Seq Scan on persona  (cost=0.00..106713.00 rows=5000000 width=2)
+
+#+end_src
 
 ** Esempi di ~EXPLAIN~: età
 *** Cercare le persone con una specifica età
@@ -413,7 +505,6 @@ mcv |  mcf
 #+end_src
 
 ~5000000 * 0.0139 = 69500 tuple~
-
 
 *** Costruzione di un indice
 #+begin_src sql
@@ -512,8 +603,6 @@ SELECT 1 - mcf::real FROM stats WHERE mcv::int = 40;
 
 
 
-
-
 *** Funzioni che usano un indice
 Molte funzioni di aggregazione possono trarre vantaggio dalla presenza di indici.
 #+begin_src sql
@@ -537,6 +626,123 @@ Molte funzioni di aggregazione possono trarre vantaggio dalla presenza di indici
 
 
 
+*** E l'indice hash?
+In questo caso un indice hash è troppo grande:
+#+begin_src sql
+> CREATE INDEX idx_persona_eta_hash ON persona USING hash (eta);
+
+> SELECT relname, relpages
+  FROM pg_class
+  WHERE relname like 'idx_persona_eta%';
+       relname        | relpages
+----------------------+----------
+ idx_persona_eta      |    13713
+ idx_persona_eta_hash |    28640
+
+> EXPLAIN SELECT * FROM persona WHERE eta = 40;
+                                     QUERY PLAN
+-------------------------------------------------------------------------------------
+ Bitmap Heap Scan on persona  (cost=1303.06..61852.75 rows=69500 width=56)
+   Recheck Cond: (eta = 40)
+   ->  Bitmap Index Scan on idx_persona_eta
+                    (cost=0.00..1285.68 rows=69500 width=0)
+         Index Cond: (eta = 40)
+#+end_src
+
+** Esempi di ~EXPLAIN~: codice fiscale
+*** B-Tree per ricerca con inizio stringa
+*Un B-Tree può essere usato per una ricerca /starts-with/*.
+#+begin_src sql
+> EXPLAIN SELECT * FROM persona
+          WHERE codice_fiscale like 'ab%';
+                                          QUERY PLAN
+----------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on persona  (cost=300.94..22131.03 rows=50505 width=56)
+   Filter: (codice_fiscale ~~ 'ab%'::text)
+   ->  Bitmap Index Scan on persona_codice_fiscale_key
+                          (cost=0.00..288.31 rows=7988 width=0)
+         Index Cond: ((codice_fiscale >= 'ab'::bpchar)
+                      AND (codice_fiscale < 'ac'::bpchar))
+#+end_src
+
+*** B-Tree non per ricerche metà/fine stringa
+L'indice B-Tree non può essere usato con ricerche non di tipo /starts-with/.
+#+begin_src sql
+> EXPLAIN SELECT * FROM persona WHERE codice_fiscale like '%ab%';
+                            QUERY PLAN
+------------------------------------------------------------------
+ Seq Scan on persona  (cost=0.00..119213.00 rows=202020 width=56)
+   Filter: (codice_fiscale ~~ '%ab%'::text)
+#+end_src
+
+*** E l'indice hash?
+In questo caso un indice hash risulta piu' compatto:
+#+begin_src sql
+> CREATE INDEX idx_persona_codice_fiscale ON persona USING hash (codice_fiscale);
+
+> SELECT relname, relpages
+  FROM pg_class
+  WHERE relname like '%persona_codice_fiscale%';
+          relname           | relpages
+----------------------------+----------
+ persona_codice_fiscale_key |    32393
+ idx_persona_codice_fiscale |    16386
+#+end_src
+*** Indice hash in azione
+Ovviamente, l'indice hash può essere usato solo per le uguaglianze.
+#+begin_src sql
+> EXPLAIN SELECT * FROM persona WHERE codice_fiscale = 'abcdef0123456789';
+                                        QUERY PLAN
+-------------------------------------------------------------------------------------------
+ Index Scan using idx_persona_codice_fiscale on persona
+                  (cost=0.00..8.02 rows=1 width=56)
+   Index Cond: (codice_fiscale = 'abcdef0123456789'::bpchar)
+
+> EXPLAIN SELECT * FROM persona WHERE codice_fiscale like 'abc%';
+                                          QUERY PLAN
+----------------------------------------------------------------------------------------------
+ Bitmap Heap Scan on persona  (cost=11.34..1068.42 rows=500 width=56)
+   Filter: (codice_fiscale ~~ 'abc%'::text)
+   ->  Bitmap Index Scan on persona_codice_fiscale_key
+                          (cost=0.00..11.21 rows=278 width=0)
+         Index Cond: ((codice_fiscale >= 'abc'::bpchar)
+                      AND (codice_fiscale < 'abd'::bpchar))
+#+end_src
+** Esempi di ~EXPLAIN~: indici con copertura multipla
+*** Disabilitare un indice
+Occorre essere amministratori per agire su ~pg_index~.
+
+#+begin_src sql
+# UPDATE pg_index
+  SET indisvalid = false
+  WHERE indexrelid IN ( SELECT oid
+                        FROM pg_class
+                        WHERE relname like 'idx_persona_%'
+                        AND relkind = 'i' );
+#+end_src
+
+A questo punto anche le scansioni che usavano tali indici non potranno avvalersene.
+
+*** Indice con copertura di altre colonne
+Si può creare un indice sull'età che contiene anche la colonna sesso.
+
+#+begin_src sql
+>  CREATE INDEX idx_persona_sesso_eta
+   ON persona(eta) INCLUDE (sesso);
+#+end_src
+
+L'indice si svolge su ~eta~ ma include nei dati dell'indice anche la colonna ~sesso~.
+
+*** Risultato di utilizzo di un indice con inclusione
+#+begin_src sql
+>  EXPLAIN SELECT sesso FROM persona ORDER BY eta;
+                                             QUERY PLAN
+-----------------------------------------------------------------------------------------------------
+ Index Only Scan using idx_persona_sesso_eta on persona
+                 (cost=0.43..356689.04 rows=5000000 width=6)
+#+end_src
+
+Non si accede ai dati ma solo all'indice, nonostante l'indice funzioni su una colonna non utilizzata nella clausola ~SELECT~.
 
 
 * TODO
