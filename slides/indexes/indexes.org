@@ -284,6 +284,67 @@ Supporta l'opzione ~BUFFERS~ che indica anche dove sono fisciamente trovati i da
  Execution Time: 2142.150 ms
 #+end_src
 
+** Tipi di accesso
+*** Sequential Scan (~Seq Scan~)
+E' il tipo di scansione di default (ossia quando non vi sono indici o il loro utilizzo è inutile e/o costoso).
+
+Viene letta la tabella una pagina dati alla volta fino alla fine.
+*** Bitmap Index Scan (~Bitmap Index Scan~)
+Viene usato quando si hanno dei valori non troppo frequenti e delle clausole di uguaglianza.
+
+Si costruisce una mappa hash di tuple che soddisfano o meno la condizione e si ripercorre questa condizione quando si leggono le pagine dati (solitamente con un ~Bitmap *Heap* Scan~).
+*** Index Scan (~Index Scan~)
+Viene usato quando si ha un indice altamente filtrante (ossia pochi valori da estrarre).
+
+E' l'accesso classico con indice:
+1. si percorre l'indice;
+2. si estraggono le tuple visibili dall'heap della tabella.
+*** Index Only Scan (~Index Only Scan~)
+E' una funzionalità introdotta nelle ultime versione di PostgreSQL.
+Viene usata se:
+- l'indice supporta l'/Index Only Scan/ (es. B-Tree);
+- la query referenzia *solo* colonne presenti nell'indice.
+
+Tutti i dati sono quindi accessibili solo tramite l'indice, e quindi è possibile accedere all'indice direttamente senza accedere all'heap.
+
+C'è però una complicazione: gli indici non memorizzano i dati di visibilità, quindi l'indice potrebbe referenziare tuple invisibili (MVCC). Per risolvere questo problema ogni pagina heap memorizza un bit che indica se tutte le sue tuple sono visibili. Se non tutte le tuple sono visibili questo accesso si trasforma di fatto in un /Index Scan/.
+*** Nested Loop (~Nested Loop~)
+E' il meccanismo classico di join.
+La tabella di destra viene percorsa con due strategie:
+- /inner/ ~Seq Scan~
+  1. la tabella /outer/ (sinistra) viene percorsa sequenzialmente;
+  2. la tabella /inner/ (destra) viene percorsa sequenzialmente per ogni valore della tabella inner. *Funziona solo per piccole dimensioni della /inner/.*
+- /inner/ ~Index Scan~
+  1. la tabella /outer/ (sinistra) viene letta sequenzialmente (o anche con indice);
+  2. per ogni valore della /outer/ si cerca nell'indice della /inner/ (destra) il match e si accede tramite l'indice alle tuple.
+*** Altri tipi di join
+- ~Hash Join~
+  1. la tabella /inner/ (destra) viene decomposta in un hash con valori multipli per bucket;
+  2. la tabella /outer/ (sinistra) viene percorsa sequenzialmente, per ogni valore si calcola la chiave e si cerca nell'array di valori
+     hash della /inner/
+- ~Merge Join~
+  1. entrambe le tabelle sono prima ordinate (~Sort~) a seguito di una lettura sequenziale (~Seq Scan~);
+  2. la tabella /outer/ (sinistra) viene percorsa sequenzialmente;
+  3. per ogni valore della /outer/ si estraggono tutti i valori della /inner/ che fanno match (sono ordinati);
+  4. al primo valore della /outer/ che non fa match si avanza al prossimo valore della /inner/ e si riparte dalla stessa posizione della /inner/.
+- ~Lateral Join~ viene usato quando ci sono delle espressioni da calcolare dinamicamente;
+- ~Semi Join~ e ~Anti Join~ sono dei join /parziali/ usati per verificare l'esistenza o meno di chiavi fra le tabelle, ad esempio clausole ~EXISTS~ e ~IN~ e relative negazioni.
+
+*** Aggregazioni
+Quando si usa una funzione di aggregazione si possono incontrare i seguenti nodi:
+- ~GroupAggregate~ è il caso classico con ~GROUP BY~;
+- ~HashAggregate~ raggruppamento in memoria mediante una tabella hash;
+- ~WindowAgg~ usato quando si ha una window function.
+*** Nodi /di servizio/
+Ci sono una serie di nodi per le operazioni principali:
+- ~Sort~ usato per il sorting esplicito o implicito;
+- ~Limit~ quando compare una clausola ~LIMIT~;
+- ~Unique~ usato per ~DISTINCT~ oppure ~UNION~.
+*** Nodi per l'unione di query
+- ~SubqueryScan~ effettua il join fra una sottoquery e quella principale;
+- ~CTEScan~ effettua il join fra una CTE e la query principale;
+- ~Materialize~ crea un recordset in memoria partendo da una porzione di risultati di un nodo;
+- ~Append~ usata con ~UNION ALL~.
 ** Esempi di ~EXPLAIN~
 *** Tabella di esempio
 #+begin_src shell
@@ -744,6 +805,42 @@ L'indice si svolge su ~eta~ ma include nei dati dell'indice anche la colonna ~se
 
 Non si accede ai dati ma solo all'indice, nonostante l'indice funzioni su una colonna non utilizzata nella clausola ~SELECT~.
 
+** Esempi di ~EXPLAIN~: indici su funzioni
+*** Cercare le persone nate in un certo anno
+#+begin_src sql
+> EXPLAIN
+  SELECT *
+  FROM persona
+  WHERE extract(year from data_nascita) = 1978;
+                                                 QUERY PLAN
+-------------------------------------------------------------------------------------------------------------
+ Seq Scan on persona  (cost=0.00..144213.00 rows=25000 width=56)
+   Filter: (date_part('year'::text,
+                (data_nascita)::timestamp without time zone)
+               = '1978'::double precision)
+
+> SELECT count(*)
+  FROM persona
+  WHERE extract(year from data_nascita) = 1978;
+ count
+-------
+ 70133
+#+end_src
+
+*** Creare un indice su una funzione
+#+begin_src sql
+-- supponiamo solo uguaglianze
+> CREATE INDEX idx_anno_nascita_hash
+  ON persona USING hash (extract(year from data_nascita) );
+
+> EXPLAIN SELECT * FROM persona WHERE extract(year from data_nascita) = 1978;
+
+ Bitmap Heap Scan on persona  (cost=769.75..46212.61 rows=25000 width=56)
+   Recheck Cond: ...
+   ->  Bitmap Index Scan on idx_anno_nascita_hash
+                      (cost=0.00..763.50 rows=25000 width=0)
+         Index Cond: ...
+#+end_src
 
 * TODO
 *** Valori cercati
@@ -893,67 +990,7 @@ Successivamente viene eseguito un ~HashAggregate~ che implementa il ~GROUP BY~; 
 Parallelamente si esegue un ~Seq Scan~ sulla tabella ~persona~ (outer) per ottnere un ~Hash~ sulla condizione di ~eta~.
 Infine i due hash sono uniti in un ~Semi Join~, si noti che il costo di partenza di questo nodo è ~244~ pari al massimo costo dei due nodi intermedi (un nodo non può partire prima dei suoi figli).
 
-** Tipi di accesso
-*** Sequential Scan (~Seq Scan~)
-E' il tipo di scansione di default (ossia quando non vi sono indici o il loro utilizzo è inutile e/o costoso).
 
-Viene letta la tabella una pagina dati alla volta fino alla fine.
-*** Bitmap Index Scan (~Bitmap Index Scan~)
-Viene usato quando si hanno dei valori non troppo frequenti e delle clausole di uguaglianza.
-
-Si costruisce una mappa hash di tuple che soddisfano o meno la condizione e si ripercorre questa condizione quando si leggono le pagine dati.
-*** Index Scan (~Index Scan~)
-Viene usato quando si ha un indice altamente filtrante (ossia pochi valori da estrarre).
-
-E' l'accesso classico con indice:
-1. si percorre l'indice;
-2. si estraggono le tuple visibili dall'heap della tabella.
-*** Index Only Scan (~Index Only Scan~)
-E' una funzionalità introdotta nelle ultime versione di PostgreSQL.
-Viene usata se:
-- l'indice supporta l'/Index Only Scan/ (es. B-Tree);
-- la query referenzia *solo* colonne presenti nell'indice.
-
-Tutti i dati sono quindi accessibili solo tramite l'indice, e quindi è possibile accedere all'indice direttamente senza accedere all'heap.
-
-C'è però una complicazione: gli indici non memorizzano i dati di visibilità, quindi l'indice potrebbe referenziare tuple invisibili (MVCC). Per risolvere questo problema ogni pagina heap memorizza un bit che indica se tutte le sue tuple sono visibili. Se non tutte le tuple sono visibili questo accesso si trasforma di fatto in un /Index Scan/.
-*** Nested Loop (~Nested Loop~)
-E' il meccanismo classico di join.
-La tabella di destra viene percorsa con due strategie:
-- /inner/ ~Seq Scan~
-  1. la tabella /outer/ (sinistra) viene percorsa sequenzialmente;
-  2. la tabella /inner/ (destra) viene percorsa sequenzialmente per ogni valore della tabella inner. *Funziona solo per piccole dimensioni della /inner/.*
-- /inner/ ~Index Scan~
-  1. la tabella /outer/ (sinistra) viene letta sequenzialmente (o anche con indice);
-  2. per ogni valore della /outer/ si cerca nell'indice della /inner/ (destra) il match e si accede tramite l'indice alle tuple.
-*** Altri tipi di join
-- ~Hash Join~
-  1. la tabella /inner/ (destra) viene decomposta in un hash con valori multipli per bucket;
-  2. la tabella /outer/ (sinistra) viene percorsa sequenzialmente, per ogni valore si calcola la chiave e si cerca nell'array di valori
-     hash della /inner/
-- ~Merge Join~
-  1. entrambe le tabelle sono prima ordinate (~Sort~) a seguito di una lettura sequenziale (~Seq Scan~);
-  2. la tabella /outer/ (sinistra) viene percorsa sequenzialmente;
-  3. per ogni valore della /outer/ si estraggono tutti i valori della /inner/ che fanno match (sono ordinati);
-  4. al primo valore della /outer/ che non fa match si avanza al prossimo valore della /inner/ e si riparte dalla stessa posizione della /inner/.
-- ~Lateral Join~ viene usato quando ci sono delle espressioni da calcolare dinamicamente;
-- ~Semi Join~ e ~Anti Join~ sono dei join /parziali/ usati per verificare l'esistenza o meno di chiavi fra le tabelle, ad esempio clausole ~EXISTS~ e ~IN~ e relative negazioni.
-
-*** Aggregazioni
-Quando si usa una funzione di aggregazione si possono incontrare i seguenti nodi:
-- ~GroupAggregate~ è il caso classico con ~GROUP BY~;
-- ~HashAggregate~ raggruppamento in memoria mediante una tabella hash;
-- ~WindowAgg~ usato quando si ha una window function.
-*** Nodi /di servizio/
-Ci sono una serie di nodi per le operazioni principali:
-- ~Sort~ usato per il sorting esplicito o implicito;
-- ~Limit~ quando compare una clausola ~LIMIT~;
-- ~Unique~ usato per ~DISTINCT~ oppure ~UNION~.
-*** Nodi per l'unione di query
-- ~SubqueryScan~ effettua il join fra una sottoquery e quella principale;
-- ~CTEScan~ effettua il join fra una CTE e la query principale;
-- ~Materialize~ crea un recordset in memoria partendo da una porzione di risultati di un nodo;
-- ~Append~ usata con ~UNION ALL~.
 ** Statistische legate agli indici
 *** Dove sono le statistische?
 Il catalogo ~pg_statistic~ contiene le informazioni statistiche su ogni attributo di ogni tabella, ad sempio:
