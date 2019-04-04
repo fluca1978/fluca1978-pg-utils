@@ -109,7 +109,7 @@ Nel caso di indici multicolonna l'indice viene usato in base a delle limitazioni
 Gli indici /Hash/ sono usabili solo per *uguaglianza*, quindi non saranno mai utilizzati se non assieme all'operatore ~=~.
 
 Converte il valore della chiave in un hash a 32 bit, si creano bucket che puntano alle tuple.
-*Può essere piu' compatto rispetto ad un B-Tree*.
+*Non è detto che sia piu' compatto di un B-Tree, in particolare su valori numerici!*
 
 Utile per confronti con chiavi lunghe (es. URL).
 
@@ -120,7 +120,7 @@ Sono indici /invertiti/, ovvero invece che "puntare" ad una tupla puntano a dati
 
 /Gli indici B-Tree non funzionano bene con molte chiavi identiche/.
 
-Sono usati solitamente per testare l'esistenza della chiave fra i possibili valori, ad esempio nell Full Text Search.
+Sono usati solitamente per testare l'esistenza della chiave fra i possibili valori, ad esempio nella Full Text Search.
 
 *** GIN (2)
 
@@ -130,18 +130,23 @@ Le foglie del B-Tree sono a loro volta /puntatori/ verso altri B-Tree che identi
 
 Appropriato per Full Text Search, JSON, array (se grandi).
 
+La posizione della chiave dipende dalla posizione fisica delle tuple, non da un criterio di ordinamento generico.
+
 *** BRIN
 Gli indici /BRIN/ (Block Range INdexes) memorizzano dati sommari circa ogni blocco fisico di dati su disco.
 Ad esempio, se i dati sono ordinabili, il BRIN memorizza il valore minimo e massimo di ogni /blocco fisico/ di dati.
 
-Utile per chiavi autoincrementali e dati che in qualche modo correlano la posiziona della tupla alla monotonicità della funzione che ne restituisce il valore (ossia tabelle dove vengono fatte molte ~ISNERT~ con chiavi automatiche e poche ~UPDATE~).
+Utile per chiavi autoincrementali e dati che in qualche modo correlano la posiziona della tupla alla monotonicità della funzione che ne restituisce il valore (ossia tabelle dove vengono fatte molte ~INSERT~ con chiavi automatiche e poche ~UPDATE~).
 
-Solitamente è piu' piccolo di un B-Tree.
+Solitamente è piu' piccolo di un B-Tree; *risparmiare spazio è lo scopo del BRIN*.
+*Tuttavia l'indice è /lossy/: ritorna piu' dati di quelli richiesti*.
 
 *** GIST
 /GIST/ (Generalized Index Search Tree) non è un vero tipo di indice ma una "piattaforma" per la costruzione di indici personalizzati.
 
 Tali indici vengono costruiti definendo gli operatori applicabili e il relativo comportamento (ad esempio indici spaziali).
+
+Fondamentalmente costruiscono un albero simile ad un B-Tree, ma con piu' operazioni (/strategie/) come /si trova a sinistra di/, /contiene/, ecc.
 *** SP-GIST
 E' una infrastruttura per la costruzione di indici non bilanciati.
 *** Scegliere un indice
@@ -663,7 +668,6 @@ SELECT 1 - mcf::real FROM stats WHERE mcv::int = 40;
 
 
 
-
 *** Funzioni che usano un indice
 Molte funzioni di aggregazione possono trarre vantaggio dalla presenza di indici.
 #+begin_src sql
@@ -680,7 +684,6 @@ Molte funzioni di aggregazione possono trarre vantaggio dalla presenza di indici
 #+end_src
 
 *~Index Only Scan~ significa che non si leggono i dati ma solo l'indice!*
-
 
 
 
@@ -709,6 +712,74 @@ In questo caso un indice hash è troppo grande:
                     (cost=0.00..1285.68 rows=69500 width=0)
          Index Cond: (eta = 40)
 #+end_src
+
+*** E l'indice BRIN?
+In questo caso l'indice BRIN diventa compattissimo:
+#+begin_src sql
+> CREATE INDEX idx_persona_eta_brin ON persona USING brin (eta);
+> SELECT relname, relpages
+  FROM pg_class
+  WHERE relname like 'idx_persona_eta%';
+       relname        | relpages
+----------------------+----------
+ idx_persona_eta      |    13713
+ idx_persona_eta_brin |        4
+ idx_persona_eta_hash |    28640
+#+end_src
+
+L'indice BRIN occupa solo 4 pagine dati (ossia 32 kB)!
+Tuttavia di fatto questo indice non è utilizzato visto che non vi è correlazione fra la posizione fisica delle tuple e le pagine dati.
+
+*** Confondere l'ottimizzatore
+#+begin_src sql
+-- conteggio tuple corretto
+> EXPLAIN SELECT eta FROM persona WHERE eta < 40;
+                            QUERY PLAN
+------------------------------------------------------------------
+ Seq Scan on persona  (cost=0.00..119213.00 rows=2829000 width=4)
+   Filter: (eta < 40)
+
+-- conteggio tuple sbagliato
+> EXPLAIN SELECT eta FROM persona
+          WHERE eta < ( SELECT 40 );
+                                       QUERY PLAN
+----------------------------------------------------------------------------------------
+ Bitmap Heap Scan on persona  (cost=31205.11..108751.45 rows=1666667 width=4)
+   Recheck Cond: (eta < $0)
+   InitPlan 1 (returns $0)
+     ->  Result  (cost=0.00..0.01 rows=1 width=4)
+   ->  Bitmap Index Scan on idx_persona_eta  (cost=0.00..30788.43 rows=1666667 width=0)
+         Index Cond: (eta < $0)
+#+end_src
+*** Perché l'ottimizzatore si confonde?
+La /sub-query/ impedisce all'ottimizzatore di calcolare correttamente la selettività, e infatti viene applicato un caso di default con selettività a circa il ~33%~, ossia circa ~1.65~ milioni di tuple.
+Nel caso di /range/ la selettività di default cala al ~5%~, quindi la situazione paradossalmente peggiora.
+#+begin_src sql
+> EXPLAIN SELECT eta FROM persona
+          WHERE eta < ( SELECT 40 ) AND eta > 0;
+                                     QUERY PLAN
+------------------------------------------------------------------------------------
+ Bitmap Heap Scan on persona  (cost=532.69..45913.05 rows=25000 width=4)
+   Recheck Cond: ((eta < $0) AND (eta > 0))
+   InitPlan 1 (returns $0)
+     ->  Result  (cost=0.00..0.01 rows=1 width=4)
+   ->  Bitmap Index Scan on idx_persona_eta  (cost=0.00..526.43 rows=25000 width=0)
+         Index Cond: ((eta < $0) AND (eta > 0))
+#+end_src
+*E' il caso dei /prepared statements/!*
+
+*** Confondere ancora l'ottimizzatore
+#+begin_src sql
+> EXPLAIN SELECT eta
+  FROM persona WHERE
+  eta > 40 AND eta < 40;
+
+ Index Only Scan using idx_persona_eta on persona
+                   (cost=0.43..82703.30 rows=25000 width=4)
+   Index Cond: ((eta > 40) AND (eta < 40))
+#+end_src
+
+L'ottimizzatore non può capire che le condizioni sulla stessa colonna sono mutuamente esclusive!
 
 ** Esempi di ~EXPLAIN~: codice fiscale
 *** B-Tree per ricerca con inizio stringa
@@ -842,6 +913,40 @@ Non si accede ai dati ma solo all'indice, nonostante l'indice funzioni su una co
          Index Cond: ...
 #+end_src
 
+** Raggruppamenti
+*** Usare ~GROUP BY~
+Solitamente l'ordine del ~GROUP BY~ non incide nel piano di esecuzione della query, ma può risultare comunque vantaggioso verificare i tempi di esecuzione effettivi perché questi possono variare a seconda delle colonne utilizzate e del loro ordinamento.
+
+*La regola generale è di elencare prima le colonne piu' filtranti!*
+
+Occorre usare ~EXPLAIN ANALYZE~ per vedere le differenze effettive!
+
+/Attenzione a falsi positivi: la cache deve essere vuota!/
+
+*** Esempio di piano di esecuzione con ~GROUP BY~
+#+begin_src sql
+> EXPLAIN ANALYZE SELECT eta, sesso, count(*) FROM persona GROUP BY  1,2;
+
+ HashAggregate  (cost=144213.00..144214.40 rows=140 width=14)
+                (actual time=2179.884..2179.903 rows=140 loops=1)
+   Group Key: eta, sesso
+   ->  Seq Scan on persona  (cost=0.00..106713.00 rows=5000000 width=6)
+                      (actual time=0.000..656.603 rows=5000000 loops=1)
+ Planning Time: 2.669 ms
+ Execution Time: 2180.315 ms
+#+end_src
+*** Esempio di piano di esecuzione con ~GROUP BY~ e clausole invertite
+#+begin_src sql
+> EXPLAIN ANALYZE SELECT eta, sesso, count(*) FROM persona GROUP BY  2,1;
+
+ HashAggregate  (cost=144213.00..144214.40 rows=140 width=14)
+                (actual time=2086.174..2086.194 rows=140 loops=1)
+   Group Key: sesso, eta
+   ->  Seq Scan on persona  (cost=0.00..106713.00 rows=5000000 width=6)
+                      (actual time=0.065..620.339 rows=5000000 loops=1)
+ Planning Time: 2.753 ms
+ Execution Time: 2086.868 ms
+#+end_src
 * TODO
 *** Valori cercati
 #+begin_src sql

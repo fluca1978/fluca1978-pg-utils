@@ -85,7 +85,13 @@ La configurazione prevede due sezioni particolari:
 Una *stanza* è un set di backup, tipicamente riferito ad un cluster o installazione.
 La stanza contiene le informazioni sull'host, cluster e parametri base di backup.
 #+end_quote
+** Tipologie di backup
+Sono supportati tre tipi di backup:
+- *full* è il primo backup o comunque un backup /totale/, e quindi occupa piu' spazio;
+- *incr* (incrementale) è un backup basato sulle differenze dall'ultimo backup valido (che può essere a sua volta /full/ o /incr/);
+- *diff* (delta) è un backup di tipo *incr* ma basato sempre sull'ultimo *full* realizzato.
 
+Quando si usa il parametro *delta* si vuole basarsi solo sulle differenze (e quindi un backup /incr/ o /diff/).
 ** Configurazione: file
 Il file principale di configurazione è ~/etc/pgbackrest/pgbackrest.conf~. Usare un file differente di configurazione è possibile ma  deve essere specificato coerentemente in ogni uso del programma.
 
@@ -98,13 +104,12 @@ Ogni parametro contenuto in una sezione è specificato con una coppia /chiave=va
 
 Analogamente, nei parametri globali i repository sono numerati partendo da 1 (~repo1~), ma al momento piu' repository non sono ancora supportati.
 
-** Configurazione Basilare
+*~pg~ e ~repo~ sono ammessi assieme solo per backup locali, mentre per i backup remoti solo un insieme di parametri è ammesso per macchina!*
+
+** Configurazione Basilare e Backup
 *** ~pgbackrest.conf~: sezione ~global~
 #+begin_src shell
 [global]
-repo1-path=/mnt/backup/pgbackrest/
-repo1-host-config-path=/usr/local/etc/pgbackrest/
-repo1-retention-full=3  # 4 backup su disco prima della rimozione!
 start-fast=y            # forza un checkpoint quando inizia il backup
 stop-auto=y             # interrompe backup abortiti prima (crash del server...)
 #+end_src
@@ -113,6 +118,9 @@ stop-auto=y             # interrompe backup abortiti prima (crash del server...)
 #+begin_src shell
 [main]
 pg1-path=/mnt/pg_data/pgdata/11.1
+repo1-path=/mnt/backup/pgbackrest/
+repo1-host-config-path=/usr/local/etc/pgbackrest/
+repo1-retention-full=3  # 4 backup su disco prima della rimozione!
 #+end_src
 
 *** Configurazione di PostgreSQL per l'invio dei WAL
@@ -202,4 +210,152 @@ La /stanza/ contiene due directory:
 000000010000000000000016.00000028.backup
 000000010000000000000017-5b2f636df0646d4ac0b511a660d112f43fe3234c.gz
 000000010000000000000018-6bcfb17a181dfe5000e74b06cfb384b07da589aa.gz
+#+end_src
+*** Etichette dei backup
+Ogni backup ha una etichetta che corrisponde alla data di generazione del backup.
+I backup /FULL/ includono data, ora e una lettera ~F~ finale:
+#+begin_src shell
+full backup: 20190304-191614F
+ timestamp start/stop: 2019-03-04 19:16:14 / 2019-03-04 19:16:21
+#+end_src
+I backup incrementali /appendono/ alla etichetta del backup full le informazioni su data e ora del backup, oltre ad una lettera ~I~ finale:
+#+begin_src shell
+incr backup: 20190304-192433F_20190404-092313I
+ timestamp start/stop: 2019-04-04 09:23:13 / 2019-04-04 09:24:27
+#+end_src
+** Recovery
+*** Creare un disastro
+#+begin_src sql
+> SELECT relname, relfilenode, relpages,
+         pg_relation_filepath( 'persona' )
+  FROM pg_class WHERE relname = 'persona';
+ relname | relfilenode | relpages | pg_relation_filepath
+---------+-------------+----------+----------------------
+ persona |       18861 |    56713 | base/16385/18861
+#+end_src
+#+begin_src shell
+% sudo service postgresql stop
+# rimozione 5 milioni di tuple!
+% sudo rm /mnt/pg_data/pgdata/11.1/base/16385/18861
+#+end_src
+*** Recovery veloce: ~restore --delta~
+Se si vuole recuperare su una istanza senza cancellare tutti i file si deve usare ~delta~.
+#+begin_src shell
+% sudo -u postgres \
+       pgbackrest restore --delta --stanza=main \
+       --config=/usr/local/etc/pgbackrest/pgbackrest.conf \
+       --log-level-console=info
+...
+ INFO: restore file /mnt/pg_data/pgdata/11.1/base/16385/18861 (443MB, 45%)
+       checksum 01525a59d80affb6366c66a8a26f4af61006bcbc
+ INFO: write /mnt/pg_data/pgdata/11.1/recovery.conf
+ INFO: restore global/pg_control (performed last to ensure aborted restores cannot be started)
+ INFO: restore command end: completed successfully (10492ms)
+...
+#+end_src
+*** Delta restore: ~recovery.conf~
+Il sistema crea in automatico un file ~recovery.conf~:
+#+begin_src shell
+% sudo cat /mnt/pg_data/pgdata/11.1/recovery.conf
+restore_command = 'pgbackrest
+                  --config=/usr/local/etc/pgbackrest/pgbackrest.conf
+                  --log-level-console=info
+                  --stanza=main archive-get %f "%p"'
+#+end_src
+*** Riavvio del cluster
+#+begin_src shell
+% sudo service postgresql start
+...
+INFO: archive-get command begin 2.11dev: [000000010000000400000041, pg_wal/RECOVERYXLOG]
+INFO: found 000000010000000400000041 in the archive
+INFO: archive-get command end: completed successfully (63ms)
+INFO: archive-get command begin 2.11dev: [000000010000000400000042, pg_wal/RECOVERYXLOG]
+...
+#+end_src
+*** Recovery di un database: creare il disastro
+#+begin_src sql
+-- via 5 milioni di record!
+> DROP TABLE persona;
+#+end_src
+*** Recovery di un database: ~-db-include~
+#+begin_src shell
+% sudo -u postgres \
+       pgbackrest restore --delta --stanza=main \
+       --db-include=testdb \
+       --config=/usr/local/etc/pgbackrest/pgbackrest.conf \
+       --log-level-console=info
+...
+INFO: write /mnt/pg_data/pgdata/11.1/recovery.conf
+INFO: restore global/pg_control (performed last to ensure aborted restores cannot be started)
+INFO: restore command end: completed successfully (15454ms)
+#+end_src
+*** Riavvio del cluster e verifica
+#+begin_src shell
+% sudo service postgresql start
+...
+INFO: archive-get command begin 2.11dev: [000000010000000400000041, pg_wal/RECOVERYXLOG]
+INFO: found 000000010000000400000041 in the archive
+INFO: archive-get command end: completed successfully (62ms)
+...
+% psql -h localhost -U luca \
+       -c 'SELECT count(*) FROM persona;' testdb
+  count
+---------
+ 5000000
+(1 row)
+#+end_src
+*** Chiarimento sul restore di un singolo database
+Qualora il cluster contenga piu' database utente e ne venga ripristinato solo uno, gli altri saranno presenti ma non validi. Questo perché viene effettuato un /delta/ restore sui WAL.
+** Point In Time Recovery
+*** Creare il disastro
+#+begin_src sql
+> SELECT current_timestamp, txid_current();
+       current_timestamp       | txid_current
+-------------------------------+--------------
+ 2019-04-04 10:07:09.098026+02 |         2066
+
+> BEGIN;
+> SELECT current_timestamp, txid_current();
+       current_timestamp       | txid_current
+-------------------------------+--------------
+ 2019-04-04 10:07:45.120642+02 |         2067
+
+> DROP TABLE persona;
+> COMMIT;
+#+end_src
+
+Alla transazione ~2066~ la tabella esisteva, la transazione ~2067~ ha rimosso tale tabella.
+*** Recovery by time
+#+begin_src shell
+% sudo service postgresql stop
+% sudo -u postgres \
+       pgbackrest restore --delta --stanza=main \
+       --db-include=testdb \  # opzionale
+       --config=/usr/local/etc/pgbackrest/pgbackrest.conf \
+       --log-level-console=info \
+       --type=time \
+       --target='2019-04-04 10:07:09.098026+02' \
+       --target-action=promote
+...
+INFO: write /mnt/pg_data/pgdata/11.1/recovery.conf
+...
+#+end_src
+*** Recovery by time: ~recovery.conf~
+Il file ~recovery.conf~ creato in automatico contiene:
+
+#+begin_src shell
+% sudo cat /mnt/pg_data/pgdata/11.1/recovery.conf
+restore_command = 'pgbackrest --stanza=main archive-get %f "%p"'
+recovery_target_time = '2019-04-04 10:07:09.098026+02'
+recovery_target_action = 'promote'
+#+end_src
+*** Riavvio del cluster e verifica
+#+begin_src shell
+% sudo service postgresql start
+...
+% psql -h localhost -U luca
+  \ -c 'SELECT count(*) FROM persona;' testdb
+  count
+---------
+ 5000000
 #+end_src
