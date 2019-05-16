@@ -48,11 +48,6 @@ Dalla versione 8.1 in poi PostgreSQL non distingue piu' fra /utenti/ e /gruppi/ 
 
 /Solitamente un gruppo non dispone del permesso di login/.
 
-*** Ruoli e connessioni
-L'accesso al sistema viene garantito dalla configurazione del file ~pg_hba.conf~, che rappresenta il listato di quali utenti, database e host possono ottenere una connessione.
-
-*E' sufficiente un ~SIGHUP~ per far riconoscere al cluster le modifiche ai permessi di connessione!*
-
 *** Ereditarietà dei ruoli
 I ruoli possono ereditare da altri ruoli.
 *Un ruolo che eredita (~INHERITS~) viene automaticamente dotato dei permessi dei ruoli di cui fa parte (quindi l'ereditarietà ha senso solo nel caso di ruoli).*
@@ -63,6 +58,13 @@ Nel caso di ruolo che non eredita, i permessi sono garantiti con richiesta espli
 *** Ruoli ~ADMIN~
 *I ruoli marcati come ~ADMIN~ non sono amministratori del database (il ruolo deve avere l'opzione ~SUPERUSER~)!*
 Un ruolo ~ADMIN~ può aggiungere o rimuovere altri ruoli ad un gruppo.
+*** Ruolo ~PUBLIC~
+Il ruolo speciale ~PUBLIC~ rappresenta *tutti* i ruoli presenti e futuri.
+
+Ogni ruolo dispone dell'unione dei suoi privilegi e di quelli concessi a ~PUBLIC~;
+*** Ruolo proprietario
+Ogni creatore di un oggetto di database ne è il /proprietario/. Il proprietario ha diritto di vita e di morte sull'oggetto (e quindi può eseguirne il ~DROP~ e ~ALTER~).
+*Non esiste un privilegio di ~DROP~ e di ~ALTER~ e quindi solo il proprietario può alterare la definizione di un oggetto*. E' però possibile cambiare il proprietario con ~REASSIGN~.
 ** Interazione SQL
 *** Comandi SQL
 I comandi SQL per la gestione dei ruoli seguono la prassi /create, drop, alter/:
@@ -419,6 +421,8 @@ Se non si inserisce al momento della creazione di un ruolo il suo amministratore
 *** Connessione al database
 La connessione ad un database avviene attraverso un filtro /Host Based Access/: deve essere garantito il permesso di connessione dall'host sorgente, dal ruolo (~LOGIN~ option) e al database specifico.
 Il file ~pg_hba.conf~ contiene le informazioni di login.
+
+*E' sufficiente un ~SIGHUP~ per far riconoscere al cluster le modifiche ai permessi di connessione!*
 *** Gruppi & login
 Per usare un gruppo si deve indicare il nome del gruppo con il simbolo ~+~ (chi si ricorda di NIS?):
 #+begin_src shell
