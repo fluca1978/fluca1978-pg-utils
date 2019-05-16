@@ -417,52 +417,53 @@ Se non si inserisce al momento della creazione di un ruolo il suo amministratore
 
 ** TODO ~pg_hba.conf~
 *** Connessione al database
+La connessione ad un database avviene attraverso un filtro /Host Based Access/: deve essere garantito il permesso di connessione dall'host sorgente, dal ruolo (~LOGIN~ option) e al database specifico.
+Il file ~pg_hba.conf~ contiene le informazioni di login.
 *** Gruppi & login
-- ~INHERITS~ non aggiunge il ~LOGIN~!
-#+begin_src sql
-# CREATE ROLE developers WITH LOGIN;
--- ok to login
-# CREATE ROLE dev1 IN ROLE developers LOGIN;
--- FATAL:  role "dev2" is not permitted to log in
-# CREATE ROLE dev2 IN ROLE developers;
-#+end_src
-
-- il gruppo non include gli altri utenti quando usato in ~pg_hba.conf~:
-
+Per usare un gruppo si deve indicare il nome del gruppo con il simbolo ~+~ (chi si ricorda di NIS?):
 #+begin_src shell
-# pg_hba.conf
-host    all   developers   127.0.0.1/32   trus
-
-% psql -h localhost -U dev1 testdb
-FATAL:  no pg_hba.conf entry for host "127.0.0.1", user "dev1", database "testdb", SSL off
+host all luca        127.0.0.1/32 trust
+host all +group_read 127.0.0.1/32 trust
 #+end_src
 
-*** Gruppi & login (2)
-- *occorre usare i gruppi con un ~+~*:
+L'utente ~luca~ ha accesso, tutti gli utenti che appartengono al gruppo ~group_read~ (quindi anche ~harry~) hanno accesso.
+
+Lo stesso si può scrivere come:
 #+begin_src shell
-# pg_hba.conf
-host    all   +developers   127.0.0.1/32   trus
+host all luca,+group_read 127.0.0.1/32 trust
 #+end_src
-
-- per disabiltiare un gruppo e abilitare gli altri utenti al login:
-#+begin_src shell
-host    all     +developers     127.0.0.1/32     reject
-host    all     all             127.0.0.1/32     trust
-#+end_src
-
 *** La vista ~pg_hba_file_rules~
-La vista ~pg_hba_file_rules~ consente di effettuare il /debugging/ delle impostazione di autenticazione e di capire chi può collegarsi al database:
+La vista ~pg_hba_file_rules~ consente di effettuare il /debugging/ delle impostazione di autenticazione e di capire chi può collegarsi al database. La colonna ~error~ indica se la particolare riga risulta in errore.
 
 #+begin_src sql
-# SELECT line_number, type, database, user_name, auth_method
+# SELECT line_number,error, database,
+  user_name, address, netmask, auth_method
   FROM pg_hba_file_rules;
-line_number| type  | database |   user_name    | auth_method
------------+-------+----------+----------------+-------------
-        84 | local | {all}    | {all}          | trust
-        86 | host  | {all}    | {+developers}  | reject
-        87 | host  | {all}    | {+stocker_app} | trust
+
+line_number | 88
+error       |
+database    | {all}
+user_name   | {+group_read}
+address     | 127.0.0.1
+netmask     | 255.255.255.255
+auth_method | trust
+#+end_src
+*** Usare ~pg_hba_file_rules~ per trovare gli errori
+#+begin_src sql
+# SELECT line_number, error
+  FROM pg_hba_file_rules
+  WHERE error IS NOT NULL;
+-[ RECORD 1 ]-----------------------------------------
+line_number | 88
+error       | invalid authentication method "trustme!"
 #+end_src
 
+la linea ~88~ presenta qualche errore
+
+#+begin_src shell
+% sudo head -n 88 $PGDATA/pg_hba.conf | tail -n 1
+host all +group_read 127.0.0.1/32 trustme!
+#+end_src
 
 
 * Conclusioni
