@@ -269,7 +269,40 @@ DELETE 2
 #+end_src
 *** ~INHERITS~ e l'innestamento dei ruoli
 Nelle versioni obsolete di PostgreSQL (prima della 10.1) l'opzione ~INHERITS~ non era il default, nelle versioni recenti ~INHERTIS~ è sempre il default.
-*** TODO Esempio con ~INHERITS~
+*** Esempio con ~INHERITS~
+Se i gruppi fossero stati creati con ~INHERITS~ (clausola di default) i permessi sarebbero stati forniti direttamente.
+#+begin_src sql
+# CREATE ROLE group_read   WITH NOLOGIN INHERIT;
+# CREATE ROLE group_write  WITH NOLOGIN INHERIT;
+# CREATE ROLE group_delete WITH NOLOGIN INHERIT;
+
+# GRANT SELECT        ON t_perms TO group_read;
+# GRANT INSERT,UPDATE ON t_perms TO group_write;
+# GRANT DELETE        ON t_perms TO group_delete;
+
+# GRANT group_read  TO harry;
+# GRANT group_write TO harry;
+
+# GRANT group_delete TO group_write;
+#+end_src
+
+*** Esempio con ~INHERITS~: risultato
+Siccome ~group_write~ /eredita/ da ~group_delete~ allora il primo ha il permesso di cancellazione.
+Transativamente, siccome ~harry~ eredita da ~group_write~ si ha che il permesso di cancellazione è consentito anche a tale utente.
+
+#+begin_src sql
+=> SELECT current_role;
+ current_role
+--------------
+ harry
+(1 row)
+
+=> INSERT INTO t_perms( v ) VALUES( 3 );
+INSERT 0 1
+=> DELETE FROM t_perms;
+DELETE 1
+#+end_src
+
 ** TODO ~pg_hba.conf~
 *** Connessione al database
 *** Gruppi & login
