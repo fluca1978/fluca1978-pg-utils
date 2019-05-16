@@ -1,0 +1,40 @@
+#+TITLE:     fluca1978's slides template
+#+AUTHOR:    ing. Luca Ferrari, PhD
+#+EMAIL:     fluca1978@gmail.com
+#+DATE:      <2019-05-16 gio>
+#+LANGUAGE:  it
+
+#+OPTIONS:   H:3 num:nil toc:nil
+#+OPTIONS:   TeX:t LaTeX:t skip:nil d:nil todo:t pri:nil tags:not-in-toc
+#+INFOJS_OPT: view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+EXPORT_SELECT_TAGS: export
+#+EXPORT_EXCLUDE_TAGS: noexport
+#+LINK_UP:
+#+LINK_HOME:
+
+#+startup: beamer
+#+LaTeX_CLASS: beamer
+#+latex_header: \mode<beamer>{\usetheme{magpie}}
+
+
+#+BEAMER_HEADER: \subtitle{TODO}
+
+#+BEAMER_HEADER: \institute[fluca1978]{fluca1978\\\url{https://fluca1978.github.io}}
+#+BEAMER_FRAME_LEVEL: 1
+
+
+
+#+LATEX_HEADER: \RequirePackage{fancyvrb}
+#+LATEX_HEADER: \DefineVerbatimEnvironment{verbatim}{Verbatim}{fontsize=\scriptsize}
+
+
+* Licenza
+*** Attribution-NonCommercial-ShareAlike 4.0
+This work is licensed under the *Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License*.
+To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/ or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
+
+* Concetti Generali
+** Principali comandi SQL
+** Principali comandi Shell
+* Esempi
+* Conclusioni
