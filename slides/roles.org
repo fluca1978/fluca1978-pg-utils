@@ -573,4 +573,30 @@ La stringa ~postgres=arwdDxt/postgres+~ indica che l'utente ~postgres~ *ha tutti
 -- query finale
 SELECT * FROM decode_acl;
 #+end_src
+* Permessi di colonna
+** ~GRANT~ di colonna
+E' possibile specificare una ~GRANT~ con permesso ~SELECT~ e/o ~UPDATE~ di colonna.
+#+begin_src sql
+# ALTER TABLE t_perms ADD COLUMN i int;
+# REVOKE SELECT ON t_perms FROM harry;
+# GRANT SELECT(v) ON t_perms TO harry;
+#+end_src
+
+#+begin_src sql
+=> SELECT current_role;
+ current_role
+--------------
+ harry
+(1 row)
+
+=> SELECT * FROM t_perms;
+ERROR:  permission denied for table t_perms
+=> SELECT v FROM t_perms;
+ v
+---
+ 1
+ 2
+(2 rows)
+#+end_src
+
 * TODO Conclusioni
