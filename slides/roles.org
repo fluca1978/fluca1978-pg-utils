@@ -1,4 +1,4 @@
-#+TITLE:     Ruoli
+#+TITLE:     Ruoli e Permessi
 #+AUTHOR:    ing. Luca Ferrari, PhD
 #+EMAIL:     fluca1978@gmail.com
 #+DATE:      <2019-05-16 gio>
@@ -193,7 +193,7 @@ Il comando shell ~dropuser~ permette l'eliminazione di un ruolo dal database:
 
 E' possibile usarlo con il flag ~--interactive~ per fare in modo che il programma chieda conferma dell'eliminazione ed eventualmente il ruolo da eliminare.
 
-* Esempi
+* Esempi sui ruoli
 ** Ruoli e Permessi
 *** Ambiente di prova
 Si supponga di avere una tabella alla quale sono rimossi tutti i permessi (nessuno può operarvi sopra):
@@ -417,13 +417,13 @@ Se non si inserisce al momento della creazione di un ruolo il suo amministratore
 # GRANT group_read TO harry WITH ADMIN OPTION;
 #+end_src
 
-** TODO ~pg_hba.conf~
-*** Connessione al database
+* ~pg_hba.conf~
+** Connessione al database
 La connessione ad un database avviene attraverso un filtro /Host Based Access/: deve essere garantito il permesso di connessione dall'host sorgente, dal ruolo (~LOGIN~ option) e al database specifico.
 Il file ~pg_hba.conf~ contiene le informazioni di login.
 
 *E' sufficiente un ~SIGHUP~ per far riconoscere al cluster le modifiche ai permessi di connessione!*
-*** Gruppi & login
+** Gruppi & login
 Per usare un gruppo si deve indicare il nome del gruppo con il simbolo ~+~ (chi si ricorda di NIS?):
 #+begin_src shell
 host all luca        127.0.0.1/32 trust
@@ -436,7 +436,7 @@ Lo stesso si può scrivere come:
 #+begin_src shell
 host all luca,+group_read 127.0.0.1/32 trust
 #+end_src
-*** La vista ~pg_hba_file_rules~
+** La vista ~pg_hba_file_rules~
 La vista ~pg_hba_file_rules~ consente di effettuare il /debugging/ delle impostazione di autenticazione e di capire chi può collegarsi al database. La colonna ~error~ indica se la particolare riga risulta in errore.
 
 #+begin_src sql
@@ -452,7 +452,7 @@ address     | 127.0.0.1
 netmask     | 255.255.255.255
 auth_method | trust
 #+end_src
-*** Usare ~pg_hba_file_rules~ per trovare gli errori
+** Usare ~pg_hba_file_rules~ per trovare gli errori
 #+begin_src sql
 # SELECT line_number, error
   FROM pg_hba_file_rules
@@ -469,5 +469,108 @@ la linea ~88~ presenta qualche errore
 host all +group_read 127.0.0.1/32 trustme!
 #+end_src
 
+* ACL
+** Access Control List
+PostgreSQL memorizza i permessi dati con ~GRANT~ come /Access Contol List (ACL)/.
 
-* Conclusioni
+Ogni ACL (~aclitem~)  è formata da tre parti:
+- *utente a cui i privilegi si riferiscono*;
+- *stringa dei permessi* (simile a quella dei file Unix);
+- *utente che ha concesso il permesso*.
+
+Le ACL sono memorizzate come array ~aclitem[]~ in ~pg_class~.
+
+** La stringa dei permessi
+Ogni lettera nella stringa ACL si riferisce ad un permesso specifico:
+#+begin_src shell
+r -- SELECT ("read")        t -- TRIGGER
+w -- UPDATE ("write")       X -- EXECUTE
+a -- INSERT ("append")      U -- USAGE
+d -- DELETE                 C -- CREATE
+D -- TRUNCATE               c -- CONNECT
+x -- REFERENCES             T -- TEMPORARY
+          arwdDxt -- ALL PRIVILEGES
+#+end_src
+*** Vedere i permessi concessi: ~\dp~
+I permessi vengono memorizzati internamente mediante delle Access Control List.
+E' possibile vedere i permessi concessi con il comando ~psql(1)~ *~\dp~*.
+#+begin_src sql
+# \dp t_perms
+Access privileges
+-[ RECORD 1 ]-----+--------------------------
+Schema            | public
+Name              | t_perms
+Type              | table
+Access privileges | postgres=arwdDxt/postgres+
+                  | group_write=aw/postgres
+#+end_src
+*** Interpretare la stringa ACL
+La stringa ~group_write=aw/postgres~ si interpreta come segue: l'utente ~group_write~ *ha* il permesso di ~INSERT~ (~a~) e di ~UPDATE~ (~w~) sulla tabella ~t_perms~ concessogli dal ruolo ~postgres~.
+
+La stringa ~postgres=arwdDxt/postgres+~ indica che l'utente ~postgres~ *ha tutti i permessi* (~arwdDxt~) sulla tabella ~t_perms~, i permessi sono stati concessi dall'utente stesso (quindi è il proprietario), che ha il permesso di concedere altri permessi (~+~).
+*** Un esempio piu' complesso di uso di ~\dp~
+ #+begin_src sql
+ > \dp soci
+
+ Access privileges | conoscerelinux=arwdDxt/conoscerelinux
+ Column privileges | nome:                                      +
+                   |   enrico=r/conoscerelinux                  +
+                   | data_associazione:                         +
+                   |   enrico=w/conoscerelinux
+ Policies          | mypol:                                     +
+                   |   (u): (data_associazione IS NOT NULL)     +
+                   |   (c): (lower(nome) = (CURRENT_USER)::text)+
+                   |   to: enrico
+
+ #+end_src
+*** Decodificare a mano i permessi (con CTE e string manipulation)
+#+begin_src sql
+> WITH acl AS (
+   -- 1) si estraggono le ACL come tuple di stringhe
+   SELECT unnest( relacl::text[] ) AS acl
+   FROM pg_class
+   WHERE relname = 't_perms'
+   AND relkind = 'r'
+)
+#+end_src
+*** Decodificare a mano i permessi (con CTE e string manipulation) (2)
+#+begin_src sql
+ ,split_acl AS (
+   -- 2) si estraggono i singoli pezzi della ACL
+   -- separando dove vi sono i simboli '=' e '/'
+    SELECT acl,
+     position( '=' in acl ) AS equal_at,
+     substring( acl from 1
+              for position( '=' in acl ) - 1 )
+              AS granted_to,
+     substring( acl from
+              position( '=' in acl ) + 1
+              for position( '/' in acl )
+                  - position( '=' in acl ) - 1 )
+              AS granted_what,
+     substring( acl from
+                 position( '/' in acl ) + 1 )
+              AS grantee
+    FROM acl
+ )
+#+end_src
+*** Decodificare a mano i permessi (con CTE e string manipulation) (3)
+#+begin_src sql
+ , decode_acl AS (
+   SELECT CASE
+          WHEN position( 'r' in granted_what ) > 0
+          THEN 'SELECT' END
+         ,CASE
+          WHEN position( 'd' in granted_what ) > 0
+          THEN 'DELETE' END
+         ,CASE
+          WHEN position( 'D' in granted_what ) > 0
+          THEN 'TRUNCATE' END
+          -- e così via
+   , * FROM split_acl
+)
+
+-- query finale
+SELECT * FROM decode_acl;
+#+end_src
+* TODO Conclusioni
