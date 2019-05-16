@@ -112,13 +112,14 @@ Analogamente ad un sistema Unix, le password contenute in ~pg_roles~ sono /masch
 La vista ~pg_shadow~ esiste per retrocompatibilità con versioni precedenti di PostgreSQL (prima della ~8.1~) e rappresenta un estratto del catalogo ~pg_authid~ con relative password.
 
 *** Riassunto delle interazioni SQL
-| Comando           | Descrizione                                               |
-|-------------------+-----------------------------------------------------------|
-| ~CREATE ROLE~     | Aggiunge un nuovo ruolo e permette una prima profilazione |
-| ~ALTER ROLE~      | Modifica un ruolo esistente (password e/o profilazione)   |
-| ~DROP ROLE~       | Rimuove un ruolo esistente                                |
-| ~GRANT~, ~REVOKE~ | Aggiunge/rimuove permessi e gruppi ad un ruolo            |
-|-------------------+-----------------------------------------------------------|
+| Comando                              | Descrizione                                               |
+|--------------------------------------+-----------------------------------------------------------|
+| ~CREATE ROLE~                        | Aggiunge un nuovo ruolo e permette una prima profilazione |
+| ~ALTER ROLE~                         | Modifica un ruolo esistente (password e/o profilazione)   |
+| ~DROP ROLE~                          | Rimuove un ruolo esistente                                |
+| ~GRANT~, ~REVOKE~                    | Aggiunge/rimuove permessi e gruppi ad un ruolo            |
+| ~DROP OWNED BY~, ~REASSIGN OWNED BY~ | Utili per gestire le dipendenze                           |
+|--------------------------------------+-----------------------------------------------------------|
 
 | Catalogo    | Descrizione                                              |
 |-------------+----------------------------------------------------------|
@@ -218,6 +219,21 @@ Se si aggiunge il gruppo ~group_write~ all'utente ~harry~ si possono effettuare 
 
 => INSERT INTO t_perms( v ) VALUES( 1 );
 INSERT 0 1
+#+end_src
+
+*** Cancellazione di un ruolo
+Il comando ~DROP ROLE~ (eventualmente con ~IF EXISTS~) consente di eliminare un ruolo, ma questo è possibile solo se il ruolo non ha oggetti associati (ad esempio privilegi).
+
+#+begin_src sql
+ DROP ROLE group_write;
+ERROR:  role "group_write" cannot be dropped because some objects depend on it
+DETAIL:  privileges for table t_perms
+#+end_src
+
+Un trucco rapido consiste nel cancellare tutti gli oggetti posseduti da un ruolo:
+#+begin_src sql
+# DROP OWNED BY group_write;
+# DROP ROLE group_write;
 #+end_src
 
 *** Permessi in azione: innestamento
