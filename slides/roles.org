@@ -479,7 +479,9 @@ Ogni ACL (~aclitem~)  è formata da tre parti:
 - *utente che ha concesso il permesso*.
 
 Le ACL sono memorizzate come array ~aclitem[]~ in ~pg_class~.
-
+** ACL vuote
+Inizialmente ogni oggetto ha una ACL vuota, che si interpreta come /permessi di default/ (ossia permessi al proprietario e per gli altri ~PUBLIC~).
+Quando viene effettuata una ~GRANT~ esplicita si introduce una entry ACL con tutti i permessi del proprietario, oltre alla ACL specifica.
 ** La stringa dei permessi
 Ogni lettera nella stringa ACL si riferisce ad un permesso specifico:
 #+begin_src shell
