@@ -17,7 +17,7 @@
 #+latex_header: \mode<beamer>{\usetheme{magpie}}
 
 
-#+BEAMER_HEADER: \subtitle{Utenti e gruppi}
+#+BEAMER_HEADER: \subtitle{Utenti, gruppi, grant, ecc.}
 
 #+BEAMER_HEADER: \institute[fluca1978]{fluca1978\\\url{https://fluca1978.github.io}}
 #+BEAMER_FRAME_LEVEL: 1
@@ -644,6 +644,3 @@ Tipicamente questo meccanismo viene usato per nascondere le tuple di altri utent
   USING  (usernam = CURRENT_USER)      -- condizione di SELECT
   WITH CHECK (usernam = CURRENT_USER); -- condizione DML
 #+end_src
-
-
-* TODO Conclusioni
