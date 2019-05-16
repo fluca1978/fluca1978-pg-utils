@@ -53,6 +53,13 @@ L'accesso al sistema viene garantito dalla configurazione del file ~pg_hba.conf~
 
 *E' sufficiente un ~SIGHUP~ per far riconoscere al cluster le modifiche ai permessi di connessione!*
 
+*** Ereditarietà dei ruoli
+I ruoli possono ereditare da altri ruoli.
+*Un ruolo che eredita (~INHERITS~) viene automaticamente dotato dei permessi dei ruoli di cui fa parte (quindi l'ereditarietà ha senso solo nel caso di ruoli).*
+Nel caso di ruolo che non eredita, i permessi sono garantiti con richiesta esplicita.
+*** Ruoli ~ADMIN~
+*I ruoli marcati come ~ADMIN~ non sono amministratori del database (il ruolo deve avere l'opzione ~SUPERUSER~)!*
+Un ruolo ~ADMIN~ può aggiungere o rimuovere altri ruoli ad un gruppo.
 ** Interazione SQL
 *** Comandi SQL
 I comandi SQL per la gestione dei ruoli seguono la prassi /create, drop, alter/:
@@ -301,6 +308,81 @@ Transativamente, siccome ~harry~ eredita da ~group_write~ si ha che il permesso 
 INSERT 0 1
 => DELETE FROM t_perms;
 DELETE 1
+#+end_src
+
+*** Esempio con ~INHERITS~ parziale
+Immaginiamo di aver creato i ruoli come segue:
+#+begin_src sql
+# CREATE ROLE group_read   WITH NOLOGIN INHERIT;
+# CREATE ROLE group_write  WITH NOLOGIN NOINHERIT; -- non si eredita
+# CREATE ROLE group_delete WITH NOLOGIN INHERIT;
+
+# GRANT SELECT        ON t_perms TO group_read;
+# GRANT INSERT,UPDATE ON t_perms TO group_write;
+# GRANT DELETE        ON t_perms TO group_delete;
+
+# GRANT group_read  TO harry;
+# GRANT group_write TO harry;
+
+# GRANT group_delete TO group_write;
+#+end_src
+
+*** Esempio con ~INHERITS~ parziale: risultato
+#+begin_src sql
+=> SELECT current_role;
+ current_role
+--------------
+ harry
+(1 row)
+
+=> DELETE FROM t_perms;
+ERROR:  permission denied for table t_perms
+
+=> SET ROLE group_write;
+SET
+=> DELETE FROM t_perms;
+ERROR:  permission denied for table t_perms
+
+=> SET ROLE group_delete;
+SET
+=> DELETE FROM t_perms;
+DELETE 0
+#+end_src
+
+*** Esempio di ~ADMIN~: aggiungere un ruolo ad un gruppo
+Senza il flag ~ADMIN~ non si possono aggiungere altri ruoli ad un gruppo.
+#+begin_src sql
+=> SELECT current_role;
+ current_role
+--------------
+ group_delete
+(1 row)
+
+=> GRANT group_read TO group_write;
+ERROR:  must have admin option on role "group_read"
+#+end_src
+*** Esempio di ~ADMIN~ (funzionante): aggiungere un ruolo ad un gruppo
+#+begin_src sql
+# CREATE ROLE group_read WITH NOLOGIN ADMIN harry;
+-- harry amministra il gruppo group_read
+
+=> SELECT current_role;
+ current_role
+--------------
+ harry
+(1 row)
+
+=> GRANT group_read TO group_write;
+GRANT ROLE
+#+end_src
+*** ~ADMIN~ e ~WITH ADMIN OPTION~
+Se non si inserisce al momento della creazione di un ruolo il suo amministratore si può sempre agire con una ~GRANT~ successiva:
+
+#+begin_src sql
+# CREATE ROLE group_read WITH NOLOGIN ADMIN harry;
+-- equivalente a ...
+# CREATE ROLE group_read WITH NOLOGIN;
+# GRANT group_read TO harry WITH ADMIN OPTION;
 #+end_src
 
 ** TODO ~pg_hba.conf~
