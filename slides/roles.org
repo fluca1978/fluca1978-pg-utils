@@ -70,9 +70,35 @@ I comandi SQL per la gestione dei ruoli seguono la prassi /create, drop, alter/:
 - ~ALTER ROLE~ per modificare un ruolo esistente;
 - ~DROP ROLE~ per eliminare un ruolo.
 
+Le opzioni di ~CREATE ROLE~ si trovano anche in ~ALTER ROLE~ e sono quasi tutti flag booleani con una opzione ~NOxxx~ per negare l'opzione.
+
 A quesi si aggiungono i comandi:
 - ~GRANT~ per assegnare dei permessi ad un ruolo;
 - ~REVOKE~ per rimuovere dei permessi ad un ruolo.
+*** Opzioni principali di ~CREATE ROLE~ (e di ~ALTER ROLE~)
+Le opzioni per l'amministrazione/gestione dei database sono:
+- ~SUPERUSER~ definisce un amministratore del cluster;
+- ~CREATEDB~ permette la creazione di nuovi database;
+- ~LOGIN~ consente di effettuare login interattivo;
+- ~CREATROLE~ consente di creare nuovi utenti/gruppi.
+*** Opzioni per la gestione dei gruppi
+Le principali opzioni per la gestione dei gruppi sono:
+- ~IN <ruolo>~ aggiunge il ruolo ad un gruppo;
+- ~ROLE <ruolo>~ aggiunge il ruolo specificato a quello che si sta creando, definendo quindi un gruppo;
+- ~ADMIN <ruolo>~ indica che il ruolo che si sta creando è amministratore del ruolo specificato.
+*** Opzioni per la password
+La principale opzione è ~PASSWORD~ che può essere composta da:
+- ~PASSWORD <password>~ memorizza cifrata la password specificata come testo semplice;
+- ~ENCRYPTED PASSWORD <password>~ memorizza la password fornita già cifrata;
+- ~PASSWORD NULL~ *(default)* non imposta la password, prevenendo il login;
+- ~VALID UNTIL~ indica la data ove la password espira e non è piu' accettata come valida per il login interattivo.
+
+Di fatto le opzioni ~PASSWORD NULL~ e ~NOLOGIN~ sono equivalenti (ai fini pratici).
+
+*** Opzioni di sicurezza varia
+- ~BYPASSRLS~ indica che l'utente è /immune/ alla /Row Level Security/;
+- ~CONNECTION LIMIT~ limita il numero massimo di connessioni che un utente può aprire verso il cluster;
+- ~REPLICATION~ indica che il ruolo può collegarsi al cluster anche quando è in fase di replica (logica o fisica) e che può creare degli slot di replica.
 *** Catalogo dei ruoli: ~pg_authid~
 Il catalogo ~pg_authid~ contiene le informazioni di profilazione e autenticazione dei ruoli, comprensive di password (cifrate).
 #+begin_src sql
@@ -352,7 +378,7 @@ SET
 DELETE 0
 #+end_src
 
-** Opzioni dei ruoli e della loro creazione
+** Amministrazione dei gruppi
 *** Esempio di ~ADMIN~: aggiungere un ruolo ad un gruppo
 Senza il flag ~ADMIN~ non si possono aggiungere altri ruoli ad un gruppo.
 #+begin_src sql
@@ -388,7 +414,6 @@ Se non si inserisce al momento della creazione di un ruolo il suo amministratore
 # CREATE ROLE group_read WITH NOLOGIN;
 # GRANT group_read TO harry WITH ADMIN OPTION;
 #+end_src
-
 
 ** TODO ~pg_hba.conf~
 *** Connessione al database
