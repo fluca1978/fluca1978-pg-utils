@@ -1,0 +1,307 @@
+#+TITLE:     Ruoli
+#+AUTHOR:    ing. Luca Ferrari, PhD
+#+EMAIL:     fluca1978@gmail.com
+#+DATE:      <2019-05-16 gio>
+#+LANGUAGE:  it
+
+#+OPTIONS:   H:3 num:nil toc:nil
+#+OPTIONS:   TeX:t LaTeX:t skip:nil d:nil todo:t pri:nil tags:not-in-toc
+#+INFOJS_OPT: view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+EXPORT_SELECT_TAGS: export
+#+EXPORT_EXCLUDE_TAGS: noexport
+#+LINK_UP:
+#+LINK_HOME:
+
+#+startup: beamer
+#+LaTeX_CLASS: beamer
+#+latex_header: \mode<beamer>{\usetheme{magpie}}
+
+
+#+BEAMER_HEADER: \subtitle{Utenti e gruppi}
+
+#+BEAMER_HEADER: \institute[fluca1978]{fluca1978\\\url{https://fluca1978.github.io}}
+#+BEAMER_FRAME_LEVEL: 1
+
+
+
+#+LATEX_HEADER: \RequirePackage{fancyvrb}
+#+LATEX_HEADER: \DefineVerbatimEnvironment{verbatim}{Verbatim}{fontsize=\scriptsize}
+
+
+* Licenza
+*** Attribution-NonCommercial-ShareAlike 4.0
+This work is licensed under the *Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License*.
+To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/ or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
+
+* Ruoli
+** Concetti Generali
+*** Il concetto di Ruolo
+*Un ruolo è un insieme di permessi (autorizzazioni)*, rappresenta quindi lo stereotipo di una collezione di ~GRANT~ e/o ~REVOKE~ sugli oggetti del database.
+
+E' un concetto ovviamente astratto e la terminologia viene definita nello standard SQL.
+*** Ruoli: Utenti e Gruppi
+Dalla versione 8.1 in poi PostgreSQL non distingue piu' fra /utenti/ e /gruppi/ ma usa il concetto di *ruolo* che rappresenta entrambi:
+- un ruolo può rappresentare un utente;
+- ad un ruolo si possono aggiungere altri ruoli (e quindi rappresenta un gruppo).
+
+*Per collegarsi ad un database occorre sempre un ruolo*, ossia un utente PostgreSQL (che è logicamente separato da quello del sistema operativo). Quando viene inizializzato un cluster viene creato un ruolo superutente per permetterne la gestione (tipicamente ~postgres~).
+
+/Solitamente un gruppo non dispone del permesso di login/.
+
+*** Ruoli e connessioni
+L'accesso al sistema viene garantito dalla configurazione del file ~pg_hba.conf~, che rappresenta il listato di quali utenti, database e host possono ottenere una connessione.
+
+*E' sufficiente un ~SIGHUP~ per far riconoscere al cluster le modifiche ai permessi di connessione!*
+
+** Interazione SQL
+*** Comandi SQL
+I comandi SQL per la gestione dei ruoli seguono la prassi /create, drop, alter/:
+- ~CREATE ROLE~ per creare un nuovo ruolo;
+- ~ALTER ROLE~ per modificare un ruolo esistente;
+- ~DROP ROLE~ per eliminare un ruolo.
+
+A quesi si aggiungono i comandi:
+- ~GRANT~ per assegnare dei permessi ad un ruolo;
+- ~REVOKE~ per rimuovere dei permessi ad un ruolo.
+*** Catalogo dei ruoli: ~pg_authid~
+Il catalogo ~pg_authid~ contiene le informazioni di profilazione e autenticazione dei ruoli, comprensive di password (cifrate).
+#+begin_src sql
+# SELECT rolname, rolcreatedb, rolinherit, rolpassword
+  FROM pg_authid WHERE rolname = 'luca';
+ rolname | rolcreatedb | rolinherit |             rolpassword
+---------+-------------+------------+-------------------------------------
+ luca    | f           | t          | md5bd18b4163ec8a3ad833d867a5933c8ec
+#+end_src
+La password ha una indicazione dell'algoritmo usato (es. ~md5~).
+/Se la password non inizia con ~md5~ o ~SCRAM-SHA-256$~ è da intendersi *non cifrata*/.
+
+*** Vedere i ruoli: ~pg_roles~
+La vista ~pg_roles~ rende pubblicamente visibili le informazioni dei ruoli presenti nel sistema, eccezion fatta per la password:
+
+#+begin_src sql
+# SELECT rolname, rolsuper, rolcreatedb, rolcanlogin
+  FROM pg_roles;
+       rolname        | rolsuper | rolcreatedb | rolcanlogin
+----------------------+----------+-------------+-------------
+ pg_monitor           | f        | f           | f
+ pg_read_all_settings | f        | f           | f
+ pg_read_all_stats    | f        | f           | f
+ pg_stat_scan_tables  | f        | f           | f
+ pg_signal_backend    | f        | f           | f
+ postgres             | t        | t           | t
+#+end_src
+
+E' possibile creare utenti/gruppi/ruoli con privilegi di super utente, possibilità di creare nuovi
+database e di collegarsi o no al cluster.
+
+*** Gestione delle password: ~pg_roles~
+Analogamente ad un sistema Unix, le password contenute in ~pg_roles~ sono /mascherate/ anche ad un utente amministratore:
+
+#+begin_src sql
+# SELECT rolname, rolpassword FROM pg_roles;
+          rolname          | rolpassword
+---------------------------+-------------
+ ur                        | ********
+ u1                        | ********
+ professors                | ********
+ students                  | ********
+ severus                   | ********
+ albus                     | ********
+#+end_src
+*** Gestione delle password: ~pg_shadow~
+La vista ~pg_shadow~ esiste per retrocompatibilità con versioni precedenti di PostgreSQL (prima della ~8.1~) e rappresenta un estratto del catalogo ~pg_authid~ con relative password.
+
+*** Riassunto delle interazioni SQL
+| Comando           | Descrizione                                               |
+|-------------------+-----------------------------------------------------------|
+| ~CREATE ROLE~     | Aggiunge un nuovo ruolo e permette una prima profilazione |
+| ~ALTER ROLE~      | Modifica un ruolo esistente (password e/o profilazione)   |
+| ~DROP ROLE~       | Rimuove un ruolo esistente                                |
+| ~GRANT~, ~REVOKE~ | Aggiunge/rimuove permessi e gruppi ad un ruolo            |
+|-------------------+-----------------------------------------------------------|
+
+| Catalogo    | Descrizione                                              |
+|-------------+----------------------------------------------------------|
+| ~pg_authid~ | Contiene il catalogo dei ruoli con relative password.    |
+| ~pg_roles~  | Versione pubblica senza password.                        |
+| ~pg_shadow~ | Mostra ~pg_authid~ solo degli utenti abilitati al login. |
+
+** Principali comandi Shell
+*** Il comando ~createuser~
+Nelle moderne versioni di PostgreSQL il comando shell ~createuser~ permette la creazione di un ruolo (utente e/o gruppo).
+
+Ad esempio per creare l'utente ~miguel~ con permesso di login e nessuna password impostata:
+#+begin_src shell
+% createuser --login -U postgres miguel
+#+end_src
+
+E' possibile eseguire il comando anche in modalità interattiva, simile ai programmi di gestione degli utenti dei sistemi Unix:
+
+#+begin_sc shell
+% createuser  -U postgres --interactive
+Enter name of role to add: miguel
+Shall the new role be a superuser? (y/n) n
+Shall the new role be allowed to create databases? (y/n) n
+Shall the new role be allowed to create more new roles? (y/n) n
+#+end_src
+
+*** Il comando ~dropuser~
+Il comando shell ~dropuser~ permette l'eliminazione di un ruolo dal database:
+
+#+begin_src shell
+% dropuser -U postgres miguel
+#+end_src
+
+E' possibile usarlo con il flag ~--interactive~ per fare in modo che il programma chieda conferma dell'eliminazione ed eventualmente il ruolo da eliminare.
+
+* Esempi
+** Ruoli e Permessi
+*** Ambiente di prova
+Si supponga di avere una tabella alla quale sono rimossi tutti i permessi (nessuno può operarvi sopra):
+
+#+begin_src sql
+# CREATE TABLE t_perms( v int );
+# REVOKE ALL ON t_perms FROM PUBLIC;
+#+end_src
+*** Creazione dei gruppi
+Si supponga di voler creare un gruppo di sola lettura, uno di inserimento/modifica e uno di cancellazione per la tabella di esempio:
+
+#+begin_src sql
+# CREATE ROLE group_read   WITH NOLOGIN NOINHERIT;
+# CREATE ROLE group_write  WITH NOLOGIN NOINHERIT;
+# CREATE ROLE group_delete WITH NOLOGIN NOINHERIT;
+
+# GRANT SELECT        ON t_perms TO group_read;
+# GRANT INSERT,UPDATE ON t_perms TO group_write;
+# GRANT DELETE        ON t_perms TO group_delete;
+#+end_src
+
+*** Creazione di un utente in un gruppo
+E' possibile specificare con ~IN ROLE~ a quale gruppo un utente appartiene, oppure fornire la ~GRANT~ di un ruolo ad un altro.
+
+#+begin_src sql
+# CREATE ROLE harry WITH LOGIN IN ROLE group_read;
+
+-- oppure equivalentemente
+# CREATE ROLE harry WITH LOGIN;
+# GRANT group_read TO harry;
+#+end_src
+
+/Non si può modificare la composizione di un gruppo con un ~ALTER ROLE~!/
+
+*** Permessi in azione: lettura
+L'utente ~harry~ può leggere la tabella ma non può inserirvi ovviamente nuovi record.
+#+begin_src sql
+testdb=> SELECT current_role;
+ current_role
+--------------
+ harry
+(1 row)
+
+=> INSERT INTO t_perms( v ) VALUES( 1 );
+ERROR:  permission denied for table t_perms
+=> SELECT * FROM t_perms;
+ v
+---
+(0 rows)
+#+end_src
+*** Permessi in azione: scrittura
+Se si aggiunge il gruppo ~group_write~ all'utente ~harry~ si possono effettuare scritture sulla tabella.
+#+begin_src sql
+# GRANT group_write TO harry;
+
+=> SELECT current_role;
+ current_role
+--------------
+ harry
+(1 row)
+
+=> INSERT INTO t_perms( v ) VALUES( 1 );
+INSERT 0 1
+#+end_src
+
+*** Permessi in azione: innestamento
+Si aggiunge il ruolo ~group_delete~ al ruolo ~group_write~, e quindi di riflesso a ~harry~ che fa parte dell'ultimo. Tuttavia il permesso non è usabile dall'utente ~harry~!
+
+#+begin_src sql
+# GRANT group_delete TO group_write;
+
+=> SELECT current_role;
+ current_role
+--------------
+ harry
+(1 row)
+
+=> INSERT INTO t_perms( v ) VALUES( 2 );
+INSERT 0 1
+=> DELETE FROM t_perms;
+ERROR:  permission denied for table t_perms
+#+end_src
+*** Innestamento dei ruoli: ~SET ROLE~
+L'utente deve esplicitamente cambiare gruppo per poter prendere i permessi di quel gruppo, e ciò avviene con ~SET ROLE~.
+#+begin_src sql
+=> SET ROLE group_delete;
+SET
+=> SELECT current_role;
+ current_role
+--------------
+ group_delete
+(1 row)
+
+=> DELETE FROM t_perms;
+DELETE 2
+#+end_src
+*** ~INHERITS~ e l'innestamento dei ruoli
+Nelle versioni obsolete di PostgreSQL (prima della 10.1) l'opzione ~INHERITS~ non era il default, nelle versioni recenti ~INHERTIS~ è sempre il default.
+*** TODO Esempio con ~INHERITS~
+** TODO ~pg_hba.conf~
+*** Connessione al database
+*** Gruppi & login
+- ~INHERITS~ non aggiunge il ~LOGIN~!
+#+begin_src sql
+# CREATE ROLE developers WITH LOGIN;
+-- ok to login
+# CREATE ROLE dev1 IN ROLE developers LOGIN;
+-- FATAL:  role "dev2" is not permitted to log in
+# CREATE ROLE dev2 IN ROLE developers;
+#+end_src
+
+- il gruppo non include gli altri utenti quando usato in ~pg_hba.conf~:
+
+#+begin_src shell
+# pg_hba.conf
+host    all   developers   127.0.0.1/32   trus
+
+% psql -h localhost -U dev1 testdb
+FATAL:  no pg_hba.conf entry for host "127.0.0.1", user "dev1", database "testdb", SSL off
+#+end_src
+
+*** Gruppi & login (2)
+- *occorre usare i gruppi con un ~+~*:
+#+begin_src shell
+# pg_hba.conf
+host    all   +developers   127.0.0.1/32   trus
+#+end_src
+
+- per disabiltiare un gruppo e abilitare gli altri utenti al login:
+#+begin_src shell
+host    all     +developers     127.0.0.1/32     reject
+host    all     all             127.0.0.1/32     trust
+#+end_src
+
+*** La vista ~pg_hba_file_rules~
+La vista ~pg_hba_file_rules~ consente di effettuare il /debugging/ delle impostazione di autenticazione e di capire chi può collegarsi al database:
+
+#+begin_src sql
+# SELECT line_number, type, database, user_name, auth_method
+  FROM pg_hba_file_rules;
+line_number| type  | database |   user_name    | auth_method
+-----------+-------+----------+----------------+-------------
+        84 | local | {all}    | {all}          | trust
+        86 | host  | {all}    | {+developers}  | reject
+        87 | host  | {all}    | {+stocker_app} | trust
+#+end_src
+
+
+
+* Conclusioni
