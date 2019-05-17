@@ -65,6 +65,21 @@ Ogni ruolo dispone dell'unione dei suoi privilegi e di quelli concessi a ~PUBLIC
 *** Ruolo proprietario
 Ogni creatore di un oggetto di database ne è il /proprietario/. Il proprietario ha diritto di vita e di morte sull'oggetto (e quindi può eseguirne il ~DROP~ e ~ALTER~).
 *Non esiste un privilegio di ~DROP~ e di ~ALTER~ e quindi solo il proprietario può alterare la definizione di un oggetto*. E' però possibile cambiare il proprietario con ~REASSIGN~.
+*** ~SESSION_USER~ vs ~CURRENT_USER~
+PostgreSQL definisce due variabili speciali:
+- ~SESSION_USER~ corrisponde all'utente che ha effettuato la connessione al database;
+- ~CURRENT_USER~ (o anche ~CURRENT_ROLE~) corrisponde all'utente attuale (eventualmente modificato con un ~SET ROLE~).
+La distinzione è analoga a quella che in Unix si ha per il /setuid/!
+#+begin_src sql
+% psql -U harry testdb
+
+=> SET ROLE group_read;
+=> SELECT current_user, session_user;
+ current_user | session_user
+--------------+--------------
+ group_read   | harry
+(1 row)
+#+end_src
 ** Interazione SQL
 *** Comandi SQL
 I comandi SQL per la gestione dei ruoli seguono la prassi /create, drop, alter/:
