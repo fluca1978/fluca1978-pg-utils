@@ -173,13 +173,13 @@ La vista ~pg_shadow~ esiste per retrocompatibilità con versioni precedenti di P
 | ~GRANT~, ~REVOKE~                    | Aggiunge/rimuove permessi e gruppi ad un ruolo            |
 | ~DROP OWNED BY~, ~REASSIGN OWNED BY~ | Utili per gestire le dipendenze                           |
 |--------------------------------------+-----------------------------------------------------------|
-
-| Catalogo    | Descrizione                                              |
-|-------------+----------------------------------------------------------|
-| ~pg_authid~ | Contiene il catalogo dei ruoli con relative password.    |
-| ~pg_roles~  | Versione pubblica senza password.                        |
-| ~pg_shadow~ | Mostra ~pg_authid~ solo degli utenti abilitati al login. |
-
+*** Cataloghi SQL utili
+| Catalogo         | Descrizione                                              |
+|------------------+----------------------------------------------------------|
+| ~pg_authid~      | Contiene il catalogo dei ruoli con relative password.    |
+| ~pg_roles~       | Versione pubblica senza password.                        |
+| ~pg_shadow~      | Mostra ~pg_authid~ solo degli utenti abilitati al login. |
+| ~pg_default_acl~ | Mostra i permessi di default                             |
 ** Principali comandi Shell
 *** Il comando ~createuser~
 Nelle moderne versioni di PostgreSQL il comando shell ~createuser~ permette la creazione di un ruolo (utente e/o gruppo).
@@ -463,6 +463,20 @@ testdbtestdb=> SELECT current_role;
 testdbtestdb=> INSERT INTO t_perms_ext( v ) VALUES ( 2 );
 ERROR:  permission denied for table t_perms_ext
 #+end_src
+*** Vedere i permessi di default
+E' possibile usare il comando ~\ddp~ all'interno di ~psql(1)~ per vedere i privilegi di default.
+#+begin_src sql
+testdb=> \ddp
+          Default access privileges
+ Owner | Schema | Type  |  Access privileges
+-------+--------+-------+---------------------
+ harry |        | table | =r/harry
+       |        |       | harry=arwdDxt/harry
+       |        |       | group_read=r/harry
+#+end_src
+
+I privilegi di default sono memorizzati come ACL nel catalogo ~pg_default_acl~.
+
 * ~pg_hba.conf~
 ** Connessione al database
 La connessione ad un database avviene attraverso un filtro /Host Based Access/: deve essere garantito il permesso di connessione dall'host sorgente, dal ruolo (~LOGIN~ option) e al database specifico.
