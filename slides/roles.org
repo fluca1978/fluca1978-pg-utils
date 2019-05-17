@@ -73,8 +73,8 @@ La distinzione è analoga a quella che in Unix si ha per il /setuid/!
 #+begin_src sql
 % psql -U harry testdb
 
-=> SET ROLE group_read;
-=> SELECT current_user, session_user;
+testdb=> SET ROLE group_read;
+testdb=> SELECT current_user, session_user;
  current_user | session_user
 --------------+--------------
  group_read   | harry
@@ -246,15 +246,15 @@ E' possibile specificare con ~IN ROLE~ a quale gruppo un utente appartiene, oppu
 *** Permessi in azione: lettura
 L'utente ~harry~ può leggere la tabella ma non può inserirvi ovviamente nuovi record.
 #+begin_src sql
-testdb=> SELECT current_role;
+testdbtestdb=> SELECT current_role;
  current_role
 --------------
  harry
 (1 row)
 
-=> INSERT INTO t_perms( v ) VALUES( 1 );
+testdb=> INSERT INTO t_perms( v ) VALUES( 1 );
 ERROR:  permission denied for table t_perms
-=> SELECT * FROM t_perms;
+testdb=> SELECT * FROM t_perms;
  v
 ---
 (0 rows)
@@ -264,13 +264,13 @@ Se si aggiunge il gruppo ~group_write~ all'utente ~harry~ si possono effettuare 
 #+begin_src sql
 # GRANT group_write TO harry;
 
-=> SELECT current_role;
+testdb=> SELECT current_role;
  current_role
 --------------
  harry
 (1 row)
 
-=> INSERT INTO t_perms( v ) VALUES( 1 );
+testdb=> INSERT INTO t_perms( v ) VALUES( 1 );
 INSERT 0 1
 #+end_src
 
@@ -295,29 +295,29 @@ Si aggiunge il ruolo ~group_delete~ al ruolo ~group_write~, e quindi di riflesso
 #+begin_src sql
 # GRANT group_delete TO group_write;
 
-=> SELECT current_role;
+testdb=> SELECT current_role;
  current_role
 --------------
  harry
 (1 row)
 
-=> INSERT INTO t_perms( v ) VALUES( 2 );
+testdb=> INSERT INTO t_perms( v ) VALUES( 2 );
 INSERT 0 1
-=> DELETE FROM t_perms;
+testdb=> DELETE FROM t_perms;
 ERROR:  permission denied for table t_perms
 #+end_src
 *** Innestamento dei ruoli: ~SET ROLE~
 L'utente deve esplicitamente cambiare gruppo per poter prendere i permessi di quel gruppo, e ciò avviene con ~SET ROLE~.
 #+begin_src sql
-=> SET ROLE group_delete;
+testdb=> SET ROLE group_delete;
 SET
-=> SELECT current_role;
+testdb=> SELECT current_role;
  current_role
 --------------
  group_delete
 (1 row)
 
-=> DELETE FROM t_perms;
+testdb=> DELETE FROM t_perms;
 DELETE 2
 #+end_src
 *** ~INHERITS~ e l'innestamento dei ruoli
@@ -344,15 +344,15 @@ Siccome ~group_write~ /eredita/ da ~group_delete~ allora il primo ha il permesso
 Transativamente, siccome ~harry~ eredita da ~group_write~ si ha che il permesso di cancellazione è consentito anche a tale utente.
 
 #+begin_src sql
-=> SELECT current_role;
+testdb=> SELECT current_role;
  current_role
 --------------
  harry
 (1 row)
 
-=> INSERT INTO t_perms( v ) VALUES( 3 );
+testdb=> INSERT INTO t_perms( v ) VALUES( 3 );
 INSERT 0 1
-=> DELETE FROM t_perms;
+testdb=> DELETE FROM t_perms;
 DELETE 1
 #+end_src
 
@@ -375,23 +375,23 @@ Immaginiamo di aver creato i ruoli come segue:
 
 *** Esempio con ~INHERITS~ parziale: risultato
 #+begin_src sql
-=> SELECT current_role;
+testdb=> SELECT current_role;
  current_role
 --------------
  harry
 (1 row)
 
-=> DELETE FROM t_perms;
+testdb=> DELETE FROM t_perms;
 ERROR:  permission denied for table t_perms
 
-=> SET ROLE group_write;
+testdb=> SET ROLE group_write;
 SET
-=> DELETE FROM t_perms;
+testdb=> DELETE FROM t_perms;
 ERROR:  permission denied for table t_perms
 
-=> SET ROLE group_delete;
+testdb=> SET ROLE group_delete;
 SET
-=> DELETE FROM t_perms;
+testdb=> DELETE FROM t_perms;
 DELETE 0
 #+end_src
 
@@ -399,13 +399,13 @@ DELETE 0
 *** Esempio di ~ADMIN~: aggiungere un ruolo ad un gruppo
 Senza il flag ~ADMIN~ non si possono aggiungere altri ruoli ad un gruppo.
 #+begin_src sql
-=> SELECT current_role;
+testdb=> SELECT current_role;
  current_role
 --------------
  group_delete
 (1 row)
 
-=> GRANT group_read TO group_write;
+testdb=> GRANT group_read TO group_write;
 ERROR:  must have admin option on role "group_read"
 #+end_src
 *** Esempio di ~ADMIN~ (funzionante): aggiungere un ruolo ad un gruppo
@@ -413,13 +413,13 @@ ERROR:  must have admin option on role "group_read"
 # CREATE ROLE group_read WITH NOLOGIN ADMIN harry;
 -- harry amministra il gruppo group_read
 
-=> SELECT current_role;
+testdb=> SELECT current_role;
  current_role
 --------------
  harry
 (1 row)
 
-=> GRANT group_read TO group_write;
+testdb=> GRANT group_read TO group_write;
 GRANT ROLE
 #+end_src
 *** ~ADMIN~ e ~WITH ADMIN OPTION~
@@ -441,26 +441,26 @@ Siccome gli oggetti non esistono ancora ci si rifersce ad essi con la tiplogia, 
 *** Esempio di ~ALTER DEFAULT PRIVILEGES~
 #+begin_src sql
 
-=> SELECT current_role;
+testdb=> SELECT current_role;
  current_role
 --------------
  harry
 (1 row)
-=> ALTER DEFAULT PRIVILEGES
+testdb=> ALTER DEFAULT PRIVILEGES
    REVOKE INSERT ON TABLES
    FROM group_write;
 
-=> CREATE TABLE t_perms_ext( v int );
+testdb=> CREATE TABLE t_perms_ext( v int );
 #+end_src
 *** Esempio di ~ALTER DEFAULT PRIVILEGES~: effetti
 #+begin_src sql
-testdb=> SELECT current_role;
+testdbtestdb=> SELECT current_role;
  current_role
 --------------
  luca
 (1 row)
 
-testdb=> INSERT INTO t_perms_ext( v ) VALUES ( 2 );
+testdbtestdb=> INSERT INTO t_perms_ext( v ) VALUES ( 2 );
 ERROR:  permission denied for table t_perms_ext
 #+end_src
 * ~pg_hba.conf~
@@ -631,15 +631,15 @@ E' possibile specificare una ~GRANT~ con permesso ~SELECT~ e/o ~UPDATE~ di colon
 #+end_src
 
 #+begin_src sql
-=> SELECT current_role;
+testdb=> SELECT current_role;
  current_role
 --------------
  harry
 (1 row)
 
-=> SELECT * FROM t_perms;
+testdb=> SELECT * FROM t_perms;
 ERROR:  permission denied for table t_perms
-=> SELECT v FROM t_perms;
+testdb=> SELECT v FROM t_perms;
  v
 ---
  1
