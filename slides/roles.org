@@ -432,6 +432,37 @@ Se non si inserisce al momento della creazione di un ruolo il suo amministratore
 # GRANT group_read TO harry WITH ADMIN OPTION;
 #+end_src
 
+** Permessi di default
+*** ~ALTER DEFAULT PRIVILEGES~
+E' possibile modificare i permessi di /default/ di oggetti che verranno creati (*non di quelli già esistenti!*).
+Di fatto con ~ALTER DEFAULT PRIVILEGES~ si impostano le ~GRANT~ e ~REVOKE~ che saranno eseguiti quando un oggetto sarà creato.
+
+Siccome gli oggetti non esistono ancora ci si rifersce ad essi con la tiplogia, es. ~TABLES~, ~FUNCTIONS~, ecc.
+*** Esempio di ~ALTER DEFAULT PRIVILEGES~
+#+begin_src sql
+
+=> SELECT current_role;
+ current_role
+--------------
+ harry
+(1 row)
+=> ALTER DEFAULT PRIVILEGES
+   REVOKE INSERT ON TABLES
+   FROM group_write;
+
+=> CREATE TABLE t_perms_ext( v int );
+#+end_src
+*** Esempio di ~ALTER DEFAULT PRIVILEGES~: effetti
+#+begin_src sql
+testdb=> SELECT current_role;
+ current_role
+--------------
+ luca
+(1 row)
+
+testdb=> INSERT INTO t_perms_ext( v ) VALUES ( 2 );
+ERROR:  permission denied for table t_perms_ext
+#+end_src
 * ~pg_hba.conf~
 ** Connessione al database
 La connessione ad un database avviene attraverso un filtro /Host Based Access/: deve essere garantito il permesso di connessione dall'host sorgente, dal ruolo (~LOGIN~ option) e al database specifico.
