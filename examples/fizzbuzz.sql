@@ -54,3 +54,13 @@ WITH RECURSIVE n AS (
 )
 SELECT current_number, coalesce( mod_3 || mod_5, mod_3, mod_5, current_number::text )
 FROM n;
+
+
+/* porposed by Gábor Szabó */
+
+SELECT
+COALESCE(NULLIF(
+CASE WHEN i % 3 = 0 THEN 'Fizz' ELSE '' END ||
+CASE WHEN i % 5 = 0 THEN 'Buzz' ELSE '' END
+, ''), i::TEXT)
+FROM generate_series(1, 15) i;
