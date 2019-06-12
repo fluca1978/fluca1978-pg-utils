@@ -4,14 +4,6 @@
 
 */
 
-SELECT
-  inh.inhrelid    AS table_oid
-  , inh.inhparent AS parent_table_oid
-  , c.relname     AS table_name
-  , cc.relname    AS table_parent_name
-FROM pg_inherits inh
-JOIN pg_class c ON inh.inhrelid = c.oid
-LEFT JOIN pg_class cc ON inh.inhparent = cc.oid
 
 
 WITH RECURSIVE inheritance_tree AS (
