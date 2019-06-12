@@ -25,7 +25,8 @@ BEGIN
          current_value := 'Fizz';
       END IF;
       IF current_number % 5 = 0 THEN
-         current_value := current_value || 'Buzz';
+         -- suggested by Adrian Klaver
+         current_value := coalesce( current_value, '' ) || 'Buzz';
       END IF;
 
       IF current_value IS NULL THEN
