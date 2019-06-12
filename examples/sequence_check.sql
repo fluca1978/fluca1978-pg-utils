@@ -26,7 +26,7 @@ BEGIN
 
      RAISE DEBUG 'Inspecting %.%', schemaz, seqz;
 
-     query := format( 'SELECT ''%s.%s'', last_value, s.seqmax AS lim, (s.seqmax - last_value) / s.seqincrement AS remaining  FROM %I.%I, pg_sequence s WHERE s.seqrelid = %s',
+     query := format( 'SELECT ''%s.%s'', last_value, s.seqmax AS lim, ( (s.seqmax - last_value) / s.seqincrement)::bigint AS remaining  FROM %I.%I, pg_sequence s WHERE s.seqrelid = %s',
                       quote_ident( schemaz ),
                       quote_ident( seqz ),
                       schemaz,
