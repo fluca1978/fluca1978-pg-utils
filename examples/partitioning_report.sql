@@ -9,7 +9,7 @@
 WITH RECURSIVE inheritance_tree AS (
      SELECT   c.oid AS table_oid
             , c.relname  AS table_name
-            , NULL::text AS table_parent_name
+            , NULL::name AS table_parent_name
             , c.relispartition AS is_partition
      FROM pg_class c
      JOIN pg_namespace n ON n.oid = c.relnamespace
