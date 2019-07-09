@@ -5,7 +5,7 @@
  *
  * \param pk_prefix the name or prefix of the column to be used as primary key (default 'pk')
  * \param schemaz the schema in which look for wrong tables (default 'public')
- * \param use_identity tryue if you want to use 'GENERATED ALWAYS AS IDENTITY' or false to use 'serial'
+ * \param use_identity true if you want to use 'GENERATED ALWAYS AS IDENTITY' or false to use 'serial'
  * \param append_table_name true if you want the column to be named pk_prefix + table-name (to avoid name clashes)
  *
  * \returns each row of alter table
