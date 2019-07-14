@@ -11,13 +11,13 @@ PG_DATABASE=
 
 
 
-MOUNT_POINT=/mnt/$SHARE
+MOUNT_POINT=/mnt/$SMB_SHARE
 
 # check to see if the share has been already mounted
 if [ ! $( mount | grep $SMB_SHARE ) ];
 then
-    logger "Mounting share $SMBSHARE on $MOUNT_POINT"
-    mount -t cifs //${SMB_MACHINE}/${SMB_SHARE} $MOUNTPOINT -o username=$SMB_USER, password=$SMB_PASSWORD,ip=$SMB_IP
+    logger "Mounting share $SMB_SHARE on $MOUNT_POINT"
+    mount -t cifs //${SMB_MACHINE}/${SMB_SHARE} $MOUNT_POINT -o username=$SMB_USER, password=$SMB_PASSWORD,ip=$SMB_IP
     if [ $? -ne 0 ];
     then
         logger "Cannot mount $SMB_SHARE over $MOUNT_POINT, aborting"
