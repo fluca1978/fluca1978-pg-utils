@@ -14,12 +14,10 @@ PG_DATABASE=
 MOUNT_POINT=/mnt/$SMB_SHARE
 
 # check to see if the share has been already mounted
-if [ ! $( mount | grep $SMB_SHARE ) ];
-then
+if [ ! $( mount | grep $SMB_SHARE ) ]; then
     logger "Mounting share $SMB_SHARE on $MOUNT_POINT"
-    mount -t cifs //${SMB_MACHINE}/${SMB_SHARE} $MOUNT_POINT -o username=$SMB_USER, password=$SMB_PASSWORD,ip=$SMB_IP
-    if [ $? -ne 0 ];
-    then
+    mount -t cifs //${SMB_MACHINE}/${SMB_SHARE} $MOUNT_POINT -o username=$SMB_USER,password=$SMB_PASSWORD,ip=$SMB_IP
+    if [ $? -ne 0 ]; then
         logger "Cannot mount $SMB_SHARE over $MOUNT_POINT, aborting"
         echo   "Cannot mount $SMB_SHARE over $MOUNT_POINT, aborting"
         exit 1
@@ -32,8 +30,7 @@ fi
 sleep 3
 BACKUP_DIR=$MOUNT_POINT/$PG_DATABASE/$(date +'day-%w')
 logger "Starting backup of database $PG_DATABASE into $BACKUP_DIR"
-if [ -d $BACKUP_DIR ];
-then
+if [ -d $BACKUP_DIR ]; then
     # remove previous content of this directory
     rm -rf $BACKUP_DIR
 fi
