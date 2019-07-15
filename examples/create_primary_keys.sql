@@ -3,8 +3,8 @@
  * primary keys (surrogated, of course) to tables that do not
  * have such constraints.
  *
- * \param pk_prefix the name or prefix of the column to be used as primary key (default 'pk')
  * \param schemaz the schema in which look for wrong tables (default 'public')
+ * \param pk_prefix the name or prefix of the column to be used as primary key (default 'pk')
  * \param use_identity true if you want to use 'GENERATED ALWAYS AS IDENTITY' or false to use 'serial'
  * \param append_table_name true if you want the column to be named pk_prefix + table-name (to avoid name clashes)
  *
@@ -12,7 +12,7 @@
  *
  *
  * Example of invocation:
- # select * from f_generate_primary_keys( 'miao', 'public', true, false );
+ # select * from f_generate_primary_keys( 'public', 'miao', true, false );
  DEBUG:  Table [foo] without primary key
  DEBUG:   -> ALTER TABLE public.foo ADD COLUMN miao int NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY;
  DEBUG:  Table [bar] without primary key
@@ -29,8 +29,8 @@ and check the script.sql, then execute it as a normal script:
 
 % psql -U luca -h miguel -f script.sql testdb
  */
-CREATE OR REPLACE FUNCTION f_generate_primary_keys( pk_prefix text DEFAULT 'pk',
-                                                    schemaz text DEFAULT 'public',
+CREATE OR REPLACE FUNCTION f_generate_primary_keys( schemaz text DEFAULT 'public',
+                                                    pk_prefix text DEFAULT 'pk',
                                                     use_identity boolean DEFAULT true,
                                                     append_table_name boolean DEFAULT false )
 RETURNS SETOF text
@@ -93,15 +93,15 @@ LANGUAGE plpgsql;
  * on a batch processing.
  *
  *
- * \param pk_prefix the name or prefix of the column to be used as primary key (default 'pk')
  * \param schemaz the schema in which look for wrong tables (default 'public')
+ * \param pk_prefix the name or prefix of the column to be used as primary key (default 'pk')
  * \param use_identity true if you want to use 'GENERATED ALWAYS AS IDENTITY' or false to use 'serial'
  * \param append_table_name true if you want the column to be named pk_prefix + table-name (to avoid name clashes)
  * \param commit_after the number of `ALTER TABLE` to issue before forcing a commit
  *
  *
  * Example of invocation:
-testdb=# call p_generate_primary_keys( 'id', 'public', false, true );
+testdb=# call p_generate_primary_keys( 'public', 'id', false, true );
 DEBUG:  Table [foo] without primary key
 DEBUG:   -> ALTER TABLE public.foo ADD COLUMN id_foo serial NOT NULL  PRIMARY KEY;
 DEBUG:  Table [bar] without primary key
@@ -121,8 +121,8 @@ LOG:  duration: 16.224 ms  statement: call p_generate_primary_keys( 'id', 'publi
 CALL
 
  */
-CREATE OR REPLACE PROCEDURE p_generate_primary_keys( pk_prefix text DEFAULT 'pk',
-                                                     schemaz text DEFAULT 'public',
+CREATE OR REPLACE PROCEDURE p_generate_primary_keys( schemaz text DEFAULT 'public',
+                                                     pk_prefix text DEFAULT 'pk',
                                                      use_identity boolean DEFAULT true,
                                                      append_table_name boolean DEFAULT false,
                                                      commit_after int DEFAULT 10 )
