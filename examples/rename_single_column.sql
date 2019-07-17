@@ -42,7 +42,7 @@ BEGIN
 
   RAISE DEBUG 'Searching for tables with column [%] in schema [%]', src_column, schemaz;
 
-  FOR current_class IN SELECT * FROM pg_class c
+  FOR current_class IN SELECT c.* FROM pg_class c
                        JOIN pg_namespace n ON n.oid      = c.relnamespace
                        JOIN pg_attribute a ON a.attrelid = c.oid
                        WHERE n.nspname = schemaz
