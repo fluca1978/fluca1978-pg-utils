@@ -11,11 +11,11 @@
  * Example of invocation:
  =# select * from f_suggest_primary_keys( 'respi', 'tipo_rensom' );
  DEBUG:  Inspecting schema respi (table tipo_rensom)
- DEBUG:  Inspecting table [respi.tipo_rensom] (151915.151952) -> pk
- DEBUG:  Inspecting table [respi.tipo_rensom] (151915.151952) -> id_tipo_rensom
- DEBUG:  Inspecting table [respi.tipo_rensom] (151915.151952) -> nome
+ DEBUG:  Inspecting column pk in table [respi.tipo_rensom] (151915.151952)
+ DEBUG:  Inspecting column id_tipo_rensom in table [respi.tipo_rensom] (151915.151952)
+ DEBUG:  Inspecting column nome in table [respi.tipo_rensom] (151915.151952)
  DEBUG:  Suggested PRIMARY KEY(nome) on respi.tipo_rensom
- DEBUG:  Inspecting table [respi.tipo_rensom] (151915.151952) -> descrizione
+ DEBUG:  Inspecting column descrizione in table [respi.tipo_rensom] (151915.151952)
  DEBUG:  Suggested PRIMARY KEY(descrizione) on respi.tipo_rensom
  f_suggest_primary_keys
  -------------------------------------------------------------------
@@ -50,11 +50,12 @@ BEGIN
     is_unique            := false;
     could_be_unique      := false;
     could_be_primary_key := false;
-    RAISE DEBUG 'Inspecting table [%.%] (%.%) -> %', current_stats.schemaname,
+    RAISE DEBUG 'Inspecting column % in table [%.%] (%.%)',
+                                                     current_stats.attname
+                                                     current_stats.schemaname,
                                                      current_stats.tablename,
                                                      current_stats.nspoid,
-                                                     current_stats.reloid,
-                                                     current_stats.attname;
+                                                     current_stats.reloid;
      -- search if this attribute is already included into
      -- a primary key constraint
      SELECT cn.contype
