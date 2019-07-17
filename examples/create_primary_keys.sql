@@ -43,7 +43,7 @@ DECLARE
   current_pk_name text;
 BEGIN
 
-  FOR current_class IN SELECT * FROM pg_class c
+  FOR current_class IN SELECT c.* FROM pg_class c
                        JOIN pg_namespace n ON n.oid = c.relnamespace
                        WHERE n.nspname = schemaz
                        AND   c.relkind = 'r'
