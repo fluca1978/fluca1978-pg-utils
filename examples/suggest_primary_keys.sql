@@ -67,17 +67,8 @@ BEGIN
      AND    a.attname       = current_stats.attname;
 
 
-     IF current_constraint = 'p' THEN
-        is_primary_key := true;
-     ELSE
-       is_primary_key := false;
-     END IF;
-
-     IF current_constraint = 'u' THEN
-        is_unique := true;
-     ELSE
-       is_unique := false;
-     END IF;
+     is_primary_key := current_constraint = 'p';
+     is_unique      := current_constraint = 'u';
 
      -- if this is already on a constraint, skip!
      IF is_primary_key OR is_unique THEN
@@ -85,18 +76,9 @@ BEGIN
      END IF;
 
    -- check if this could be an unique attribute
-   IF current_stats.n_distinct = -1 THEN
-      could_be_unique := true;
-   ELSE
-      could_be_unique := false;
-   END IF;
-
+   could_be_unique := current_stats.n_distinct = -1;
    -- could it be promoted as a primary key?
-   IF could_be_unique AND current_stats.null_frac = 0 THEN
-      could_be_primary_key := true;
-   ELSE
-     could_be_primary_key := false;
-   END IF;
+   could_be_primary_key := could_be_unique AND current_stats.null_frac = 0;
 
    IF could_be_primary_key THEN
       RAISE DEBUG 'Suggested PRIMARY KEY(%) on %.%', current_stats.attname,
