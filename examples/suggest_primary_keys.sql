@@ -9,7 +9,7 @@
  *\return the set of possible/suggested alter tables
  *
  * Example of invocation:
- =# select * from f_suggest_primary_keys( 'respi', 'tipo_rensom' );
+ testdb=# select * from f_suggest_primary_keys( 'respi', 'tipo_rensom' );
  DEBUG:  Inspecting schema respi (table tipo_rensom)
  DEBUG:  Inspecting column pk in table [respi.tipo_rensom] (151915.151952)
  DEBUG:  Inspecting column id_tipo_rensom in table [respi.tipo_rensom] (151915.151952)
