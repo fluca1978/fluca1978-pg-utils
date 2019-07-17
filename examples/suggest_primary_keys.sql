@@ -10,14 +10,15 @@
  *
  * Example of invocation:
  testdb=# select * from f_suggest_primary_keys( 'respi', 'tipo_rensom' );
- DEBUG:  Inspecting schema respi (table tipo_rensom)
- DEBUG:  Inspecting column pk in table [respi.tipo_rensom] (151915.151952)
- DEBUG:  Inspecting column id_tipo_rensom in table [respi.tipo_rensom] (151915.151952)
- DEBUG:  Inspecting column nome in table [respi.tipo_rensom] (151915.151952)
- DEBUG:  Suggested PRIMARY KEY(nome) on respi.tipo_rensom
- DEBUG:  Inspecting column descrizione in table [respi.tipo_rensom] (151915.151952)
- DEBUG:  Suggested PRIMARY KEY(descrizione) on respi.tipo_rensom
- f_suggest_primary_keys
+   DEBUG:  Inspecting schema respi (table tipo_rensom)
+   DEBUG:  Inspecting column pk in table [respi.tipo_rensom] (151915.151952)
+   DEBUG:  Inspecting column id_tipo_rensom in table [respi.tipo_rensom] (151915.151952)
+   DEBUG:  Inspecting column nome in table [respi.tipo_rensom] (151915.151952)
+   DEBUG:  Suggested PRIMARY KEY(nome) on respi.tipo_rensom
+   DEBUG:  Inspecting column descrizione in table [respi.tipo_rensom] (151915.151952)
+   DEBUG:  Suggested PRIMARY KEY(descrizione) on respi.tipo_rensom
+
+                f_suggest_primary_keys
  -------------------------------------------------------------------
  ALTER TABLE respi.tipo_rensom ADD CONSTRAINT UNIQUE(nome)
  ALTER TABLE respi.tipo_rensom ADD CONSTRAINT UNIQUE(descrizione)
