@@ -1,6 +1,7 @@
 /*
  * Try to understand which version of PostgreSQL we have.
  * Exports variables:
+   pg_version_at_least_12
    pg_version_at_least_11
    pg_version_at_least_10
    pg_version_less_than_10
@@ -13,7 +14,15 @@ SELECT
 EXISTS ( SELECT setting
          FROM   pg_settings
          WHERE  name = 'server_version_num'
+         AND    setting::int >= 120000
+         AND    setting::int  < 130000
+       )
+       AS pg_version_at_least_12
+, EXISTS ( SELECT setting
+         FROM   pg_settings
+         WHERE  name = 'server_version_num'
          AND    setting::int >= 110000
+         AND    setting::int  < 120000
          )
          AS pg_version_at_least_11
 , EXISTS ( SELECT setting
