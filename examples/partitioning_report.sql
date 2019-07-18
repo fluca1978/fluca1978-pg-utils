@@ -32,13 +32,12 @@ SELECT
           it.table_name
         , c.reltuples
         , c.relpages
-
         , CASE p.partstrat
                WHEN 'l' THEN 'BY LIST'
                WHEN 'r' THEN 'BY RANGE'
                WHEN 'h' THEN 'BY HASH'
                ELSE 'not partitioned'
-          END AS partitionin_type
+          END AS partitioning_type
         , it.table_parent_name
         , pg_get_expr( c.relpartbound, c.oid, true ) AS partitioning_values
         , pg_get_expr( p.partexprs, c.oid, true )    AS sub_partitioning_values
