@@ -1,6 +1,37 @@
 /*
- Paritioning status query.
- Inspired by <https://www.postgresql.org/message-id/otalb9%245ma%241%40blaine.gmane.org>
+ * Paritioning status query.
+ * Inspired by <https://www.postgresql.org/message-id/otalb9%245ma%241%40blaine.gmane.org>
+ *
+ * Example of output:
+
+-[ RECORD 1 ]-----------+-------------------------------------------------
+table_name              | images_root
+is_root                 | t
+reltuples               | 0
+relpages                | 0
+partitioning_type       | BY RANGE
+table_parent_name       |
+partitioning_values     |
+sub_partitioning_values |
+-[ RECORD 2 ]-----------+-------------------------------------------------
+table_name              | images_2015
+is_root                 | f
+reltuples               | 5036
+relpages                | 83
+partitioning_type       | not partitioned
+table_parent_name       | images_root
+partitioning_values     | FOR VALUES FROM ('2015-01-01') TO ('2016-01-01')
+sub_partitioning_values |
+
+-[ RECORD 3 ]-----------+-------------------------------------------------
+table_name              | images_2017
+is_root                 | f
+reltuples               | 0
+relpages                | 0
+partitioning_type       | BY LIST
+table_parent_name       | images_root
+partitioning_values     | FOR VALUES FROM ('2017-01-01') TO ('2018-01-01')
+sub_partitioning_values | date_part('month'::text, modificationdate)
 
 */
 
