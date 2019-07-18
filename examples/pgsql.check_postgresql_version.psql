@@ -1,9 +1,9 @@
 /*
  * Try to understand which version of PostgreSQL we have.
  * Exports variables:
-   pg_version_at_least_12
-   pg_version_at_least_11
-   pg_version_at_least_10
+   pg_version_12
+   pg_version_11
+   pg_version_10
    pg_version_less_than_10
  *
  * Include in your scripts with \ir such as
@@ -17,21 +17,21 @@ EXISTS ( SELECT setting
          AND    setting::int >= 120000
          AND    setting::int  < 130000
        )
-       AS pg_version_at_least_12
+       AS pg_version_12
 , EXISTS ( SELECT setting
          FROM   pg_settings
          WHERE  name = 'server_version_num'
          AND    setting::int >= 110000
          AND    setting::int  < 120000
          )
-         AS pg_version_at_least_11
+         AS pg_version_11
 , EXISTS ( SELECT setting
          FROM   pg_settings
          WHERE  name = 'server_version_num'
          AND    setting::int >= 100000
          AND    setting::int <  110000
          )
-         AS pg_version_at_least_10
+         AS pg_version_10
 , EXISTS ( SELECT setting
          FROM   pg_settings
          WHERE  name = 'server_version_num'

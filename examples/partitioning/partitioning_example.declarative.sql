@@ -127,15 +127,8 @@ FOR VALUES FROM ( MINVALUE )
 TO ( '2015-01-01' );
 */
 
-\if :pg_version_at_least_11
-\echo 'PostgreSQL version is at least 11'
-\echo 'Using DEFAULT partition'
--- PostgreSQL 11
-CREATE TABLE digikam.images_old
-PARTITION OF digikam.images_root
-DEFAULT;
+\if :pg_version_10
 
-\elif :pg_version_at_least_10
 \echo 'PostgreSQL version is 10'
 \echo 'Emulate a DEFAULT partition'
 -- PostgreSQL 10
@@ -143,6 +136,16 @@ CREATE TABLE digikam.images_old
 PARTITION OF digikam.images_root
 FOR VALUES FROM ( MINVALUE )
 TO ( '2015-01-01' );
+
+\else
+
+\echo 'PostgreSQL version is at least 11'
+\echo 'Using DEFAULT partition'
+-- PostgreSQL 11
+CREATE TABLE digikam.images_old
+PARTITION OF digikam.images_root
+DEFAULT;
+
 \endif
 
 
