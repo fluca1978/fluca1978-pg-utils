@@ -1,3 +1,14 @@
+-- load variables to see which version of PostgreSQL is running
+\ir ../pgsql.check_postgresql_version.psql
+
+\if :pg_version_less_than_10
+\echo 'PostgreSQL version less than 10, cannot run declarative partitioning!'
+\echo 'Update yourself!'
+\quit
+\endif
+
+
+
 /*
 
 sqlite> .schema images
@@ -116,10 +127,25 @@ FOR VALUES FROM ( MINVALUE )
 TO ( '2015-01-01' );
 */
 
+\if :pg_version_at_least_11
+\echo 'PostgreSQL version is at least 11'
+\echo 'Using DEFAULT partition'
 -- PostgreSQL 11
 CREATE TABLE digikam.images_old
 PARTITION OF digikam.images_root
 DEFAULT;
+
+\elif :pg_version_at_least_10
+\echo 'PostgreSQL version is 10'
+\echo 'Emulate a DEFAULT partition'
+-- PostgreSQL 10
+CREATE TABLE digikam.images_old
+PARTITION OF digikam.images_root
+FOR VALUES FROM ( MINVALUE )
+TO ( '2015-01-01' );
+\endif
+
+
 
 CREATE TABLE digikam.images_2018
 PARTITION OF digikam.images_root

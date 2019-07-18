@@ -1,0 +1,34 @@
+/*
+ * Try to understand which version of PostgreSQL we have.
+ * Exports variables:
+   pg_version_at_least_11
+   pg_version_at_least_10
+   pg_version_less_than_10
+ *
+ * Include in your scripts with \ir such as
+ \ir ../pgsql.check_postgresql_version.psql
+
+ */
+SELECT
+EXISTS ( SELECT setting
+         FROM   pg_settings
+         WHERE  name = 'server_version_num'
+         AND    setting::int >= 110000
+         )
+         AS pg_version_at_least_11
+, EXISTS ( SELECT setting
+         FROM   pg_settings
+         WHERE  name = 'server_version_num'
+         AND    setting::int >= 100000
+         AND    setting::int <  110000
+         )
+         AS pg_version_at_least_10
+, EXISTS ( SELECT setting
+         FROM   pg_settings
+         WHERE  name = 'server_version_num'
+         AND    setting::int < 100000
+         )
+         AS pg_version_less_than_10
+\gset
+
+
