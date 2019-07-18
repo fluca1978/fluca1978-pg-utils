@@ -1,15 +1,21 @@
 /*
+ * A function that inspects sequences
+ * and reports back how much remaining 'entries'
+ * the sequence will produce.
+ *
+ * Example of invocation:
+
 testdb=# select * from seq_check() ORDER BY remaining;
-seq_name        | current_value |    lim     | remaining
-------------------------|---------------|------------|------------
-public.persona_pk_seq  |       5000000 | 2147483647 |     214248
-public.root_pk_seq     |         50000 | 2147483647 | 2147433647
-public.students_pk_seq |             7 | 2147483647 | 2147483640
+       seq_name        | current_value |    lim     | remaining  | cycle |
+-----------------------|---------------|------------|------------|-------|
+public.persona_pk_seq  |       5000000 | 2147483647 |     214248 | t     |
+public.root_pk_seq     |         50000 | 2147483647 | 2147433647 | f     |
+public.students_pk_seq |             7 | 2147483647 | 2147483640 | f     |
 (3 rows)
 */
 
 CREATE OR REPLACE FUNCTION seq_check()
-RETURNS TABLE( seq_name text, current_value bigint, lim bigint, remaining bigint )
+RETURNS TABLE( seq_name text, current_value bigint, lim bigint, remaining bigint, cycle boolean )
 AS $CODE$
 DECLARE
   query text;
@@ -26,7 +32,7 @@ BEGIN
 
      RAISE DEBUG 'Inspecting %.%', schemaz, seqz;
 
-     query := format( 'SELECT ''%s.%s'', last_value, s.seqmax AS lim, ( (s.seqmax - last_value) / s.seqincrement)::bigint AS remaining  FROM %I.%I, pg_sequence s WHERE s.seqrelid = %s',
+     query := format( 'SELECT ''%s.%s'', last_value, s.seqmax AS lim, ( (s.seqmax - last_value) / s.seqincrement)::bigint AS remaining, s.seqcycle AS cycle  FROM %I.%I, pg_sequence s WHERE s.seqrelid = %s',
                       quote_ident( schemaz ),
                       quote_ident( seqz ),
                       schemaz,
