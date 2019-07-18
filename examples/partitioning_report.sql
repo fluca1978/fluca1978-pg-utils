@@ -36,6 +36,7 @@ SELECT
         , CASE p.partstrat
                WHEN 'l' THEN 'BY LIST'
                WHEN 'r' THEN 'BY RANGE'
+               WHEN 'h' THEN 'BY HASH'
                ELSE 'not partitioned'
           END AS partitionin_type
         , it.table_parent_name
