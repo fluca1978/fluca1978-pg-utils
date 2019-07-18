@@ -4,13 +4,12 @@
 
 */
 
-
-
 WITH RECURSIVE inheritance_tree AS (
      SELECT   c.oid AS table_oid
             , c.relname  AS table_name
             , NULL::name AS table_parent_name
             , c.relispartition AS is_partition
+            , true AS is_root
      FROM pg_class c
      JOIN pg_namespace n ON n.oid = c.relnamespace
      WHERE c.relkind = 'p'
@@ -22,6 +21,7 @@ WITH RECURSIVE inheritance_tree AS (
           , c.relname AS table_name
           , cc.relname AS table_parent_name
           , c.relispartition AS is_partition
+          , false AS is_root
      FROM inheritance_tree it
      JOIN pg_inherits inh ON inh.inhparent = it.table_oid
      JOIN pg_class c ON inh.inhrelid = c.oid
@@ -30,6 +30,7 @@ WITH RECURSIVE inheritance_tree AS (
 )
 SELECT
           it.table_name
+        , is_root
         , c.reltuples
         , c.relpages
         , CASE p.partstrat
@@ -44,4 +45,4 @@ SELECT
 FROM inheritance_tree it
 JOIN pg_class c ON c.oid = it.table_oid
 LEFT JOIN pg_partitioned_table p ON p.partrelid = it.table_oid
-ORDER BY 1,2;
+ORDER BY 2 DESC,1,3;
