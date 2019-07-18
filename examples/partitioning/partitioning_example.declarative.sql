@@ -99,10 +99,27 @@ PARTITION OF digikam.images_root
 FOR VALUES FROM ( '2015-01-01' )
 TO ( '2016-01-01' );
 
+/*
+-- PostgreSQL 10
+
 CREATE TABLE digikam.images_old
 PARTITION OF digikam.images_root
 FOR VALUES FROM ( '1950-01-01' )
 TO ( '2015-01-01' );
+*/
+
+/*
+-- PostgreSQL 10
+CREATE TABLE digikam.images_old
+PARTITION OF digikam.images_root
+FOR VALUES FROM ( MINVALUE )
+TO ( '2015-01-01' );
+*/
+
+-- PostgreSQL 11
+CREATE TABLE digikam.images_old
+PARTITION OF digikam.images_root
+DEFAULT;
 
 CREATE TABLE digikam.images_2018
 PARTITION OF digikam.images_root
