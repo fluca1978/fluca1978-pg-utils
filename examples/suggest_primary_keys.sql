@@ -36,15 +36,25 @@ DECLARE
   current_constraint   char(1);
   current_alter_table  text;
 BEGIN
-  RAISE DEBUG 'Inspecting schema % (table %)', schemaz, tablez;
+  -- ensure at least one schema to inspect!
+  schemaz := coalesce( schemaz, 'public' );
 
-  FOR current_stats IN SELECT s.*, n.oid AS nspoid, c.oid AS reloid FROM pg_stats s
+  IF tablez IS NULL THEN
+     RAISE DEBUG 'Inspecting whole schema % (scanning all tables)', schemaz;
+  ELSE
+    RAISE DEBUG 'Inspecting single table %.%', schemaz, tablez;
+  END IF;
+
+  FOR current_stats IN SELECT s.*, n.oid AS nspoid, c.oid AS reloid
+                       FROM pg_stats s
                        JOIN  pg_class c ON c.relname = s.tablename
                        JOIN  pg_namespace n ON n.oid = c.relnamespace
                        WHERE s.schemaname = schemaz
                        AND   c.relkind = 'r'
                        AND   n.nspname = s.schemaname
-                       AND   ( ( s.tablename = tablez ))
+                       AND   ( ( tablez IS NOT NULL AND s.tablename = tablez )
+                               OR ( tablez IS NULL )
+                             )
 
   LOOP
     is_primary_key       := false;
@@ -52,7 +62,7 @@ BEGIN
     could_be_unique      := false;
     could_be_primary_key := false;
     RAISE DEBUG 'Inspecting column % in table [%.%] (%.%)',
-                                                     current_stats.attname
+                                                     current_stats.attname,
                                                      current_stats.schemaname,
                                                      current_stats.tablename,
                                                      current_stats.nspoid,
