@@ -15,6 +15,12 @@ where
   time  how many seconds to run each test (default 12 minutes)
   host  remote host (default to localhost)
   tag   is a tag to use for identifying the log files
+
+Example of invocation:
+  $0 10 720 miguel fsync-off
+will run 10 tests, 12 minutes each, on the host miguel with the
+current user and the 'pgbench' database, creating a log file
+with the name pgbench-fsync-off.log
 EOF
 }
 
