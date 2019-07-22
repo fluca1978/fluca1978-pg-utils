@@ -80,7 +80,7 @@ echo "Log in [$PGBENCH_LOG]"
 
 
 echo "=== pgbench test run from $0 ===" > $PGBENCH_LOG
-$(date) >> $PGBENCH_LOG
+echo $(date) >> $PGBENCH_LOG
 
 # check for configuration
 $PSQL_CMD  -c "SELECT name, setting FROM pg_settings WHERE name IN ('checkpoint_completion_target', 'shared_buffers', 'checkpoint_timeout', 'fsync', 'synchronous_commit' );" -h $PGBENCH_HOST $PGBENCH_DB >> $PGBENCH_LOG
@@ -90,6 +90,7 @@ while [ $current_run -le $PGBENCH_RUNS ]
 do
     current_log=/tmp/pgbench.$$.$current_run
     echo "run $current_run" > $current_log
+    echo $(date) >> $current_log
     echo "Running test $current_run/$PGBENCH_RUNS with log $current_log"
     $PGBENCH_CMD  -T $PGBENCH_TIME  -j $PGBENCH_PARALLELISM -c $PGBENCH_PARALLELISM -h $PGBENCH_HOST $PGBENCH_DB >> $current_log 2>&1
     current_tps=$( grep 'tps = ' $current_log | grep 'including' | awk '{printf "%d", $3;}')
