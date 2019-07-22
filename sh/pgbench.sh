@@ -73,8 +73,9 @@ $PSQL_CMD  -c "SELECT name, setting FROM pg_settings WHERE name IN ('checkpoint_
 while [ $current_run -le $PGBENCH_RUNS ]
 do
     current_log=/tmp/pgbench.$$.$current_run
-    echo "Running test $current_run with log $current_log"
-    $PGBENCH_CMD  -T $PGBENCH_TIME  -j $PGBENCH_PARALLELISM -c $PGBENCH_PARALLELISM -h $PGBENCH_HOST $PGBENCH_DB > $current_log 2>&1
+    echo "run $current_run" > $current_log
+    echo "Running test $current_run/$PGBENCH_RUNS with log $current_log"
+    $PGBENCH_CMD  -T $PGBENCH_TIME  -j $PGBENCH_PARALLELISM -c $PGBENCH_PARALLELISM -h $PGBENCH_HOST $PGBENCH_DB >> $current_log 2>&1
     current_tps=$( grep 'tps = ' $current_log | grep 'including' | awk '{printf "%d", $3;}')
     current_latency=$( grep 'latency' $current_log | awk '{printf "%d", $4;}' )
 
@@ -86,8 +87,10 @@ done
 
 echo "please note all numbers are rounded to integers"
 echo "all done!"
-echo "=============================================="
-echo "tps avg = " $(( current_tps_total / PGBENCH_RUNS ))
-echo "latency avg ms = " $(( current_latency_total / PGBENCH_RUNS ))
-echo "=============================================="
+echo "=============================================="                | tee -a $PGBENCH_LOG
+echo "tps avg = " $(( current_tps_total / PGBENCH_RUNS ))            | tee -a $PGBENCH_LOG
+echo "latency avg ms = " $(( current_latency_total / PGBENCH_RUNS )) | tee -a $PGBENCH_LOG
+echo "=============================================="                | tee -a $PGBENCH_LOG
+cat /tmp/pgbench.$$* >> $PGBENCH_LOG
 rm /tmp/pgbench.$$.*
+echo "see $PGBENCH_LOG for a full log"
