@@ -77,7 +77,8 @@ current_tps_total=0
 current_latency_total=0
 PGBENCH_LOG="pgbench-$PGBENCH_TAG.log"
 echo "Log in [$PGBENCH_LOG]"
-
+echo "This test is supposed to finish at"
+echo $(date "+$PGBENCH_TIME minutes")
 
 echo "=== pgbench test run from $0 ===" > $PGBENCH_LOG
 echo $(date) >> $PGBENCH_LOG
@@ -98,7 +99,7 @@ do
 
     current_tps_total=$(( current_tps_total + current_tps ))
     current_latency_total=$(( current_latency_total + current_latency ))
-    echo "Run $current_run: tps = $current_tps, latency = $current_latency ms" >> $PGBENCH_LOG
+    echo "Run $current_run: tps = $current_tps, latency = $current_latency ms" | tee -a $PGBENCH_LOG
     current_run=$(( current_run + 1 ))
 done
 
