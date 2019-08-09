@@ -78,7 +78,8 @@ current_latency_total=0
 PGBENCH_LOG="pgbench-$PGBENCH_TAG.log"
 echo "Log in [$PGBENCH_LOG]"
 echo "This test is supposed to finish at"
-echo $(date "+$PGBENCH_TIME minutes")
+total_minutes=$(( PGBENCH_TIME * PGBENCH_RUNS ))
+echo $(date "+$total_minutes minutes")
 
 echo "=== pgbench test run from $0 ===" > $PGBENCH_LOG
 echo $(date) >> $PGBENCH_LOG
