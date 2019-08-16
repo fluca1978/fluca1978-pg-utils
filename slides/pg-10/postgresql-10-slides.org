@@ -12227,7 +12227,7 @@ avg_sent         | 0
 avg_query        | 0
 #+end_src
 
-*ATTENZIONE: il ~database~ è quello a cui ci è connessi mediante ~pgpool~, non quello effettivo!*
+*ATTENZIONE: il ~database~ è quello a cui ci è connessi mediante ~pgbouncer~, non quello effettivo!*
 
 *** ~SHOW POOLS~
 Mostra lo stato del pool per ogni database configurato:
@@ -12281,7 +12281,7 @@ The connection to the server was lost. Attempting reset:
 Ricarica la configurazione senza interrompere il servizio.
 
 *** ~SHUTDOWN~
-Interrompe il servizio di ~pgpool~.
+Interrompe il servizio di ~pgbouncer~.
 
 #+begin_src sql
 # SHUTDOWN;
