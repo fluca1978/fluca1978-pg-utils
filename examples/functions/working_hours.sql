@@ -29,9 +29,9 @@ DEBUG:  Day 2019-08-03 counting 8 working hours
 CREATE OR REPLACE FUNCTION compute_working_hours( _year int,
                                                   _month int,
                                                   _saturday boolean DEFAULT false,
-                                                  _hour_template int[] DEFAULT ARRAY[ 8, 8, 8, 8, 8, 8, 8 ]::int[],
+                                                  _hour_template real[] DEFAULT ARRAY[ 8, 8, 8, 8, 8, 8, 8 ]::real[],
                                                   _exclude_days int[] DEFAULT null )
-RETURNS int
+RETURNS real
 AS $CODE$
 DECLARE
   _exclude_days_as_dates date[];
@@ -97,15 +97,15 @@ compute_working_hours
 CREATE OR REPLACE FUNCTION compute_working_hours( begin_day DATE,
                                                   end_day DATE,
                                                   _saturday boolean DEFAULT false,
-                                                  _hour_template int[] DEFAULT ARRAY[ 8, 8, 8, 8, 8, 8, 8 ]::int[],
+                                                  _hour_template real[] DEFAULT ARRAY[ 8, 8, 8, 8, 8, 8, 8 ]::real[],
                                                   _exclude_days date[] DEFAULT NULL )
-RETURNS INT
+RETURNS real
 AS $CODE$
 DECLARE
-  working_hours int := 0;
+  working_hours real := 0;
   working_days daterange;
   current_day date;
-  current_day_hours int;
+  current_day_hours real;
   skip boolean;
 BEGIN
   -- check arguments
@@ -117,7 +117,7 @@ BEGIN
 
 
   IF _hour_template IS NULL THEN
-     _hour_template := ARRAY[ 8, 8, 8, 8, 8, 8, 8 ]::int[];
+     _hour_template := ARRAY[ 8, 8, 8, 8, 8, 8, 8 ]::real[];
   END IF;
   WHILE array_length( _hour_template, 1 ) < 7 LOOP
     _hour_template := array_append( _hour_template, 8 );
