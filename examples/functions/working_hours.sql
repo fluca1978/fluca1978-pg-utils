@@ -85,6 +85,7 @@ LANGUAGE plpgsql;
 
 testdb=# select compute_working_hours( current_date, current_date + 3, false, NULL, ARRAY[ '2019-08-28' ]::date[] );
 DEBUG:  Working days in the range [2019-08-28,2019-09-01)
+DEBUG:  Day 2019-08-28 counting 0 working hours
 DEBUG:  Day 2019-08-29 counting 8 working hours
 DEBUG:  Day 2019-08-30 counting 8 working hours
 DEBUG:  Day 2019-08-31 counting 0 working hours
