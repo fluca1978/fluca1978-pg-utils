@@ -60,10 +60,10 @@ BEGIN
   END IF;
 
   RETURN compute_working_hours( make_date( _year, _month, 1),
-                            ( make_date( _year, _month, 1) + '1 month - 1 day'::interval )::date,
-                            _saturday,
-                            _hour_template,
-                            _exclude_days_as_dates );
+                              ( make_date( _year, _month, 1) + '1 month - 1 day'::interval )::date,
+                                _saturday,
+                                _hour_template,
+                                _exclude_days_as_dates );
 
 END
 $CODE$
@@ -127,10 +127,10 @@ BEGIN
      _hour_template := ARRAY[ 8, 8, 8, 8, 8, 8, 8 ]::int[];
   END IF;
   WHILE array_length( _hour_template, 1 ) < 7 LOOP
-    _hour_template :=   array_append( _hour_template, 8 );
+    _hour_template := array_append( _hour_template, 8 );
   END LOOP;
 
--- create the working period date range
+   -- create the working period date range
   working_days = daterange( begin_day, end_day, '[]');
 
   RAISE DEBUG 'Working days in the range %', working_days;
@@ -148,7 +148,9 @@ BEGIN
      skip := skip OR ( _exclude_days IS NOT NULL AND _exclude_days @> ARRAY[ current_day ] );
 
      IF NOT skip THEN
-        RAISE DEBUG 'Day % counting % working hours', current_day, _hour_template[ EXTRACT( dow FROM current_day ) ];
+        RAISE DEBUG 'Day % counting % working hours',
+                    current_day,
+                    _hour_template[ EXTRACT( dow FROM current_day ) ];
         working_hours := working_hours + _hour_template[ EXTRACT( dow FROM current_day ) ];
      END IF;
 
