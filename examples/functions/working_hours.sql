@@ -16,15 +16,9 @@
 
 testdb=# SELECT compute_working_hours( NULL, NULL, true, NULL,  ARRAY[12, 15 ,29] );
 DEBUG:  Working days in the range [2019-08-01,2019-09-01)
-DEBUG:  Examining day 2019-08-01
 DEBUG:  Day 2019-08-01 counting 8 working hours
-DEBUG:  Examining day 2019-08-02
 DEBUG:  Day 2019-08-02 counting 8 working hours
-DEBUG:  Examining day 2019-08-03
 DEBUG:  Day 2019-08-03 counting 8 working hours
-DEBUG:  Examining day 2019-08-04
-DEBUG:  Examining day 2019-08-05
-DEBUG:  Day 2019-08-05 counting 8 working hours
 ...
  compute_working_hours
 -----------------------
@@ -91,12 +85,9 @@ LANGUAGE plpgsql;
 
 testdb=# select compute_working_hours( current_date, current_date + 3, false, NULL, ARRAY[ '2019-08-28' ]::date[] );
 DEBUG:  Working days in the range [2019-08-28,2019-09-01)
-DEBUG:  Examining day 2019-08-28
-DEBUG:  Examining day 2019-08-29
 DEBUG:  Day 2019-08-29 counting 8 working hours
-DEBUG:  Examining day 2019-08-30
 DEBUG:  Day 2019-08-30 counting 8 working hours
-DEBUG:  Examining day 2019-08-31
+DEBUG:  Day 2019-08-31 counting 0 working hours
 compute_working_hours
 -----------------------
                     16
@@ -113,6 +104,7 @@ DECLARE
   working_hours int := 0;
   working_days daterange;
   current_day date;
+  current_day_hours int;
   skip boolean;
 BEGIN
   -- check arguments
@@ -137,8 +129,6 @@ BEGIN
 
   current_day := lower( working_days );
   LOOP
-     RAISE DEBUG 'Examining day %', current_day;
-
      -- skip sundays
      skip := EXTRACT( dow FROM current_day ) = 0;
      -- skip saturdays if required
@@ -148,13 +138,17 @@ BEGIN
      skip := skip OR ( _exclude_days IS NOT NULL AND _exclude_days @> ARRAY[ current_day ] );
 
      IF NOT skip THEN
-        RAISE DEBUG 'Day % counting % working hours',
-                    current_day,
-                    _hour_template[ EXTRACT( dow FROM current_day ) ];
-        working_hours := working_hours + _hour_template[ EXTRACT( dow FROM current_day ) ];
+        current_day_hours := _hour_template[ EXTRACT( dow FROM current_day ) ];
+     ELSE
+        current_day_hours := 0;
      END IF;
 
-     current_day := current_day + 1;
+     RAISE DEBUG 'Day % counting % working hours',
+                 current_day,
+                 current_day_hours;
+
+     working_hours := working_hours + current_day_hours;
+     current_day   := current_day + 1;
      EXIT WHEN NOT current_day <@ working_days;
   END LOOP;
 
