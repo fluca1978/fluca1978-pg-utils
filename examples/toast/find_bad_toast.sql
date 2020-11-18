@@ -73,9 +73,10 @@ LANGUAGE plpgsql;
  * all the wrong identifiers of the tuples.
  *
  * WARNING: this function scans every single record one at a time, so it can
- * be really slow on large tables.
+ * be really slow on large tables. For this reason, is is possible to specify
+ * an optional row limit and offset to invoke iteratively with table "chunks".
  *
-
+ *
  * Example of invocation:
 
 testdb=> SELECT * FROM f_find_bad_toast( 'crashy_table', 'id' );
@@ -123,7 +124,10 @@ description      | Table crashy_table has 100% toast data damaged (toast relatio
 damage_tuple_ids | {16385,16386,16387}
 
 */
-CREATE OR REPLACE FUNCTION f_find_bad_toast( tablez text, pk text )
+CREATE OR REPLACE FUNCTION f_find_bad_toast( tablez text,
+                                             pk text,
+                                             tuple_limit bigint  DEFAULT 0,
+                                             tuple_offset bigint DEFAULT 0 )
 RETURNS TABLE( total bigint,
                ok bigint,
                ko bigint,
@@ -178,6 +182,12 @@ BEGIN
 
   -- dynamically create a query to select all the records
   query_pk = format( 'SELECT %I FROM %I ORDER BY 1', pk, tablez );
+  IF tuple_limit > 0 THEN
+     query_pk = format( '%s LIMIT %s', query_pk, tuple_limit );
+  END IF;
+  IF tuple_offset > 0 THEN
+     query_pk = format( '%s OFFSET %s', query_pk, tuple_offset );
+  END IF;
   RAISE DEBUG 'Prepared query [%]', query_pk;
 
   FOR current_pk IN EXECUTE query_pk LOOP
@@ -222,7 +232,11 @@ BEGIN
                 ko_counter;
 
 
-  damage_ratio = ( total_counter - ok_counter ) / total_counter::float * 100;
+  -- compute the damage ratio, only
+  -- if tuples have been effecively read
+  IF total_counter > 0 THEN
+     damage_ratio = ( total_counter - ok_counter ) / total_counter::float * 100;
+  END IF;
 
   RETURN QUERY
   SELECT total_counter AS total,
