@@ -54,46 +54,83 @@ AS $CODE$
 
 DECLARE
 BEGIN
-  RETURN f_enumerate_toastable_columns( tablez::regclass );
+  RETURN QUERY SELECT f_enumerate_toastable_columns( tablez::regclass );
 END
 
 $CODE$
 LANGUAGE plpgsql;
 
 
-/*
+/**
+ * A function that tries to individuate tuples with wrong or corruptd toast data.
+ * The idea is to try to execute a query that will de-toast the data
+ * on every record, so to catch the wrong tuples.
+ *
+ * The function accepts the table to scan and the primary key, that is assumed
+ * to be a bigint (serial, generated always and so on).
+ * The function returns a table with a single record that will provide
+ * the information about the health ratio of the table and an array with
+ * all the wrong identifiers of the tuples.
+ *
+ * WARNING: this function scans every single record one at a time, so it can
+ * be really slow on large tables.
+ *
+
  * Example of invocation:
 
 testdb=> SELECT * FROM f_find_bad_toast( 'crashy_table', 'id' );
+NOTICE:  Record with id = 16385 of table crashy_table has corrupted toast data!
+NOTICE:  Record with id = 16386 of table crashy_table has corrupted toast data!
+NOTICE:  Record with id = 16387 of table crashy_table has corrupted toast data!
+INFO:  3 record analyzed in table crashy_table, 0 healthy, 3 with corrupted toast data
+-[ RECORD 1 ]----+------------------------------------------------------------------------------------------------------------------------
+total            | 3
+ok               | 0
+ko               | 3
+health_ratio     | 0
+damage_ratio     | 100
+description      | Table crashy_table has 100% toast data damaged (toast relation pg_toast.pg_toast_17022 on disk file [base/17021/33597])
+damage_tuple_ids | {16385,16386,16387}
 
-testdb=# SELECT * FROM f_find_bad_toast( 'crashy_table', 'id' );
+
+If you need more messages, you can enable the debug level:
+
+testdb=> set client_min_messages to debug;
+SET
+testdb=> SELECT * FROM f_find_bad_toast( 'crashy_table', 'id' );
 DEBUG:  Toast table pg_toast.pg_toast_17022 with OID 17209 (on disk [base/17021/33597])
 DEBUG:  Prepared query [SELECT id FROM crashy_table ORDER BY 1]
 DEBUG:  Preparing to de-toast record pk = 16385
 DEBUG:  Prepared query [SELECT  lower( boundary::text )  ||  lower( t::text )  FROM crashy_table WHERE id = '16385']
-DEBUG:  building index "pg_toast_33875_index" on table "pg_toast_33875" serially
+DEBUG:  building index "pg_toast_33985_index" on table "pg_toast_33985" serially
 NOTICE:  Record with id = 16385 of table crashy_table has corrupted toast data!
 DEBUG:  Preparing to de-toast record pk = 16386
 DEBUG:  Prepared query [SELECT  lower( boundary::text )  ||  lower( t::text )  FROM crashy_table WHERE id = '16386']
-DEBUG:  building index "pg_toast_33881_index" on table "pg_toast_33881" serially
+DEBUG:  building index "pg_toast_33991_index" on table "pg_toast_33991" serially
 NOTICE:  Record with id = 16386 of table crashy_table has corrupted toast data!
 DEBUG:  Preparing to de-toast record pk = 16387
 DEBUG:  Prepared query [SELECT  lower( boundary::text )  ||  lower( t::text )  FROM crashy_table WHERE id = '16387']
-DEBUG:  building index "pg_toast_33887_index" on table "pg_toast_33887" serially
+DEBUG:  building index "pg_toast_33997_index" on table "pg_toast_33997" serially
 NOTICE:  Record with id = 16387 of table crashy_table has corrupted toast data!
 INFO:  3 record analyzed in table crashy_table, 0 healthy, 3 with corrupted toast data
--[ RECORD 1 ]------------------------------------------------------------------------------------------------------------------------
-total       | 3
-ok          | 0
-ko          | 3
-health      | 0
-damage      | 100
-description | Table crashy_table has 100% toast data damaged (toast relation pg_toast.pg_toast_17022 on disk file [base/17021/33597])
-
+-[ RECORD 1 ]----+------------------------------------------------------------------------------------------------------------------------
+total            | 3
+ok               | 0
+ko               | 3
+health_ratio     | 0
+damage_ratio     | 100
+description      | Table crashy_table has 100% toast data damaged (toast relation pg_toast.pg_toast_17022 on disk file [base/17021/33597])
+damage_tuple_ids | {16385,16386,16387}
 
 */
 CREATE OR REPLACE FUNCTION f_find_bad_toast( tablez text, pk text )
-RETURNS TABLE( total bigint, ok bigint, ko bigint, health_ratio float, damage_ratio float, description text )
+RETURNS TABLE( total bigint,
+               ok bigint,
+               ko bigint,
+               health_ratio float,
+               damage_ratio float,
+               description text,
+               damage_tuple_ids bigint[] )
 AS $CODE$
 
 DECLARE
@@ -114,6 +151,8 @@ DECLARE
   ko_counter bigint := 0;
   total_counter bigint := 0;
   damage_ratio float := 0;
+
+  wrong_tuple_ids bigint[];
 BEGIN
 
   -- first of all, find out the toastable table
@@ -169,6 +208,7 @@ BEGIN
       EXCEPTION
         WHEN OTHERS THEN
              ko_counter = ko_counter + 1;
+             wrong_tuple_ids = array_append( wrong_tuple_ids, current_pk );
              RAISE NOTICE 'Record with % = % of table % has corrupted toast data!', pk, current_pk, tablez;
 
       END;
@@ -194,7 +234,8 @@ BEGIN
                   tablez,
                   damage_ratio,
                   toast_tablez,
-                  toast_filename ) AS description;
+                  toast_filename ) AS description,
+        wrong_tuple_ids AS damaged_tuple_ids;
 
 END
 
