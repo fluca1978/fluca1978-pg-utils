@@ -2,6 +2,51 @@
  * A function to get the list of possible toast-able columns.
  * The idea is to query the table system catalog to get
  * all the columns that can have a toastable state.
+ *
+ * Example of invocation:
+ *  testdb=> select oid, relname from pg_class where relname = 'crashy_table';
+ *  oid  |   relname    
+ *  -------+--------------
+ *  17022 | crashy_table
+ *  (1 row)
+ * 
+ * testdb=> select f_enumerate_toastable_columns( 17022 );
+ * f_enumerate_toastable_columns 
+ * -------------------------------
+ * boundary
+ * t
+ * (2 rows)
+ *
+ *
+ */
+ CREATE OR REPLACE FUNCTION f_enumerate_toastable_columns( tablez oid )
+ RETURNS SETOF text
+ AS $CODE$
+
+DECLARE
+BEGIN
+-- the pg_attribute.attstorage stores a letter
+-- to indicate the type of storage. Usually this is a clone
+-- of what is set up in the pg_type catalog, but can be changed
+-- depending on the value of the column field
+
+RETURN QUERY
+SELECT attname::text
+FROM   pg_attribute
+WHERE  attrelid = tablez
+AND    attstorage IN ('x', 'e')  -- x = extended,  e = external
+;
+END
+
+$CODE$
+LANGUAGE plpgsql;
+
+
+/**
+ * Overloading of the function to accept a simple name
+ * of table.
+ * Example of invocation:
+
  */
 CREATE OR REPLACE FUNCTION f_enumerate_toastable_columns( tablez text )
 RETURNS SETOF text
@@ -9,17 +54,148 @@ AS $CODE$
 
 DECLARE
 BEGIN
-  -- the pg_attribute.attstorage stores a letter
-  -- to indicate the type of storage. Usually this is a clone
-  -- of what is set up in the pg_type catalog, but can be changed
-  -- depending on the value of the column field
-  
+  RETURN f_enumerate_toastable_columns( tablez::regclass );
+END
+
+$CODE$
+LANGUAGE plpgsql;
+
+
+/*
+ * Example of invocation:
+
+testdb=> SELECT * FROM f_find_bad_toast( 'crashy_table', 'id' );
+
+testdb=# SELECT * FROM f_find_bad_toast( 'crashy_table', 'id' );
+DEBUG:  Toast table pg_toast.pg_toast_17022 with OID 17209 (on disk [base/17021/33597])
+DEBUG:  Prepared query [SELECT id FROM crashy_table ORDER BY 1]
+DEBUG:  Preparing to de-toast record pk = 16385
+DEBUG:  Prepared query [SELECT  lower( boundary::text )  ||  lower( t::text )  FROM crashy_table WHERE id = '16385']
+DEBUG:  building index "pg_toast_33875_index" on table "pg_toast_33875" serially
+NOTICE:  Record with id = 16385 of table crashy_table has corrupted toast data!
+DEBUG:  Preparing to de-toast record pk = 16386
+DEBUG:  Prepared query [SELECT  lower( boundary::text )  ||  lower( t::text )  FROM crashy_table WHERE id = '16386']
+DEBUG:  building index "pg_toast_33881_index" on table "pg_toast_33881" serially
+NOTICE:  Record with id = 16386 of table crashy_table has corrupted toast data!
+DEBUG:  Preparing to de-toast record pk = 16387
+DEBUG:  Prepared query [SELECT  lower( boundary::text )  ||  lower( t::text )  FROM crashy_table WHERE id = '16387']
+DEBUG:  building index "pg_toast_33887_index" on table "pg_toast_33887" serially
+NOTICE:  Record with id = 16387 of table crashy_table has corrupted toast data!
+INFO:  3 record analyzed in table crashy_table, 0 healthy, 3 with corrupted toast data
+-[ RECORD 1 ]------------------------------------------------------------------------------------------------------------------------
+total       | 3
+ok          | 0
+ko          | 3
+health      | 0
+damage      | 100
+description | Table crashy_table has 100% toast data damaged (toast relation pg_toast.pg_toast_17022 on disk file [base/17021/33597])
+
+
+*/
+CREATE OR REPLACE FUNCTION f_find_bad_toast( tablez text, pk text )
+RETURNS TABLE( total bigint, ok bigint, ko bigint, health_ratio float, damage_ratio float, description text )
+AS $CODE$
+
+DECLARE
+  toast_oid      oid;
+  toast_tablez   text;
+  toast_filename text;
+
+  query_pk text;
+  query_detoast text;
+  column_counter int := 0;
+
+  current_column_to_detoast  text;
+  current_pk bigint;
+
+  current_detoasted_data text;
+
+  ok_counter bigint := 0;
+  ko_counter bigint := 0;
+  total_counter bigint := 0;
+  damage_ratio float := 0;
+BEGIN
+
+  -- first of all, find out the toastable table
+  SELECT reltoastrelid, reltoastrelid::regclass, pg_relation_filepath( reltoastrelid::regclass )
+  INTO   toast_oid, toast_tablez, toast_filename
+  FROM   pg_class
+  WHERE  relname = tablez
+  AND    relkind = 'r';
+
+  -- check that the table has the potential data toasted!
+  IF toast_oid IS NULL OR toast_oid = 0 THEN
+     RAISE NOTICE 'The table % does not have any toast data associated!', tablez;
+     RETURN;
+  END IF;
+
+
+
+  RAISE DEBUG 'Toast table % with OID % (on disk [%])',
+                     toast_tablez,
+                     toast_oid,
+                     toast_filename;
+
+
+  -- dynamically create a query to select all the records
+  query_pk = format( 'SELECT %I FROM %I ORDER BY 1', pk, tablez );
+  RAISE DEBUG 'Prepared query [%]', query_pk;
+
+  FOR current_pk IN EXECUTE query_pk LOOP
+      RAISE DEBUG 'Preparing to de-toast record pk = %', current_pk;
+      total_counter = total_counter + 1;
+
+      column_counter = 0;
+      query_detoast = 'SELECT ';
+      FOR current_column_to_detoast IN SELECT f_enumerate_toastable_columns( tablez ) LOOP
+
+          IF column_counter > 0 THEN
+             query_detoast = query_detoast || ' || ';
+          END IF;
+          query_detoast = query_detoast || format( ' lower( %I::text ) ', current_column_to_detoast );
+          column_counter = column_counter + 1;
+      END LOOP;
+
+      query_detoast = query_detoast || format( ' FROM %I WHERE %I = %L', tablez, pk, current_pk );
+      RAISE DEBUG 'Prepared query [%]', query_detoast;
+
+      BEGIN
+        PERFORM query_detoast
+        INTO    current_detoasted_data;
+
+        PERFORM  length( current_detoasted_data );
+        RAISE DEBUG 'Succesfully executed query [%]', query_detoast;
+        ok_counter = ok_counter + 1;
+      EXCEPTION
+        WHEN OTHERS THEN
+             ko_counter = ko_counter + 1;
+             RAISE NOTICE 'Record with % = % of table % has corrupted toast data!', pk, current_pk, tablez;
+
+      END;
+
+  END LOOP;
+
+  RAISE INFO '% record analyzed in table %, % healthy, % with corrupted toast data',
+                total_counter,
+                tablez,
+                ok_counter,
+                ko_counter;
+
+
+  damage_ratio = ( total_counter - ok_counter ) / total_counter::float * 100;
+
   RETURN QUERY
-  SELECT attname::text
-  FROM   pg_attribute
-  WHERE  attrelid = tablez::regclass
-  AND    attstorage IN ('x', 'e')  -- x = extended,  e = external
-  ;
+  SELECT total_counter AS total,
+         ok_counter    AS ok,
+         ko_counter    AS ko,
+         100 - damage_ratio AS health_ratio,
+         damage_ratio       AS damage_ratio,
+         format( 'Table %I has %s%% toast data damaged (toast relation %s on disk file [%s])',
+                  tablez,
+                  damage_ratio,
+                  toast_tablez,
+                  toast_filename ) AS description;
+
 END
 
 $CODE$
