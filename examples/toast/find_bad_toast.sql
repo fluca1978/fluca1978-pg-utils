@@ -1,4 +1,11 @@
 /**
+ * find_bad_toast.sql
+ * Utility functions to inspect TOAST data and get records that could have been damaged.
+ *
+ * Inspired by <http://www.databasesoup.com/2013/10/de-corrupting-toast-tables.html>
+ */
+
+/**
  * A function to get the list of possible toast-able columns.
  * The idea is to query the table system catalog to get
  * all the columns that can have a toastable state.
