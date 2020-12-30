@@ -209,8 +209,8 @@ BEGIN
       RAISE DEBUG 'Prepared query [%]', query_detoast;
 
       BEGIN
-        PERFORM query_detoast
-        INTO    current_detoasted_data;
+         EXECUTE query_detoast
+         INTO    current_detoasted_data;
 
         PERFORM  length( current_detoasted_data );
         RAISE DEBUG 'Succesfully executed query [%]', query_detoast;
