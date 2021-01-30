@@ -190,9 +190,7 @@
 
     - name: copy PostgreSQL useful scripts
       become: yes
-      with_items:
-      - replication.pitr.archiver.sh
-      - pgbench_helper.sh
+      with_fileglob: freebsd-files/*.conf
       copy:
         src: freebsd-files/{{ item }}
         dest: /usr/local/bin
