@@ -32,8 +32,8 @@ for i in  1 .. :scale  loop
     SELECT regexp_replace( x , '<(.*)>(.*)</\1>', '&lt;\1&gt;\2&lt;/\1&gt;', 'g' )
     INTO   y;
 
-    SELECT regexp_replace( y , '<?xml(.*)?>', '&lt;?\1 ?&gt;', 'g' )
-    INTO   y;
+    -- SELECT regexp_replace( y , '<?xml(.*)?>', '&lt;?\1 ?&gt;', 'g' )
+    -- INTO   y;
 
 
     ts_end := clock_timestamp();
