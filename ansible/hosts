@@ -1,0 +1,22 @@
+[freebsd]
+miguel
+
+[fedora]
+carmensita
+
+
+[pg]
+miguel
+carmensita
+
+
+[ghostbusters]
+venkman
+
+
+# FreeBSD hosts have non-standard (to Linux!)
+# executables.
+[freebsd:vars]
+ansible_python_interpreter=/usr/local/bin/python
+ansible_perl_interpreter=/usr/local/bin/perl
+sudoers_file=/usr/local/etc/sudoers

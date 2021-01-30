@@ -1,0 +1,99 @@
+---
+- hosts: freebsd
+  vars:
+    http_port: 80
+    max_clients: 200
+    sudoers_file: /usr/local/etc/sudoers
+    pg_version: 11
+    pg_components:
+      - postgresql{{ pg_version }}-server
+      - postgresql{{ pg_version }}-contrib
+      - postgresql{{ pg_version }}-client
+      - postgresql{{ pg_version }}-plperl
+
+  tasks:
+    - name: Standard packages and applications
+      become: yes
+      pkgng:
+        name:
+          - emacs
+          - git
+          - zsh
+          - bash
+          - perl5
+          - python3
+          - sudo
+          - pstree
+          - libxml2
+          - libxslt
+          - libressl
+          - readline
+          - gmake
+          - gcc
+          - nmap
+        state: latest
+
+    - name: Check 'luca' user account
+      user:
+        name: luca
+        gecos: Luca Ferrari
+        generate_ssh_key: yes
+        ssh_key_bits: 2048
+        ssh_key_file: .ssh/id_rsa
+        shell: /usr/local/bin/zsh
+        groups: wheel
+
+    - name: Ensure 'wheel' group is present
+      group:
+        name: wheel
+        state: present
+
+    - name: Allow 'wheel' group to have passwordless sudo
+      lineinfile:
+        dest: "{{ sudoers_file }}"
+        state: present
+        regexp: '^%wheel'
+        line: '%wheel ALL=(ALL) NOPASSWD: ALL'
+        validate: visudo -cf %s
+
+    - name: GitHub personal repositories
+      with_items:
+        - fluca1978-coding-bits
+        - fluca1978-pg-utils
+        - pgenv
+      git:
+        repo: "git@github.com:fluca1978/{{ item }}.git"
+        dest: "/home/luca/git/{{ item }}"
+        remote: github
+
+    - name: GitLab personal repositories
+      with_items:
+        - talks
+      git:
+        repo: "git@gitlab.com:fluca1978/{{ item }}.git"
+        dest: "/home/luca/git/{{ item }}"
+        remote: gitlab
+
+
+    - name: PostgreSQL related packages
+      become: yes
+      pkgng:
+        name:
+          - pgxnclient
+        state: latest
+
+    - name: PostgreSQL 12
+      become: yes
+      pkgng:
+        name:
+          - postgresql12-server
+          - postgresql12-contrib
+          - postgresql12-client
+          - postgresql12-plperl
+        state: absent
+
+    - name: PostgreSQL {{ pg_version }}
+      become: yes
+      pkgng:
+        name: "{{ pg_components }}"
+        state: latest
