@@ -1,0 +1,209 @@
+---
+- hosts: fedora
+  vars:
+    http_port: 80
+    max_clients: 200
+    sudoers_file: /etc/sudoers
+    pg_version: 13
+    pg_software_modules:
+      - postgresql{{ pg_version }}-server
+      - postgresql{{ pg_version }}-contrib
+      - postgresql{{ pg_version }}
+      - postgresql{{ pg_version }}-plperl
+      - postgresql{{ pg_version }}-libs
+    pg_data_directory: /postgres/{{ pg_version }}/data
+    pg_extra_conf_directory: "{{ pg_data_directory }}/conf.d"
+
+
+  tasks:
+    - name: Standard packages and applications
+      become: yes
+      dnf:
+        name:
+          - emacs-nox
+          - git
+          - zsh
+          - bash
+          - perl
+          - python3
+          - sudo
+          - rsync
+          - readline
+          - make
+          - gcc
+          - nmap
+          - perl-App-cpanminus
+          - perl-DBD-Pg
+          - perl-DBD-SQLite
+        state: latest
+
+    - name: Add PostgreSQL PGDG repository
+      become: yes
+      yum_repository:
+        name: pgdg-fedora-all
+        baseurl: https://download.postgresql.org/pub/repos/yum/reporpms/F-33-x86_64/pgdg-fedora-repo-latest.noarch.rpm
+        state: present
+        enabled: yes
+        description: PGDG Fedora 33 repository
+        gpgcheck: yes
+
+    - name: Ensure 'wheel' group is present
+      become: yes
+      group:
+        name: wheel
+        state: present
+
+
+
+    - name: PostgreSQL {{ pg_version }}
+      become: yes
+      dnf:
+        name: "{{ pg_software_modules }}"
+        state: latest
+
+
+    - name: Ensure 'postgres' group is present
+      become: yes
+      group:
+        name: postgres
+        state: present
+
+
+    - name: Check 'luca' user account
+      become: yes
+      user:
+        name: luca
+        comment: Luca Ferrari
+        generate_ssh_key: yes
+        ssh_key_bits: 2048
+        ssh_key_file: .ssh/id_rsa
+        shell: /usr/bin/zsh
+        groups:
+          - wheel
+          - postgres
+
+
+    - name: Allow 'wheel' group to have passwordless sudo
+      become: yes
+      lineinfile:
+        dest: "{{ sudoers_file }}"
+        state: present
+        regexp: '^%wheel'
+        line: '%wheel ALL=(ALL) NOPASSWD: ALL'
+        validate: visudo -cf %s
+
+    # - name: GitHub personal repositories
+    #   with_items:
+    #     - fluca1978-coding-bits
+    #     - fluca1978-pg-utils
+    #     - pgenv
+    #   git:
+    #     repo: "https://github.com/fluca1978/{{ item }}.git"
+    #     dest: "/home/luca/git/{{ item }}"
+    #     remote: github
+
+    - name: PostgreSQL related packages
+      become: yes
+      dnf:
+        name:
+          - pgxnclient
+          - barman
+          - pgbackrest
+        state: latest
+
+    - name: Sqitch
+      with_items:
+        - App::Sqitch
+      cpanm:
+        name: "{{ item }}"
+
+
+
+
+    # - name: copy miscellaneous files in /etc
+    #   become: yes
+    #   with_items:
+    #   - motd
+    #   copy:
+    #     src: freebsd-files/{{ item }}
+    #     dest: /etc
+    #     owner: root
+    #     group: wheel
+    #     mode: '0644'
+
+
+    - name: Adjusting message of the day (motd)
+      become: yes
+      lineinfile:
+        dest: /etc/motd
+        state: present
+        regexp: '^     PGDATA'
+        line: '     PGDATA = {{ pg_data_directory }}'
+        create: yes
+
+
+    - name: Ensure PGDATA environment variable for user 'luca'
+      become: yes
+      lineinfile:
+        dest: .zshrc
+        state: present
+        create: yes
+        regexp: '^export PGDATA'
+        line: 'export PGDATA={{ pg_data_directory }}'
+
+    # - name: Creates extra configuration directory for PostgreSQL
+    #   become: yes
+    #   file:
+    #     path: "{{ pg_extra_conf_directory }}"
+    #     state: directory
+    #     owner: postgres
+    #     group: postgres
+    #     mode: 0755
+
+    # - name: copy miscellaneous PostgreSQL files in PGDATA
+    #   become: yes
+    #   synchronize:
+    #     mode: push
+    #     src: postgresql-files
+    #     dest: "{{ pg_extra_conf_directory }}"
+
+    # - name: Ensure PostgreSQL related files are ready to be activated
+    #   become: yes
+    #   with_items:
+    #     - basic_logging.conf
+    #     - replication.pitr.conf
+    #     - replication.barman.conf
+    #     - ssl.conf
+    #   lineinfile:
+    #     dest: "{{ pg_data_directory }}/postgresql.conf"
+    #     state: present
+    #     regexp: '^{{ item }}'
+    #     line: '#include_if_exists = {{ pg_extra_conf_directory }}/{{ item }}'
+
+
+   
+
+
+    # - name: copy PostgreSQL useful scripts
+    #   become: yes
+    #   with_fileglob: freebsd-files/*.conf
+    #   copy:
+    #     src: freebsd-files/{{ item }}
+    #     dest: /usr/local/bin
+    #     owner: root
+    #     group: wheel
+    #     mode: '0755'
+
+
+    - name: Check 'backup' user account
+      become: yes
+      user:
+       name: backup
+       comment: Backup account user
+       generate_ssh_key: yes
+       ssh_key_bits: 2048
+       ssh_key_file: .ssh/id_rsa
+       shell: /bin/sh
+       groups:
+         - postgres
+
