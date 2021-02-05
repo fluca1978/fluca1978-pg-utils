@@ -119,6 +119,33 @@
 
 
 
+    - name: Find BARMAN specific files
+      delegate_to: 127.0.0.1
+      find:
+       paths: barman/
+       recurse: yes
+       file_type: any
+       patterns:
+         - "*.conf"
+         - "*.sh"
+         - "*.d"
+      register: barman_files
+
+
+    - name: Copy BARMAN specific files
+      become: yes
+      with_items:
+         - "{{ barman_files.files }}"
+      copy:
+          src: "{{ item.path }}"
+          dest: "{{ item.path | replace( 'barman/', '/' ) }}"
+          force: no
+          owner: backup
+          group: postgres
+          mode: '0644'
+
+
+
 
     - name: copy miscellaneous files in /etc
       become: yes
@@ -132,33 +159,6 @@
         mode: '0644'
 
 
-    - name: Copy Barman Main File
-      become: yes
-      with_items:
-        - barman.conf
-      copy:
-        src: barman/{{ item }}
-        dest: /etc
-        owner: backup
-        group: postgres
-        mode: '0644'
-        force: no
-
-
-
-    - name: Copy Barman Backup Files
-      become: yes
-      with_items:
-        - barman.d
-      copy:
-        src: barman/{{ item }}
-        dest: /usr/local/etc
-        owner: backup
-        group: postgres
-        mode: '0755'
-        directory_mode: yes
-        force: no
-
 
     - name: Ensure PGDATA environment variable for user 'luca'
       become: yes
@@ -170,13 +170,6 @@
         line: 'export PGDATA={{ pg_data_directory }}'
 
 
-    - name: Debug
-      with_items: "{{ groups['pg'] }}"
-      debug:
-         var: hostvars[ item ].ingress_ipv4
-
-
-
 
     - name: Cross update /etc/hosts with server IP addresses
       become: yes
@@ -184,7 +177,7 @@
       lineinfile:
         path: "/etc/hosts"
         regexp: ".*{{ item }}"
-        line: "{{ hostvars[ item ].ingress_ipv4 \t item }}"
+        line: "{{ hostvars[ item ].ingress_ipv4 }} \t {{ item }}"
         state: present
         backup: yes
       when: inventory_hostname != item

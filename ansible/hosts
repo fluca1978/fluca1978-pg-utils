@@ -21,5 +21,3 @@ ansible_python_interpreter=/usr/local/bin/python
 ansible_perl_interpreter=/usr/local/bin/perl
 sudoers_file=/usr/local/etc/sudoers
 
-[miguel:vars]
-ingress_ipv4=192.168.222.123

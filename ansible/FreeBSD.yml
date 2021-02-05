@@ -45,6 +45,16 @@
         name: wheel
         state: present
 
+    - name: Cross update /etc/hosts with server IP addresses
+      become: yes
+      with_items: "{{ groups[ 'pg' ] }}"
+      lineinfile:
+        path: "/etc/hosts"
+        regexp: ".*{{ item }}"
+        line: "{{ hostvars[ item ].ingress_ipv4 }} \t {{ item }}"
+        state: present
+        backup: yes
+      when: inventory_hostname != item
 
 
     - name: PostgreSQL {{ pg_version }}
