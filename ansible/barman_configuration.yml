@@ -1,7 +1,4 @@
 ---
-- hosts: fedora
-  gather_facts: false
-  tasks:
 
     - name: Find BARMAN specific files
       delegate_to: 127.0.0.1
