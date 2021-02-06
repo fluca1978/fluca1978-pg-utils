@@ -1,26 +1,38 @@
 ---
 
-    - name: Find BARMAN specific files
-      delegate_to: 127.0.0.1
-      find:
-       paths: barman/
-       recurse: yes
-       file_type: any
-       patterns:
-         - "*.conf"
-         - "*.sh"
-         - "*.d"
-      register: barman_files
+- name: Ensure backup directory is there
+  become: yes
+  with_items:
+    - /backup
+    - /backup/barman
+    - /backup/pgbackrest
+  file:
+   path: "{{ item }}"
+   state: directory
+   owner: backup
+   mode:  0755
+
+- name: Find BARMAN specific files
+  delegate_to: 127.0.0.1
+  find:
+   paths: barman/
+   recurse: yes
+   file_type: any
+   patterns:
+     - "*.conf"
+     - "*.sh"
+     - "*.d"
+  register: barman_files
 
 
-    - name: Copy BARMAN specific files
-      become: yes
-      with_items:
-         - "{{ barman_files.files }}"
-      copy:
-          src: "{{ item.path }}"
-          dest: "{{ item.path | replace( 'barman/', '/' ) }}"
-          force: no
-          owner: backup
-          group: postgres
-          mode: '0644'
+- name: Copy BARMAN specific files
+  become: yes
+  with_items:
+     - "{{ barman_files.files }}"
+  copy:
+      src: "{{ item.path }}"
+      dest: "{{ item.path | replace( 'barman/', '/' ) }}"
+      force: no
+      owner: backup
+      group: postgres
+      mode: '0644'
