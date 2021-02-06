@@ -33,8 +33,7 @@
           - gcc
           - nmap
           - perl-App-cpanminus
-          - perl-DBD-Pg
-          - perl-DBD-SQLite
+          - htop
         state: latest
 
     - name: Add PostgreSQL PGDG repository
@@ -113,6 +112,8 @@
 
     - name: Sqitch
       with_items:
+        - DBD::Pg
+        - DBD::SQLite
         - App::Sqitch
       cpanm:
         name: "{{ item }}"

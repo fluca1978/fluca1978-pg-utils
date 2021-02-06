@@ -36,6 +36,9 @@
           - gmake
           - gcc
           - nmap
+          - p5-App-cpanminus
+          - pgbarman
+          - htop
         state: latest
 
 
@@ -222,3 +225,10 @@
          - postgres
 
 
+    - name: Sqitch
+      with_items:
+        - DBD::Pg
+        - DBD::SQLite
+        - App::Sqitch
+      cpanm:
+        name: "{{ item }}"
