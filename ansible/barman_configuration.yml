@@ -6,10 +6,12 @@
     - /backup
     - /backup/barman
     - /backup/pgbackrest
+    - /var/log/barman
   file:
    path: "{{ item }}"
    state: directory
    owner: backup
+   group: barman
    mode:  0755
 
 - name: Find BARMAN specific files
@@ -32,7 +34,15 @@
   copy:
       src: "{{ item.path }}"
       dest: "{{ item.path | replace( 'barman/', '/' ) }}"
-      force: no
+      force: yes
       owner: backup
       group: postgres
       mode: '0644'
+
+# - cron:
+#     name: Add cron entry for user backup
+#     become: yes
+#     disabled: no
+#     job: /usr/bin/barman cron
+#     state: present
+#     user: backup

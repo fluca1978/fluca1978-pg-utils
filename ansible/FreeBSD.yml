@@ -4,7 +4,7 @@
     http_port: 80
     max_clients: 200
     sudoers_file: /usr/local/etc/sudoers
-    pg_version: 13
+    pg_version: 12
     pg_software_modules:
       - postgresql{{ pg_version }}-server
       - postgresql{{ pg_version }}-contrib
@@ -73,6 +73,14 @@
         name: postgres
         state: present
 
+    - name: Ensure PGDATA "{{ pg_data_directory }}" is there
+      become: yes
+      file:
+        path: "{{ pg_data_directory }}"
+        owner: postgres
+        group: postgres
+        mode:  0750
+        state: directory
 
     - name: Check 'luca' user account
       become: yes
@@ -179,23 +187,29 @@
 
     - name: copy miscellaneous PostgreSQL files in PGDATA
       become: yes
-      synchronize:
-        mode: push
-        src: postgresql-files
-        dest: "{{ pg_extra_conf_directory }}"
+      with_fileglob:
+        - "postgresql-files/*"
+      copy:
+       src: "{{ item }}"
+       dest: "{{ pg_extra_conf_directory }}"
+       owner: postgres
+       group: postgres
+       mode: 0660
 
     - name: Ensure PostgreSQL related files are ready to be activated
       become: yes
-      with_items:
-        - basic_logging.conf
-        - replication.pitr.conf
-        - replication.barman.conf
-        - ssl.conf
+      with_fileglob:
+        - "postgresql-files/*"
+      # with_items:
+      #   - basic_logging.conf
+      #   - replication.pitr.conf
+      #   - replication.barman.conf
+      #   - ssl.conf
       lineinfile:
         dest: "{{ pg_data_directory }}/postgresql.conf"
         state: present
         regexp: '^{{ item }}'
-        line: '#include_if_exists = {{ pg_extra_conf_directory }}/{{ item }}'
+        line: '#include_if_exists = {{ pg_extra_conf_directory | basename }}/{{ item | basename }}'
 
 
    
@@ -217,6 +231,18 @@
       user:
        name: backup
        comment: Backup account user
+       generate_ssh_key: yes
+       ssh_key_bits: 2048
+       ssh_key_file: .ssh/id_rsa
+       shell: /bin/sh
+       groups:
+         - postgres
+
+    - name: Check 'postgres' user account
+      become: yes
+      user:
+       name: postgres
+       comment: PostgreSQL server user
        generate_ssh_key: yes
        ssh_key_bits: 2048
        ssh_key_file: .ssh/id_rsa
