@@ -258,3 +258,12 @@
         - App::Sqitch
       cpanm:
         name: "{{ item }}"
+
+    - name: Ensure pg_hba.conf has a line for replication backup user
+      become: yes
+      lineinfile:
+        dest: "{{ pg_data_directory }}/pg_hba.conf"
+        state: present
+        create: no
+        regexp: 'host    replication     backup           carmensita            trust'
+        line: 'host    replication     backup           carmensita            trust'
