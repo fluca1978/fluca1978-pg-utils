@@ -39,7 +39,16 @@
           - p5-App-cpanminus
           - pgbarman
           - htop
+          - curl
+          - wget
+          - libxml2
+          - autoconf
         state: latest
+
+    # - hostname:
+    #     become: yes
+    #     name: miguel
+    #     use: freebsd
 
 
     - name: Ensure 'wheel' group is present
@@ -267,3 +276,5 @@
         create: no
         regexp: 'host    replication     backup           carmensita            trust'
         line: 'host    replication     backup           carmensita            trust'
+
+    - include: pgbackrest_configuration.yml

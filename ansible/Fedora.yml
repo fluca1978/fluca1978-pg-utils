@@ -36,6 +36,11 @@
           - htop
         state: latest
 
+    # - hostname:
+    #     become: yes
+    #     name: carmensita
+    #     use: redhat
+
     - name: Add PostgreSQL PGDG repository
       become: yes
       yum_repository:
@@ -121,6 +126,7 @@
 
 
     - include: barman_configuration.yml
+    - include: pgbackrest_configuration.yml
 
 
 
