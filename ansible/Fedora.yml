@@ -16,6 +16,11 @@
 
 
   tasks:
+    - name: Set hostname {{ inventory_hostname_short }}
+      become: yes
+      hostname:
+        name: "{{ inventory_hostname_short }}"
+
     - name: Standard packages and applications
       become: yes
       dnf:
