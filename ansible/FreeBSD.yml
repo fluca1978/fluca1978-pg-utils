@@ -277,4 +277,4 @@
         regexp: 'host    replication     backup           carmensita            trust'
         line: 'host    replication     backup           carmensita            trust'
 
-    - include: pgbackrest_configuration.yml
+    - include: pgbackrest.pg.yml

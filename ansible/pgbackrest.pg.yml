@@ -1,0 +1,16 @@
+---
+
+- name: Copy pgbackrest specific files
+  become: yes
+  with_items:
+     - pgbackrest/pgbackrest.pg.conf
+  copy:
+      src: "{{ item }}"
+      dest: /usr/local/etc/pgbackrest.conf
+      force: yes
+      owner: backup
+      group: postgres
+      mode: '0644'
+
+
+
