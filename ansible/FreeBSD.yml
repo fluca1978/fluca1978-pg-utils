@@ -295,3 +295,20 @@
         dest: /etc/rc.conf
         regexp: "{{ item.regexp }}"
         line: "{{ item.line }}"
+
+
+    - name: PostgreSQL pg_hba.conf
+      become: yes
+      with_items:
+        - {
+        regexp: "^host .*192.168.222.0/24",
+        line: 'host all all 192.168.222.0/24 md5'
+        }
+        - {
+        regexp: "^hostssl .*192.168.222.0/24",
+        line: 'host all all 192.168.222.0/24 md5'
+        }
+      lineinfile:
+        dest: "{{ pg_data_directory }}/pg_hba.conf"
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
