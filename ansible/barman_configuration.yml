@@ -39,13 +39,11 @@
       group: postgres
       mode: '0644'
 
-# - cron:
-#     name: Add cron entry for user backup
-#     become: yes
-#     disabled: no
-#     job: /usr/bin/barman cron
-#     state: present
-#     user: backup
-
-
-
+- name: Add cron entry for user backup
+  become: yes
+  cron:
+    disabled: no
+    name: Execute BARMAN cron to allow pg_walreceiver
+    job: /usr/bin/barman cron
+    state: present
+    user: backup

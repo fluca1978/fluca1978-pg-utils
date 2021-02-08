@@ -284,3 +284,19 @@
         line: 'host    replication     backup           carmensita            trust'
 
     - include: pgbackrest.pg.yml
+
+    - name: PostgreSQL Service in rc.conf
+      become: yes
+      with_items:
+        - {
+        regexp: "^postgresql_enable",
+        line: 'postgresql_enable="YES"'
+        }
+        - {
+        regexp: "^postgresql_data",
+        line: 'postgresql_data="{{ pg_data_directory }}"'
+        }
+      lineinfile:
+        dest: /etc/rc.conf
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
