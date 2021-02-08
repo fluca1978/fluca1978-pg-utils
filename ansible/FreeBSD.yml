@@ -209,17 +209,12 @@
        dest: "{{ pg_extra_conf_directory }}"
        owner: postgres
        group: postgres
-       mode: 0660
+       mode: 0600
 
     - name: Ensure PostgreSQL related files are ready to be activated
       become: yes
       with_fileglob:
-        - "postgresql-files/*"
-      # with_items:
-      #   - basic_logging.conf
-      #   - replication.pitr.conf
-      #   - replication.barman.conf
-      #   - ssl.conf
+        - "postgresql-files/*.conf"
       lineinfile:
         dest: "{{ pg_data_directory }}/postgresql.conf"
         state: present
