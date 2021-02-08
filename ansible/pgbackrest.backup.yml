@@ -1,0 +1,27 @@
+---
+
+- name: Copy pgbackrest specific files
+  become: yes
+  with_items:
+     - pgbackrest/pgbackrest.backup.conf
+  copy:
+      src: "{{ item }}"
+      dest: /etc/pgbackrest.conf
+      force: yes
+      owner: backup
+      group: postgres
+      mode: '0644'
+
+
+
+- name: Ensure backup directory is there
+  become: yes
+  with_items:
+    - /backup
+    - /backup/pgbackrest
+  file:
+   path: "{{ item }}"
+   state: directory
+   owner: backup
+   group: barman
+   mode:  0755

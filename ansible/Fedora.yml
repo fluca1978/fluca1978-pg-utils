@@ -126,7 +126,7 @@
 
 
     - include: barman_configuration.yml
-    - include: pgbackrest_configuration.yml
+    - include: pgbackrest.backup.yml
 
 
 
