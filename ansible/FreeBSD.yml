@@ -49,6 +49,7 @@
           - wget
           - libxml2
           - autoconf
+          - pkgconf
         state: latest
 
     # - hostname:
