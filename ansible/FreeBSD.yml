@@ -267,6 +267,7 @@
         - DBD::Pg
         - DBD::SQLite
         - App::Sqitch
+        - TAP::Parser::SourceHandler::pgTAP
       cpanm:
         name: "{{ item }}"
 
