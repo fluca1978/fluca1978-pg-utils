@@ -39,6 +39,7 @@
           - nmap
           - perl-App-cpanminus
           - htop
+          - pgbadger
         state: latest
 
     - include: user_luca.yml
