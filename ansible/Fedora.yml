@@ -41,6 +41,7 @@
           - htop
         state: latest
 
+    - include: user_luca.yml
     # - hostname:
     #     become: yes
     #     name: carmensita
@@ -76,20 +77,6 @@
       group:
         name: postgres
         state: present
-
-
-    - name: Check 'luca' user account
-      become: yes
-      user:
-        name: luca
-        comment: Luca Ferrari
-        generate_ssh_key: yes
-        ssh_key_bits: 2048
-        ssh_key_file: .ssh/id_rsa
-        shell: /usr/bin/zsh
-        groups:
-          - wheel
-          - postgres
 
 
     - name: Allow 'wheel' group to have passwordless sudo
@@ -147,16 +134,6 @@
         group: wheel
         mode: '0644'
 
-
-
-    - name: Ensure PGDATA environment variable for user 'luca'
-      become: yes
-      lineinfile:
-        dest: .zshrc
-        state: present
-        create: yes
-        regexp: '^export PGDATA'
-        line: 'export PGDATA={{ pg_data_directory }}'
 
 
 

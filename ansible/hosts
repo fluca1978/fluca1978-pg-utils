@@ -1,8 +1,8 @@
 [freebsd]
-miguel ingress_ipv4=192.168.222.123
+miguel ingress_ipv4=192.168.222.123 zsh_executable=/usr/local/bin/zsh
 
 [fedora]
-carmensita ingress_ipv4=192.168.222.2
+carmensita ingress_ipv4=192.168.222.2 zsh_executable=/bin/zsh
 
 
 [pg]

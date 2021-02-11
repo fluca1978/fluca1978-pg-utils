@@ -1,0 +1,44 @@
+---
+- name: Check 'luca' user account
+  become: yes
+  user:
+    name: luca
+    comment: Luca Ferrari
+    generate_ssh_key: yes
+    ssh_key_bits: 2048
+    ssh_key_file: .ssh/id_rsa
+    shell: "{{ zsh_executable }}"
+    groups:
+      - wheel
+      - postgres
+
+- name: Copy ZSH configuration files for user luca
+  become: yes
+  with_fileglob:
+    - "user-files/{{ ansible_hostname }}/*zsh*"
+  copy:
+   src: "{{ item }}"
+   dest: /home/luca//{{ item | basename | replace( 'dot', '.' ) }}
+   force: yes
+   owner: luca
+   group: luca
+   mode: '0644'
+
+- name: GitHub personal repositories
+  with_items:
+    - fluca1978-coding-bits
+    - fluca1978-pg-utils
+    - pgenv
+  git:
+    repo: "https://github.com/fluca1978/{{ item }}.git"
+    dest: "/home/luca/git/{{ item }}"
+    remote: github
+
+
+- name: Ensure PGDATA environment variable for user 'luca'
+  become: yes
+  lineinfile:
+    dest: .zshrc
+    state: present
+    regexp: '^export PGDATA'
+    line: 'export PGDATA={{ pg_data_directory }}'

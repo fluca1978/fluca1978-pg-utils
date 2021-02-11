@@ -53,6 +53,8 @@
           - cmake
         state: latest
 
+    - include: user_luca.yml
+
     # - hostname:
     #     become: yes
     #     name: miguel
@@ -99,19 +101,6 @@
         mode:  0750
         state: directory
 
-    - name: Check 'luca' user account
-      become: yes
-      user:
-        name: luca
-        comment: Luca Ferrari
-        generate_ssh_key: yes
-        ssh_key_bits: 2048
-        ssh_key_file: .ssh/id_rsa
-        shell: /usr/local/bin/zsh
-        groups:
-          - wheel
-          - postgres
-
 
     - name: Allow 'wheel' group to have passwordless sudo
       become: yes
@@ -122,15 +111,6 @@
         line: '%wheel ALL=(ALL) NOPASSWD: ALL'
         validate: visudo -cf %s
 
-    - name: GitHub personal repositories
-      with_items:
-        - fluca1978-coding-bits
-        - fluca1978-pg-utils
-        - pgenv
-      git:
-        repo: "https://github.com/fluca1978/{{ item }}.git"
-        dest: "/home/luca/git/{{ item }}"
-        remote: github
 
     - name: PostgreSQL related packages
       become: yes
@@ -186,13 +166,6 @@
         line: '     PGDATA = {{ pg_data_directory }}'
 
 
-    - name: Ensure PGDATA environment variable for user 'luca'
-      become: yes
-      lineinfile:
-        dest: .zshrc
-        state: present
-        regexp: '^export PGDATA'
-        line: 'export PGDATA={{ pg_data_directory }}'
 
     - name: Creates extra configuration directory for PostgreSQL
       become: yes
