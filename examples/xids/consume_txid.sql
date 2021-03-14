@@ -8,6 +8,16 @@
   INFO:  Current xid is 36000000, 2146287 consumed totally (report every 1000000)
   INFO:  Current xid is 37000000, 3146287 consumed totally (report every 1000000)
   ...
+  INFO:  Current xid is 120000000, 8674967 consumed totally (report every 1000000)
+  INFO:  Current xid is 121000000, 9674967 consumed totally (report every 1000000)
+  WARNING:  terminating connection because of crash of another server process
+  DETAIL:  The postmaster has commanded this server process to roll back the current transaction and exit, because another server process exited abnormally and possibly corrupted shared memory.
+  HINT:  In a moment you should be able to reconnect to the database and repeat your command.
+  server closed the connection unexpectedly
+  This probably means the server terminated abnormally
+  before or while processing the request.
+  The connection to the server was lost. Attempting reset: Failed.
+
 */
 
 
