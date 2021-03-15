@@ -43,7 +43,6 @@
           - gcc
           - nmap
           - p5-App-cpanminus
-          - pgbarman
           - htop
           - curl
           - wget
@@ -51,6 +50,7 @@
           - autoconf
           - pkgconf
           - cmake
+          - krb5
         state: latest
 
     - include: user_luca.yml
@@ -118,6 +118,7 @@
         name:
           - pgxnclient
           - pgbadger
+          - pgbarman
         state: latest
 
 

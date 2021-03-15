@@ -24,3 +24,9 @@ bindkey -e
 autoload -U promptinit
 promptinit
 prompt adam1 red magenta magenta
+
+
+export ORACLE_HOME=/usr/local/instantclient_18_3
+export LD_LIBRARY_PATH=$ORACLE_HOME:$LD_LIBRARY_PATH
+export PATH=$ORACLE_HOME:$PATH   # solo per usare eventualmente sqlplus
+export PERL5LIB=~/perl5/lib/perl5
