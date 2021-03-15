@@ -49,9 +49,14 @@ declare
   secs            numeric := 0;
   estimated_secs  numeric := 0;
   total_secs      numeric := 0;
+  xid_warning     bigint  := 0;
+  xid_shutdown    bigint  := 1000000;
 begin
   -- compute the max value
   max_xid := pow( 2, 31 ) - 1;
+
+  -- when warnings will appear?
+  xid_warning := xid_shutdown * 11;
 
   -- initialize the timestamp
   ts_start   := clock_timestamp();
@@ -97,6 +102,12 @@ begin
                        + ( ( ( max_xid - xid ) / ( counter / total_secs ) )::bigint || ' seconds' )::interval,
                       report_every,
                       secs::bigint;
+
+          -- are we in the warning threshold?
+          if ( max_xid - xid ) <= xid_warning then
+             raise info ' |--> you are now within the % transactions warning', xid_warning;
+             raise info ' |---> % transactions before system goes read-only!', ( max_xid - xid - xid_shutdown );
+         end if;
       end if;
      end if;
 
