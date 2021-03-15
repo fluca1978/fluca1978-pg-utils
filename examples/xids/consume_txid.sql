@@ -9,13 +9,23 @@
  * Example of invocation:
 
   testdb=> call p_consume_xid();
-  INFO:  Current xid is 770000000, 91413546 transactions consumed so far (1847 secs elapsed), 49496 xid/sec
-  INFO:   |-> 1377483647 transactions to wraparound (estimated 27830 secs = 464 mins = 8 hours = 0 days) (this report appears every 10000000 transactions, 199 secs)
-  INFO:  Current xid is 780000000, 101413546 transactions consumed so far (2048 secs elapsed), 49529 xid/sec
-  INFO:   |-> 1367483647 transactions to wraparound (estimated 27609 secs = 460 mins = 8 hours = 0 days) (this report appears every 10000000 transactions, 201 secs)
-  INFO:  Current xid is 790000000, 111413546 transactions consumed so far (2250 secs elapsed), 49522 xid/sec
-  INFO:   |-> 1357483647 transactions to wraparound (estimated 27411 secs = 457 mins = 8 hours = 0 days) (this report appears every 10000000 transactions, 202 secs)
- ...
+
+INFO:  Starting to consume transaction ids, reporting every 10000000 consumed xids
+INFO:  Consuming 43341 xid/sec: current xid is 1110000000, 9999999 transactions consumed so far (231 secs elapsed)
+INFO:   |-> 1037483647 transactions to wraparound (estimated 23937 secs, at 2021-03-15 22:27:59.790675+01 ) (this report appears every 10000000 transactions, 231 secs)
+INFO:  Consuming 47293 xid/sec: current xid is 1120000000, 19999999 transactions consumed so far (423 secs elapsed)
+INFO:   |-> 1027483647 transactions to wraparound (estimated 21725 secs, at 2021-03-15 21:54:19.959369+01 ) (this report appears every 10000000 transactions, 192 secs)
+INFO:  Consuming 49126 xid/sec: current xid is 1130000000, 29999999 transactions consumed so far (611 secs elapsed)
+INFO:   |-> 1017483647 transactions to wraparound (estimated 20711 secs, at 2021-03-15 21:40:33.73678+01 ) (this report appears every 10000000 transactions, 188 secs)
+INFO:  Consuming 50637 xid/sec: current xid is 1140000000, 39999999 transactions consumed so far (790 secs elapsed)
+INFO:   |-> 1007483647 transactions to wraparound (estimated 19896 secs, at 2021-03-15 21:29:56.994531+01 ) (this report appears every 10000000 transactions, 179 secs)
+INFO:  Consuming 51433 xid/sec: current xid is 1150000000, 49999999 transactions consumed so far (972 secs elapsed)
+INFO:   |-> 997483647 transactions to wraparound (estimated 19393 secs, at 2021-03-15 21:24:37.200114+01 ) (this report appears every 10000000 transactions, 182 secs)
+INFO:  Consuming 51846 xid/sec: current xid is 1160000000, 59999999 transactions consumed so far (1157 secs elapsed)
+INFO:   |-> 987483647 transactions to wraparound (estimated 19046 secs, at 2021-03-15 21:21:54.325776+01 ) (this report appears every 10000000 transactions, 185 secs)
+INFO:  Consuming 51489 xid/sec: current xid is 1170000000, 69999999 transactions consumed so far (1360 secs elapsed)
+INFO:   |-> 977483647 transactions to wraparound (estimated 18984 secs, at 2021-03-15 21:24:14.575018+01 ) (this report appears every 10000000 transactions, 202 secs)
+...
  */
 
 /*
@@ -34,20 +44,18 @@ declare
   xid     bigint;
   counter bigint := 0;
   max_xid bigint := 0;
-  ts_start timestamp;
-  ts_end   timestamp;
+  ts_start   timestamp;
+  ts_end     timestamp;
   secs            numeric := 0;
   estimated_secs  numeric := 0;
-  estimated_mins  numeric := 0;
-  estimated_hours numeric := 0;
-  estimated_days  numeric := 0;
   total_secs      numeric := 0;
 begin
   -- compute the max value
   max_xid := pow( 2, 31 ) - 1;
 
   -- initialize the timestamp
-  ts_start := clock_timestamp();
+  ts_start   := clock_timestamp();
+
 
   if lim is null then
      lim := max_xid;
@@ -76,21 +84,17 @@ begin
         secs            := extract( epoch from ( ts_end - ts_start ) );
         total_secs      := total_secs + secs;
         ts_start        := clock_timestamp();
-        raise info 'Current xid is %, % transactions consumed so far (% secs elapsed), % xid/sec'
-                    , xid, counter, total_secs::int, ( counter / total_secs )::int;
+        raise info 'Consuming % xid/sec: current xid is %, % transactions consumed so far (% secs elapsed)'
+                    ,   ( counter / total_secs )::int, xid, counter, total_secs::int;
 
       if report_details then
           estimated_secs  := ( max_xid - xid ) /  ( counter / total_secs )::bigint;
-          estimated_mins  := estimated_secs / 60;
-          estimated_hours := estimated_secs / 3600;
-          estimated_days  := estimated_secs / ( 3600 * 24 );
 
-        raise info ' |-> % transactions to wraparound (estimated % secs = % mins = % hours = % days) (this report appears every % transactions, % secs)',
+        raise info ' |-> % transactions to wraparound (estimated % secs, at % ) (this report appears every % transactions, % secs)',
                       ( max_xid - xid ),
                       estimated_secs,
-                      estimated_mins::bigint,
-                      estimated_hours::bigint,
-                      estimated_days::bigint,
+                      current_timestamp
+                       + ( ( ( max_xid - xid ) / ( counter / total_secs ) )::bigint || ' seconds' )::interval,
                       report_every,
                       secs::bigint;
       end if;
