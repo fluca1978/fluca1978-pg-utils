@@ -29,7 +29,12 @@ $$
 declare
   xid     bigint;
   counter bigint := 0;
+  max_xid bigint := 0;
 begin
+  -- compute the max value
+  max_xid := pow( 2, 31 ) - 1;
+
+
   while true loop
       counter := counter + 1;
       if lim is not null  then
@@ -42,7 +47,11 @@ begin
 
      -- print something
      if xid % report_every = 0 then
-        raise info 'Current xid is %, % consumed totally (report every %)', xid, counter, report_every;
+        raise info 'Current xid is %, % consumed so far, % to wraparound (report every %)',
+                      xid,
+                      counter,
+                      ( max_xid - xid ),
+                      report_every;
      end if;
 
      -- nothing to do
