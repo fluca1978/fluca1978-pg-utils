@@ -23,23 +23,37 @@
 
 create or replace procedure
 p_consume_xid( lim bigint default null,
-               report_every bigint default 1000000 )
+               report_every bigint default 10000000 )
 as
 $$
 declare
   xid     bigint;
   counter bigint := 0;
   max_xid bigint := 0;
+  ts_start timestamp;
+  ts_end   timestamp;
+  secs            numeric := 0;
+  estimated_secs  numeric := 0;
+  estimated_mins  numeric := 0;
+  estimated_hours numeric := 0;
+  estimated_days  numeric := 0;
+  total_secs      numeric := 0;
 begin
   -- compute the max value
   max_xid := pow( 2, 31 ) - 1;
 
+  -- initialize the timestamp
+  ts_start := clock_timestamp();
+
+  raise info 'Starting to consume transaction ids, reporting every % consumed xids', report_every;
 
   while true loop
+
       counter := counter + 1;
       if lim is not null  then
          exit when lim = counter;
       end if;
+
 
     -- consume the xid
       select txid_current()
@@ -47,11 +61,25 @@ begin
 
      -- print something
      if xid % report_every = 0 then
-        raise info 'Current xid is %, % consumed so far, % to wraparound (report every %)',
+        ts_end          := clock_timestamp();
+        secs            := extract( epoch from ( ts_end - ts_start ) );
+        total_secs      := total_secs + secs;
+        estimated_secs  := ( counter / total_secs ) * ( max_xid - xid );
+        estimated_mins  := estimated_secs / 60;
+        estimated_hours := estimated_secs / 3600;
+        estimated_days  := estimated_secs / ( 3600 * 24 );
+        ts_start        := clock_timestamp();
+        raise info 'Current xid is %, % consumed so far (% secs elapsed), % transactions to wraparound (estimated % secs = % mins = % hours = % days) (this report appears every % transactions, % secs)',
                       xid,
                       counter,
+                      total_secs,
                       ( max_xid - xid ),
-                      report_every;
+                      estimated_secs,
+                      estimated_mins,
+                      estimated_hours,
+                      estimated_days,
+                      report_every,
+                      secs;
      end if;
 
      -- nothing to do
