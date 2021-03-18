@@ -62,7 +62,9 @@ CREATE TABLE IF NOT EXISTS wa (
 
   testdb=> call p_consume_xid();
 
-INFO:  Starting to consume transaction ids, reporting every 10000000 consumed xids
+  INFO:  Starting to consume transaction ids, reporting every 50000000 consumed xids
+  INFO:  Consuming 23731 xid/sec: current xid is 3600000000 (real 12189934592), 44759627 transactions consumed so far (1886 secs elapsed)
+  INFO:   |-> 4063130830 transactions to wraparound (estimated 171216 secs, at 2021-03-20 13:36:29.449209+01, read only at 2021-03-20 13:36:29.449209+01) (this report appears every 50000000 transactions, 1886 secs)
 
  */
 
