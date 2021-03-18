@@ -1,4 +1,35 @@
-/*
+
+
+CREATE TABLE IF NOT EXISTS wa (
+    pk serial primary key
+    , t text
+    );
+
+/**
+  * Inserts record forever in the table, suspending for 20 minutes
+  * between inserts
+  */
+  CREATE OR REPLACE FUNCTION
+  f_insert_records_forever()
+  RETURNS VOID
+  AS
+  $$
+  declare
+    counter bigint := 0;
+  BEGIN
+       WHILE true LOOP
+          counter := counter + 1;
+          RAISE INFO 'Inserting record % into wa %', counter, clock_timestamp();
+  	INSERT INTO wa( t )
+  	SELECT 'I am ' || txid_current() || ' from f_insert_records_wraparound @ ' || clock_timestamp();
+  	PERFORM pg_sleep_for( '20 minutes' );
+      END LOOP;
+  END
+  $$ LANGUAGE plpgsql;
+
+
+
+    /*
  * Consumes a lot of xids without doing anything.
  *
  * !!!!! DO NOT TRY THIS IN PRODUCTION !!!!!!
@@ -11,21 +42,7 @@
   testdb=> call p_consume_xid();
 
 INFO:  Starting to consume transaction ids, reporting every 10000000 consumed xids
-INFO:  Consuming 43341 xid/sec: current xid is 1110000000, 9999999 transactions consumed so far (231 secs elapsed)
-INFO:   |-> 1037483647 transactions to wraparound (estimated 23937 secs, at 2021-03-15 22:27:59.790675+01 ) (this report appears every 10000000 transactions, 231 secs)
-INFO:  Consuming 47293 xid/sec: current xid is 1120000000, 19999999 transactions consumed so far (423 secs elapsed)
-INFO:   |-> 1027483647 transactions to wraparound (estimated 21725 secs, at 2021-03-15 21:54:19.959369+01 ) (this report appears every 10000000 transactions, 192 secs)
-INFO:  Consuming 49126 xid/sec: current xid is 1130000000, 29999999 transactions consumed so far (611 secs elapsed)
-INFO:   |-> 1017483647 transactions to wraparound (estimated 20711 secs, at 2021-03-15 21:40:33.73678+01 ) (this report appears every 10000000 transactions, 188 secs)
-INFO:  Consuming 50637 xid/sec: current xid is 1140000000, 39999999 transactions consumed so far (790 secs elapsed)
-INFO:   |-> 1007483647 transactions to wraparound (estimated 19896 secs, at 2021-03-15 21:29:56.994531+01 ) (this report appears every 10000000 transactions, 179 secs)
-INFO:  Consuming 51433 xid/sec: current xid is 1150000000, 49999999 transactions consumed so far (972 secs elapsed)
-INFO:   |-> 997483647 transactions to wraparound (estimated 19393 secs, at 2021-03-15 21:24:37.200114+01 ) (this report appears every 10000000 transactions, 182 secs)
-INFO:  Consuming 51846 xid/sec: current xid is 1160000000, 59999999 transactions consumed so far (1157 secs elapsed)
-INFO:   |-> 987483647 transactions to wraparound (estimated 19046 secs, at 2021-03-15 21:21:54.325776+01 ) (this report appears every 10000000 transactions, 185 secs)
-INFO:  Consuming 51489 xid/sec: current xid is 1170000000, 69999999 transactions consumed so far (1360 secs elapsed)
-INFO:   |-> 977483647 transactions to wraparound (estimated 18984 secs, at 2021-03-15 21:24:14.575018+01 ) (this report appears every 10000000 transactions, 202 secs)
-...
+
  */
 
 /*
@@ -36,7 +53,7 @@ INFO:   |-> 977483647 transactions to wraparound (estimated 18984 secs, at 2021-
   */
 create or replace procedure
 p_consume_xid( lim bigint default null,
-               report_every bigint default 10000000,
+               report_every bigint default 50000000,
                report_details boolean default true  )
 as
 $$
@@ -51,9 +68,11 @@ declare
   total_secs      numeric := 0;
   xid_warning     bigint  := 0;
   xid_shutdown    bigint  := 1000000;
+  xid_abs         bigint  := 0;
+  xid_age         bigint := 0;
 begin
   -- compute the max value
-  max_xid := pow( 2, 31 ) - 1;
+  max_xid := pow( 2, 32 );
 
   -- when warnings will appear?
   xid_warning := xid_shutdown * 11;
@@ -80,8 +99,10 @@ begin
 
 
     -- consume the xid
-      select txid_current()
-        into xid;
+      select txid_current(),  mod( txid_current(), max_xid ), age( datfrozenxid )
+      into xid_abs, xid, xid_age
+      from pg_database
+      where datname = current_database();
 
      -- print something
      if xid % report_every = 0 then
@@ -89,24 +110,26 @@ begin
         secs            := extract( epoch from ( ts_end - ts_start ) );
         total_secs      := total_secs + secs;
         ts_start        := clock_timestamp();
-        raise info 'Consuming % xid/sec: current xid is %, % transactions consumed so far (% secs elapsed)'
-                    ,   ( counter / total_secs )::int, xid, counter, total_secs::int;
+        raise info 'Consuming % xid/sec: current xid is % (real %), % transactions consumed so far (% secs elapsed)'
+                    ,   ( counter / total_secs )::int, xid, xid_abs, counter, total_secs::int;
 
       if report_details then
-          estimated_secs  := ( max_xid - xid ) /  ( counter / total_secs )::bigint;
+          estimated_secs  := abs( max_xid - xid_age ) /  ( counter / total_secs )::bigint;
 
-        raise info ' |-> % transactions to wraparound (estimated % secs, at % ) (this report appears every % transactions, % secs)',
-                      ( max_xid - xid ),
+        raise info ' |-> % transactions to wraparound (estimated % secs, at %, read only at %) (this report appears every % transactions, % secs)',
+                      abs( max_xid - xid_age ),
                       estimated_secs,
                       current_timestamp
-                       + ( ( ( max_xid - xid ) / ( counter / total_secs ) )::bigint || ' seconds' )::interval,
+                       + ( estimated_secs || ' seconds' )::interval,
+                        current_timestamp
+                         + ( estimated_secs || ' seconds' )::interval,
                       report_every,
                       secs::bigint;
 
           -- are we in the warning threshold?
-          if ( max_xid - xid ) <= xid_warning then
+          if abs( max_xid - xid_age ) <= xid_warning then
              raise info ' |--> you are now within the % transactions warning', xid_warning;
-             raise info ' |---> % transactions before system goes read-only!', ( max_xid - xid - xid_shutdown );
+             raise info ' |---> % transactions before system goes read-only!', abs( max_xid - xid_age - xid_shutdown );
          end if;
       end if;
      end if;
