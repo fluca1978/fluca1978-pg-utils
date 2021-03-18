@@ -1,4 +1,25 @@
-
+/**
+  * !!! DO NO TRY THIS IN PRODUCTION !!!
+  *
+  * The only purpose of this bunch of stuff is to
+  * try a xid wraparound.
+  *
+  * The idea is as follows:
+  * - use a table and insert slowly tuples without committing;
+  * - use a procedure to consume all the xids in sequence
+  *
+  * Autovacuum should be turned off, so to leave only emergency freeze. However
+  * since the transaction is never committing tuples, it can be left on.
+  *
+  *
+  * To launch it:
+  * 1) create table and rotuines using this script
+  * 2) in a session launch the inserting function
+  psql -h miguel -U luca -c "SELECT f_insert_records_forever();" testdb
+  * 3) in another session launch the consuming xid procedure:
+  psql -h miguel -U luca -c "call p_consume_xid();" testdb
+  * 4) have a nice day waiting...
+  */
 
 CREATE TABLE IF NOT EXISTS wa (
     pk serial primary key
