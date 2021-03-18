@@ -145,7 +145,7 @@ begin
                       current_timestamp
                        + ( estimated_secs || ' seconds' )::interval,
                         current_timestamp
-                         + ( estimated_secs || ' seconds' )::interval,
+                         + (  ( max_xid - xid_age - xid_shutdown ) / ( counter / total_secs )::bigint || ' seconds' )::interval,
                       report_every,
                       secs::bigint;
 
