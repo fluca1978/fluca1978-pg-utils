@@ -63,8 +63,11 @@ CREATE TABLE IF NOT EXISTS wa (
   testdb=> call p_consume_xid();
 
   INFO:  Starting to consume transaction ids, reporting every 50000000 consumed xids
-  INFO:  Consuming 23731 xid/sec: current xid is 3600000000 (real 12189934592), 44759627 transactions consumed so far (1886 secs elapsed)
-  INFO:   |-> 4063130830 transactions to wraparound (estimated 171216 secs, at 2021-03-20 13:36:29.449209+01, read only at 2021-03-20 13:36:29.449209+01) (this report appears every 50000000 transactions, 1886 secs)
+  INFO:  Consuming 26906 xid/sec: current xid is 3800000000 (real 16684901888), 49999999 transactions consumed so far (1858 secs elapsed)
+  INFO:   |-> 3909582979 transactions to wraparound (estimated 145305 secs, at 2021-03-24 08:30:36.727671)
+  INFO:   |-> read only at 2021-03-24 08:29:59.727671+01
+  INFO:   |-> this report appears every 50000000 transactions, 1858 secs, next at 2021-03-22 16:39:49.727671
+
 
  */
 
@@ -139,20 +142,23 @@ begin
       if report_details then
           estimated_secs  := abs( max_xid - xid_age ) /  ( counter / total_secs )::bigint;
 
-        raise info ' |-> % transactions to wraparound (estimated % secs, at %, read only at %) (this report appears every % transactions, % secs)',
+        raise info ' |-> % transactions to wraparound (estimated % secs, at %)',
                       abs( max_xid - xid_age ),
                       estimated_secs,
-                      current_timestamp
-                       + ( estimated_secs || ' seconds' )::interval,
-                        current_timestamp
-                         + (  ( max_xid - xid_age - xid_shutdown ) / ( counter / total_secs )::bigint || ' seconds' )::interval,
+                      clock_timestamp()::timestamp
+                       + ( estimated_secs || ' seconds' )::interval;
+       raise info ' |-> read only at % ',
+                        clock_timestamp()
+                         + (  ( max_xid - xid_age - xid_shutdown ) / ( counter / total_secs )::bigint || ' seconds' )::interval;
+       raise info ' |-> this report appears every % transactions, % secs, next at %',
                       report_every,
-                      secs::bigint;
+                      secs::bigint,
+                      clock_timestamp()::timestamp + ( secs::bigint || ' seconds' )::interval;
 
           -- are we in the warning threshold?
           if abs( max_xid - xid_age ) <= xid_warning then
              raise info ' |--> you are now within the % transactions warning', xid_warning;
-             raise info ' |---> % transactions before system goes read-only!', abs( max_xid - xid_age - xid_shutdown );
+             raise info ' |---> % transactions before system goes read-only!', max_xid - xid_age - xid_shutdown ;
          end if;
       end if;
      end if;
