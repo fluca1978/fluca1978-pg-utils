@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS wa (
 
 
 
-    /*
+/*
  * Consumes a lot of xids without doing anything.
  *
  * !!!!! DO NOT TRY THIS IN PRODUCTION !!!!!!
@@ -168,3 +168,6 @@ begin
   end loop;
 end
 $$ language plpgsql;
+
+
+
