@@ -38,9 +38,9 @@
 
       RAISE DEBUG 'Inspecting PostgreSQL process %', pid;
 
-      shell :=    ' ps -ax -o flags,flags2 -p '
+      shell :=    '/bin/ps -ax -o flags,flags2 -p '
                     || pid
-                    || ' | tail -n 1 ';
+                    || ' | /usr/bin/tail -n 1 ';
       CREATE TEMPORARY TABLE IF NOT EXISTS
                 my_ps( flags bit(8), flags2 bit(8) );
       TRUNCATE my_ps;
