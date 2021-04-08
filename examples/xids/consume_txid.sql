@@ -95,7 +95,8 @@ declare
   xid_warning     bigint  := 0;
   xid_shutdown    bigint  := 1000000;
   xid_abs         bigint  := 0;
-  xid_age         bigint := 0;
+  xid_age         bigint  := 0;
+  epoch           int     := 0;
 begin
   -- compute the max value
   max_xid := pow( 2, 32 );
@@ -125,8 +126,8 @@ begin
 
 
     -- consume the xid
-      select txid_current(),  mod( txid_current(), max_xid ), age( datfrozenxid )
-      into xid_abs, xid, xid_age
+      select txid_current(),  mod( txid_current(), max_xid ), age( datfrozenxid ), txid_current() >> 32
+      into xid_abs, xid, xid_age, epoch
       from pg_database
       where datname = current_database();
 
@@ -136,8 +137,12 @@ begin
         secs            := extract( epoch from ( ts_end - ts_start ) );
         total_secs      := total_secs + secs;
         ts_start        := clock_timestamp();
-        raise info 'Consuming % xid/sec: current xid is % (real %), % transactions consumed so far (% secs elapsed)'
-                    ,   ( counter / total_secs )::int, xid, xid_abs, counter, total_secs::int;
+        raise info 'Consuming % xid/sec: current xid is % (real %, epoch %), % transactions consumed so far (% secs elapsed)'
+                    , ( counter / total_secs )::int,
+                      xid,
+                      xid_abs,
+                      epoch,
+                      counter, total_secs::int;
 
       if report_details then
           estimated_secs  := abs( max_xid - xid_age ) /  ( counter / total_secs )::bigint;
