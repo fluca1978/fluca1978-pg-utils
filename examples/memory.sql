@@ -24,6 +24,21 @@ AS
   $CODE$
     LANGUAGE sql;
 
+/**
+ * Check if pg_buffercache is installed.
+ */
+  CREATE OR REPLACE FUNCTION
+    memory.f_check_pg_buffercache()
+    RETURNS bool
+  AS
+    $CODE$
+    SELECT EXISTS(
+      SELECT extname
+        FROM pg_extension
+       WHERE extname = 'pg_buffercache' );
+    $CODE$
+      LANGUAGE sql;
+
 
   /**
    * Provides the name of a table and its type.
@@ -82,6 +97,11 @@ AS
     shared_buffers bigint;
     block_size     int;
   BEGIN
+
+    IF NOT memory.f_check_pg_buffercache() THEN
+      RAISE 'pg_buffercache not installed!'
+      USING HINT = 'Please execute CREATE EXTENSION pg_buffercache;';
+    END IF;
 
     SELECT setting
       INTO shared_buffers
@@ -143,6 +163,12 @@ AS
     shared_buffers bigint;
     block_size     int;
   BEGIN
+
+    IF NOT memory.f_check_pg_buffercache() THEN
+      RAISE 'pg_buffercache not installed!'
+      USING HINT = 'Please execute CREATE EXTENSION pg_buffercache;';
+    END IF;
+
     SELECT setting
       INTO shared_buffers
       FROM pg_settings
@@ -216,6 +242,11 @@ AS
     shared_buffers bigint;
     block_size     int;
   BEGIN
+
+    IF NOT memory.f_check_pg_buffercache() THEN
+      RAISE 'pg_buffercache not installed!'
+      USING HINT = 'Please execute CREATE EXTENSION pg_buffercache;';
+    END IF;
 
     SELECT setting
       INTO shared_buffers
@@ -297,6 +328,13 @@ pgbench=# select * from f_memory_usage_by_table_cumulative( 3 );
     shared_buffers bigint;
     block_size     int;
   BEGIN
+
+
+    IF NOT memory.f_check_pg_buffercache() THEN
+      RAISE 'pg_buffercache not installed!'
+      USING HINT = 'Please execute CREATE EXTENSION pg_buffercache;';
+    END IF;
+
 
     SELECT setting
       INTO shared_buffers
