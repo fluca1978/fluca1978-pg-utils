@@ -40,6 +40,29 @@ AS
       LANGUAGE sql;
 
 
+    /**
+     * Check the current user can execute the functions
+     * tied to pg_buffercache.
+     */
+    CREATE OR REPLACE FUNCTION
+      memory.f_check_user()
+      RETURNS bool
+    AS
+      $CODE$
+      SELECT rolsuper
+      OR pg_has_role( CURRENT_ROLE, 'pg_monitor', 'MEMBER' )
+      OR (
+        has_function_privilege( CURRENT_ROLE, 'pg_buffercache_pages()', 'EXECUTE' )
+        AND
+        has_table_privilege( CURRENT_ROLE, 'pg_buffercache', 'SELECT' )
+        )
+      FROM pg_roles
+      WHERE rolname = CURRENT_ROLE;
+
+      $CODE$
+      LANGUAGE sql;
+
+
   /**
    * Provides the name of a table and its type.
    */
@@ -72,6 +95,30 @@ AS
   LANGUAGE plpgsql;
 
 
+      /**
+       * Checks the user and the extension and raises an exception
+       * if something is wrong.
+       */
+      CREATE OR REPLACE FUNCTION
+        memory.f_check()
+        RETURNS void
+      AS
+        $CODE$
+      BEGIN
+        IF NOT memory.f_check_pg_buffercache() THEN
+          RAISE 'pg_buffercache not installed!'
+          USING HINT = 'Please execute CREATE EXTENSION pg_buffercache;';
+        END IF;
+
+        IF NOT memory.f_check_user() THEN
+          RAISE 'User % is not allow to interact with the pg_buffercache extension', CURRENT_ROLE
+          USING HINT = 'Grant the pg_monitor role or execution to function pg_buffercache_pages';
+        END IF;
+      END
+      $CODE$
+      LANGUAGE plpgsql;
+
+
 /**
    * Provides a kind of view about the overall memory usage.
    * Example of invocation:
@@ -98,10 +145,7 @@ AS
     block_size     int;
   BEGIN
 
-    IF NOT memory.f_check_pg_buffercache() THEN
-      RAISE 'pg_buffercache not installed!'
-      USING HINT = 'Please execute CREATE EXTENSION pg_buffercache;';
-    END IF;
+    PERFORM memory.f_check();
 
     SELECT setting
       INTO shared_buffers
@@ -164,10 +208,8 @@ AS
     block_size     int;
   BEGIN
 
-    IF NOT memory.f_check_pg_buffercache() THEN
-      RAISE 'pg_buffercache not installed!'
-      USING HINT = 'Please execute CREATE EXTENSION pg_buffercache;';
-    END IF;
+    PERFORM memory.f_check();
+        
 
     SELECT setting
       INTO shared_buffers
@@ -243,10 +285,8 @@ AS
     block_size     int;
   BEGIN
 
-    IF NOT memory.f_check_pg_buffercache() THEN
-      RAISE 'pg_buffercache not installed!'
-      USING HINT = 'Please execute CREATE EXTENSION pg_buffercache;';
-    END IF;
+    PERFORM memory.f_check();
+        
 
     SELECT setting
       INTO shared_buffers
@@ -329,12 +369,8 @@ pgbench=# select * from f_memory_usage_by_table_cumulative( 3 );
     block_size     int;
   BEGIN
 
-
-    IF NOT memory.f_check_pg_buffercache() THEN
-      RAISE 'pg_buffercache not installed!'
-      USING HINT = 'Please execute CREATE EXTENSION pg_buffercache;';
-    END IF;
-
+    PERFORM memory.f_check();
+        
 
     SELECT setting
       INTO shared_buffers
