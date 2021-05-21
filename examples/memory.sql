@@ -21,6 +21,39 @@ AS
   $CODE$
     LANGUAGE sql;
 
+
+  /**
+   * Provides the name of a table and its type.
+   */
+  CREATE OR REPLACE FUNCTION
+    f_tablename( 
+       relname name
+      , nspname name default 'public'
+      , relkind char default 'r' )
+    RETURNS text
+  AS
+    $CODE$
+    DECLARE
+    relation_type text;
+  BEGIN
+    SELECT CASE relkind
+           WHEN 'r' THEN 'table'
+           WHEN 'v' THEN 'view'
+           WHEN 'm' THEN 'materialized'
+           WHEN 's' THEN 'sequence'
+           WHEN 'i' THEN 'index'
+           END
+      INTO relation_type;
+
+    RETURN format( '(%s) %I.%I',
+                  relation_type
+                  , nspname
+                  , relname );
+    END
+  $CODE$
+  LANGUAGE plpgsql;
+
+
 /**
    * Provides a kind of view about the overall memory usage.
    * Example of invocation:
@@ -172,4 +205,83 @@ AS
     LANGUAGE plpgsql;
 
 
+/**
+   * Provides information about per-table usage.
+   * It does not display any information about the memory usage, rather a cumulative
+   * indication of the per-table usage and the amount of memory that is in cache.
+   * Example of invocation:
 
+pgbench=# select * from f_memory_usage_by_table_cumulative( 3 );
+                                                                FOODB
+ total_memory | database |           relation           | memory  | on_disk | percent_of_memory | percent_of_disk | usagedescription 
+--------------+----------+------------------------------+---------+---------+-------------------+-----------------+------------------
+ 256 MB       | pgbench  | public.pgbench_accounts      | 608 kB  | 1281 MB | 0.23 %            | 0.05%           | >= MID (3)
+ 256 MB       | pgbench  | public.pgbench_accounts_pkey | 3768 kB | 214 MB  | 1.44 %            | 1.72%           | >= MID (3)
+ 256 MB       | pgbench  | public.pgbench_history       | 88 kB   | 104 kB  | 0.03 %            | 84.62%          | >= MID (3)
+ 256 MB       | pgbench  | public.pgbench_tellers       | 88 kB   | 88 kB   | 0.03 %            | 100.00%         | >= MID (3)
+ 256 MB       | pgbench  | public.pgbench_branches      | 16 kB   | 40 kB   | 0.01 %            | 40.00%          | >= MID (3)
+ 256 MB       | pgbench  | public.pgbench_tellers_pkey  | 32 kB   | 40 kB   | 0.01 %            | 80.00%          | >= MID (3)
+
+
+   *
+   * The integer argument specifies a value between 0 and 6 to get the correct level of
+   * memory usage for the table. In the case NULL, or an out of range value is specified, the
+   * value is automatically set to 0 that means 'every usage'.
+*/
+
+  CREATE OR REPLACE FUNCTION
+    f_memory_usage_by_table_cumulative( wanted_usagecount int default 0 )
+    RETURNS
+    TABLE( total_memory text, database text, relation text,
+          memory text, on_disk text,  percent_of_memory text, percent_of_disk text
+    , usagedescription text )
+  AS
+    $CODE$
+    DECLARE
+    shared_buffers bigint;
+    block_size     int;
+  BEGIN
+
+    SELECT setting
+      INTO shared_buffers
+      FROM pg_settings
+     WHERE name = 'shared_buffers';
+
+    SELECT setting
+      INTO block_size
+      FROM pg_settings
+     WHERE name = 'block_size';
+
+    -- normalize usage count value
+    IF wanted_usagecount IS NULL OR wanted_usagecount < 0 THEN
+      wanted_usagecount := 0;
+    ELSEIF wanted_usagecount > 6 THEN
+      wanted_usagecount := 6;
+    END IF;
+
+    RETURN QUERY
+      SELECT
+      pg_size_pretty( block_size * shared_buffers ) as total_memory
+      , d.datname::text as database
+      , f_tablename( c.relname, n.nspname, c.relkind::char ) as relation
+      , pg_size_pretty( block_size  * count( bc.* ) ) as memory
+      , pg_size_pretty( pg_table_size( c.oid::regclass ) ) AS on_disk
+      , round( count( bc.* )::numeric / shared_buffers * 100, 2 ) || ' %' as percent_of_memory
+      , round( count( bc.* )::numeric * block_size / pg_table_size( c.oid ) * 100, 2 ) || '%' as percent_of_disk 
+      , CASE wanted_usagecount
+      WHEN 0 THEN 'any'
+      ELSE '>= ' || f_usagecounter_to_string( wanted_usagecount )
+      END as usage_description 
+      FROM pg_class c
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      JOIN pg_buffercache bc ON bc.relfilenode = pg_relation_filenode( c.oid )
+      JOIN pg_database d ON d.oid = bc.reldatabase
+      WHERE n.nspname NOT IN ( 'pg_catalog', 'information_schema' )
+      AND c.relpages > 0 -- avoid empty tables!
+      AND c.relname NOT LIKE 'pg\_%'
+      AND bc.usagecount >= wanted_usagecount
+      GROUP BY n.nspname, c.relname, c.oid, d.datname, c.relkind
+      ORDER BY pg_table_size( c.oid ) DESC, 4;
+  END
+$CODE$
+  LANGUAGE plpgsql;
