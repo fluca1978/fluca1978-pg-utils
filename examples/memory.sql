@@ -110,6 +110,63 @@ AS
 
 
 
+/**
+   * Provides information about the size and the caching of a database
+   * Example of invocation:
+
+   pgbench=# select * from f_memory_usage_by_database();
+   FOODB
+   total_memory |  database   | size_in_memory | size_on_disk | percent_cached | percent_of_memory 
+   --------------+-------------+----------------+--------------+----------------+-------------------
+   256 MB       | xyzmystrong | 664 kB         | 13 MB        | 5.01%          | 0.25%
+   256 MB       | luca        | 560 kB         | 36 MB        | 1.50%          | 0.21%
+   256 MB       | template1   | 560 kB         | 8221 kB      | 6.81%          | 0.21%
+   256 MB       | postgres    | 544 kB         | 8205 kB      | 6.63%          | 0.21%
+   256 MB       | pgbench     | 236 MB         | 1504 MB      | 15.69%         | 92.17%
+   256 MB       | foodb       | 18 MB          | 23 MB        | 75.60%         | 6.85%
+
+   */
+  CREATE OR REPLACE FUNCTION
+    f_memory_usage_by_database()
+    RETURNS TABLE (
+      total_memory text
+      , database text
+      , size_in_memory text
+      , size_on_disk text
+      , percent_cached text
+    , percent_of_memory text )
+  AS $CODE$
+    DECLARE
+    shared_buffers bigint;
+    block_size     int;
+  BEGIN
+    SELECT setting
+      INTO shared_buffers
+      FROM pg_settings
+     WHERE name = 'shared_buffers';
+
+    SELECT setting
+      INTO block_size
+      FROM pg_settings
+     WHERE name = 'block_size';
+
+    RETURN QUERY
+      SELECT pg_size_pretty( block_size * shared_buffers ) as total_memory
+      , d.datname::text as database
+      , pg_size_pretty( block_size  * count( bc.* ) ) as size_in_memory
+      , pg_size_pretty( pg_database_size( d.oid ) ) as size_on_disk
+      , round( block_size  * count( bc.* )::numeric / pg_database_size( d.oid ) * 100, 2 ) || '%' as percent_cached
+      , round( ( count( bc.* ) / shared_buffers::numeric ) * 100, 2 ) || '%' as percent_of_memory
+      
+      FROM pg_buffercache bc
+      JOIN pg_database d ON bc.reldatabase = d.oid
+      
+      GROUP BY d.datname, d.oid
+      ORDER BY count( bc.* ) DESC, 2;
+  END
+    $CODE$
+
+    LANGUAGE plpgsql;
 
 
 
