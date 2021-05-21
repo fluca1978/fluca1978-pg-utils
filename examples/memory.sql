@@ -170,12 +170,7 @@ AS
     RETURN QUERY
       SELECT pg_size_pretty( block_size * shared_buffers ) as total_memory
       , d.datname::text as database
-      , c.relname::text || CASE c.relkind
-      WHEN 'r' THEN ' (table)'
-      WHEN 'i' THEN ' (index)'
-      WHEN 'v' THEN ' (view)'
-      WHEN 'm' THEN ' (materialized)'
-      END as relation
+      , f_tablename( c.relname, n.nspname, c.relkind::char ) as relation
       , pg_size_pretty( block_size  * count( bc.* ) ) as memory
       , round( count( bc.* )::numeric / shared_buffers * 100, 2 ) || ' %' as percent
       , f_usagecounter_to_string( bc.usagecount )  as description 
@@ -185,6 +180,7 @@ AS
       JOIN pg_class c ON bc.relfilenode = pg_relation_filenode( c.oid )
       -- also every buffer has a reference to the database
       JOIN pg_database d ON bc.reldatabase = d.oid
+      JOIN pg_namespace n ON n.oid = c.relnamespace
       WHERE
       -- skip the information schema
       c.relnamespace NOT IN ( SELECT oid FROM pg_namespace
@@ -194,7 +190,7 @@ AS
       -- always stick to the current database
       AND d.datname = current_database()
 
-      GROUP BY bc.usagecount, d.datname, c.relname, c.relkind
+      GROUP BY bc.usagecount, d.datname, c.relname, c.relkind, n.nspname
                                       WINDOW w AS (
                                         ORDER BY bc.usagecount DESC
                                         RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
