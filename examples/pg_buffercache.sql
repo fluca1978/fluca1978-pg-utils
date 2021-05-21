@@ -22,7 +22,7 @@ SELECT
        WHEN 4 THEN 'HIGH'
        WHEN 5 THEN 'VERY HIGH'
        WHEN 6 THEN 'VERY VERY HIGH'
-       ELSE '-free-'
+       ELSE  b.usagecount || ''
     END AS usage
 FROM pg_buffercache b, sb
 GROUP BY b.usagecount, sb.setting
