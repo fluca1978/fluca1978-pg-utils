@@ -1,10 +1,13 @@
 
+\echo 'Creating a schema named memory...'
+CREATE SCHEMA IF NOT EXISTS memory;
+
 /**
    * Converts a pg_buffercache.usagecount to a string value
    * usefult to display as a result.
    */
 CREATE OR REPLACE FUNCTION
-  f_usagecounter_to_string( uc int )
+  memory.f_usagecounter_to_string( uc int )
   RETURNS text
 AS
   $CODE$
@@ -26,7 +29,7 @@ AS
    * Provides the name of a table and its type.
    */
   CREATE OR REPLACE FUNCTION
-    f_tablename( 
+    memory.f_tablename( 
        relname name
       , nspname name default 'public'
       , relkind char default 'r' )
@@ -70,7 +73,7 @@ AS
 
    */
   CREATE OR REPLACE FUNCTION
-    f_memory_usage()
+    memory.f_memory_usage()
     RETURNS
     TABLE( total_memory text, memory text, percent text, cumulative text, description text )
   AS
@@ -95,7 +98,7 @@ AS
       , pg_size_pretty( block_size  * count( bc.* ) ) as memory
            , round( count( bc.* )::numeric / shared_buffers * 100, 2 ) || ' %' as percent
            , round( sum( count( bc.* ) ) OVER w / shared_buffers::numeric * 100, 2 ) || '%' as cumulative
-           , f_usagecounter_to_string( bc.usagecount )  as description 
+           , memory.f_usagecounter_to_string( bc.usagecount )  as description 
 
                                       FROM pg_buffercache bc
                                       GROUP BY bc.usagecount
@@ -127,7 +130,7 @@ AS
 
    */
   CREATE OR REPLACE FUNCTION
-    f_memory_usage_by_database()
+    memory.f_memory_usage_by_database()
     RETURNS TABLE (
       total_memory text
       , database text
@@ -203,7 +206,7 @@ AS
 
    */
     CREATE OR REPLACE FUNCTION
-    f_memory_usage_by_table()
+    memory.f_memory_usage_by_table()
     RETURNS
       TABLE( total_memory text, database text, relation text,
             memory text, percent text, description text )
@@ -227,10 +230,10 @@ AS
     RETURN QUERY
       SELECT pg_size_pretty( block_size * shared_buffers ) as total_memory
       , d.datname::text as database
-      , f_tablename( c.relname, n.nspname, c.relkind::char ) as relation
+      , memory.f_tablename( c.relname, n.nspname, c.relkind::char ) as relation
       , pg_size_pretty( block_size  * count( bc.* ) ) as memory
       , round( count( bc.* )::numeric / shared_buffers * 100, 2 ) || ' %' as percent
-      , f_usagecounter_to_string( bc.usagecount )  as description 
+      , memory.f_usagecounter_to_string( bc.usagecount )  as description 
 
       FROM pg_buffercache bc
       -- every buffercache has information about the table on disk
@@ -283,7 +286,7 @@ pgbench=# select * from f_memory_usage_by_table_cumulative( 3 );
 */
 
   CREATE OR REPLACE FUNCTION
-    f_memory_usage_by_table_cumulative( wanted_usagecount int default 0 )
+    memory.f_memory_usage_by_table_cumulative( wanted_usagecount int default 0 )
     RETURNS
     TABLE( total_memory text, database text, relation text,
           memory text, on_disk text,  percent_of_memory text, percent_of_disk text
@@ -316,14 +319,14 @@ pgbench=# select * from f_memory_usage_by_table_cumulative( 3 );
       SELECT
       pg_size_pretty( block_size * shared_buffers ) as total_memory
       , d.datname::text as database
-      , f_tablename( c.relname, n.nspname, c.relkind::char ) as relation
+      , memory.f_tablename( c.relname, n.nspname, c.relkind::char ) as relation
       , pg_size_pretty( block_size  * count( bc.* ) ) as memory
       , pg_size_pretty( pg_table_size( c.oid::regclass ) ) AS on_disk
       , round( count( bc.* )::numeric / shared_buffers * 100, 2 ) || ' %' as percent_of_memory
       , round( count( bc.* )::numeric * block_size / pg_table_size( c.oid ) * 100, 2 ) || '%' as percent_of_disk 
       , CASE wanted_usagecount
       WHEN 0 THEN 'any'
-      ELSE '>= ' || f_usagecounter_to_string( wanted_usagecount )
+      ELSE '>= ' || memory.f_usagecounter_to_string( wanted_usagecount )
       END as usage_description 
       FROM pg_class c
       JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -338,3 +341,17 @@ pgbench=# select * from f_memory_usage_by_table_cumulative( 3 );
   END
 $CODE$
   LANGUAGE plpgsql;
+
+
+
+  \echo 'All objects created!'
+    \echo 'Try one of the following functions:'
+    \echo ' - memory.f_memory_usage() to get information about the whole memory'
+    \echo ' - memory.f_memory_usage_by_database() to get information about single databases'
+    \echo ' - memory.f_memory_usage_by_table() to get information about tables in the current database'
+    \echo ' - memory.f_memory_usage_by_table_cumulative() to get cumulative information for tables'
+    \echo
+    \echo 'You can add the memory schema to the search path.'
+    \echo 'Try running the following query while testing the database (e.g., via pgbench):'
+    \echo 'select memory.f_memory_usage();'
+    \echo '\watch 5'
