@@ -120,6 +120,51 @@ AS
 
 
 /**
+   * Display some total information about the memory.
+   * Example of invocation:
+
+   testdb=> select * from memory.f_memory();
+
+   total  | used  |  free  
+   --------+-------+--------
+   256 MB | 36 MB | 220 MB
+*/
+      CREATE OR REPLACE FUNCTION
+        memory.f_memory()
+        RETURNS TABLE( total text, used text, free text )
+      AS
+        $CODE$
+        DECLARE
+        shared_buffers bigint;
+        block_size     int;
+      BEGIN
+
+        PERFORM memory.f_check();
+
+        SELECT setting
+          INTO shared_buffers
+          FROM pg_settings
+         WHERE name = 'shared_buffers';
+
+        SELECT setting
+          INTO block_size
+          FROM pg_settings
+         WHERE name = 'block_size';
+
+        RETURN QUERY
+          SELECT pg_size_pretty( shared_buffers  * block_size ) as total
+          , pg_size_pretty( count( bc.* ) * block_size ) as used
+          , pg_size_pretty( ( shared_buffers - count( bc.* ) ) * block_size ) as free
+          FROM pg_buffercache bc
+          WHERE bc.usagecount > 0;
+
+      END
+        
+        $CODE$
+        LANGUAGE plpgsql;
+
+
+/**
    * Provides a kind of view about the overall memory usage.
    * Example of invocation:
 
@@ -420,6 +465,7 @@ $CODE$
 
   \echo 'All objects created!'
     \echo 'Try one of the following functions:'
+    \echo ' - memory.f_memory() to get very basic information'
     \echo ' - memory.f_memory_usage() to get information about the whole memory'
     \echo ' - memory.f_memory_usage_by_database() to get information about single databases'
     \echo ' - memory.f_memory_usage_by_table() to get information about tables in the current database'
