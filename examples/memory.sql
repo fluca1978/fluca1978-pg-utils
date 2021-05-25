@@ -21,8 +21,9 @@ AS $CODE$
   FROM pg_settings
   WHERE name = 'shared_buffers';
   $CODE$
-  LANGUAGE sql;
+  LANGUAGE sql IMMUTABLE;
 
+  
 
 /**
    * Converts a pg_buffercache.usagecount to a string value
@@ -195,7 +196,7 @@ AS
 
    */
   CREATE OR REPLACE FUNCTION
-    memory.f_memory_usage()
+    memory.f_memory_usage( human bool default true )
     RETURNS
     TABLE( total_memory text, memory text, percent text, cumulative text, description text )
   AS
@@ -203,16 +204,24 @@ AS
     DECLARE
     shared_buffers bigint;
     block_size     int;
+    memory         bigint;
   BEGIN
 
     PERFORM memory.f_check();
     block_size     := current_setting( 'block_size' )::int;
     shared_buffers := memory.f_get_shared_buffers();
-    
+    memory         := block_size * shared_buffers;
 
     RETURN QUERY
-      SELECT pg_size_pretty( block_size * shared_buffers ) as total_memory
-      , pg_size_pretty( block_size  * count( bc.* ) ) as memory
+      SELECT
+      CASE human
+      WHEN true THEN pg_size_pretty( memory )
+      ELSE memory::text
+      END as total_memory
+      , CASE human
+      WHEN true THEN pg_size_pretty( block_size  * count( bc.* ) )
+      ELSE (block_size  * count( bc.* ))::text
+      END as memory
            , round( count( bc.* )::numeric / shared_buffers * 100, 2 ) || ' %' as percent
            , round( sum( count( bc.* ) ) OVER w / shared_buffers::numeric * 100, 2 ) || '%' as cumulative
            , memory.f_usagecounter_to_string( bc.usagecount )  as description 
@@ -247,7 +256,7 @@ AS
 
    */
   CREATE OR REPLACE FUNCTION
-    memory.f_memory_usage_by_database()
+    memory.f_memory_usage_by_database( human bool default true )
     RETURNS TABLE (
       total_memory text
       , database text
@@ -268,10 +277,20 @@ AS
     
 
     RETURN QUERY
-      SELECT pg_size_pretty( block_size * shared_buffers ) as total_memory
+      SELECT
+      CASE human
+      WHEN true THEN pg_size_pretty( block_size * shared_buffers )
+      ELSE ( block_size * shared_buffers )::text
+      END as total_memory
       , d.datname::text as database
-      , pg_size_pretty( block_size  * count( bc.* ) ) as size_in_memory
-      , pg_size_pretty( pg_database_size( d.oid ) ) as size_on_disk
+      , CASE human
+      WHEN true THEN pg_size_pretty( block_size  * count( bc.* ) )
+      ELSE ( block_size  * count( bc.* ) )::text
+      END as size_in_memory
+      , CASE human
+      WHEN true THEN pg_size_pretty( pg_database_size( d.oid ) )
+      ELSE pg_database_size( d.oid )::text
+      END as size_on_disk
       , round( block_size  * count( bc.* )::numeric / pg_database_size( d.oid ) * 100, 2 ) || '%' as percent_cached
       , round( ( count( bc.* ) / shared_buffers::numeric ) * 100, 2 ) || '%' as percent_of_memory
       
@@ -320,7 +339,7 @@ AS
 
    */
     CREATE OR REPLACE FUNCTION
-    memory.f_memory_usage_by_table()
+    memory.f_memory_usage_by_table( human bool default true )
     RETURNS
       TABLE( total_memory text, database text, relation text,
             memory text, percent text, description text )
@@ -338,10 +357,17 @@ AS
     
 
     RETURN QUERY
-      SELECT pg_size_pretty( block_size * shared_buffers ) as total_memory
+      SELECT
+      CASE human
+      WHEN true THEN pg_size_pretty( block_size * shared_buffers )
+      ELSE ( block_size * shared_buffers )::text
+      END as total_memory
       , d.datname::text as database
       , memory.f_tablename( c.relname, n.nspname, c.relkind::char ) as relation
-      , pg_size_pretty( block_size  * count( bc.* ) ) as memory
+      , CASE human
+      WHEN true THEN pg_size_pretty( block_size  * count( bc.* ) )
+      ELSE ( block_size  * count( bc.* ) )::text
+      END as memory
       , round( count( bc.* )::numeric / shared_buffers * 100, 2 ) || ' %' as percent
       , memory.f_usagecounter_to_string( bc.usagecount )  as description 
 
@@ -396,7 +422,7 @@ pgbench=# select * from f_memory_usage_by_table_cumulative( 3 );
 */
 
   CREATE OR REPLACE FUNCTION
-    memory.f_memory_usage_by_table_cumulative( wanted_usagecount int default 0 )
+    memory.f_memory_usage_by_table_cumulative( wanted_usagecount int default 0, human bool default true )
     RETURNS
     TABLE( total_memory text, database text, relation text,
           memory text, on_disk text,  percent_of_memory text, percent_of_disk text
@@ -423,11 +449,20 @@ pgbench=# select * from f_memory_usage_by_table_cumulative( 3 );
 
     RETURN QUERY
       SELECT
-      pg_size_pretty( block_size * shared_buffers ) as total_memory
+      CASE human
+      WHEN true THEN pg_size_pretty( block_size * shared_buffers )
+      ELSE ( block_size * shared_buffers )::text
+      END as total_memory
       , d.datname::text as database
       , memory.f_tablename( c.relname, n.nspname, c.relkind::char ) as relation
-      , pg_size_pretty( block_size  * count( bc.* ) ) as memory
-      , pg_size_pretty( pg_table_size( c.oid::regclass ) ) AS on_disk
+      , CASE human
+      WHEN true THEN pg_size_pretty( block_size  * count( bc.* ) )
+      ELSE ( block_size  * count( bc.* ) )::text
+      END as memory
+      , CASE human
+      WHEN true THEN pg_size_pretty( pg_table_size( c.oid::regclass ) )
+      ELSE pg_table_size( c.oid::regclass )::text
+      END AS on_disk
       , round( count( bc.* )::numeric / shared_buffers * 100, 2 ) || ' %' as percent_of_memory
       , round( count( bc.* )::numeric * block_size / pg_table_size( c.oid ) * 100, 2 ) || '%' as percent_of_disk 
       , CASE wanted_usagecount
