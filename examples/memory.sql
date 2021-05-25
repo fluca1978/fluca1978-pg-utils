@@ -104,7 +104,7 @@ AS
            WHEN 'r' THEN 'table'
            WHEN 'v' THEN 'view'
            WHEN 'm' THEN 'materialized'
-           WHEN 's' THEN 'sequence'
+           WHEN 'S' THEN 'sequence'
            WHEN 'i' THEN 'index'
            END
       INTO relation_type;
