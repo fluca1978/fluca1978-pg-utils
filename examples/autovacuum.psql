@@ -33,15 +33,18 @@ AS $CODE$
 BEGIN
 
   IF reset THEN
-    RAISE INFO 'Resetting table av.stats';
     TRUNCATE TABLE av.stats;
     COMMIT;
+    RAISE INFO 'Truncated table av.stats';
   END IF;
+
 
 
   IF pause_secs IS NULL OR pause_secs <= 0 THEN
     pause_secs := 2;
-      END IF;
+  END IF;
+
+  RAISE INFO 'Monitoring vacuum activity for % seconds every % secs', seconds, pause_secs;
 
   WHILE seconds > 0 LOOP
     INSERT INTO av.stats( ts, pid, database, relation, command, phase )
@@ -56,9 +59,11 @@ BEGIN
 
     INSERT INTO av.stats( ts, pid, database, relation, command, phase )
     SELECT clock_timestamp()
-           , pid, datname, c.relname, command,  phase
+           , pid, datname
+           ,format( '%I (%s)', coalesce( c.relname, '' ), relid )
+           , command,  phase
       FROM pg_stat_progress_cluster
-              JOIN pg_class c on c.oid = relid
+              LEFT JOIN pg_class c on c.oid = relid
      WHERE pid IS NOT NULL;
     COMMIT;
 
