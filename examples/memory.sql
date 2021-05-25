@@ -1,3 +1,4 @@
+\set QUIET on
 
 \echo 'Creating a schema named memory...'
 CREATE SCHEMA IF NOT EXISTS memory;
