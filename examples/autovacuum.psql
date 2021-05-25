@@ -1,0 +1,70 @@
+\echo "Creating table to store information..."
+
+CREATE SCHEMA IF NOT EXISTS av;
+
+CREATE TABLE av.stats (
+       pk int GENERATED ALWAYS AS IDENTITY
+       , ts timestamp default current_timestamp
+       , pid int
+       , database text
+       , relation text
+       , command text
+       , phase text
+       , PRIMARY KEY( pk )
+);
+
+/**
+   * The procedure monitors the vacuum progress meter
+   * and inserts a new log record into the table
+   * to store the execution of the vacuum.
+   *
+   * Parameters are:
+   * - seconds how long the procedure is going to run
+   * - reset true if the table must be truncated before the execution starts
+   * - pause_secs the number of secs to pause between scanning progress tables
+   *
+   * Use the debug level to see how many seconds have elapsed.
+   */
+CREATE OR REPLACE PROCEDURE
+  av.p_log_vacuum( seconds int default 600,
+                  reset boolean default true,
+                  pause_secs int default 2 )
+AS $CODE$
+BEGIN
+
+  IF reset THEN
+    RAISE INFO 'Resetting table av.stats';
+    TRUNCATE TABLE av.stats;
+    COMMIT;
+  END IF;
+
+
+  IF pause_secs IS NULL OR pause_secs <= 0 THEN
+    pause_secs := 2;
+      END IF;
+
+  WHILE seconds > 0 LOOP
+    INSERT INTO av.stats( ts, pid, database, relation, command, phase )
+    SELECT clock_timestamp()
+           , pid, datname
+           , format( '%I (%s)', coalesce( c.relname, '' ), relid )
+           , '(auto) vacuum',  phase
+      FROM pg_stat_progress_vacuum
+             LEFT JOIN pg_class c on c.oid = relid
+     WHERE pid IS NOT NULL;
+                    
+
+    INSERT INTO av.stats( ts, pid, database, relation, command, phase )
+    SELECT clock_timestamp()
+           , pid, datname, c.relname, command,  phase
+      FROM pg_stat_progress_cluster
+              JOIN pg_class c on c.oid = relid
+     WHERE pid IS NOT NULL;
+    COMMIT;
+
+    RAISE DEBUG '% ... zzz ...', seconds;
+    PERFORM pg_sleep( pause_secs );
+    seconds := seconds - pause_secs;
+    END LOOP;
+  END
+       $CODE$ LANGUAGE plpgsql;
