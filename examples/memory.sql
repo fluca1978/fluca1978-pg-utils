@@ -2,6 +2,28 @@
 \echo 'Creating a schema named memory...'
 CREATE SCHEMA IF NOT EXISTS memory;
 
+
+/**
+ * Get the number of shared buffers.
+ * It is not possible to use current_config because it returns
+ * the string configured for the setting.
+   *
+ * It would be possible to do:
+ * pg_size_bytes( current_setting( 'shared_buffers' ) ) / current_setting( 'block_size' )::int
+ * but I suspect this could be not accurate.
+ */
+
+CREATE OR REPLACE FUNCTION
+  memory.f_get_shared_buffers()
+  RETURNS bigint
+AS $CODE$
+  SELECT setting::bigint
+  FROM pg_settings
+  WHERE name = 'shared_buffers';
+  $CODE$
+  LANGUAGE sql;
+
+
 /**
    * Converts a pg_buffercache.usagecount to a string value
    * usefult to display as a result.
@@ -141,16 +163,9 @@ AS
 
         PERFORM memory.f_check();
 
-        SELECT setting
-          INTO shared_buffers
-          FROM pg_settings
-         WHERE name = 'shared_buffers';
-
-        SELECT setting
-          INTO block_size
-          FROM pg_settings
-         WHERE name = 'block_size';
-
+        block_size     := current_setting( 'block_size' )::int;
+        shared_buffers := memory.f_get_shared_buffers();
+        
         RETURN QUERY
           SELECT pg_size_pretty( shared_buffers  * block_size ) as total
           , pg_size_pretty( count( bc.* ) * block_size ) as used
@@ -191,16 +206,9 @@ AS
   BEGIN
 
     PERFORM memory.f_check();
-
-    SELECT setting
-      INTO shared_buffers
-      FROM pg_settings
-     WHERE name = 'shared_buffers';
-
-    SELECT setting
-      INTO block_size
-      FROM pg_settings
-     WHERE name = 'block_size';
+    block_size     := current_setting( 'block_size' )::int;
+    shared_buffers := memory.f_get_shared_buffers();
+    
 
     RETURN QUERY
       SELECT pg_size_pretty( block_size * shared_buffers ) as total_memory
@@ -255,16 +263,9 @@ AS
 
     PERFORM memory.f_check();
         
-
-    SELECT setting
-      INTO shared_buffers
-      FROM pg_settings
-     WHERE name = 'shared_buffers';
-
-    SELECT setting
-      INTO block_size
-      FROM pg_settings
-     WHERE name = 'block_size';
+    block_size     := current_setting( 'block_size' )::int;
+    shared_buffers := memory.f_get_shared_buffers();
+    
 
     RETURN QUERY
       SELECT pg_size_pretty( block_size * shared_buffers ) as total_memory
@@ -332,16 +333,9 @@ AS
 
     PERFORM memory.f_check();
         
-
-    SELECT setting
-      INTO shared_buffers
-      FROM pg_settings
-     WHERE name = 'shared_buffers';
-
-    SELECT setting
-      INTO block_size
-      FROM pg_settings
-     WHERE name = 'block_size';
+    block_size     := current_setting( 'block_size' )::int;
+    shared_buffers := memory.f_get_shared_buffers();
+    
 
     RETURN QUERY
       SELECT pg_size_pretty( block_size * shared_buffers ) as total_memory
@@ -416,16 +410,9 @@ pgbench=# select * from f_memory_usage_by_table_cumulative( 3 );
 
     PERFORM memory.f_check();
         
-
-    SELECT setting
-      INTO shared_buffers
-      FROM pg_settings
-     WHERE name = 'shared_buffers';
-
-    SELECT setting
-      INTO block_size
-      FROM pg_settings
-     WHERE name = 'block_size';
+    block_size     := current_setting( 'block_size' )::int;
+    shared_buffers := memory.f_get_shared_buffers();
+    
 
     -- normalize usage count value
     IF wanted_usagecount IS NULL OR wanted_usagecount < 0 THEN
