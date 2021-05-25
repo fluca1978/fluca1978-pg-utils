@@ -495,5 +495,6 @@ $CODE$
     \echo
     \echo 'You can add the memory schema to the search path.'
     \echo 'Try running the following query while testing the database (e.g., via pgbench):'
+    \echo
     \echo 'select memory.f_memory_usage();'
-    \echo '\watch 5'
+    \echo '\\watch 5'
