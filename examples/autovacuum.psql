@@ -10,12 +10,12 @@ CREATE TABLE av.stats (
        , relation text
        , command text
        , phase text
-       , monitoring_event bigint default 0
+       , batch_id bigint default 0
        , PRIMARY KEY( pk )
 );
 
 
-CREATE SEQUENCE av.monitoring_seq;
+CREATE SEQUENCE av.batch_seq;
 
 /**
    * The procedure monitors the vacuum progress meter
@@ -35,10 +35,10 @@ CREATE OR REPLACE PROCEDURE
                   pause_secs int default 2 )
 AS $CODE$
   DECLARE
-  event_id bigint;
+  batch_id bigint;
 BEGIN
 
-  event_id := nextval( 'av.monitoring_seq' );
+  batch_id := nextval( 'av.batch_seq' );
 
   IF reset THEN
     TRUNCATE TABLE av.stats;
@@ -55,23 +55,23 @@ BEGIN
   RAISE INFO 'Monitoring vacuum activity for % seconds every % secs', seconds, pause_secs;
 
   WHILE seconds > 0 LOOP
-    INSERT INTO av.stats( ts, pid, database, relation, command, phase, monitoring_event )
+    INSERT INTO av.stats( ts, pid, database, relation, command, phase, batch_id )
     SELECT clock_timestamp()
            , pid, datname
            , format( '%I (%s)', coalesce( c.relname, '' ), relid )
            , '(auto) vacuum',  phase
-           , event_id
+           , batch_id
       FROM pg_stat_progress_vacuum
              LEFT JOIN pg_class c on c.oid = relid
      WHERE pid IS NOT NULL;
                     
 
-    INSERT INTO av.stats( ts, pid, database, relation, command, phase, monitoring_event )
+    INSERT INTO av.stats( ts, pid, database, relation, command, phase, batch_id )
     SELECT clock_timestamp()
            , pid, datname
            ,format( '%I (%s)', coalesce( c.relname, '' ), relid )
            , command,  phase
-           , event_id
+           , batch_id
       FROM pg_stat_progress_cluster
               LEFT JOIN pg_class c on c.oid = relid
      WHERE pid IS NOT NULL;
