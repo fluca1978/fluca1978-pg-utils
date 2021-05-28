@@ -154,7 +154,7 @@ AS
    256 MB | 36 MB | 220 MB
 */
       CREATE OR REPLACE FUNCTION
-        memory.f_memory()
+        memory.f_memory( human boolean default true )
         RETURNS TABLE( total text, used text, free text )
       AS
         $CODE$
@@ -169,9 +169,19 @@ AS
         shared_buffers := memory.f_get_shared_buffers();
         
         RETURN QUERY
-          SELECT pg_size_pretty( shared_buffers  * block_size ) as total
-          , pg_size_pretty( count( bc.* ) * block_size ) as used
-          , pg_size_pretty( ( shared_buffers - count( bc.* ) ) * block_size ) as free
+          SELECT
+          CASE human
+          WHEN true THEN pg_size_pretty( shared_buffers  * block_size )
+          ELSE ( shared_buffers  * block_size )::text
+          END as total
+          , CASE human
+          WHEN true THEN pg_size_pretty( count( bc.* ) * block_size )
+          ELSE ( count( bc.* ) * block_size )::text
+          END as used
+          ,CASE human
+          WHEN true THEN  pg_size_pretty( ( shared_buffers - count( bc.* ) ) * block_size )
+          ELSE ( ( shared_buffers - count( bc.* ) ) * block_size )::text
+          END as free
           FROM pg_buffercache bc
           WHERE bc.usagecount > 0;
 
