@@ -1,4 +1,7 @@
 \set QUIET on
+\set STOP_ON_ERROR on
+
+DROP SCHEMA memory CASCADE;
 
 \echo 'Creating a schema named memory...'
 CREATE SCHEMA IF NOT EXISTS memory;
