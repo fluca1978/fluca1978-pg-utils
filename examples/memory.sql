@@ -1,7 +1,6 @@
 \set QUIET on
 \set STOP_ON_ERROR on
 
-DROP SCHEMA memory CASCADE;
 
 \echo 'Creating a schema named memory...'
 CREATE SCHEMA IF NOT EXISTS memory;
@@ -57,7 +56,7 @@ CREATE OR REPLACE FUNCTION
 AS
   $CODE$
   SELECT CASE uc
---         WHEN 0 THEN 'VERY VERY LOW'
+         WHEN 0 THEN 'VERY VERY LOW'
          WHEN 1 THEN 'VERY LOW'
          WHEN 2 THEN 'LOW'
          WHEN 3 THEN 'MID'
