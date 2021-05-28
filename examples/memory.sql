@@ -24,7 +24,25 @@ AS $CODE$
   $CODE$
   LANGUAGE sql IMMUTABLE;
 
-  
+
+/**
+ * Prints the amount of bytes as a text.
+ * Arguments are:
+ * - bytes the size to print as a big integer
+ * - human true if you want to print the size thru pg_size_pretty()
+ * Returns the amount of bytes as text.
+ */
+  CREATE OR REPLACE FUNCTION
+    memory.f_print_bytes( bytes bigint, human boolean default true )
+    RETURNS text
+  AS $CODE$
+    SELECT CASE human
+           WHEN true THEN pg_size_pretty( bytes )
+           ELSE bytes::text
+          END;
+    $CODE$
+    LANGUAGE sql IMMUTABLE;
+
 
 /**
    * Converts a pg_buffercache.usagecount to a string value
@@ -170,18 +188,9 @@ AS
         
         RETURN QUERY
           SELECT
-          CASE human
-          WHEN true THEN pg_size_pretty( shared_buffers  * block_size )
-          ELSE ( shared_buffers  * block_size )::text
-          END as total
-          , CASE human
-          WHEN true THEN pg_size_pretty( count( bc.* ) * block_size )
-          ELSE ( count( bc.* ) * block_size )::text
-          END as used
-          ,CASE human
-          WHEN true THEN  pg_size_pretty( ( shared_buffers - count( bc.* ) ) * block_size )
-          ELSE ( ( shared_buffers - count( bc.* ) ) * block_size )::text
-          END as free
+            memory.f_print_bytes( shared_buffers  * block_size, human ) as total
+          , memory.f_print_bytes( count( bc.* ) * block_size, human ) as used
+          , memory.f_print_bytes( ( shared_buffers - count( bc.* ) ) * block_size, human ) as free
           FROM pg_buffercache bc
           WHERE bc.usagecount > 0;
 
@@ -225,25 +234,18 @@ AS
 
     RETURN QUERY
       SELECT
-      CASE human
-      WHEN true THEN pg_size_pretty( memory )
-      ELSE memory::text
-      END as total_memory
-      , CASE human
-      WHEN true THEN pg_size_pretty( block_size  * count( bc.* ) )
-      ELSE (block_size  * count( bc.* ))::text
-      END as memory
-           , round( count( bc.* )::numeric / shared_buffers * 100, 2 ) || ' %' as percent
-           , round( sum( count( bc.* ) ) OVER w / shared_buffers::numeric * 100, 2 ) || '%' as cumulative
-           , memory.f_usagecounter_to_string( bc.usagecount )  as description 
-
-                                      FROM pg_buffercache bc
-                                      GROUP BY bc.usagecount
-                                      WINDOW w AS (
-                                        ORDER BY bc.usagecount DESC
-                                        RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-                                      )
-                                      ORDER BY bc.usagecount DESC;
+        memory.f_print_bytes( memory, human ) as total_memory
+      , memory.f_print_bytes( block_size  * count( bc.* ), human ) as memory
+      , round( count( bc.* )::numeric / shared_buffers * 100, 2 ) || ' %' as percent
+      , round( sum( count( bc.* ) ) OVER w / shared_buffers::numeric * 100, 2 ) || '%' as cumulative
+      , memory.f_usagecounter_to_string( bc.usagecount )  as description 
+      FROM pg_buffercache bc
+      GROUP BY bc.usagecount
+      WINDOW w AS (
+        ORDER BY bc.usagecount DESC
+        RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+      )
+      ORDER BY bc.usagecount DESC;
   END
     $CODE$
     LANGUAGE plpgsql;
@@ -289,19 +291,10 @@ AS
 
     RETURN QUERY
       SELECT
-      CASE human
-      WHEN true THEN pg_size_pretty( block_size * shared_buffers )
-      ELSE ( block_size * shared_buffers )::text
-      END as total_memory
+        memory.f_print_bytes( block_size * shared_buffers, human ) as total_memory
       , d.datname::text as database
-      , CASE human
-      WHEN true THEN pg_size_pretty( block_size  * count( bc.* ) )
-      ELSE ( block_size  * count( bc.* ) )::text
-      END as size_in_memory
-      , CASE human
-      WHEN true THEN pg_size_pretty( pg_database_size( d.oid ) )
-      ELSE pg_database_size( d.oid )::text
-      END as size_on_disk
+      , memory.f_print_bytes( block_size  * count( bc.* ), human ) as size_in_memory
+      , memory.f_print_bytes( pg_database_size( d.oid ), human )  as size_on_disk
       , round( block_size  * count( bc.* )::numeric / pg_database_size( d.oid ) * 100, 2 ) || '%' as percent_cached
       , round( ( count( bc.* ) / shared_buffers::numeric ) * 100, 2 ) || '%' as percent_of_memory
       
@@ -369,16 +362,10 @@ AS
 
     RETURN QUERY
       SELECT
-      CASE human
-      WHEN true THEN pg_size_pretty( block_size * shared_buffers )
-      ELSE ( block_size * shared_buffers )::text
-      END as total_memory
+        memory.f_print_bytes( block_size * shared_buffers, human ) as total_memory
       , d.datname::text as database
       , memory.f_tablename( c.relname, n.nspname, c.relkind::char ) as relation
-      , CASE human
-      WHEN true THEN pg_size_pretty( block_size  * count( bc.* ) )
-      ELSE ( block_size  * count( bc.* ) )::text
-      END as memory
+      , memory.f_print_bytes( block_size  * count( bc.* ), human )  as memory
       , round( count( bc.* )::numeric / shared_buffers * 100, 2 ) || ' %' as percent
       , memory.f_usagecounter_to_string( bc.usagecount )  as description 
 
@@ -460,20 +447,11 @@ pgbench=# select * from f_memory_usage_by_table_cumulative( 3 );
 
     RETURN QUERY
       SELECT
-      CASE human
-      WHEN true THEN pg_size_pretty( block_size * shared_buffers )
-      ELSE ( block_size * shared_buffers )::text
-      END as total_memory
+        memory.f_print_bytes( block_size * shared_buffers, human ) as total_memory
       , d.datname::text as database
       , memory.f_tablename( c.relname, n.nspname, c.relkind::char ) as relation
-      , CASE human
-      WHEN true THEN pg_size_pretty( block_size  * count( bc.* ) )
-      ELSE ( block_size  * count( bc.* ) )::text
-      END as memory
-      , CASE human
-      WHEN true THEN pg_size_pretty( pg_table_size( c.oid::regclass ) )
-      ELSE pg_table_size( c.oid::regclass )::text
-      END AS on_disk
+      , memory.f_print_bytes( block_size  * count( bc.* ), human )  as memory
+      , memory.f_print_bytes( pg_table_size( c.oid::regclass ), human ) as on_disk
       , round( count( bc.* )::numeric / shared_buffers * 100, 2 ) || ' %' as percent_of_memory
       , round( count( bc.* )::numeric * block_size / pg_table_size( c.oid ) * 100, 2 ) || '%' as percent_of_disk 
       , CASE wanted_usagecount
