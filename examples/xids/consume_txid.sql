@@ -202,6 +202,11 @@ begin
                         clock_timestamp()
                          + (  ( max_xid - xid_age - xid_shutdown ) / ( counter / total_secs )::bigint || ' seconds' )::interval;
 
+        raise info ' |-> autovacuum should freeze within % trasanctions, at %',
+          ( current_setting( 'autovacuum_freeze_max_age' )::int - xid_age )
+          , clock_timestamp()
+          + (  ( current_setting( 'autovacuum_freeze_max_age' )::int - xid_age ) / ( counter / total_secs )::bigint || ' seconds' )::interval;
+          
         raise info ' |-> current LSN is now at %', pg_current_wal_lsn();
         raise info ' |-> current timeline is at % (previous was %)', current_timeline, previous_timeline;
 
