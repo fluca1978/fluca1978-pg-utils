@@ -201,12 +201,15 @@ begin
        raise info ' |-> read only at % ',
                         clock_timestamp()
                          + (  ( max_xid - xid_age - xid_shutdown ) / ( counter / total_secs )::bigint || ' seconds' )::interval;
-       raise info ' |-> this report appears every % transactions, % secs, next at %',
+
+        raise info ' |-> current LSN is now at %', pg_current_wal_lsn();
+        raise info ' |-> current timeline is at % (previous was %)', current_timeline, previous_timeline;
+
+
+        raise info ' |-> this report appears every % transactions, % secs, next at %',
          report_every,
          secs::bigint,
          clock_timestamp()::timestamp + ( secs::bigint || ' seconds' )::interval;
-        raise info ' |-> current LSN is now at %', pg_current_wal_lsn();
-        raise info ' |-> current timeline is at % (previous was %)', current_timeline, previous_timeline;
 
           -- are we in the warning threshold?
           if abs( max_xid - xid_age ) <= xid_warning then
