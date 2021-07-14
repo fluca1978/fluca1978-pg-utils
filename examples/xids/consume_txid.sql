@@ -76,6 +76,29 @@ CREATE TABLE IF NOT EXISTS wa (
   - lim the limit of xids to consume, NULL to consume all (i.e., execute an infinite loop)
   - report_every number of transactions after which report a progress
   - report_details report also statistics about timing, and this can require a few milliseconds
+
+
+
+  If you inspect the WAL traffic with, for example, pg_waldump, you are going to see a lot of 'ABORT' records
+like the following one
+
+  rmgr: Transaction len (rec/tot):     34/    34, tx:    6455124, lsn: 17/7401BE60, prev 17/7401BE38, desc: ABORT 2021-07-14 06:55:03.923054 EDT
+  rmgr: Transaction len (rec/tot):     34/    34, tx:    6455125, lsn: 17/7401BE88, prev 17/7401BE60, desc: ABORT 2021-07-14 06:55:03.923074 EDT
+  rmgr: Transaction len (rec/tot):     34/    34, tx:    6455126, lsn: 17/7401BEB0, prev 17/7401BE88, desc: ABORT 2021-07-14 06:55:03.923093 EDT
+  rmgr: Transaction len (rec/tot):     34/    34, tx:    6455127, lsn: 17/7401BED8, prev 17/7401BEB0, desc: ABORT 2021-07-14 06:55:03.923113 EDT
+  rmgr: Transaction len (rec/tot):     34/    34, tx:    6455128, lsn: 17/7401BF00, prev 17/7401BED8, desc: ABORT 2021-07-14 06:55:03.923132 EDT
+
+
+  To see the WAL traffic use pg_waldump in a way similar to the following:
+
+  % sudo -u postgres /usr/pgsql-13/bin/pg_waldump -p $PGDATA/pg_wal  -s 17/728BA6A8 -f -t 7
+
+  where you can get the wal starting point (-s) with pg_current_wal_lsn() or by the procedure output
+  and have to use the follow (-f) flag as well as the timeline (-t) if different from 1.
+
+
+
+
   */
 create or replace procedure
 p_consume_xid( lim bigint default null,
@@ -97,6 +120,9 @@ declare
   xid_abs         bigint  := 0;
   xid_age         bigint  := 0;
   epoch           int     := 0;
+  current_timeline int    := 1;
+  previous_timeline int   := 1;
+  wraparound_counter int  := 0;
 begin
   -- compute the max value
   max_xid := pow( 2, 32 );
@@ -116,14 +142,34 @@ begin
      report_every := lim;
   end if;
 
+
+  -- compute current timeline
+  current_timeline   := substring( pg_walfile_name( pg_current_wal_lsn() ), 1, 8 )::int;
+  previous_timeline  := current_timeline;
+  wraparound_counter := 0;
+
+
+
   raise info 'Starting to consume transaction ids, reporting every % consumed xids', report_every;
+  raise info 'Current WAL location (LSN) is %, current timeline is %', pg_current_wal_lsn(), current_timeline;
 
   while true loop
 
       counter := counter + 1;
       exit when lim = counter;
 
+    -- cmpute the current timeline and see
+    -- if it has changed
+    current_timeline := substring( pg_walfile_name( pg_current_wal_lsn() ), 1, 8 )::int;
 
+    if current_timeline <> previous_timeline then
+      raise info '*** Wraparound happened near LSN %! Previous timeline was %, now it is % ***',
+      pg_current_wal_lsn(),
+      current_timeline,
+      previous_timeline;
+
+      previous_timeline = current_timeline;
+    end if;
 
     -- consume the xid
       select txid_current(),  mod( txid_current(), max_xid ), age( datfrozenxid ), txid_current() >> 32
@@ -132,7 +178,7 @@ begin
       where datname = current_database();
 
      -- print something
-     if xid % report_every = 0 then
+     if counter % report_every = 0 then
         ts_end          := clock_timestamp();
         secs            := extract( epoch from ( ts_end - ts_start ) );
         total_secs      := total_secs + secs;
@@ -156,9 +202,11 @@ begin
                         clock_timestamp()
                          + (  ( max_xid - xid_age - xid_shutdown ) / ( counter / total_secs )::bigint || ' seconds' )::interval;
        raise info ' |-> this report appears every % transactions, % secs, next at %',
-                      report_every,
-                      secs::bigint,
-                      clock_timestamp()::timestamp + ( secs::bigint || ' seconds' )::interval;
+         report_every,
+         secs::bigint,
+         clock_timestamp()::timestamp + ( secs::bigint || ' seconds' )::interval;
+        raise info ' |-> current LSN is now at %', pg_current_wal_lsn();
+        raise info ' |-> current timeline is at % (previous was %)', current_timeline, previous_timeline;
 
           -- are we in the warning threshold?
           if abs( max_xid - xid_age ) <= xid_warning then
