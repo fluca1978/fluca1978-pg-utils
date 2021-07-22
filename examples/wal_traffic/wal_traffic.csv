@@ -1,0 +1,3889 @@
+run,workload,wal_size,data_size,wal_data_ratio,wall_clock,wal_level,wal_log_hints,wal_compression,full_page_writes
+1,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",40544,16384,247.4609375,00:00:00.774075,minimal,on,off,off
+2,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",39008,16384,238.0859375,00:00:00.188211,minimal,off,off,off
+3,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",36280,16384,221.435546875,00:00:00.214521,minimal,off,off,off
+4,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",18208,16384,111.1328125,00:00:00.427126,minimal,off,on,off
+5,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",18480,16384,112.79296875,00:00:00.314409,minimal,on,on,off
+6,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",18728,16384,114.306640625,00:00:00.143606,minimal,on,on,on
+7,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",35056,16384,213.96484375,00:00:00.149981,minimal,on,off,on
+8,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",35520,16384,216.796875,00:00:00.705826,minimal,off,off,on
+9,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",38264,16384,233.544921875,00:00:00.183637,minimal,off,off,off
+10,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",18408,16384,112.353515625,00:00:00.479829,minimal,off,on,off
+11,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",18440,16384,112.548828125,00:00:00.230319,minimal,on,on,off
+12,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",18720,16384,114.2578125,00:00:00.203349,minimal,on,on,on
+13,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",29712,16384,181.34765625,00:00:00.128752,replica,on,off,on
+14,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",35128,16384,214.404296875,00:00:00.149737,replica,off,off,on
+15,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",38232,16384,233.349609375,00:00:00.116238,replica,off,off,off
+16,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",18448,16384,112.59765625,00:00:00.152463,replica,off,on,off
+17,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",18544,16384,113.18359375,00:00:00.168956,replica,on,on,off
+18,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",17376,16384,106.0546875,00:00:00.120513,replica,on,on,on
+19,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",35104,16384,214.2578125,00:00:00.193668,replica,on,off,on
+20,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",33720,16384,205.810546875,00:00:00.137249,replica,off,off,on
+21,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",37024,16384,225.9765625,00:00:00.137544,replica,off,off,off
+22,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",16952,16384,103.466796875,00:00:00.152927,replica,off,on,off
+23,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",17000,16384,103.759765625,00:00:00.142911,replica,on,on,off
+24,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",16640,16384,101.5625,00:00:00.120578,replica,on,on,on
+25,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",28104,16384,171.533203125,00:00:00.124868,logical,on,off,on
+26,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",36240,16384,221.19140625,00:00:00.115099,logical,off,off,on
+27,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",35384,16384,215.966796875,00:00:00.127633,logical,off,off,off
+28,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",18840,16384,114.990234375,00:00:00.416849,logical,off,on,off
+29,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",16984,16384,103.662109375,00:00:00.125722,logical,on,on,off
+30,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",18528,16384,113.0859375,00:00:00.202673,logical,on,on,on
+31,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",30808,16384,188.037109375,00:00:00.154749,logical,on,off,on
+32,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",35360,16384,215.8203125,00:00:00.119693,logical,off,off,on
+33,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",38160,16384,232.91015625,00:00:00.128649,logical,off,off,off
+34,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",18528,16384,113.0859375,00:00:00.199908,logical,off,on,off
+35,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",16704,16384,101.953125,00:00:00.133674,logical,on,on,off
+36,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",16976,16384,103.61328125,00:00:00.135375,logical,on,on,on
+37,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",178080,131072,135.8642578125,00:00:00.167236,minimal,on,off,on
+38,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",180928,131072,138.037109375,00:00:00.145139,minimal,off,off,on
+39,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",177856,131072,135.693359375,00:00:00.176628,minimal,off,off,off
+40,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",161264,131072,123.03466796875,00:00:00.165681,minimal,off,on,off
+41,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",161456,131072,123.18115234375,00:00:00.247221,minimal,on,on,off
+42,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",161176,131072,122.967529296875,00:00:00.267269,minimal,on,on,on
+43,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",180944,131072,138.04931640625,00:00:00.167471,minimal,on,off,on
+44,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",177824,131072,135.6689453125,00:00:00.179441,minimal,off,off,on
+45,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",178160,131072,135.92529296875,00:00:00.208128,minimal,off,off,off
+46,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",161552,131072,123.25439453125,00:00:00.411317,minimal,off,on,off
+47,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",161144,131072,122.943115234375,00:00:00.191211,minimal,on,on,off
+48,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",161536,131072,123.2421875,00:00:00.141261,minimal,on,on,on
+49,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",176312,131072,134.515380859375,00:00:00.117365,replica,on,off,on
+50,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",176712,131072,134.820556640625,00:00:00.122593,replica,off,off,on
+51,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",174640,131072,133.23974609375,00:00:00.114925,replica,off,off,off
+52,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",161304,131072,123.065185546875,00:00:00.126615,replica,off,on,off
+53,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",161592,131072,123.284912109375,00:00:00.178513,replica,on,on,off
+54,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",160416,131072,122.3876953125,00:00:00.137205,replica,on,on,on
+55,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",178112,131072,135.888671875,00:00:00.280628,replica,on,off,on
+56,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",180912,131072,138.02490234375,00:00:00.146193,replica,off,off,on
+57,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",170944,131072,130.419921875,00:00:00.119777,replica,off,off,off
+58,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",161528,131072,123.236083984375,00:00:00.177606,replica,off,on,off
+59,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",161336,131072,123.089599609375,00:00:00.136081,replica,on,on,off
+60,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",161272,131072,123.040771484375,00:00:00.141931,replica,on,on,on
+61,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",183848,131072,140.264892578125,00:00:00.146077,logical,on,off,on
+62,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",199240,131072,152.008056640625,00:00:00.146786,logical,off,off,on
+63,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",178464,131072,136.1572265625,00:00:00.145772,logical,off,off,off
+64,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",159392,131072,121.6064453125,00:00:00.120057,logical,off,on,off
+65,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",159496,131072,121.685791015625,00:00:00.142178,logical,on,on,off
+66,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",160608,131072,122.5341796875,00:00:00.173278,logical,on,on,on
+67,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",174248,131072,132.940673828125,00:00:00.185622,logical,on,off,on
+68,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",172872,131072,131.890869140625,00:00:00.131473,logical,off,off,on
+69,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",174208,131072,132.91015625,00:00:00.167479,logical,off,off,off
+70,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",160792,131072,122.674560546875,00:00:00.180958,logical,off,on,off
+71,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",159848,131072,121.954345703125,00:00:00.149615,logical,on,on,off
+72,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",159360,131072,121.58203125,00:00:00.11574,logical,on,on,on
+73,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1604040,1269760,126.326234879032,00:00:00.201519,minimal,on,off,on
+74,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1602872,1269760,126.234248991935,00:00:00.224682,minimal,off,off,on
+75,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1606248,1269760,126.500126008065,00:00:00.602091,minimal,off,off,off
+76,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1588680,1269760,125.116557459677,00:00:00.221699,minimal,off,on,off
+77,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1588656,1269760,125.11466733871,00:00:00.860728,minimal,on,on,off
+78,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1588600,1269760,125.110257056452,00:00:00.218615,minimal,on,on,on
+79,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1601464,1269760,126.123361895161,00:00:00.236569,minimal,on,off,on
+80,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1603360,1269760,126.272681451613,00:00:00.733937,minimal,off,off,on
+81,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1606616,1269760,126.529107862903,00:00:00.208659,minimal,off,off,off
+82,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1588296,1269760,125.086315524194,00:00:00.20467,minimal,off,on,off
+83,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1588776,1269760,125.124117943548,00:00:00.250785,minimal,on,on,off
+84,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1587816,1269760,125.048513104839,00:00:00.220109,minimal,on,on,on
+85,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1599544,1269760,125.972152217742,00:00:00.186718,replica,on,off,on
+86,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1597792,1269760,125.834173387097,00:00:00.185105,replica,off,off,on
+87,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1600752,1269760,126.067288306452,00:00:00.215378,replica,off,off,off
+88,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1588200,1269760,125.078755040323,00:00:00.211745,replica,off,on,off
+89,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1587424,1269760,125.017641129032,00:00:00.20135,replica,on,on,off
+90,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1588104,1269760,125.071194556452,00:00:00.162856,replica,on,on,on
+91,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1597080,1269760,125.778099798387,00:00:00.158528,replica,on,off,on
+92,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1603208,1269760,126.260710685484,00:00:00.191778,replica,off,off,on
+93,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1606824,1269760,126.54548891129,00:00:00.172425,replica,off,off,off
+94,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1587176,1269760,124.998109879032,00:00:00.183134,replica,off,on,off
+95,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1587168,1269760,124.99747983871,00:00:00.235509,replica,on,on,off
+96,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1587384,1269760,125.014490927419,00:00:00.193142,replica,on,on,on
+97,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1602136,1269760,126.176285282258,00:00:00.447563,logical,on,off,on
+98,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1600664,1269760,126.060357862903,00:00:00.183277,logical,off,off,on
+99,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1603000,1269760,126.244329637097,00:00:00.185628,logical,off,off,off
+100,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1587136,1269760,124.994959677419,00:00:00.188313,logical,off,on,off
+101,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1587528,1269760,125.025831653226,00:00:00.211533,logical,on,on,off
+102,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1587536,1269760,125.026461693548,00:00:00.201911,logical,on,on,on
+103,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1600528,1269760,126.049647177419,00:00:00.204665,logical,on,off,on
+104,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1602488,1269760,126.204007056452,00:00:00.300766,logical,off,off,on
+105,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1598264,1269760,125.871345766129,00:00:00.196857,logical,off,off,off
+106,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1587488,1269760,125.022681451613,00:00:00.22283,logical,off,on,off
+107,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1588736,1269760,125.120967741935,00:00:00.257701,logical,on,on,off
+108,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",1587544,1269760,125.027091733871,00:00:00.182155,logical,on,on,on
+109,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15877848,12640256,125.613342008263,00:00:00.536883,minimal,on,off,on
+110,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15879128,12640256,125.62346838545,00:00:00.540157,minimal,off,off,on
+111,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15882848,12640256,125.652898169151,00:00:00.731937,minimal,off,off,off
+112,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15864808,12640256,125.510179540668,00:00:00.459487,minimal,off,on,off
+113,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15865048,12640256,125.51207823639,00:00:00.555635,minimal,on,on,off
+114,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15865056,12640256,125.512141526248,00:00:00.572065,minimal,on,on,on
+115,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15878784,12640256,125.620746921581,00:00:00.579733,minimal,on,off,on
+116,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15882128,12640256,125.647202081983,00:00:00.548437,minimal,off,off,on
+117,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15879184,12632064,125.705379580091,00:00:00.533323,minimal,off,off,off
+118,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15864984,12640256,125.511571917531,00:00:00.558679,minimal,off,on,off
+119,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15864360,12640256,125.506635308652,00:00:00.555535,minimal,on,on,off
+120,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15864648,12632064,125.590307332198,00:00:00.68396,minimal,on,on,on
+121,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15878984,12632064,125.703796307555,00:00:00.530347,replica,on,off,on
+122,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15876696,12640256,125.604228268795,00:00:00.550553,replica,off,off,on
+123,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15879712,12632064,125.709559419585,00:00:00.537065,replica,off,off,off
+124,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15862752,12640256,125.49391404731,00:00:00.556508,replica,off,on,off
+125,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15864392,12640256,125.506888468082,00:00:00.524356,replica,on,on,off
+126,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15865336,12640256,125.514356671257,00:00:00.565569,replica,on,on,on
+127,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15880416,12640256,125.633658052495,00:00:00.543548,replica,on,off,on
+128,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15882704,12632064,125.733245176719,00:00:00.541762,replica,off,off,on
+129,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15877584,12640256,125.611253442968,00:00:00.444498,replica,off,off,off
+130,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15863496,12640256,125.499800004051,00:00:00.542609,replica,off,on,off
+131,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15864688,12640256,125.509230192806,00:00:00.60928,replica,on,on,off
+132,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15863624,12640256,125.500812641769,00:00:00.471919,replica,on,on,on
+133,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15877600,12640256,125.611380022683,00:00:00.602582,logical,on,off,on
+134,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15879224,12632064,125.705696234598,00:00:00.534687,logical,off,off,on
+135,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15877056,12640256,125.607076312378,00:00:00.64007,logical,off,off,off
+136,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15863048,12640256,125.496255772035,00:00:00.632144,logical,off,on,off
+137,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15863464,12640256,125.499546844621,00:00:00.555779,logical,on,on,off
+138,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15864120,12640256,125.504736612929,00:00:00.533176,logical,on,on,on
+139,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15875344,12632064,125.674980747406,00:00:00.553721,logical,on,off,on
+140,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15881488,12632064,125.723618879702,00:00:00.583647,logical,off,off,on
+141,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15879368,12640256,125.625367081173,00:00:00.501429,logical,off,off,off
+142,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15864768,12640256,125.50986309138,00:00:00.536688,logical,off,on,off
+143,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15863528,12640256,125.50005316348,00:00:00.606093,logical,on,on,off
+144,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 100000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",15864648,12640256,125.508913743519,00:00:00.545308,logical,on,on,on
+145,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158667256,126337024,125.590471404487,00:00:05.391916,minimal,on,off,on
+146,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158670856,126337024,125.593308260926,00:00:05.613828,minimal,off,off,on
+147,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158665096,126337024,125.588749027364,00:00:05.617538,minimal,off,off,off
+148,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158624208,126328832,125.564533043415,00:00:05.732403,minimal,off,on,off
+149,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158628408,126337024,125.559721907016,00:00:04.89463,minimal,on,on,off
+150,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158626808,126328832,125.56659749692,00:00:05.791685,minimal,on,on,on
+151,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158681672,126337024,125.601869488393,00:00:05.08899,minimal,on,off,on
+152,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158669648,126337024,125.5923584206,00:00:05.68691,minimal,off,off,on
+153,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158667232,126328832,125.598590193567,00:00:05.719029,minimal,off,off,off
+154,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158628752,126337024,125.559987862307,00:00:05.415487,minimal,off,on,off
+155,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158627688,126328832,125.567281426302,00:00:04.854735,minimal,on,on,off
+156,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158628624,126337024,125.559886546006,00:00:05.226395,minimal,on,on,on
+157,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158666888,126337024,125.590167455583,00:00:06.009119,replica,on,off,on
+158,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158670512,126337024,125.593042305635,00:00:05.346405,replica,off,off,on
+159,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158662008,126320640,125.602606193256,00:00:05.217354,replica,off,off,off
+160,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158628536,126328832,125.567965355684,00:00:05.282791,replica,off,on,off
+161,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158628864,126337024,125.560076514071,00:00:05.658261,replica,on,on,off
+162,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158626056,126328832,125.565989559691,00:00:05.551835,replica,on,on,on
+163,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158671464,126337024,125.593789513358,00:00:05.175309,replica,on,off,on
+164,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158668424,126328832,125.599527430128,00:00:04.996977,replica,off,off,on
+165,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158666160,126328832,125.597741614519,00:00:05.181381,replica,off,off,off
+166,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158626792,126337024,125.558430124173,00:00:05.366267,replica,off,on,off
+167,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158627504,126328832,125.567142107354,00:00:05.966129,replica,on,on,off
+168,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158627032,126337024,125.558632756776,00:00:06.047583,replica,on,on,on
+169,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158669392,126337024,125.592155787998,00:00:05.784363,logical,on,off,on
+170,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158668224,126337024,125.591231276747,00:00:05.840573,logical,off,off,on
+171,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158667448,126337024,125.590623378939,00:00:05.610715,logical,off,off,off
+172,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158625848,126320640,125.573980625811,00:00:05.461963,logical,off,on,off
+173,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158627960,126337024,125.559367299961,00:00:05.671647,logical,on,on,off
+174,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158626776,126328832,125.566572166202,00:00:05.183306,logical,on,on,on
+175,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158668328,126337024,125.591307263974,00:00:05.665866,logical,on,off,on
+176,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158666528,126328832,125.598032917774,00:00:05.523307,logical,off,off,on
+177,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158668576,126328832,125.599654083717,00:00:05.65865,logical,off,off,off
+178,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158628960,126337024,125.560152501297,00:00:05.086912,logical,off,on,off
+179,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158627744,126345216,125.551048960967,00:00:05.801865,logical,on,on,off
+180,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 1000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",158628168,126328832,125.56766138707,00:00:05.188817,logical,on,on,on
+181,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2519843752,1263321088,199.461867923794,00:03:13.918655,minimal,on,off,on
+182,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2518366680,1263329280,199.343651720001,00:02:30.725138,minimal,off,off,on
+183,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2518367792,1263312896,199.346318079539,00:02:32.240107,minimal,off,off,off
+184,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2252095696,1263296512,178.271349806434,00:02:33.282366,minimal,off,on,off
+185,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2252103752,1263321088,178.268509992608,00:02:34.063401,minimal,on,on,off
+186,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2252086784,1263312896,178.268328545583,00:02:31.599113,minimal,on,on,on
+187,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2518348784,1263304704,199.346111197572,00:02:34.045549,minimal,on,off,on
+188,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2518345568,1263321088,199.343262446989,00:02:33.860416,minimal,off,off,on
+189,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2518337504,1263304704,199.345219567868,00:02:36.67652,minimal,off,off,off
+190,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2252089240,1263321088,178.267375205883,00:02:31.172702,minimal,off,on,off
+191,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2252106800,1263321088,178.268753161192,00:02:30.798462,minimal,on,on,off
+192,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2252099104,1263304704,178.270457227713,00:02:34.882126,minimal,on,on,on
+193,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2518347904,1263296512,199.347322823923,00:02:42.14359,replica,on,off,on
+194,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2518351336,1263280128,199.350191947292,00:02:40.626329,replica,off,off,on
+195,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2518357552,1263321088,199.344214857276,00:02:37.455496,replica,off,off,off
+196,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2252100112,1263312896,178.269382282946,00:02:39.80369,replica,off,on,off
+197,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2252082024,1263296512,178.270255526519,00:02:37.399403,replica,on,on,off
+198,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2252129824,1263312896,178.271732927834,00:02:39.2096,replica,on,on,on
+199,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2518354480,1263280128,199.350435123761,00:02:47.564466,replica,on,off,on
+200,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2518356488,1263321088,199.344133801082,00:02:38.087463,replica,off,off,on
+201,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2518426496,1263312896,199.350978840954,00:02:44.461534,replica,off,off,off
+202,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2252092464,1263312896,178.268774357544,00:02:42.045404,replica,off,on,off
+203,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2252092752,1263296512,178.27110663312,00:02:40.206746,replica,on,on,off
+204,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2252090152,1263280128,178.273216057429,00:02:36.709825,replica,on,on,on
+205,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2518353416,1263321088,199.343890632498,00:02:42.017219,logical,on,off,on
+206,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2518347992,1263312896,199.344757737675,00:02:36.561555,logical,off,off,on
+207,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2518338104,1263304704,199.345260096491,00:02:43.59319,logical,off,off,off
+208,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2252110664,1263337472,178.266745182082,00:02:39.940858,logical,off,on,off
+209,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2252116088,1263312896,178.27063866211,00:02:42.627216,logical,on,on,off
+210,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2252101528,1263296512,178.27181588862,00:02:38.610669,logical,on,on,on
+211,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2518436464,1263329280,199.349163505496,00:02:38.603388,logical,on,off,on
+212,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2518351144,1263304704,199.346293576375,00:02:42.042389,logical,off,off,on
+213,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2518339080,1263312896,199.344048491372,00:02:43.11951,logical,off,off,off
+214,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2252123512,1263321088,178.270070324354,00:02:40.621355,logical,off,on,off
+215,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2252153048,1263321088,178.272420953999,00:02:42.001043,logical,on,on,off
+216,"'BEGIN;
+INSERT INTO wal_traffic_workload SELECT v, md5( v::text )::text || random()::text
+FROM generate_series( 1, 10000000 ) v;
+COMMIT;
+
+BEGIN;
+INSERT INTO wal_traffic_workload 
+SELECT v + v, t || '' - '' || t || random()::text
+FROM wal_traffic_workload
+WHERE v % 5 = 0;
+COMMIT;'",2252124912,1263321088,178.270191908646,00:02:39.872734,logical,on,on,on
+217,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",20928,8192,255.46875,00:00:00.283914,minimal,on,off,on
+218,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",23688,8192,289.16015625,00:00:00.112946,minimal,off,off,on
+219,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",20520,8192,250.48828125,00:00:00.303841,minimal,off,off,off
+220,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",12024,8192,146.77734375,00:00:00.209957,minimal,off,on,off
+221,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",12280,8192,149.90234375,00:00:00.157434,minimal,on,on,off
+222,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",11968,8192,146.09375,00:00:00.114114,minimal,on,on,on
+223,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",20928,8192,255.46875,00:00:00.10668,minimal,on,off,on
+224,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",23688,8192,289.16015625,00:00:00.266881,minimal,off,off,on
+225,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",20496,8192,250.1953125,00:00:00.145867,minimal,off,off,off
+226,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",12016,8192,146.6796875,00:00:00.109053,minimal,off,on,off
+227,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",12272,8192,149.8046875,00:00:00.101468,minimal,on,on,off
+228,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",11960,8192,145.99609375,00:00:00.165799,minimal,on,on,on
+229,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",12872,8192,157.12890625,00:00:00.082202,replica,on,off,on
+230,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",23728,8192,289.6484375,00:00:00.113793,replica,off,off,on
+231,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",17048,8192,208.10546875,00:00:00.067675,replica,off,off,off
+232,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",10240,8192,125,00:00:00.092042,replica,off,on,off
+233,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",12352,8192,150.78125,00:00:00.089406,replica,on,on,off
+234,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",11992,8192,146.38671875,00:00:00.391175,replica,on,on,on
+235,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",13952,8192,170.3125,00:00:00.076132,replica,on,off,on
+236,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",22520,8192,274.90234375,00:00:00.061032,replica,off,off,on
+237,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",15840,8192,193.359375,00:00:00.085025,replica,off,off,off
+238,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",12072,8192,147.36328125,00:00:00.116741,replica,off,on,off
+239,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",10520,8192,128.41796875,00:00:00.074767,replica,on,on,off
+240,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",10160,8192,124.0234375,00:00:00.075217,replica,on,on,on
+241,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",21000,8192,256.34765625,00:00:00.084159,logical,on,off,on
+242,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",17280,8192,210.9375,00:00:00.086673,logical,off,off,on
+243,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",20512,8192,250.390625,00:00:00.078116,logical,off,off,off
+244,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",10248,8192,125.09765625,00:00:00.072179,logical,off,on,off
+245,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",12352,8192,150.78125,00:00:00.107541,logical,on,on,off
+246,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",10192,8192,124.4140625,00:00:00.083182,logical,on,on,on
+247,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",17832,8192,217.67578125,00:00:00.090461,logical,on,off,on
+248,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",23304,8192,284.47265625,00:00:00.076021,logical,off,off,on
+249,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",20488,8192,250.09765625,00:00:00.463933,logical,off,off,off
+250,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",10224,8192,124.8046875,00:00:00.105349,logical,off,on,off
+251,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",10528,8192,128.515625,00:00:00.085613,logical,on,on,off
+252,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",10168,8192,124.12109375,00:00:00.074914,logical,on,on,on
+253,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",115848,81920,141.416015625,00:00:00.118372,minimal,on,off,on
+254,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",118584,81920,144.755859375,00:00:00.10397,minimal,off,off,on
+255,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",115416,81920,140.888671875,00:00:00.226623,minimal,off,off,off
+256,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",98856,81920,120.673828125,00:00:00.087,minimal,off,on,off
+257,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",99136,81920,121.015625,00:00:00.131695,minimal,on,on,off
+258,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",98808,81920,120.615234375,00:00:00.167322,minimal,on,on,on
+259,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",115696,81920,141.23046875,00:00:00.22183,minimal,on,off,on
+260,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",118432,81920,144.5703125,00:00:00.100018,minimal,off,off,on
+261,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",115728,81920,141.26953125,00:00:00.143862,minimal,off,off,off
+262,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",99152,81920,121.03515625,00:00:00.118292,minimal,off,on,off
+263,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",98816,81920,120.625,00:00:00.22527,minimal,on,on,off
+264,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",98864,81920,120.68359375,00:00:00.090495,minimal,on,on,on
+265,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",118512,81920,144.66796875,00:00:00.082333,replica,on,off,on
+266,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",107784,81920,131.572265625,00:00:00.07987,replica,off,off,on
+267,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",113344,81920,138.359375,00:00:00.079571,replica,off,off,off
+268,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",97032,81920,118.447265625,00:00:00.07318,replica,off,on,off
+269,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",98920,81920,120.751953125,00:00:00.139946,replica,on,on,off
+270,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",107008,81920,130.625,00:00:00.217929,replica,on,on,on
+271,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",137112,81920,167.373046875,00:00:00.149658,replica,on,off,on
+272,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",114816,81920,140.15625,00:00:00.256797,replica,off,off,on
+273,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",107352,81920,131.044921875,00:00:00.078871,replica,off,off,off
+274,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",97368,81920,118.857421875,00:00:00.079132,replica,off,on,off
+275,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",97080,81920,118.505859375,00:00:00.078831,replica,on,on,off
+276,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",98824,81920,120.634765625,00:00:00.088934,replica,on,on,on
+277,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",111168,81920,135.703125,00:00:00.14446,logical,on,off,on
+278,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",114016,81920,139.1796875,00:00:00.083233,logical,off,off,on
+279,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",108456,81920,132.392578125,00:00:00.091459,logical,off,off,off
+280,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",97376,81920,118.8671875,00:00:00.092508,logical,off,on,off
+281,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",97032,81920,118.447265625,00:00:00.086546,logical,on,on,off
+282,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",97152,81920,118.59375,00:00:00.084608,logical,on,on,on
+283,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",111776,81920,136.4453125,00:00:00.086939,logical,on,off,on
+284,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",111392,81920,135.9765625,00:00:00.086486,logical,off,off,on
+285,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",110072,81920,134.365234375,00:00:00.078288,logical,off,off,off
+286,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",97432,81920,118.935546875,00:00:00.085144,logical,off,on,off
+287,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",98376,81920,120.087890625,00:00:00.067514,logical,on,on,off
+288,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",98856,81920,120.673828125,00:00:00.111443,logical,on,on,on
+289,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",977664,770048,126.961436170213,00:00:00.143802,minimal,on,off,on
+290,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",980744,770048,127.361411236702,00:00:00.215707,minimal,off,off,on
+291,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",979552,770048,127.206615691489,00:00:00.242785,minimal,off,off,off
+292,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",965096,770048,125.329330119681,00:00:00.138902,minimal,off,on,off
+293,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",964864,770048,125.29920212766,00:00:00.170105,minimal,on,on,off
+294,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",965104,770048,125.330369015957,00:00:00.197819,minimal,on,on,on
+295,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",981120,770048,127.410239361702,00:00:00.12546,minimal,on,off,on
+296,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",977912,770048,126.993641954787,00:00:00.139469,minimal,off,off,on
+297,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",979792,770048,127.237782579787,00:00:00.362956,minimal,off,off,off
+298,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",965120,770048,125.332446808511,00:00:00.15577,minimal,off,on,off
+299,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",964832,770048,125.295046542553,00:00:00.141921,minimal,on,on,off
+300,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",965080,770048,125.327252327128,00:00:00.134837,minimal,on,on,on
+301,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",979680,770048,127.223238031915,00:00:00.185072,replica,on,off,on
+302,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",978856,770048,127.116231715426,00:00:00.137262,replica,off,off,on
+303,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",977440,770048,126.932347074468,00:00:00.134829,replica,off,off,off
+304,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",964816,770048,125.29296875,00:00:00.12212,replica,off,on,off
+305,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",965016,770048,125.318941156915,00:00:00.14966,replica,on,on,off
+306,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",965384,770048,125.366730385638,00:00:00.118147,replica,on,on,on
+307,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",974344,770048,126.530294215426,00:00:00.127604,replica,on,off,on
+308,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",981616,770048,127.474650930851,00:00:00.25456,replica,off,off,on
+309,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",976760,770048,126.844040890957,00:00:00.127737,replica,off,off,off
+310,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",963680,770048,125.145445478723,00:00:00.126692,replica,off,on,off
+311,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",963960,770048,125.181806848404,00:00:00.120665,replica,on,on,off
+312,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",964776,770048,125.287774268617,00:00:00.144969,replica,on,on,on
+313,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",980920,770048,127.384266954787,00:00:00.132079,logical,on,off,on
+314,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",973920,770048,126.475232712766,00:00:00.133288,logical,off,off,on
+315,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",980024,770048,127.267910571808,00:00:00.145831,logical,off,off,off
+316,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",965208,770048,125.343874667553,00:00:00.147539,logical,off,on,off
+317,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",963648,770048,125.141289893617,00:00:00.183238,logical,on,on,off
+318,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",965344,770048,125.361535904255,00:00:00.136074,logical,on,on,on
+319,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",973920,770048,126.475232712766,00:00:00.137273,logical,on,off,on
+320,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",977144,770048,126.893907912234,00:00:00.140148,logical,off,off,on
+321,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",978120,770048,127.020653257979,00:00:00.133138,logical,off,off,off
+322,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",963632,770048,125.139212101064,00:00:00.1153,logical,off,on,off
+323,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",963920,770048,125.176612367021,00:00:00.12213,logical,on,on,off
+324,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",965064,770048,125.325174534574,00:00:00.237496,logical,on,on,on
+325,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9643936,7659520,125.907837566845,00:00:00.641596,minimal,on,off,on
+326,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9647360,7659520,125.952540106952,00:00:00.557126,minimal,off,off,on
+327,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9644936,7659520,125.920893215241,00:00:00.638514,minimal,off,off,off
+328,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9630488,7659520,125.732265207219,00:00:00.552058,minimal,off,on,off
+329,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9630256,7659520,125.729236296791,00:00:00.692122,minimal,on,on,off
+330,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9630480,7659520,125.732160762032,00:00:00.639909,minimal,on,on,on
+331,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9646696,7659520,125.943871156417,00:00:00.578526,minimal,on,off,on
+332,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9644208,7659520,125.911388703209,00:00:00.591149,minimal,off,off,on
+333,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9647656,7659520,125.956404578877,00:00:00.638159,minimal,off,off,off
+334,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9630168,7659520,125.728087399733,00:00:00.581433,minimal,off,on,off
+335,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9630856,7659520,125.737069685829,00:00:00.881203,minimal,on,on,off
+336,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9630792,7659520,125.736234124332,00:00:00.600693,minimal,on,on,on
+337,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9644416,7659520,125.914104278075,00:00:00.580975,replica,on,off,on
+338,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9646016,7659520,125.934993315508,00:00:00.599331,replica,off,off,on
+339,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9642456,7659520,125.888515207219,00:00:00.621871,replica,off,off,off
+340,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9629280,7659520,125.716493983957,00:00:00.572398,replica,off,on,off
+341,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9630328,7659520,125.730176303476,00:00:00.563445,replica,on,on,off
+342,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9630632,7659520,125.734145220588,00:00:00.558579,replica,on,on,on
+343,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9643672,7659520,125.904390875668,00:00:00.555986,replica,on,off,on
+344,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9642488,7659520,125.888932987968,00:00:00.658409,replica,off,off,on
+345,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9641160,7659520,125.871595086898,00:00:00.560486,replica,off,off,off
+346,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9630664,7659520,125.734563001337,00:00:01.387388,replica,off,on,off
+347,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9630312,7659520,125.729967413102,00:00:00.86678,replica,on,on,off
+348,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9630800,7659520,125.736338569519,00:00:01.294928,replica,on,on,on
+349,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9639320,7659520,125.84757269385,00:00:00.620188,logical,on,off,on
+350,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9640624,7659520,125.864597259358,00:00:00.598716,logical,off,off,on
+351,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9648600,7659520,125.968729110963,00:00:00.612462,logical,off,off,off
+352,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9630264,7659520,125.729340741979,00:00:00.583425,logical,off,on,off
+353,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9629304,7659520,125.716807319519,00:00:00.617534,logical,on,on,off
+354,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9629600,7659520,125.720671791444,00:00:00.575966,logical,on,on,on
+355,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9644432,7659520,125.914313168449,00:00:00.592811,logical,on,off,on
+356,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9647840,7659520,125.958806818182,00:00:00.644785,logical,off,off,on
+357,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9639744,7659520,125.85310828877,00:00:00.549322,logical,off,off,off
+358,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9629552,7659520,125.720045120321,00:00:00.671907,logical,off,on,off
+359,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9630336,7659520,125.730280748663,00:00:00.637801,logical,on,on,off
+360,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 100000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",9630112,7659520,125.727356283422,00:00:00.557044,logical,on,on,on
+361,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96316888,76562432,125.801761365156,00:00:05.752149,minimal,on,off,on
+362,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96331264,76562432,125.82053819816,00:00:05.751077,minimal,off,off,on
+363,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96320776,76562432,125.806839573748,00:00:05.436715,minimal,off,off,off
+364,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96285056,76562432,125.760184838434,00:00:06.024048,minimal,off,on,off
+365,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96284456,76562432,125.759401164268,00:00:05.88377,minimal,on,on,off
+366,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96284592,76562432,125.759578797079,00:00:05.994751,minimal,on,on,on
+367,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96320744,76562432,125.806797777793,00:00:05.71893,minimal,on,off,on
+368,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96315664,76562432,125.800162669859,00:00:05.999429,minimal,off,off,on
+369,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96316016,76562432,125.800622425369,00:00:05.799185,minimal,off,off,off
+370,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96284896,76562432,125.759975858656,00:00:05.59379,minimal,off,on,off
+371,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96284648,76562432,125.759651940001,00:00:05.695283,minimal,on,on,off
+372,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96284480,76562432,125.759432511235,00:00:06.091981,minimal,on,on,on
+373,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96319504,76562432,125.805178184517,00:00:05.685953,replica,on,off,on
+374,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96316808,76562432,125.801656875267,00:00:05.687015,replica,off,off,on
+375,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96316016,76562432,125.800622425369,00:00:06.171036,replica,off,off,off
+376,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96284912,76562432,125.759996756634,00:00:05.487284,replica,off,on,off
+377,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96284632,76562432,125.759631042023,00:00:05.83421,replica,on,on,off
+378,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96284520,76562432,125.759484756179,00:00:05.444379,replica,on,on,on
+379,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96319808,76562432,125.805575246095,00:00:05.686269,replica,on,off,on
+380,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96317248,76562432,125.802231569655,00:00:05.655514,replica,off,off,on
+381,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96318664,76562432,125.804081040686,00:00:05.646031,replica,off,off,off
+382,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96284608,76562432,125.759599695057,00:00:05.625553,replica,off,on,off
+383,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96284824,76562432,125.759881817756,00:00:05.733444,replica,on,on,off
+384,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96284848,76562432,125.759913164723,00:00:05.563667,replica,on,on,on
+385,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96315792,76562432,125.800329853681,00:00:05.629358,logical,on,off,on
+386,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96317888,76562432,125.803067488765,00:00:05.703079,logical,off,off,on
+387,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96319288,76562432,125.804896061818,00:00:05.565867,logical,off,off,off
+388,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96284608,76562432,125.759599695057,00:00:05.853345,logical,off,on,off
+389,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96285016,76562432,125.760132593489,00:00:05.927246,logical,on,on,off
+390,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96284416,76562432,125.759348919324,00:00:05.848977,logical,on,on,on
+391,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96316832,76562432,125.801688222234,00:00:05.672284,logical,on,off,on
+392,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96320368,76562432,125.806306675316,00:00:05.400169,logical,off,off,on
+393,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96315112,76562432,125.799441689627,00:00:05.658382,logical,off,off,off
+394,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96284680,76562432,125.759693735957,00:00:05.971895,logical,off,on,off
+395,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96285072,76562432,125.760205736411,00:00:05.522564,logical,on,on,off
+396,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 1000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",96284480,76562432,125.759432511235,00:00:05.776628,logical,on,on,on
+397,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",964052808,765607936,125.919906869931,00:01:41.606724,minimal,on,off,on
+398,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",963171200,765607936,125.804756548396,00:01:08.97771,minimal,off,off,on
+399,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",963039984,765607936,125.787619839928,00:01:06.236153,minimal,off,off,off
+400,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",962833512,765607936,125.760652512358,00:01:08.987497,minimal,off,on,off
+401,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",962833440,765607936,125.760635793619,00:01:07.522628,minimal,on,on,off
+402,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",962829848,765607936,125.760167668899,00:01:07.80076,minimal,on,on,on
+403,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",963026000,765607936,125.785789137902,00:01:08.814006,minimal,on,off,on
+404,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",963022792,765607936,125.785371169402,00:01:09.522883,minimal,off,off,on
+405,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",963023248,765607936,125.785429684992,00:01:07.487882,minimal,off,off,off
+406,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",962828968,765607936,125.76005899709,00:01:07.976758,minimal,off,on,off
+407,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",962826344,765607936,125.75971626292,00:01:09.315077,minimal,on,on,off
+408,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",962828672,765607936,125.76001720024,00:01:08.471369,minimal,on,on,on
+409,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",963021664,765607936,125.785229060113,00:01:10.667337,replica,on,off,on
+410,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",963023016,765607936,125.785404606882,00:01:11.092782,replica,off,off,on
+411,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",963015424,765607936,125.784409841854,00:01:11.276245,replica,off,off,off
+412,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",962827400,765607936,125.75985001284,00:01:10.317849,replica,off,on,off
+413,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",962827088,765607936,125.75980821599,00:01:10.35098,replica,on,on,off
+414,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",962827184,765607936,125.75982493473,00:01:10.355105,replica,on,on,on
+415,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",963018936,765607936,125.784869607203,00:01:10.253599,replica,on,off,on
+416,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",963016192,765607936,125.784510154294,00:01:10.756387,replica,off,off,on
+417,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",963101832,765607936,125.795694991333,00:01:10.869422,replica,off,off,off
+418,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",962827144,765607936,125.75981657536,00:01:10.329251,replica,off,on,off
+419,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",962829200,765607936,125.7600840752,00:01:10.325998,replica,on,on,off
+420,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",962827144,765607936,125.75981657536,00:01:09.780605,replica,on,on,on
+421,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",963027008,765607936,125.785922887821,00:01:09.511543,logical,on,off,on
+422,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",963018416,765607936,125.784802732243,00:01:08.39472,logical,off,off,on
+423,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",963021752,765607936,125.785237419483,00:01:11.166986,logical,off,off,off
+424,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",962827112,765607936,125.75981657536,00:01:09.182857,logical,off,on,off
+425,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",962857232,765607936,125.763745479253,00:01:08.825863,logical,on,on,off
+426,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",962827112,765607936,125.75981657536,00:01:10.355332,logical,on,on,on
+427,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",963102136,765607936,125.795736788183,00:01:10.466752,logical,on,off,on
+428,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",963020712,765607936,125.785103669563,00:01:09.886128,logical,off,off,on
+429,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",963014328,765607936,125.784267732564,00:01:09.963191,logical,off,off,off
+430,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",962827128,765607936,125.75981657536,00:01:10.438681,logical,off,on,off
+431,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",962864368,765607936,125.764681728691,00:01:09.382,logical,on,on,off
+432,"'DO $wl$ DECLARE
+  i int;
+BEGIN
+  FOR i IN 1 .. 10000000 LOOP
+    INSERT INTO wal_traffic_workload SELECT 1, md5( random()::text )::text;
+  END LOOP;
+END $wl$;'",962828912,765607936,125.76005063772,00:01:10.66467,logical,on,on,on
