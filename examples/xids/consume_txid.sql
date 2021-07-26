@@ -159,8 +159,8 @@ begin
 
   -- print some startup messages
   raise info 'Starting to consume transaction ids, reporting every % consumed xids', report_every;
-  raise info 'Current WAL location (LSN) is %, current epoch is %, current timeline is %',
-    pg_current_wal_lsn(),     epoch, current_timeline;
+  raise info 'Current WAL location (LSN) is %, current xid is %, current epoch is %, current timeline is %',
+    pg_current_wal_lsn(),     txid_current(), epoch, current_timeline;
 
   while true loop
 
