@@ -149,10 +149,16 @@ begin
   previous_timeline  := current_timeline;
   wraparound_counter := 0;
 
+  -- select the current epoch
+  -- this is going to be recomputed every
+  -- transaction
+  select txid_current() >> 32
+    into epoch;
 
-
+  -- print some startup messages
   raise info 'Starting to consume transaction ids, reporting every % consumed xids', report_every;
-  raise info 'Current WAL location (LSN) is %, current timeline is %', pg_current_wal_lsn(), current_timeline;
+  raise info 'Current WAL location (LSN) is %, current epoch is %, current timeline is %',
+    pg_current_wal_lsn(),     epoch, current_timeline;
 
   while true loop
 
@@ -188,12 +194,12 @@ begin
       -- there has been a wraparound
  	    wraparound_counter := wraparound_counter + 1;		
 	    raise info 'WRAPAROUND % happened @ %: epoch is now %, previous epoch was %, xid is now % (real %)',
-             wraparound_counter,
-             clock_timestamp(),
-             epoch,
-             previous_epoch,
-             xid,
-             xid_abs;
+         wraparound_counter,
+        clock_timestamp(),
+        epoch,
+        previous_epoch,
+        xid,
+        xid_abs;
 	    previous_epoch      := epoch;
 
      end if;
@@ -214,11 +220,14 @@ begin
       if report_details then
           estimated_secs  := abs( max_xid - xid_age ) /  ( counter / total_secs )::bigint;
 
-        raise info ' |-> % transactions to wraparound (estimated % secs, at %)',
+        raise info ' |-> % transactions to wraparound (estimated % secs, at %), database % was frozen % transactions ago',
                       abs( max_xid - xid_age ),
                       estimated_secs,
                       clock_timestamp()::timestamp
-                       + ( estimated_secs || ' seconds' )::interval;
+          + ( estimated_secs || ' seconds' )::interval,
+          current_database(),
+          xid_age;
+
        raise info ' |-> read only at % ',
                         clock_timestamp()
                          + (  ( max_xid - xid_age - xid_shutdown ) / ( counter / total_secs )::bigint || ' seconds' )::interval;
