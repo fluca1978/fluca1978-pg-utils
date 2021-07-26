@@ -123,6 +123,7 @@ declare
   current_timeline int    := 1;
   previous_timeline int   := 1;
   wraparound_counter int  := 0;
+  previous_epoch     int  := 0;
 begin
   -- compute the max value
   max_xid := pow( 2, 32 );
@@ -176,6 +177,26 @@ begin
       into xid_abs, xid, xid_age, epoch
       from pg_database
       where datname = current_database();
+
+      -- if the previous epoch is null, assign it
+      IF previous_epoch IS NULL OR previous_epoch = 0 THEN
+      	 previous_epoch := epoch;
+     END IF;
+
+
+    if previous_epoch <> epoch then
+      -- there has been a wraparound
+ 	    wraparound_counter := wraparound_counter + 1;		
+	    raise info 'WRAPAROUND % happened @ %: epoch is now %, previous epoch was %, xid is now % (real %)',
+             wraparound_counter,
+             clock_timestamp(),
+             epoch,
+             previous_epoch,
+             xid,
+             xid_abs;
+	    previous_epoch      := epoch;
+
+     end if;
 
      -- print something
      if counter % report_every = 0 then
