@@ -222,9 +222,9 @@ begin
 
 
        if autovacuum_enabled then
-         raise info 'Autovacuum is turned ON!';
+         raise info ' |->  autovacuum is active';
        else
-         raise info 'Autovacuum is turned OFF';
+         raise info ' |-> autovacuum is turned OFF! Emergency (anti-wraparound) autovacuum will work, however.';
        end if;
 
       if report_details then
