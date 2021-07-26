@@ -124,6 +124,7 @@ declare
   previous_timeline int   := 1;
   wraparound_counter int  := 0;
   previous_epoch     int  := 0;
+  autovacuum_enabled boolean := false;
 begin
   -- compute the max value
   max_xid := pow( 2, 32 );
@@ -133,6 +134,7 @@ begin
 
   -- initialize the timestamp
   ts_start   := clock_timestamp();
+
 
 
   if lim is null then
@@ -152,8 +154,8 @@ begin
   -- select the current epoch
   -- this is going to be recomputed every
   -- transaction
-  select txid_current() >> 32
-    into epoch;
+  select txid_current() >> 32, current_setting( 'autovacuum' )::boolean
+    into epoch, autovacuum_enabled;
 
   -- print some startup messages
   raise info 'Starting to consume transaction ids, reporting every % consumed xids', report_every;
@@ -179,8 +181,8 @@ begin
     end if;
 
     -- consume the xid
-      select txid_current(),  mod( txid_current(), max_xid ), age( datfrozenxid ), txid_current() >> 32
-      into xid_abs, xid, xid_age, epoch
+      select txid_current(),  mod( txid_current(), max_xid ), age( datfrozenxid ), txid_current() >> 32, current_setting( 'autovacuum' )::boolean
+      into xid_abs, xid, xid_age, epoch, autovacuum_enabled
       from pg_database
       where datname = current_database();
 
@@ -216,6 +218,14 @@ begin
                       xid_abs,
                       epoch,
                       counter, total_secs::int;
+
+
+
+       if autovacuum_enabled then
+         raise info 'Autovacuum is turned ON!';
+       else
+         raise info 'Autovacuum is turned OFF';
+       end if;
 
       if report_details then
           estimated_secs  := abs( max_xid - xid_age ) /  ( counter / total_secs )::bigint;
