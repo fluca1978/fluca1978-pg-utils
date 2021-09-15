@@ -120,8 +120,7 @@ declare
   xid_abs         bigint  := 0;
   xid_age         bigint  := 0;
   epoch           int     := 0;
-  current_timeline int    := 1;
-  previous_timeline int   := 1;
+  
   wraparound_counter int  := 0;
   previous_epoch     int  := 0;
   autovacuum_enabled boolean := false;
@@ -146,9 +145,6 @@ begin
   end if;
 
 
-  -- compute current timeline
-  current_timeline   := substring( pg_walfile_name( pg_current_wal_lsn() ), 1, 8 )::int;
-  previous_timeline  := current_timeline;
   wraparound_counter := 0;
 
   -- select the current epoch
@@ -159,26 +155,15 @@ begin
 
   -- print some startup messages
   raise info 'Starting to consume transaction ids, reporting every % consumed xids', report_every;
-  raise info 'Current WAL location (LSN) is %, current xid is %, current epoch is %, current timeline is %',
-    pg_current_wal_lsn(),     txid_current(), epoch, current_timeline;
+  raise info 'Current WAL location (LSN) is %, current xid is %, current epoch is %',
+    pg_current_wal_lsn(),     txid_current(), epoch;
 
   while true loop
 
       counter := counter + 1;
       exit when lim = counter;
 
-    -- cmpute the current timeline and see
-    -- if it has changed
-    current_timeline := substring( pg_walfile_name( pg_current_wal_lsn() ), 1, 8 )::int;
-
-    if current_timeline <> previous_timeline then
-      raise info '*** Wraparound happened near LSN %! Previous timeline was %, now it is % ***',
-      pg_current_wal_lsn(),
-      current_timeline,
-      previous_timeline;
-
-      previous_timeline = current_timeline;
-    end if;
+        
 
     -- consume the xid
       select txid_current(),  mod( txid_current(), max_xid ), age( datfrozenxid ), txid_current() >> 32, current_setting( 'autovacuum' )::boolean
@@ -217,7 +202,7 @@ begin
                       xid,
                       xid_abs,
                       epoch,
-                      counter, total_secs::int;
+                      counter, total_secs::bigint;
 
 
 
@@ -248,7 +233,7 @@ begin
           + (  ( current_setting( 'autovacuum_freeze_max_age' )::int - xid_age ) / ( counter / total_secs )::bigint || ' seconds' )::interval;
           
         raise info ' |-> current LSN is now at %', pg_current_wal_lsn();
-        raise info ' |-> current timeline is at % (previous was %)', current_timeline, previous_timeline;
+        
 
 
         raise info ' |-> this report appears every % transactions, % secs, next at %',
