@@ -62,11 +62,14 @@ CREATE TABLE IF NOT EXISTS wa (
 
   testdb=> call p_consume_xid();
 
-  INFO:  Starting to consume transaction ids, reporting every 50000000 consumed xids
-  INFO:  Consuming 26906 xid/sec: current xid is 3800000000 (real 16684901888), 49999999 transactions consumed so far (1858 secs elapsed)
-  INFO:   |-> 3909582979 transactions to wraparound (estimated 145305 secs, at 2021-03-24 08:30:36.727671)
-  INFO:   |-> read only at 2021-03-24 08:29:59.727671+01
-  INFO:   |-> this report appears every 50000000 transactions, 1858 secs, next at 2021-03-22 16:39:49.727671
+  INFO:  Consuming 44007 xid/sec: current xid is 460296404 (real 137899249876, epoch 32), 200000000 transactions consumed so far (4545 secs elapsed)
+  INFO:   |-> autovacuum is turned OFF! Emergency (anti-wraparound) autovacuum will work, however.
+  INFO:   |-> 4102095898 transactions to wraparound (estimated 93214 secs, at 2021-09-16 08:13:51.722305), database testdb was frozen 192871398 transactions ago
+  INFO:   |-> read only at 2021-09-16 08:13:28.722382-04 
+  INFO:   |-> autovacuum should freeze within 7128602 trasanctions, at 2021-09-15 06:22:58.722452-04
+  INFO:   |-> current LSN is now at 5FA/D853A000
+  INFO:   |-> this report appears every 50000000 transactions, 1147 secs, next at 2021-09-15 06:39:24.788489
+
 
 
  */
