@@ -50,6 +50,21 @@ CREATE TABLE IF NOT EXISTS wa (
 
 
 
+
+CREATE TABLE IF NOT EXISTS wa_epoch
+(
+        pk int generated always as identity
+        , epoch bigint
+        , ts timestamp
+        , xid bigint
+        , xid_abs bigint
+        , wal_lsn text
+        , PRIMARY KEY( pk )
+);
+
+
+
+
 /*
  * Consumes a lot of xids without doing anything.
  *
@@ -65,7 +80,7 @@ CREATE TABLE IF NOT EXISTS wa (
   INFO:  Consuming 44007 xid/sec: current xid is 460296404 (real 137899249876, epoch 32), 200000000 transactions consumed so far (4545 secs elapsed)
   INFO:   |-> autovacuum is turned OFF! Emergency (anti-wraparound) autovacuum will work, however.
   INFO:   |-> 4102095898 transactions to wraparound (estimated 93214 secs, at 2021-09-16 08:13:51.722305), database testdb was frozen 192871398 transactions ago
-  INFO:   |-> read only at 2021-09-16 08:13:28.722382-04 
+  INFO:   |-> read only at 2021-09-16 08:13:28.722382-04
   INFO:   |-> autovacuum should freeze within 7128602 trasanctions, at 2021-09-15 06:22:58.722452-04
   INFO:   |-> current LSN is now at 5FA/D853A000
   INFO:   |-> this report appears every 50000000 transactions, 1147 secs, next at 2021-09-15 06:39:24.788489
@@ -123,7 +138,7 @@ declare
   xid_abs         bigint  := 0;
   xid_age         bigint  := 0;
   epoch           int     := 0;
-  
+
   wraparound_counter int  := 0;
   previous_epoch     int  := 0;
   autovacuum_enabled boolean := false;
@@ -166,7 +181,7 @@ begin
       counter := counter + 1;
       exit when lim = counter;
 
-        
+
 
     -- consume the xid
       select txid_current(),  mod( txid_current(), max_xid ), age( datfrozenxid ), txid_current() >> 32, current_setting( 'autovacuum' )::boolean
@@ -182,7 +197,7 @@ begin
 
     if previous_epoch <> epoch then
       -- there has been a wraparound
- 	    wraparound_counter := wraparound_counter + 1;		
+ 	    wraparound_counter := wraparound_counter + 1;
 	    raise info 'WRAPAROUND % happened @ %: epoch is now %, previous epoch was %, xid is now % (real %)',
          wraparound_counter,
         clock_timestamp(),
@@ -192,6 +207,13 @@ begin
         xid_abs;
 	    previous_epoch      := epoch;
 
+            -- insert a tuple into the
+            -- wraparound table
+            INSERT INTO wa_epoch( epoch, ts, xid, xid_abs, wal_lsn )
+            VALUES( epoch, clock_timestamp(), xid, xid_abs, pg_current_wal_lsn()::text );
+            COMMIT;
+
+            raise info 'Look at table wa_epoch for history';
      end if;
 
      -- print something
@@ -234,9 +256,9 @@ begin
           ( current_setting( 'autovacuum_freeze_max_age' )::int - xid_age )
           , clock_timestamp()
           + (  ( current_setting( 'autovacuum_freeze_max_age' )::int - xid_age ) / ( counter / total_secs )::bigint || ' seconds' )::interval;
-          
+
         raise info ' |-> current LSN is now at %', pg_current_wal_lsn();
-        
+
 
 
         raise info ' |-> this report appears every % transactions, % secs, next at %',
@@ -257,6 +279,3 @@ begin
   end loop;
 end
 $$ language plpgsql;
-
-
-
