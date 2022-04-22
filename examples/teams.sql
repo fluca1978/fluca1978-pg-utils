@@ -4,7 +4,7 @@ CREATE TABLE score(
   pk int GENERATED ALWAYS AS IDENTITY
   , nome text NOT NULL
   , anno_nascita int NOT NULL
-  , eta int 
+  , eta int
   , punteggio int DEFAULT 0
   , divisione text
   , squadra text
@@ -15,7 +15,7 @@ CREATE TABLE score(
 /**
  * Normalizza il punteggio fra 0 e 100 anche se viene specificato qualcosa di diverso.
  */
-CREATE FUNCTION f_tr_punteggio()
+CREATE OR REPLACE FUNCTION f_tr_punteggio()
   RETURNS TRIGGER
 AS $CODE$
 BEGIN
@@ -23,9 +23,12 @@ BEGIN
     RAISE EXCEPTION 'Questa funzione deve essere usata per inserimento/modifica!';
   END IF;
 
-  IF NEW.punteggio < 0 THEN
+  RAISE DEBUG 'Trigger scattato';
+
+
+  IF NEW.punteggio IS NULL OR  NEW.punteggio < 0 THEN
     NEW.punteggio := 0;
-  ELSIF NEW.punteggio > 100 THEN 
+  ELSIF NEW.punteggio > 100 THEN
     NEW.punteggio := 100;
   END IF;
 
@@ -45,11 +48,15 @@ CREATE TRIGGER tr_punteggio
 
 
 
-
+/*
+ * Questa funzione considera che l'anno di nascita sia sempre
+ * l'informazione che conta, e quindi da quella calcola l'eta' e
+ * di conseguenza la divisione.
+ */
 CREATE OR REPLACE FUNCTION f_tr_eta()
   RETURNS TRIGGER
 AS $CODE$
-  
+
 BEGIN
 
   IF TG_OP NOT IN ( 'INSERT', 'UPDATE' ) THEN
@@ -73,9 +80,14 @@ END
   $CODE$
   LANGUAGE plpgsql;
 
+/*
+ * Il trigger deve attivarsi ogni volta che si agisce sulle
+ * colonne eta, divisione, anno_nascita perché le deve
+ * mantenere sempre coerenti.
+ */
 CREATE TRIGGER tr_eta
   BEFORE
-  INSERT OR UPDATE OF eta, anno_nascita
+  INSERT OR UPDATE OF anno_nascita, eta, divisione
   ON score
   FOR EACH ROW
     EXECUTE FUNCTION f_tr_eta();
@@ -103,9 +115,7 @@ ALTER TABLE score
   GENERATED ALWAYS AS ( f_compute_eta( anno_nascita ) ) STORED;
 
 
-
-
-
+TRUNCATE score;
 insert into score( nome, anno_nascita, punteggio, squadra )
 VALUES
 ( 'Luca', 1978, 200, 'A' )
