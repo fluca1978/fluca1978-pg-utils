@@ -1,0 +1,18 @@
+
+
+CREATE OR REPLACE FUNCTION
+plperl_catch_nulls( int, text )
+RETURNS VOID
+AS $CODE$
+   my $arg = 1;
+
+  for ( @_ ) {
+      elog(INFO, "Input argument number $arg [$_] is false (as Perl)" ) if ! $_;
+      elog(INFO, "Input argument number $arg [$_] is NULL (as SQL)" ) if ! defined $_;
+      elog(INFO, "Input argument number $arg is valid [$_]" ) if defined( $_ ) && $_;
+      $arg++;
+  }
+
+  
+$CODE$
+LANGUAGE plperl;
