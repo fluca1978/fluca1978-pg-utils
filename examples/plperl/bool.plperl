@@ -1,0 +1,51 @@
+
+--
+-- Not working without a transformation!
+--
+/*
+estdb=> select test_bool( 't', 'f' );
+INFO:  First  argument [t] is true
+INFO:  Second argument [f] is true
+ test_bool 
+-----------
+ 
+(1 row)
+
+*/
+CREATE OR REPLACE FUNCTION
+test_bool( bool, bool )
+RETURNS VOID
+AS $CODE$
+  my ( $a, $b ) = @_;
+  elog( INFO, "First  argument [$a] is true" ) if $a;
+  elog( INFO, "Second argument [$b] is true" ) if $b;	
+$CODE$
+LANGUAGE plperl;
+
+
+
+
+/*
+ * WORKING
+ *
+ testdb=> select test_bool( 't', 'f' );
+INFO:  First  argument [1] is true
+ test_bool 
+-----------
+ 
+(1 row)
+*/
+
+CREATE EXTENSION IF NOT EXISTS bool_plperl;
+
+
+CREATE OR REPLACE FUNCTION
+test_bool( bool, bool )
+RETURNS VOID
+TRANSFORM FOR TYPE bool
+AS $CODE$
+  my ( $a, $b ) = @_;
+  elog( INFO, "First  argument [$a] is true" ) if $a;
+  elog( INFO, "Second argument [$b] is true" ) if $b;	
+$CODE$
+LANGUAGE plperl;
