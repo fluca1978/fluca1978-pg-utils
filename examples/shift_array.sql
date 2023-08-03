@@ -121,6 +121,23 @@ LANGUAGE plpgsql;
 
 
 
+CREATE OR REPLACE FUNCTION
+shift_plperl(  text[],
+                int default 1 )
+RETURNS TABLE( head text, tail text[] )
+AS $CODE$
+   my ( $array, $loops ) = @_;
+   my ( $head );
+
+   $head = shift $array->@* for ( 1 .. $loops );
+   return_next( { head => $head, tail => $array } );
+   return undef;
+$CODE$
+LANGUAGE plperl;
+
+
+
+
 
 /*
  * Example for performance analysis.
@@ -141,7 +158,7 @@ DECLARE
 	i        int;
 BEGIN
 
-	iter := 5000;
+	iter := 2000;
 
 	-- initialize the array
 	ts_begin := clock_timestamp();
@@ -158,7 +175,7 @@ BEGIN
 	END LOOP;
 	ts_end := clock_timestamp();
 
-	RAISE INFO 'Using shift for % iteration over % elements = %',
+	RAISE INFO 'Using shift for % iterations over % elements = %',
 	      	   iter,
 		   array_length( a, 1 ),
 		   ( ts_end - ts_begin );
@@ -170,7 +187,32 @@ BEGIN
 	END LOOP;
 	ts_end := clock_timestamp();
 
-	RAISE INFO 'Using shiftx for % iteration over % elements = %',
+	RAISE INFO 'Using shiftx for % iterations over % elements = %',
+	      	   iter,
+		   array_length( a, 1 ),
+		   ( ts_end - ts_begin );
+
+
+
+	ts_begin := clock_timestamp();
+	FOR i IN 1 .. iter LOOP
+	    PERFORM array_shift( a, iter / 2 );
+	END LOOP;
+	ts_end := clock_timestamp();
+
+	RAISE INFO 'Using array_shift for % iterations over % elements = %',
+	      	   iter,
+		   array_length( a, 1 ),
+		   ( ts_end - ts_begin );
+
+
+	ts_begin := clock_timestamp();
+	FOR i IN 1 .. iter LOOP
+	    PERFORM shift_plperl( a, iter / 2 );
+	END LOOP;
+	ts_end := clock_timestamp();
+
+	RAISE INFO 'Using shift_plperl for % iterations over % elements = %',
 	      	   iter,
 		   array_length( a, 1 ),
 		   ( ts_end - ts_begin );
