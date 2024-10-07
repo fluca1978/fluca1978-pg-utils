@@ -1,0 +1,35 @@
+version: '3.3'
+
+services:
+  pg_database:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    hostname: 'pg_database'
+    ports:
+      - '65432:5432'
+      - '7777:7777'
+    environment:
+      POSTGRES_USER: 'postgres'
+      POSTGRES_PASSWORD: 'P0stgres!!'
+      POSTGRES_DB: 'postgres'
+      PGDATA: '/postgres/17/data'
+      SERVER_NAME: 'pg_standalone'
+    volumes:
+      - ./init:/docker-entrypoint-initdb.d/
+      - ~/postgres-docker-vols/standalone:/postgres/17/data
+
+
+  pgadmin4:
+    image : dpage/pgadmin4:latest
+    hostname: 'pgadmin4'
+    ports:
+      - '8888:80'
+    environment:
+      PGADMIN_DEFAULT_EMAIL    : 'pgadmin@pgadmin.org'
+      PGADMIN_DEFAULT_PASSWORD : 'Postgres!!'
+      PGADMIN_LISTEN_PORT      : 80
+    depends_on:
+      - pg_database
+    # volumes:
+    #   - ~/postgres-docker-vols/pgadmin:/var/lib/pgadmin

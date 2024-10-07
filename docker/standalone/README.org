@@ -1,0 +1,15 @@
+* Usage of docker images
+
+In order to use the images:
+1) ~sudo docker compose build -d~
+2) ~sudo docker compose up -d~
+3) check images are running with ~sudo docker ps~
+4) attach a console with:
+   ~sudo docker exec --user postgres --workdir /var/lib/postgresql -it $(sudo docker ps -qf "name=standalone_pg_database")  /usr/bin/zsh~
+
+
+* Remove all
+
+1) shutdown with ~sudo docker compose down~
+2) remove images ~sudo docker rmi standalone_pg_database dpage/pgadmin4~
+3) remove the ~postgresql~docker~vols~ into the home folder of the admin

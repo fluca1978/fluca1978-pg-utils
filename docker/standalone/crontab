@@ -1,0 +1,2 @@
+*/5 * * * *  /usr/bin/pgbadger -I -f stderr -O /data/html /postgres/17/data/log/*.log
+*/2 * * * *  /usr/lib/postgresql/17/bin/pgbench -U pgbench -T 35 -c 4 -n pgbench
