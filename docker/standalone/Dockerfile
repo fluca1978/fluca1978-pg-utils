@@ -4,6 +4,7 @@ RUN apt-get update \
  && apt-get install -y net-tools vim sudo less emacs-nox procps sudo \
  && apt-get install -y postgresql-plperl-17     \
  && apt-get install -y postgresql-plpython3-17  \
+ && apt-get install -y postgresql-17-postgis-3  \
  && apt install -y perl pgbadger lighttpd nmap  cron \
  && apt install -y zsh
 
