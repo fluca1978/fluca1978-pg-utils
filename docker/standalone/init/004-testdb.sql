@@ -83,6 +83,9 @@ LANGUAGE plperl;
 
 
 
+
+SET ROLE to postgres;
+
 CREATE OR REPLACE FUNCTION
 py_check_codice_fiscale( cf text )
 RETURNS bool
@@ -98,13 +101,14 @@ $CODE$
 LANGUAGE plpython3u;
 
 
+GRANT EXECUTE ON FUNCTION py_check_codice_fiscale TO luca;
 
 
 CREATE OR REPLACE FUNCTION
 py_select_highest_score( threshold int DEFAULT NULL )
 RETURNS TABLE( who text, score int )
 AS $CODE$
-   query = "SELECT person || ' (' || team || ')' as who, score FROM scores WHERE score <= $1;"
+   query = "SELECT person || ' (' || team || ')' as who, score FROM luca.scores WHERE score <= $1;"
 
    global threshold                                            # note usage of global!
    if threshold is None or threshold < 0:
@@ -122,3 +126,34 @@ AS $CODE$
    return [ highest ]
 $CODE$
 LANGUAGE plpython3u;
+
+
+GRANT EXECUTE ON FUNCTION py_select_highest_score TO luca;
+
+
+
+
+
+CREATE TABLE IF NOT EXISTS luca.jbooks (
+       pk int generated always as identity
+       , content jsonb NOT NULL
+       , PRIMARY KEY( pk )
+);
+
+
+TRUNCATE TABLE luca.jbooks;
+GRANT ALL ON TABLE luca.jbooks TO luca;
+
+INSERT INTO luca.jbooks( content )
+VALUES ( '{ "title" : "Learn PostgreSQL",
+             "authors" : [ "Luca Ferrari", "Enrico Pirozzi" ],
+            "info" : {
+	         "year" : 2020, "edition" : 1 } }' )
+, ( '{ "title" : "PostgreSQL 11 Server Side Programming",
+       "authors" : [ "Luca Ferrari" ],        "info" : { "year" : 2018 }
+       }' )
+, ( '{ "title" : "Learn PostgreSQL",
+       "authors" : [ "Luca Ferrari", "Enrico Pirozzi" ],
+       "info" : {
+           "year" : 2020, "edition" : 2 } }' )
+;
