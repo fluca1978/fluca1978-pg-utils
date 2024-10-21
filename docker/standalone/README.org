@@ -13,3 +13,11 @@ In order to use the images:
 1) shutdown with ~sudo docker compose down~
 2) remove images ~sudo docker rmi standalone_pg_database dpage/pgadmin4~
 3) remove the ~postgresql~docker~vols~ into the home folder of the admin
+
+
+* pgbadger
+
+Connect to ~http://localhost:7777~ to view the dashboard.
+
+*Wait more than five minutes for ~pgbench~ to run and ~pgbadger~ to collect the data*.
+It is required to connect to the instance.
