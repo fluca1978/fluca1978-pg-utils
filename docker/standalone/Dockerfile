@@ -6,6 +6,7 @@ RUN apt-get update \
  && apt-get install -y postgresql-plpython3-17  \
  && apt-get install -y postgresql-17-postgis-3  \
  && apt install -y perl pgbadger lighttpd nmap  cron \
+ && apt install -y python3-venv python3-pip \
  && apt install -y zsh
 
 RUN mkdir -p /data/tablespaces       \
@@ -22,6 +23,17 @@ RUN echo 'export PATH=$PATH:/usr/lib/postgresql/17/bin/' >> /etc/bash.bashrc
 RUN echo 'export EDITOR=emacs' >> /etc/bash.bashrc
 COPY ./motd /etc/motd
 COPY ./sudoers.conf /etc/sudoers
+
+RUN mkdir /var/lib/postgresql/alembic_demo
+COPY ./alembic_demo /var/lib/postgresql/alembic_demo
+RUN chown -Rf postgres:postgres /var/lib/postgresql/alembic_demo
+
+RUN python3 -m venv /var/lib/postgresql/.alembic.venv.d
+RUN chown -Rf postgres:postgres /var/lib/postgresql/.alembic.venv.d
+RUN /var/lib/postgresql/.alembic.venv.d/bin/pip3 install sqlalchemy
+RUN /var/lib/postgresql/.alembic.venv.d/bin/pip3 install alembic
+RUN /var/lib/postgresql/.alembic.venv.d/bin/pip3 install psycopg2-binary
+RUN echo 'source /var/lib/postgresql/.alembic.venv.d/bin/activate' >> /var/lib/postgresql/.bashrc
 
 COPY ./crontab /tmp
 RUN cat /tmp/crontab | crontab -u postgres -
