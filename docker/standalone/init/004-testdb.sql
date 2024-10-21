@@ -83,3 +83,42 @@ LANGUAGE plperl;
 
 
 
+CREATE OR REPLACE FUNCTION
+py_check_codice_fiscale( cf text )
+RETURNS bool
+AS $CODE$
+   import re
+   pattern = re.compile( r'[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]$' )
+   # `match` anchors at the beginning of the string!
+   if pattern.match( cf ) is not None:
+      return True
+   else:
+      return False
+$CODE$
+LANGUAGE plpython3u;
+
+
+
+
+CREATE OR REPLACE FUNCTION
+py_select_highest_score( threshold int DEFAULT NULL )
+RETURNS TABLE( who text, score int )
+AS $CODE$
+   query = "SELECT person || ' (' || team || ')' as who, score FROM scores WHERE score <= $1;"
+
+   global threshold                                            # note usage of global!
+   if threshold is None or threshold < 0:
+      threshold = 0
+
+   prepared_statement = plpy.prepare( query, [ 'int' ] )       # note usage of list of parameter types
+   tuples = plpy.execute( prepared_statement, [ threshold ] )  # note usage of list of parameter values
+
+   highest = None
+   for t in tuples:
+       if highest is None or t[ 'score' ] > highest[ 'score' ]:
+       	  highest = t
+
+   # returns a table, so use a list
+   return [ highest ]
+$CODE$
+LANGUAGE plpython3u;
