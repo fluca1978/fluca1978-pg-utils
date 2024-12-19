@@ -26,8 +26,8 @@ v_scale AS
 , a_threshold AS
 ( SELECT setting::integer AS a_base FROM pg_settings WHERE name = 'autovacuum_analyze_threshold' )
 SELECT relname, reltuples,
-( v_base + v_scale * reltuples )::integer AS vacuum_trigger,
-( a_base + a_scale * reltuples )::integer AS analyze_trigger,
+( v_base + v_scale * reltuples )::bigint AS vacuum_trigger,
+( a_base + a_scale * reltuples )::bigint AS analyze_trigger,
 v_base, v_scale,
 a_base, a_scale
 FROM   pg_class, v_scale, v_threshold, a_scale, a_threshold
