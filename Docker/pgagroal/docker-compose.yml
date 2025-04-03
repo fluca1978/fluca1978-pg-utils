@@ -41,6 +41,8 @@ services:
     hostname: 'pooler'
     ports:
       - '65433:5433'
+      - '65444:5444'
+      - '65449:5449'
     depends_on:
       - pg_database
     # volumes:

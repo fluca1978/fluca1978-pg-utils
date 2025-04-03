@@ -88,5 +88,6 @@ RUN echo "0penDay2025" | /usr/local/bin/pgagroal-admin master-key
 RUN printf "pgagroal\npgagroal\npgagroal\n" | /usr/local/bin/pgagroal-admin -f /etc/pgagroal/pgagroal_users.conf user add
 RUN printf "pgbench\npgbench\npgbench\n" | /usr/local/bin/pgagroal-admin -f /etc/pgagroal/pgagroal_users.conf user add
 RUN printf "luca\nluca\nluca\n" | /usr/local/bin/pgagroal-admin -f /etc/pgagroal/pgagroal_users.conf user add
+RUN printf "pgagroal\npgagroal\npgagroal\n" | /usr/local/bin/pgagroal-admin -f /etc/pgagroal/pgagroal_admins.conf user add
 
 CMD ["/usr/local/bin/pgagroal", "-c", "/etc/pgagroal/pgagroal.conf", "-u", "/etc/pgagroal/pgagroal_users.conf"]
