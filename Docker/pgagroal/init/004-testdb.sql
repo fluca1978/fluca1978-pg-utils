@@ -10,24 +10,8 @@ CREATE DATABASE testdb WITH owner luca;
 -- the current role!
 CREATE EXTENSION IF NOT EXISTS plperl;
 CREATE EXTENSION IF NOT EXISTS bool_plperl;
-CREATE EXTENSION IF NOT EXISTS plpython3u;
 
 
-
-
-CREATE OR REPLACE FUNCTION
-check_codice_fiscale_python( cf text )
-RETURNS bool
-AS $CODE$
-   import re
-   if re.match( '^[A-Z]{3}[A-Z]{3}\\d{2}[A-Z]\\d{2}[A-Z]\\d{3}[A-Z]$', cf ):
-      return True
-   else:
-     return False
-$CODE$
-LANGUAGE plpython3u;
-
---GRANT USAGE ON check_codice_fiscale_python TO luca;
 
 
 
@@ -80,55 +64,6 @@ LANGUAGE plperl;
 
 
 
-
-
-
-
-SET ROLE to postgres;
-
-CREATE OR REPLACE FUNCTION
-py_check_codice_fiscale( cf text )
-RETURNS bool
-AS $CODE$
-   import re
-   pattern = re.compile( r'[A-Z]{6}\d{2}[A-Z]\d{2}[A-Z]\d{3}[A-Z]$' )
-   # `match` anchors at the beginning of the string!
-   if pattern.match( cf ) is not None:
-      return True
-   else:
-      return False
-$CODE$
-LANGUAGE plpython3u;
-
-
-GRANT EXECUTE ON FUNCTION py_check_codice_fiscale TO luca;
-
-
-CREATE OR REPLACE FUNCTION
-py_select_highest_score( threshold int DEFAULT NULL )
-RETURNS TABLE( who text, score int )
-AS $CODE$
-   query = "SELECT person || ' (' || team || ')' as who, score FROM luca.scores WHERE score <= $1;"
-
-   global threshold                                            # note usage of global!
-   if threshold is None or threshold < 0:
-      threshold = 0
-
-   prepared_statement = plpy.prepare( query, [ 'int' ] )       # note usage of list of parameter types
-   tuples = plpy.execute( prepared_statement, [ threshold ] )  # note usage of list of parameter values
-
-   highest = None
-   for t in tuples:
-       if highest is None or t[ 'score' ] > highest[ 'score' ]:
-       	  highest = t
-
-   # returns a table, so use a list
-   return [ highest ]
-$CODE$
-LANGUAGE plpython3u;
-
-
-GRANT EXECUTE ON FUNCTION py_select_highest_score TO luca;
 
 
 

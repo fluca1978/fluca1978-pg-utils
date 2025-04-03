@@ -1,4 +1,5 @@
 
+psql -U postgres -c "ALTER SYSTEM SET listen_addresses TO '*';"
 psql -U postgres -c "ALTER SYSTEM SET logging_collector TO on;"
 psql -U postgres -c "ALTER SYSTEM SET log_destination   TO 'stderr,csvlog,jsonlog';"
 psql -U postgres -c "ALTER SYSTEM SET log_directory     TO 'log';"

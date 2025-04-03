@@ -1,0 +1,93 @@
+FROM rockylinux:9 AS builder
+
+RUN rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm  \
+    && dnf -y upgrade                        \
+    && dnf install -y dnf-plugins-core       \
+    && dnf config-manager --set-enabled crb  \
+    && dnf makecache     \
+    && dnf install -y    \
+        git              \
+        gcc              \
+        cmake            \
+        make             \
+        postgresql-devel \
+        zlib             \
+        zlib-devel       \
+        zstd             \
+        libzstd-devel    \
+        lz4              \
+        lz4-devel        \
+        bzip2            \
+        bzip2-devel      \
+        libpq            \
+        libpq-devel      \
+        libev-devel      \
+        python3-docutils \
+        pandoc           \
+        texlive          \
+        doxygen          \
+        graphviz         \
+        openssl-devel    \
+        libatomic        \
+        libyaml-devel    \
+        yaml-cpp-devel   \
+	clang            \
+	emacs-nox        \
+	systemd-devel    \
+	systemd-libs     \
+	liburing         \
+	liburing-devel   \
+    && dnf clean all
+
+WORKDIR /src
+RUN git clone https://github.com/agroal/pgagroal.git /src
+
+
+RUN rm -rf build && mkdir build
+
+RUN cd build                      \
+    && cmake -DCMAKE_C_COMPILER=clang  ..  \
+    && make                                \
+    && make install
+
+FROM rockylinux:9
+
+RUN dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm  \
+    && dnf -y update                 \
+    && dnf install -y postgresql17   \
+        libpq5                       \
+        libev                        \
+        libatomic                    \
+	zsh                          \
+	emacs-nox                    \
+	liburing                     \
+    && dnf clean all
+
+
+# create the user
+RUN useradd --create-home --shell /bin/bash pgagroal
+COPY bashrc /etc/bashrc
+
+WORKDIR /pgagroal
+
+COPY --from=builder /usr/local/bin/pgagroal /usr/local/bin/pgagroal-cli /usr/local/bin/pgagroal-admin /usr/local/bin/pgagroal-vault /usr/local/bin/
+COPY --from=builder /usr/local/lib64/libpgagroal.so* /usr/local/lib64/
+
+COPY ./conf/pgagroal.conf /etc/pgagroal/pgagroal.conf
+COPY ./conf/pgagroal_databases.conf /etc/pgagroal/pgagroal_databases.conf
+COPY ./conf/pgagroal_hba.conf /etc/pgagroal/pgagroal_hba.conf
+
+RUN mkdir /var/log/pgagroal
+RUN chown -R pgagroal:pgagroal /pgagroal /etc/pgagroal /var/log/pgagroal
+RUN chmod +x /usr/local/bin/pgagroal /usr/local/bin/pgagroal-cli /usr/local/bin/pgagroal-admin /usr/local/bin/pgagroal-vault
+
+ENV LD_LIBRARY_PATH=/usr/local/lib64
+USER pgagroal
+
+RUN echo "0penDay2025" | /usr/local/bin/pgagroal-admin master-key 
+RUN printf "pgagroal\npgagroal\npgagroal\n" | /usr/local/bin/pgagroal-admin -f /etc/pgagroal/pgagroal_users.conf user add
+RUN printf "pgbench\npgbench\npgbench\n" | /usr/local/bin/pgagroal-admin -f /etc/pgagroal/pgagroal_users.conf user add
+RUN printf "luca\nluca\nluca\n" | /usr/local/bin/pgagroal-admin -f /etc/pgagroal/pgagroal_users.conf user add
+RUN printf "pgagroal\npgagroal\npgagroal\n" | /usr/local/bin/pgagroal-admin -f /etc/pgagroal/pgagroal_admins.conf user add
+
+CMD ["/usr/local/bin/pgagroal", "-c", "/etc/pgagroal/pgagroal.conf", "-u", "/etc/pgagroal/pgagroal_users.conf"]
