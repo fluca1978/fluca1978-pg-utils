@@ -1,0 +1,37 @@
+version: '3.3'
+
+services:
+  pg_database_new:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    hostname: 'pg_database_new'
+    ports:
+      - '65432:5432'
+    environment:
+      POSTGRES_USER: 'postgres'
+      POSTGRES_PASSWORD: 'P0stgres!!'
+      POSTGRES_DB: 'postgres'
+      PGDATA: '/postgres/17/data'
+      SERVER_NAME: 'pg_database_new'
+    volumes:
+      - ./init:/docker-entrypoint-initdb.d/
+      - ~/postgres-docker-vols/pg_database:/postgres/17/data
+
+
+  pg_database_old:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    hostname: 'pg_database_old'
+    ports:
+      - '65431:5432'
+    environment:
+      POSTGRES_USER: 'postgres'
+      POSTGRES_PASSWORD: 'P0stgres!!'
+      POSTGRES_DB: 'postgres'
+      PGDATA: '/postgres/16/data'
+      SERVER_NAME: 'pg_database_old'
+    volumes:
+      - ./init:/docker-entrypoint-initdb.d/
+      - ~/postgres-docker-vols/pg_database:/postgres/17/data
